@@ -6,21 +6,43 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "predev": "prisma generate",
+    "prebuild": "prisma generate",
+    "db:status": "prisma migrate status"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.13",
+    "leaflet": "^1.9.4",
     "next": "16.4.3",
+    "pg": "^8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-icons": "^5.7.0",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.9",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "prisma": "7.10.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "type": "module",
+  "packageManager": "bun@1.4.2"
 }
