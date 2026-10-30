@@ -1,0 +1,187 @@
+[00:00] pokoknya lengkap saya ngomong tanggerang-tanggerang semua aja
+[00:03] jadi gini kalau kamu bisa ngerjain tanggerang
+[00:05] berarti kamu bisa ngerjain makasi dong
+[00:07] gak perlu semua gitu loh
+[00:08] kayak proofnya aja kan pak
+[00:11] nah proofnya aja oke tanggerang ya
+[00:12] dan berharap datanya
+[00:14] katanya 5% tadi ya
+[00:16] nah sekarang
+[00:18] dari data tersebut mau
+[00:20] ditahukan kemana
+[00:23] keanggaran
+[00:24] kemana tadi
+[00:26] keanggaran atau dari apa
+[00:28] Dari proyek-proyeknya
+[00:30] Dari data proyek kan udah ada nama proyek
+[00:32] Sama anggaran kan pak
+[00:33] Nah coba sekarang kamu catat disitu
+[00:36] Fiturnya apa saja
+[00:37] Jadi kamu udah dapet pertanyaan
+[00:39] Dapet anggaran
+[00:41] Tadi apalagi siapa yang mengerjakan
+[00:44] Terus apalagi lamanya
+[00:46] Dari kapan sampai kapan
+[00:47] Umurnya
+[00:49] Nah tapi itu kan baru data
+[00:52] Belum inovasi kan
+[00:54] Itu cuma mengintegrasikan kan
+[00:56] Nah cara-cara supaya berinovasi kamu tambahkan apa dari data itu semua
+[01:00] Kalau gitu gak akan juara, itu cuma basic data
+[01:07] Nah sekarang kalau dimasukkan AI, AI nya dimana kalau pakai
+[01:12] Nah yang kepikiran sih, tadinya kan kalau nama-nama paket gitu kan gak ada posisinya di peta itu gimana kan pak
+[01:23] dan yang mungkin jadi pertanyaan
+[01:26] warga pada umumnya
+[01:27] di sekitar saya itu
+[01:29] ada proyek apa saja dan
+[01:31] mungkin historinya, realisasinya bagaimana pak
+[01:33] nah yang jadi kesulitan
+[01:35] mungkin bagi
+[01:36] hasilkan umum itu
+[01:39] anggaran ini, pengadaan
+[01:41] proyek itu tuh
+[01:42] datanya ada tapi susah dicari
+[01:45] kayak kita gak tau nama proyek
+[01:47] untuk jalan depan kita itu apa
+[01:48] atau mungkin ya
+[01:50] kalau mau katakan
+[01:51] fasilitas lain itu kita gak tahu
+[01:54] karena di data pengadalannya
+[01:56] memang gak ada alat posisinya gitu pak
+[01:58] jadi inovasi yang mungkin itu
+[02:00] kita
+[02:01] pemetaan dari nama proyeknya
+[02:04] ke peta gitu pak
+[02:06] jadi kita menampilkan gitu
+[02:07] jadi di peta
+[02:09] bayangannya kan itu kayak infografis
+[02:11] kita bisa memetakan
+[02:15] dari report yang ada ya
+[02:17] report yang ada
+[02:18] itu jalan besar misalnya jalan kecebong itu dari kelelantaraan itu harus digambarkan di dalam peta ini petanya rusak berarti dia warnanya misalnya kan asalnya
+[02:31] abu-abu jadi warnanya mungkin merah gitu nah satu lagi data yang lain berarti overlapping ya
+[02:37] berlayar-layar ya yang satu peta yang satu data untuk yang rusak-rusak satu data perencanaan untuk
+[02:44] diperbaiki atau tidak sudah ada perencana diperbaiki atau tidak
+[02:49] atau warna apa atau ikon yang lain begitu ya maksudnya bisa gitu ya Nah terus ya itu kan
+[03:00] berarti kan salah satu nilai ya jadi kalau ngelihat pokok kan jadi si pemerintah atau
+[03:07] masyarakat bisa kira-kira memetakan oh ini kira-kira jalan-jalan yang rusak yang akan ditangani dengan baik
+[03:15] kemudian dengan anggaran pendoran siapa dan sebagainya
+[03:18] terus apalagi yang bisa kita makakan di situ
+[03:22] jadi sekarang kamu perbanyak itu untuk tempat
+[03:25] biasanya inferensi
+[03:27] kapan itu rusak
+[03:30] kan ketawan
+[03:32] caranya kan ketawan
+[03:36] itu biasanya itu seperti saya di jalan yang dimuncul itu
+[03:39] itu sebulan langsung rusak
+[03:41] jadi yang ketahuan
+[03:44] itu yang sering rusak-rusak itu ditampilin itu vendornya siapa
+[03:47] top
+[03:48] kalau saya sih akan gitu ya
+[03:52] top 10 gitu
+[03:54] top 10 vendor yang bikin rusak jalan
+[03:55] yang sering rusak jalan
+[03:57] tapi harus balance
+[03:59] kenapa rusaknya?
+[04:01] karena dilalui truk
+[04:03] lho iya dong
+[04:05] Jadi kalau memang itu jalan selalu diladuk harusnya
+[04:09] Dia pakai beton misalnya gitu loh
+[04:13] Gak boleh pakai pasir sama asfal doang
+[04:17] Kan gitu mencari selama ini begitu
+[04:20] Terus kedua yang harus gak mau perhatikan tuh
+[04:22] Jadi kamu harus bilang kategorinya tuh rusaknya kenapa?
+[04:25] Karena dilaluknya sama true
+[04:28] Karena memang terlalu banyak padat
+[04:30] Macet jalan-macet
+[04:32] karena memang dia tidak ada pengairan atau tidak
+[04:35] apa sih?
+[04:36] di bawah kiri kanannya tidak ada
+[04:38] bahwa jalannya
+[04:40] drainasernya nah drainasernya tidak ada nah itu penting loh gitu justru menurut saya kalau kamu mau memang ini kan ada orang si itu tuh orang si sipilnya manfaatin ilmu supaya itu tahan tuh gimana jadi kamu harus
+[04:54] tahu sebenarnya jalan yang bagus itu ini rusak nih memang jalan itu kenapa masalahnya jadi jangan
+[05:00] cuma rusak rusak rusak nggak boleh gitu loh penyebabnya pendalamannya gitu ya Pak supaya lebih
+[05:06] kalau ini tahu di Sipendor ini pasti masalahnya
+[05:09] di mana-mana pasti sama
+[05:11] itu satu
+[05:13] bahan pasti jelek
+[05:15] semua yang dia bangun pasti sama
+[05:17] gak mungkin jauh
+[05:20] ini pasti rusak nih
+[05:21] 6 bulan rusak
+[05:23] nah itu ngomong inferensi
+[05:27] nah itu inovasi
+[05:28] jadi udah ketahuan tuh
+[05:29] pemerintah kota udah ketahuan
+[05:32] asalnya warnanya hijau
+[05:36] tiba-tiba berubahnya di warna atau nggak hijau-jauh muda
+[05:38] nah itu inovasi
+[05:41] nah kalau bisa grafiknya
+[05:43] jangan satik ya
+[05:44] tapi dinamis
+[05:46] kamu tahu
+[05:48] situ lagi
+[05:49] berapa mobil yang
+[05:51] ngomongnya kan mobil
+[05:53] tapi ngomongnya itu adalah beban
+[05:54] ngerti gak
+[05:56] jalan itu tuh dibebani oleh beberapa orang
+[05:59] kamu gak hubungkan dengan google maps
+[06:01] misalnya
+[06:01] kalau saya buat itu
+[06:05] itu nggak mau yang siapa yang yang apa namanya yang biasa-biasa jadi berlayar-layar yang satu
+[06:15] layar untuk rusak tahapan apa nih layar untuk beban yang sering dipakai disitu tuh pakai Google
+[06:20] kan bisa dibaca datanya ada nah kalau bisa ya itu dinamis bisa tambah susah lagi sama saya kalau
+[06:31] Masuk kendaraan susah sih pak, udah masuk yang kendaraan-kendaraan tadi, beban-beban kayaknya susah sih
+[06:36] Ya tapi itu inovasi itu
+[06:38] Ya kan ya
+[06:39] Kalau saya sih akan bicara begitu, itu namanya inovasi
+[06:42] Jadi kalau misalnya pikir memang sekolahnya kecil
+[06:45] Tapi dengan cara begitu kita bisa tahu sebenarnya itu jalan itu rusak kenapa
+[06:50] Kan gitu, gak cuma ah rusak-rusak
+[06:53] Kalau cuma ngomong rusak-rusak aja bisa
+[06:54] Mungkin visualisasinya bikin yang
+[06:57] Maksudnya untuk sementara ya pak
+[06:59] yang penting kita kelihatan ini sebenarnya bisa visible
+[07:03] iya infograf kayak info apa ada misalnya ya kayak grafis gitu kelihatan jadi orang tanpa kan orang malah selihat tabel kan Mas Ini lebih kayak kita visualisasi
+[07:16] Paket 3D gitu ya Pak
+[07:18] Enggak usah 3D, enggak ada guna 3D
+[07:20] 2D cukup
+[07:22] 2D cukup
+[07:28] Kan di Google Maps enggak susah kan?
+[07:31] Bisa kan?
+[07:32] saya mau saya mau mau saya ajarin sih karena bayar Hai jadi saya males karena dia harus
+[07:40] kita kepikiran pakai OSM
+[07:44] itu gratis
+[07:50] open source
+[07:52] kalau buat jangan setengah
+[07:56] makanya tidak menurut kalian kalau gitu
+[08:00] ini kita fokus ke visualisasinya
+[08:04] tapi di klik bisa keluar data
+[08:08] ya di klik keluar tabel gitu loh jadi nggak cuma ngomong ini tabel ini ada
+[08:17] udah ya kalau udah ngomong jangan kemana-mana lagi saya nggak mau capek berarti kita fokus ke situ
+[08:22] di situ ya oke ini oke kan nih oke jalanin udah gitu kan ada segala macem kenapa susah sih
+[08:30] Semua overlay itu ada datanya, ini data awal, data maps, ada datanya ini semua layer
+[08:41] Oh ngerti
+[08:42] Layer ya, per layer, kamu bisa membedakan dengan baik
+[08:46] Datanya per layer
+[08:48] Kayak city builder gitu ya Pak
+[08:50] Ya ampun gitu, pokoknya layer aja datanya
+[08:52] Boleh
+[08:53] Nah cukup
+[08:56] Amat Pak
+[08:57] Nah jalanin udah
+[08:58] Kita fokus dulu
+[08:59] tapi bikin Pak lainnya kita bangunin ya bikin metode pipeline metode metode pakai diagram
+[09:11] Hai
+[09:13] ya
+[09:14] buat githubnya Pak
+[09:15] nanti mau investasi
+[09:17] cinta email
+[09:19] saya
+[09:21] nama gmailnya
+[09:23] yang bisa di investasi
+[09:25] oh dhrv1
+[09:27] gmail.com
+[09:29] itu kita
+[09:31] ya langsung kecewa kapan buat kupulin ya

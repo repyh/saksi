@@ -1,0 +1,189 @@
+[00:00] Nah kalau itu bisa, itu kan informatasi ini seluruh Indonesia loh
+[00:04] Yuk kan bikin kategorinya gimana?
+[00:06] Seluruh Indonesia loh
+[00:07] Berarti daerahnya gimana sih?
+[00:10] Gubernurnya bang-bang
+[00:11] Itu sebenarnya udah tercatat loh
+[00:13] Udah bergila ini
+[00:15] Jadi kalau bisa itu udah
+[00:16] Kamu udah bisa memetakan sebetulnya
+[00:18] Ini tuh salahnya siapa?
+[00:22] Sampai ke arah sana
+[00:23] Jadi jangan-jangan bayang
+[00:25] Nah itu kalau udah aplikasinya sudah kompleks ya?
+[00:28] Kompleks ya?
+[00:30] tapi kita yang bikin juara
+[00:32] pakai AI bisa
+[00:35] tapi yang ketika ini
+[00:37] ini ya idenya
+[00:39] itu lebih ke kita
+[00:41] misalnya dengan tanda kutip
+[00:43] mengekspos pemerintah gitu kan
+[00:44] iya, pokoknya kita kan objektif
+[00:47] bukan soal mau ekspos ya
+[00:49] tapi yang kita ingin
+[00:51] perbaikan, perbaikan kan
+[00:53] perbaikan itu tidak bisa hanya data
+[00:55] tapi harus ada targetnya
+[00:57] gimana, cuma ngomong data
+[00:59] Tidak ada target
+[01:00] Target yang ditujuk
+[01:01] Apakah pada siapa keluar itu diharuskan
+[01:07] Ngomongnya kesalahan siapa itu agak susah
+[01:09] Ngomong gimana siapa menurut serinya
+[01:11] Apakah si denanya
+[01:13] Apakah si kabupatenya
+[01:15] Itu kan susah
+[01:16] Tapi kan kita bisa NLP itu bicara
+[01:18] NLP itu
+[01:19] Natural language
+[01:21] Jadi dengan dia ngomong
+[01:24] Ini desa nih, kepala desanya ngaco
+[01:26] Aduh dua tira
+[01:27] kan ini ambil
+[01:28] ngerti ya?
+[01:30] tadi kategorinya bukan hanya
+[01:31] ambil tuh
+[01:33] yang kayak gitu tuh omongan-omongan
+[01:35] segala macam
+[01:35] gue harus bikin NLP
+[01:37] kamu
+[01:37] kamu bisa sama NLP ya
+[01:39] supaya kan atal
+[01:41] kita ngomongin harus ya
+[01:44] diduga
+[01:46] gitu loh jangan laksan ya
+[01:48] diduga
+[01:49] mungkin karena ini
+[01:50] karena ini
+[01:50] jadi itu
+[01:51] analisa yang kita
+[01:53] kasih tuh
+[01:54] AI nya disitu
+[01:54] ngomongin AI nya
+[01:56] ada data
+[01:57] jadikan AI supaya paketnya tau
+[01:59] tapi jangan cuma nyalahin solusinya
+[02:03] solusi kan kita harus bikin model dari AI yang ada yang ngomong apa namanya ya harus ada AI nya lah saya gak tau kamu ambil AI nya dimana
+[02:15] dari data yang ada di apelin
+[02:17] harus bikin itu model AI
+[02:21] yang seperti apa
+[02:22] tapi kebayang gak
+[02:24] jadi kalau membanding cuma data koperitas
+[02:27] so what
+[02:27] apakah yang data AI
+[02:32] yang dipakai, tentu bisa
+[02:35] untuk komparasi, bisa juga untuk menakutkan modal kita
+[02:38] berapa persen sih
+[02:43] pelaporan yang dilakukan oleh pemerintah
+[02:46] dan pemerintah ASN yang bawa-bawa itu
+[02:51] inakurit, hebat banget
+[02:54] itu bisa ngomong, berapa persen
+[02:57] baik-baik
+[03:00] berarti kalau reportnya ke papor bawah
+[03:02] semuanya baik-baik
+[03:04] berarti scrapping dari berita sama twitter gitu
+[03:07] itu boleh
+[03:08] kamu bisa gak masuk ke berita
+[03:10] itu bagus tuh
+[03:11] jadi inputnya bukan aja demacamnya
+[03:12] dari berita
+[03:14] kamu ambil semua
+[03:16] berita ngomong gini cocok gak
+[03:17] mana berita cocoknya dengan si
+[03:19] apa namanya yang kunyanya si masyarakat
+[03:21] itu
+[03:22] gimana
+[03:24] bisa gak
+[03:26] Bisa ga?
+[03:28] Berarti kayak MVP nya
+[03:30] Sebenernya orang Sipir ga dibutuhkan
+[03:32] MVP nya berarti
+[03:35] Sampai gimana?
+[03:37] MVP nya
+[03:39] MVP nya pak
+[03:41] Minimum fabric
+[03:43] Seminimum mungkin kita buat submit
+[03:46] Hari tanggal 1 nanti pak
+[03:48] Udah harus ada progres sih pak
+[03:52] Tapi mereka belum minta produk jadi
+[03:54] jadi kayak beberapa pitch udah oke
+[03:58] beberapa fungsionalitas
+[04:00] kamu mau ngomong design dulu
+[04:02] kasih ke kita design
+[04:04] terus baru saya bisa ngomong mana yang harus dibikin
+[04:07] yang gak perlu bikin kamu login segala penting gak penting
+[04:12] yang kamu harus bikin adalah misalnya computer visionnya atau mau model LLM aja mau mana yang mau bikin kalau itu udah jadi ingin yakin bahwa kamu bisa bikin kalau kamu bisa bikin Terima kasih
+[04:52] dianggara penentang seperti apa
+[04:56] bikin
+[04:58] itu nanti udah bikin itu baru dari situ
+[05:00] ajanya
+[05:02] harus jadi proposal
+[05:04] kamu berarti kan punya waktu
+[05:06] timelainnya berapa lama
+[05:08] nah dari timeline itu kamu pasti tau
+[05:10] yang sudah jadi mana
+[05:12] nanti penerangannya
+[05:14] berdasarkan proposalnya
+[05:16] jadi apa yang jadi proposal harus terponokin
+[05:18] kalau enggak ya akan terjuara
+[05:20] Nah, proposalnya bagus, itu salah satu desk yang boleh jemput, kita masuk final.
+[05:28] Tapi untuk juara, harus terpukul.
+[05:50] malah dia jadi beban
+[05:52] karena gak pasti apa
+[05:55] betul gak
+[05:57] kekotik kokotan bahan
+[05:59] dia punya eksperimen
+[06:01] gitu
+[06:02] ini berpedulit
+[06:06] jadi dia berpedulit
+[06:11] 3 juta lagi sih pak
+[06:15] juara satunya 3 juta lagi
+[06:17] 3 juta?
+[06:18] sama berapa lagi?
+[06:20] Jadi dimana?
+[06:22] Kejadiannya dimana Ini kemarin sih kita join karena di share sama pak Felix di grup mana di informatika
+[06:32] kita siapa siapa
+[06:38] kalau mau sebagai
+[06:40] part studio
+[06:42] dimana
+[06:44] kita kesana atau disini aja
+[06:46] nanti finalnya disana
+[06:48] disana dimana
+[06:50] Oh, diberi pesan sama PNC Teran, Pak.
+[06:53] Aja, Pak.
+[06:55] Oh, bolak-balik berarti.
+[06:58] Kekitanya bolak-balik, ya.
+[07:00] Gak dikejadian hotel, gak dikejadian apa, ya.
+[07:04] Bagaimana hari?
+[07:14] 10 hari, dong.
+[07:16] Oh, iya, 10 hari, Pak.
+[07:17] Oh, 10 hari.
+[07:18] Ini buat pendaftaran
+[07:31] Kita sudah semenit sih
+[07:33] Sudah
+[07:33] Tadi berapa amutannya
+[07:38] Tiga
+[07:39] Cuma tiga aja
+[07:40] ini seperti yang itunya
+[07:48] dikerjainya
+[07:49] ini ada kata-kata
+[07:52] jadi udah
+[07:53] saya sanggup isin rekam yang tadi bapak
+[07:58] yang tadi
+[08:02] ide dari bapak
+[08:03] dikasih tulis
+[08:06] kalau bisa
+[08:08] dikitaran
+[08:09] Cuma diagramnya aja
+[08:11] Ya diagramnya aja
+[08:13] Keluarin
+[08:15] Tadi yang di omongin tadi
+[08:17] Tidak buah, nanti kasih tau saya
+[08:19] Kamu harus bikin yang aman
+[08:21] Dari diagram
+[08:25] Gitu ya
+[08:27] Nanti kalau udah, kalau gue udah ala ini
+[08:29] Cukup kan? Ada ala yang ditanyain?
+[08:31] Aman ya
+[08:33] Oke

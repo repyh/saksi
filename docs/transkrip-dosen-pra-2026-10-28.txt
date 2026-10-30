@@ -1,0 +1,87 @@
+# Transkrip — bimbingan dosen, rekaman **sebelum** sesi 28 Oktober 2026
+
+**Sumber:** `audio_7d61c433cf02.mp3` (9 mnt 25 dtk, 48 kHz stereo).
+**Metode:** Groq `whisper-large-v3`, mono 16 kHz + loudnorm, potong 180 dtk → 98 segmen.
+**Berkas mentah:** `docs/audio_7d61c433cf02-large-v3.txt`.
+**Posisi:** rekaman ini terjadi **lebih awal** dari `docs/transkrip-dosen-2026-10-28.txt`. Rekaman
+28 Oktober mulai di tengah percakapan — bagian awal yang tidak terekam itulah yang ada di sini.
+**Label penutur** (D = dosen, M = mahasiswa) disimpulkan dari isi, bukan identifikasi suara.
+`[?]` = tidak jelas, sengaja tidak ditebak.
+
+---
+
+[00:00] D: Dampaknya ke siapa?
+[00:02] D: Kalau misalnya aplikasi ini akhirnya nggak bisa dipakai, itu kan nggak ada dampaknya.
+[00:12] D: Nah, kalau misalnya bikin gitu, bisa berdampak nggak? Pertanyaannya gampang: siapa yang pakai?
+[00:18] D: Masyarakat yang pakai, nggak [nyambung?] ke pemerintah? Betul nggak sih? Logis.
+[00:25] D: Lalu yang kedua — asalnya jalan, tiba-tiba jadi semua, jadi nggak kena sasaran. Mendingan satu tapi jelas.
+[00:38] M: Fokus gitu ya, Pak?
+[00:39] D: Iya lah. Yang penting cuma dampaknya ke mana.
+[00:42] D: Kalau dampaknya luas, kemungkinan kita dipakai — dan juara mungkin.
+[00:47] D: Tapi kalau nggak [kena] ke mana-mana, ya coba balik, coba logis aja.
+[00:54] M: Kemarin, Pak, kita sempat eksplor ide lain juga. Ini lebih ke bidang hukum.
+[01:03] M: Karena ada teman kita, kita tanya keresahannya: kalau ada update UU, mereka susah nyari infonya.
+[01:11] M: Jadi nggak ada kayak "eh, ternyata UU ini ada RUU baru".
+[01:17] M: Nah, jadi kita kepikiran itu — kita udah dapat API buat hukum. Jadi user bisa subscribe, mereka dapat notifikasi, Pak.
+[01:35] D: Tetap hukum? Iya tetap. Padahal lu temannya orang sipil. Lu orang-orang hukum.
+[01:37] D: Makanya, kalau kemauannya mana ya — makanya kamu harus [pilih] satu, satu tempat, jangan ke mana-mana.
+[01:41] D: Kita maunya banyak, tapi jadi nggak kena ke mana-mana.
+[01:45] D: Mendingan sederhana — sederhana tapi dampaknya beda.
+[01:49] D: Simpel aja. Betul ya? Betul nggak?
+[01:55] M: Ini alasan kita kenapa meluaskan daripada cuma jalan: karena kadang yang ada [penggarisannya?] itu bukan cuma jalan, Pak.
+[02:05] D: Iya, itu. Yang lain. Mendingan [dipilih targetnya].
+[02:10] D: Ngerti ya? Kalau nggak kena sasaran itu, nggak bisa — nggak bisa nembak angin.
+[02:14] D: Orang yang terlalu banyak mau — saya udah bilang — sama orang idealis, itu kelemahan.
+[02:23] D: Jarang orang idealis dan orang yang banyak mau itu berhasil. Coba dilihat rata-rata. Jarang.
+[02:32] D: Tapi orang yang fokus sama satu strategi, itu malah yang banyak [berhasil].
+[02:42] D: Nah, kalian putuskan dulu supaya matang, [jangan] ke mana-mana. Susah nantinya.
+[02:49] D: Betul nggak sih saya ngomongnya? Saya logis kan?
+[02:53] D: Pokoknya kenapa ngomong sederhana? Karena ini kan [logikanya] dekat. Simpel aja.
+[03:00] D: Terserah maunya gimana, saya cuma ngikutin kalian maunya gimana.
+[03:08] D: Tapi asal memenuhi syarat itu. Kalau yang tadi terlalu idealis, saya nggak mau — karena nggak akan juara. Nggak apa-apa juga, capek.
+[03:16] M: Kalau yang soal hukum, Pak, menurut saya dampaknya — masyarakat memang juga keresahan, Pak.
+[03:24] M: Nggak ada yang kena update, tiba-tiba mereka udah [ketinggalan]. Portal utamanya cuma dari berita.
+[03:32] M: Dan sekarang kalau lihat dari TV juga kayaknya udah jarang yang lihat TV.
+[03:38] M: Kalau buka artikel, orang-orang [untuk] pengawasan pribadi udah jarang lihat artikel, kecuali buat tugas.
+[03:48] M: Mungkin dari aplikasi notifikasi hukum tadi.
+[03:52] D: Ini mau cerita hukum. Nah, mungkin teman kita, Pak, yang [tekstur?] bisa bantu mencari data.
+[04:01] D: Ya, tapi kan dia sipil. [Padahal] orang hukum.
+[04:06] D: Dan kalau saya ngomong soal hukum, yang berdampak hukum bukan masyarakat biasa.
+[04:10] D: Masyarakat biasa nggak mau tahu. Yang sebenarnya kena dampak hukum itu perusahaan, yang kriminal.
+[04:16] D: Itu yang kena [jerat] hukum. Orang yang bekerja di pemerintahan, supaya mereka nggak ketahuan nyuri.
+[04:22] D: Loh, itu kan yang mereka butuhkan — bagaimana mereka bisa nggak kena jerat hukum. Itu yang justru butuh orang hukum beneran.
+[04:55] D: Kan masih banyak lomba yang lain. Nggak bisa [dikerjakan] sekarang. Sekarang fokus aja satu, sederhana — saya ngomong sederhana aja.
+[05:05] M: Nah, kalau misalnya tadi, Pak — apakah ini terlalu general, yang soal infrastruktur?
+[05:13] D: Yang mana tuh? Yang ngomongnya mana? Kan ada 1, 2, 3 — mana?
+[05:17] M: Yang pelaporan infrastruktur yang dihubungkan dengan anggaran.
+[05:21] D: **Infrastruktur yang mana? Kan banyak infrastruktur. Harus spesifik.**
+[05:24] D: **Harus spesifik. Nggak ada gunanya kamu soal bangunan, soal proyek bendungan — itu kan gede. Nggak mampu kamu.**
+[05:33] D: Saya jawab jujur: nggak mampu. **Satu, satu aja.**
+[05:38] M: Jadi kita balik fokus ke jalan, aman ya Pak?
+[05:38] D: **Ya. Yang sederhana, yang juga bisa. Jangan yang [muluk-muluk].**
+[05:43] D: Kamu nggak ahli, apalagi soal bangunan. Infrastruktur misalnya jalan yang toko-toko — itu nggak kena kita, nggak bisa.
+[05:52] D: Mendingan [simpel]. Udah, itu aja.
+[06:00] D: Kita kembangkan.
+[06:02] D: **Kami menang karena sederhana. Saya udah kasih tahu.**
+[06:05] D: Tapi semuanya terpenuhi. Requirements yang kita ajukan, semuanya dapat. Udah, itu menang.
+[06:13] D: Dibanding kita banyak mau, tapi cuma 50% — pasti kalah. Udah, tetap aja.
+[06:24] D: **Jalan. Itu berarti kembangkan fitur-fitur di dalam.**
+[06:29] D: Kalau mau computer vision — Vilo udah punya programnya. Yang jalan-jalan bisa mengukur. Tanya Vilo, udah ada. Coba minta izin dia untuk ambil, kalau mau.
+[06:40] D: Nah, misalnya seperti Jawa Barat, katanya udah mungkin ya. Tapi menurut saya sistemnya nggak sampai vision — betul atau belum?
+[06:56] D: Tapi memang biasanya orangnya datang langsung ke [lokasinya].
+[07:01] D: Ya, kan namanya [pencitraan?]. Kalau itu pencitraan. Kenapa? Karena si KDM selain pencitraan, dia juga nggak percaya sama bawahnya.
+[07:13] D: **Nah, sekarang bagaimana membuat suatu sistem, mau orang bawahan, mau orang atas — itu nggak bisa deny, nggak bisa ignore.**
+[07:22] D: Udah kelihatan, itu kan yang belum dilakukan Jawa Barat. Nggak bisa sampai [serapi itu]. Jawa Barat punya sistem itu? Nggak. Mereka [lewat] sosial media.
+[07:42] D: Yang dilihat bukan sistem — TikTok. TikTok itu kan bukan sistem. Media sosial.
+[07:52] D: **Nah, inovasinya, boleh masukin TikTok kek, apa kek — boleh. Itu jadi sumbernya.**
+[08:00] D: Gitu sih.
+[08:04] M: [Bisa] sih.
+[08:06] D: **[Pikirkan] dulu ya. Jangan bercabang. Kalau udah satu, satu. Kalau bercabang, mentah lagi.** Betul nggak?
+[08:14] D: Kita waktunya pendek. Jadi ini aja udah.
+[08:22] D: [Stick] dengan apa yang ada.
+[08:33] D: Jadi saya udah kasih tahu, pokoknya secara ramah: semuanya terpenuhi. Udah, kalau mau juara, gitu.
+[08:39] D: Terima kasih.
+[09:00] D: Jadi gimana? Nunggu dulu ya. Saya kerja lagi. Nanti kalau udah pasti, baru ngomong.
+[09:08] M: Iya, Pak.
+[09:14] D: Berarti ini fiturnya dulu.
+[09:21] D: Semua orang upload segalanya.

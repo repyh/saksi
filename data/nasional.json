@@ -1,0 +1,186 @@
+{
+ "kuartal4": {
+  "Belanja Daerah": {
+   "nilai": 538523036507905.5,
+   "porsi_realisasi": 41.41,
+   "persen_sd_september": 53.86
+  },
+  "Belanja Modal": {
+   "nilai": 128360700869773.97,
+   "porsi_realisasi": 66.71,
+   "persen_sd_september": 30.1
+  },
+  "Belanja Barang dan Jasa": {
+   "nilai": 175010042655130.7,
+   "porsi_realisasi": 44.67,
+   "persen_sd_september": 51.77
+  },
+  "Belanja Pegawai": {
+   "nilai": 149351690531398.62,
+   "porsi_realisasi": 31.72,
+   "persen_sd_september": 62.78
+  },
+  "Belanja Tidak Terduga": {
+   "nilai": 1104203151790.7212,
+   "porsi_realisasi": 42.63,
+   "persen_sd_september": 11.52
+  }
+ },
+ "tahun": 2025,
+ "sumber": {
+  "nama": "SIKD — DJPK Kementerian Keuangan",
+  "endpoint": "https://djpk.kemenkeu.go.id/portal/csv_apbd?type=apbd&periode={3,6,9,12}&tahun=2025&provinsi={01-38}&pemda=--",
+  "format": "XML SpreadsheetML (CSV)",
+  "keterangan": "Pagu, realisasi, dan persentase per akun belanja, per periode kumulatif."
+ },
+ "tarik": "2026-10-21",
+ "akun_setahun": {
+  "Belanja Daerah": {
+   "pagu": 1414615052293900.0,
+   "realisasi": 1300434703673400.0,
+   "persen": 91.93
+  },
+  "Belanja Modal": {
+   "pagu": 212763955387030.0,
+   "realisasi": 192402651441270.0,
+   "persen": 90.43
+  },
+  "Belanja Barang dan Jasa": {
+   "pagu": 418755944555610.0,
+   "realisasi": 391799995151570.0,
+   "persen": 93.56
+  },
+  "Belanja Pegawai": {
+   "pagu": 512191777758970.0,
+   "realisasi": 470905688608480.0,
+   "persen": 91.94
+  },
+  "Belanja Tidak Terduga": {
+   "pagu": 12900770111571.0,
+   "realisasi": 2590371868643.7,
+   "persen": 20.08
+  }
+ },
+ "kurva": [
+  {
+   "periode": 3,
+   "akun": {
+    "Belanja Daerah": {
+     "pagu": 1414615052293900.0,
+     "realisasi": 198128520688880.0,
+     "persen": 14.01
+    },
+    "Belanja Modal": {
+     "pagu": 212763955387030.0,
+     "realisasi": 6509405915784.0,
+     "persen": 3.06
+    },
+    "Belanja Barang dan Jasa": {
+     "pagu": 418755944555610.0,
+     "realisasi": 49589352628839.0,
+     "persen": 11.84
+    },
+    "Belanja Pegawai": {
+     "pagu": 512191777758970.0,
+     "realisasi": 105106927213920.0,
+     "persen": 20.52
+    },
+    "Belanja Tidak Terduga": {
+     "pagu": 12900770111571.0,
+     "realisasi": 449440582297.1,
+     "persen": 3.48
+    }
+   }
+  },
+  {
+   "periode": 6,
+   "akun": {
+    "Belanja Daerah": {
+     "pagu": 1414615052293900.0,
+     "realisasi": 455101438697050.0,
+     "persen": 32.17
+    },
+    "Belanja Modal": {
+     "pagu": 212763955387030.0,
+     "realisasi": 23181039022809.0,
+     "persen": 10.9
+    },
+    "Belanja Barang dan Jasa": {
+     "pagu": 418755944555610.0,
+     "realisasi": 120939934967760.0,
+     "persen": 28.88
+    },
+    "Belanja Pegawai": {
+     "pagu": 512191777758970.0,
+     "realisasi": 219416249237270.0,
+     "persen": 42.84
+    },
+    "Belanja Tidak Terduga": {
+     "pagu": 12900770111571.0,
+     "realisasi": 883513995898.18,
+     "persen": 6.85
+    }
+   }
+  },
+  {
+   "periode": 9,
+   "akun": {
+    "Belanja Daerah": {
+     "pagu": 1414615052293900.0,
+     "realisasi": 761977373390970.0,
+     "persen": 53.86
+    },
+    "Belanja Modal": {
+     "pagu": 212763955387030.0,
+     "realisasi": 64033165482523.0,
+     "persen": 30.1
+    },
+    "Belanja Barang dan Jasa": {
+     "pagu": 418755944555610.0,
+     "realisasi": 216799228664910.0,
+     "persen": 51.77
+    },
+    "Belanja Pegawai": {
+     "pagu": 512191777758970.0,
+     "realisasi": 321546608721940.0,
+     "persen": 62.78
+    },
+    "Belanja Tidak Terduga": {
+     "pagu": 12900770111571.0,
+     "realisasi": 1486331928480.9,
+     "persen": 11.52
+    }
+   }
+  },
+  {
+   "periode": 12,
+   "akun": {
+    "Belanja Daerah": {
+     "pagu": 1414615052293900.0,
+     "realisasi": 1300434703673400.0,
+     "persen": 91.93
+    },
+    "Belanja Modal": {
+     "pagu": 212763955387030.0,
+     "realisasi": 192402651441270.0,
+     "persen": 90.43
+    },
+    "Belanja Barang dan Jasa": {
+     "pagu": 418755944555610.0,
+     "realisasi": 391799995151570.0,
+     "persen": 93.56
+    },
+    "Belanja Pegawai": {
+     "pagu": 512191777758970.0,
+     "realisasi": 470905688608480.0,
+     "persen": 91.94
+    },
+    "Belanja Tidak Terduga": {
+     "pagu": 12900770111571.0,
+     "realisasi": 2590371868643.7,
+     "persen": 20.08
+    }
+   }
+  }
+ ]
+}

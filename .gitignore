@@ -1,0 +1,10 @@
+node_modules/
+dist/
+ingest/.cache/
+dump/
+__pycache__/
+*.pyc
+
+data/scratch/
+docs/.work-*/
+*.wav

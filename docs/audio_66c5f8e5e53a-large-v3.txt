@@ -1,0 +1,95 @@
+[00:00] Pokoknya lengkap, saya ngomong tangerang-tangerang semua aja. Jadi gini, kalau kamu bisa ngajin tangerang, berarti kamu bisa ngajin bakasi dong. Enggak perlu semua gitu loh, tangerang aja.
+[00:10] Kayak proofnya aja kan pak?
+[00:11] Ya, proofnya aja. Oke, tangerang ya. Dan berharap datanya katanya 5% tadi ya. Oke.
+[00:17] Nah sekarang, dari data tersebut mau ditahukan kemana? Keanggaran? Eh kemana tadi? Keanggaran atau dari apa?
+[00:28] Oh, dari data proyek kan udah ada nama proyek sama anggaran kan pak?
+[00:34] Nah, coba sekarang kamu catet disitu fiturnya apa saja. Jadi kamu udah dapat pertanyaan, dapat anggaran, tadi apalagi siapa yang mengerjakan, terus apalagi lamanya dari kapan sampai kapan, umurnya.
+[00:49] Nah, tapi dari semua itu kan baru data. Belum inovasi kan? Itu cuma mengintegrasikan kan?
+[00:56] Akhir-akhirnya supaya berinovasi, kamu tambahkan apa dari data itu semua?
+[01:00] Saya nggak, kalau gitu nggak akan juara. Ngerti nggak? Itu cuma basic data.
+[01:07] Iya kan? Nggak akan juara. Nah, sekarang kalau dimasukin AI, AI-nya dimana kalau pakai?
+[01:12] Nah, yang kepikiran sih, tadinya kan kalau nama-nama paket gitu kan, nggak ada posisinya di peta itu gimana kan, Pak?
+[01:23] Dan yang mungkin jadi pertanyaan warga pada umumnya di sekitar saya itu ada proyek apa saja dan mungkin historinya realisasinya bagaimana Pak Nah yang jadi kesulitan itu mungkin bagi masyarakat umum itu anggaran ini pengadaan proyek itu datanya ada tapi susah dicari
+[01:45] Kami tidak tahu nama proyek untuk jalan depan kita itu apa, atau mungkin kalau mau katakan fasilitas lain itu kita tidak tahu, karena di data pengadalnya memang tidak ada posisinya gitu Pak.
+[01:59] Jadi inovasi yang mungkin itu kita pemetaan dari nama proyeknya ke peta gitu Pak, jadi kita menampilkan gitu.
+[02:08] Jadi di peta bayangannya itu kayak infografis, kita bisa mematakan dari report yang ada ya, report yang ada itu jalan rusak.
+[02:19] Misalnya jalan kecebong gitu ya, nah kecebong itu dari kelantangan rusak itu dalam rusak, nah itu harus digambarkan di dalam peta.
+[02:27] Misalnya petanya rusak berarti dia warnanya misalnya kan asalnya abu-abu jadi warnanya mungkin merah gitu loh.
+[02:34] Nah satu lagi data yang lain berarti overlapping ya, berlayar-layar ya.
+[02:39] Yang satu peta, yang satu data untuk yang pusat-pusat, satu data perencanaan untuk diperbaiki atau tidak, sudah ada perencanaan diperbaiki atau tidak,
+[02:50] makanya warnanya biru, atau warna apa terserah, atau icon yang lain, begitu ya maksudnya?
+[02:55] Bisa sih Pak.
+[02:56] Gitu nggak? Gitu ya.
+[02:58] Nah terus?
+[03:00] Ya, itu kan merupakan salah satu nilai ya. Jadi kalau melihat total kan jadi si pemerintah atau masyarakat bisa kira-kira memetakan, oh ini kira-kira jalan-jalan yang rusak yang Anda akan ditanganin dengan baik, kemudian dengan anggaran, vendornya siapa, dan sebagainya.
+[03:18] Ya kan? Nah terus apa lagi yang bisa ditambahkan di situ, di kapitulnya. Jadi sekarang aku perbanyakkan titun untuk tempat bukanya.
+[03:25] Biasanya inferensi. Kapan intunya rusak? Kan ketahuan.
+[03:31] Caranya gimana ya?
+[03:33] Caranya kan ketahuan si vendornya siapa. Itu biasanya seperti saya di jalan yang dimuncul itu, itu sebulan langsung rusak.
+[03:42] Jadi emang ketahuan. Nah itu yang sering rusak-rusak itu ditampilin vendornya siapa? Top.
+[03:49] Oke. Kalau saya sih akan gitu ya. Top ten vendor yang bikin rusak jalan. Yang sering rusak jalan. Tapi harus balance. Kenapa rusak jalan?
+[04:01] Karena dilalui truk misalnya. Loh iya dong. Jadi kalau memang itu jalan selalu dilalui truk harusnya, apa namanya, dia pakai beton misalnya gitu loh.
+[04:13] Gak boleh pakai pasir sama aspal doang.
+[04:16] Gitu dong. Kan gitu mau bicara nih ya. Selama ini begitu.
+[04:20] Terus kedua yang harus kamu perhatikan tuh Jadi kamu harus bilang kategorinya tuh Saki kenapa Karena Dilla lebih sama true Karena memang terlalu banyak padat macet jalan macet karena memang dia tidak ada pengairan apa enggak
+[04:35] Di kiri kanannya enggak ada.
+[04:38] Bahwa jalannya, erigat, drainasenya.
+[04:41] Nah, drainasenya enggak ada. Nah itu penting lah gitu-gitu. Justru menurut saya, kalau kamu mau memang, ini kan ada orang situ tuh, orang si sipilnya, manfaatin ilmu supaya itu tahan tuh gimana.
+[04:53] Jadi kamu harus tahu sebenarnya jalan yang bagus itu ini rusak, ini memang jalan itu kenapa masalahnya.
+[05:00] Jadi jangan cuma rusak, rusak, rusak. Nggak boleh gitu dong. Penyebabnya apa.
+[05:04] Tendalamannya gitu ya Pak supaya lebih.
+[05:06] Iya. Jadi ketahuan. Kalau ini tahu di vendor ini pasti masalahnya jalan-jalannya sih jelek.
+[05:10] Di mana-mana pasti sama, nggak ada kewangan. Itu satu.
+[05:13] Bahan pasti jelek ini. Semua yang diambil pasti sama.
+[05:18] Nah, kamu jauh. Ini pasti usang nih. Ah, 6 bulan usang. Pasti bangun, 6 bulan pasti usang.
+[05:26] Nah itu ngomong inferensi. Nah itu inovasi. Jadi udah ketahuan tuh. Kompeten-kompeten kota udah tau.
+[05:32] Nah ini, asalnya warnanya hijau, tiba-tiba berubah jadi warna. Tau ga hijau, hijau muda. Rusak gitu loh.
+[05:40] Nah itu inovasi. Kalau bisa grafiknya jalan satik ya, tapi dinamis. Kamu tahu di situ lagi berapa mobil yang, apa, ngomongnya kan mobil, tapi ngomong di situ adalah beban. Ngerti nggak? Jalan itu tuh dibebani oleh berapa orang.
+[06:00] Hubungkan dengan Google Maps misalnya.
+[06:03] Nah gitu kalau buat tuh jangan, kalau saya buat itu nggak mau yang si apa yang apa namanya yang biasa-biasa gitu-gitu tuh.
+[06:12] Jadi berlayar-layar gitu loh.
+[06:14] Yang satu layar untuk rusak, tahapan, apa, ini layar untuk beban yang sering dipakai di situ tuh pakai Google kan bisa dibaca.
+[06:21] Datanya ada.
+[06:24] Nah kalau bisa, ya itu, dinamis.
+[06:28] Bisa.
+[06:28] Sampai jumpa di video selanjutnya.
+[06:58] Untuk sementara ya pak, yang penting kita kelihatan ini sebenarnya bisa visible.
+[07:03] Iya, infograf kayak info apa ada misalnya? Atau misalnya kayak grafis gitu kelihatan.
+[07:09] Jadi orang tanpa, kan orang malah selihat tabel kan?
+[07:12] Nah, jadi visual, jadi lebih kayak kita visualisasi.
+[07:15] Visualisasi, kan.
+[07:16] Kayak 3D gitu ya pak.
+[07:17] Gak usah 3D, ngapain gak ada guna 3D? 2D, 2D cukup. 2D cukup.
+[07:28] Google Maps tidak susah kan Bisa kan Bisa Memang saya waktu membuat program Terima kasih
+[07:55] Kalau buat jangan setengah-setengah.
+[07:59] Menarik gak menurut kalian kalau gitu ini mas?
+[08:03] Ini kita fokus ke visualisasinya.
+[08:05] Iya.
+[08:06] Tapi di klik bisa keluar data ya?
+[08:09] Diklik keluar tabel gitu loh. Jadi gak cuma ngomong.
+[08:12] Ini tabel ini ada.
+[08:17] Udah ya? Kalau udah ngomong jangan kemana-mana lagi. Saya gak mau. Capek.
+[08:21] Berarti kita fokus ke situ dulu.
+[08:22] Situ ya?
+[08:23] Oke. Ini oke kan nih?
+[08:24] Oke ya, oke jalanin udah gitu. Kan ada segala macem, kenapa susah sih? Semua gak ada yang susah kan? Bikin overlay gitu maksudnya ya. Overlay ya?
+[08:35] Semua overlay itu ada datanya. Ini data awal, data maps, ada datanya ini semua layer. Oh ngerti. Layer ya. Jadi kamu bisa memanfaatkan yang baik.
+[08:46] Ini datanya per layer.
+[08:48] Kayak city builder gitu ya Pak?
+[08:50] Ya, apa datanya? Pokoknya layer aja datanya.
+[08:52] Boleh.
+[08:54] Nah, cukup?
+[08:56] Aman, Pak.
+[08:58] Kita fokus itu dulu.
+[09:00] Tapi bikin pipeline ya, kan saya udah kita bangun nih, bikin metode pipeline ya Pak, metode-metodenya pake diagram.
+[09:11] Buat Githubnya Pak, nanti mau invite.
+[09:16] Github tuh bisa Pak.
+[09:17] Kita email.
+[09:18] Oh saya?
+[09:19] Iya.
+[09:19] Kan pake DHREFA1, nama Gmailnya ya?
+[09:22] Iya, yang bisa di invite Pak.
+[09:24] Oh DHREFA1.
+[09:26] DHREFA1.
+[09:27] At gmail.com.
+[09:29] Itu kita saja.

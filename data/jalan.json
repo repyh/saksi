@@ -1,0 +1,622 @@
+{
+ "sumber": {
+  "nama": "Bina Marga GIS — Kementerian PU",
+  "layer": "https://gisportal.binamarga.pu.go.id/arcgis/rest/services/Hosted/IRI_1_2026/FeatureServer/0",
+  "endpoint_contoh": "https://gisportal.binamarga.pu.go.id/arcgis/rest/services/Hosted/IRI_1_2026/FeatureServer/0/query?where=1=1&returnCountOnly=true&f=json",
+  "keterangan": "IRI rata-rata per titik ukur 100 m, semester 1 2026. Kelas: baik<=4, sedang 4-8, rusak ringan 8-12, rusak berat >12."
+ },
+ "semester": "1/2026",
+ "nasional": {
+  "titik": 477032,
+  "km": 47703.2,
+  "rata_iri": 4.97,
+  "kelas": {
+   "baik": 176008,
+   "sedang": 268814,
+   "rusak_ringan": 24075,
+   "rusak_berat": 8135
+  },
+  "persen": {
+   "baik": 36.9,
+   "sedang": 56.35,
+   "rusak_ringan": 5.05,
+   "rusak_berat": 1.71
+  }
+ },
+ "provinsi": [
+  {
+   "provinsi": "PAPUA",
+   "titik": 27817,
+   "km": 2781.7,
+   "rata_iri": 5.86,
+   "kelas": {
+    "baik": 7704,
+    "sedang": 15529,
+    "rusak_ringan": 2369,
+    "rusak_berat": 2215
+   },
+   "persen": {
+    "baik": 27.7,
+    "sedang": 55.83,
+    "rusak_ringan": 8.52,
+    "rusak_berat": 7.96
+   }
+  },
+  {
+   "provinsi": "SULAWESI BARAT",
+   "titik": 7643,
+   "km": 764.3,
+   "rata_iri": 5.81,
+   "kelas": {
+    "baik": 1474,
+    "sedang": 5662,
+    "rusak_ringan": 374,
+    "rusak_berat": 133
+   },
+   "persen": {
+    "baik": 19.29,
+    "sedang": 74.08,
+    "rusak_ringan": 4.89,
+    "rusak_berat": 1.74
+   }
+  },
+  {
+   "provinsi": "KALIMANTAN TIMUR",
+   "titik": 18073,
+   "km": 1807.3,
+   "rata_iri": 5.73,
+   "kelas": {
+    "baik": 4909,
+    "sedang": 10830,
+    "rusak_ringan": 1419,
+    "rusak_berat": 915
+   },
+   "persen": {
+    "baik": 27.16,
+    "sedang": 59.92,
+    "rusak_ringan": 7.85,
+    "rusak_berat": 5.06
+   }
+  },
+  {
+   "provinsi": "PAPUA BARAT ",
+   "titik": 13370,
+   "km": 1337.0,
+   "rata_iri": 5.67,
+   "kelas": {
+    "baik": 5228,
+    "sedang": 6431,
+    "rusak_ringan": 584,
+    "rusak_berat": 1127
+   },
+   "persen": {
+    "baik": 39.1,
+    "sedang": 48.1,
+    "rusak_ringan": 4.37,
+    "rusak_berat": 8.43
+   }
+  },
+  {
+   "provinsi": "SUMATERA BARAT",
+   "titik": 14257,
+   "km": 1425.7,
+   "rata_iri": 5.62,
+   "kelas": {
+    "baik": 4060,
+    "sedang": 8045,
+    "rusak_ringan": 1872,
+    "rusak_berat": 280
+   },
+   "persen": {
+    "baik": 28.48,
+    "sedang": 56.43,
+    "rusak_ringan": 13.13,
+    "rusak_berat": 1.96
+   }
+  },
+  {
+   "provinsi": "SUMATERA SELATAN",
+   "titik": 15857,
+   "km": 1585.7,
+   "rata_iri": 5.58,
+   "kelas": {
+    "baik": 4368,
+    "sedang": 9692,
+    "rusak_ringan": 1533,
+    "rusak_berat": 264
+   },
+   "persen": {
+    "baik": 27.55,
+    "sedang": 61.12,
+    "rusak_ringan": 9.67,
+    "rusak_berat": 1.66
+   }
+  },
+  {
+   "provinsi": "SULAWESI SELATAN",
+   "titik": 17355,
+   "km": 1735.5,
+   "rata_iri": 5.57,
+   "kelas": {
+    "baik": 2257,
+    "sedang": 14639,
+    "rusak_ringan": 446,
+    "rusak_berat": 13
+   },
+   "persen": {
+    "baik": 13.0,
+    "sedang": 84.35,
+    "rusak_ringan": 2.57,
+    "rusak_berat": 0.07
+   }
+  },
+  {
+   "provinsi": "BANTEN",
+   "titik": 5693,
+   "km": 569.3,
+   "rata_iri": 5.48,
+   "kelas": {
+    "baik": 589,
+    "sedang": 4934,
+    "rusak_ringan": 159,
+    "rusak_berat": 11
+   },
+   "persen": {
+    "baik": 10.35,
+    "sedang": 86.67,
+    "rusak_ringan": 2.79,
+    "rusak_berat": 0.19
+   }
+  },
+  {
+   "provinsi": "KALIMANTAN TENGAH",
+   "titik": 20981,
+   "km": 2098.1,
+   "rata_iri": 5.45,
+   "kelas": {
+    "baik": 8033,
+    "sedang": 10198,
+    "rusak_ringan": 1363,
+    "rusak_berat": 1387
+   },
+   "persen": {
+    "baik": 38.29,
+    "sedang": 48.61,
+    "rusak_ringan": 6.5,
+    "rusak_berat": 6.61
+   }
+  },
+  {
+   "provinsi": "LAMPUNG",
+   "titik": 13012,
+   "km": 1301.2,
+   "rata_iri": 5.45,
+   "kelas": {
+    "baik": 2406,
+    "sedang": 9583,
+    "rusak_ringan": 989,
+    "rusak_berat": 34
+   },
+   "persen": {
+    "baik": 18.49,
+    "sedang": 73.65,
+    "rusak_ringan": 7.6,
+    "rusak_berat": 0.26
+   }
+  },
+  {
+   "provinsi": "J A M B I",
+   "titik": 13186,
+   "km": 1318.6,
+   "rata_iri": 5.38,
+   "kelas": {
+    "baik": 3910,
+    "sedang": 7992,
+    "rusak_ringan": 1115,
+    "rusak_berat": 169
+   },
+   "persen": {
+    "baik": 29.65,
+    "sedang": 60.61,
+    "rusak_ringan": 8.46,
+    "rusak_berat": 1.28
+   }
+  },
+  {
+   "provinsi": "ACEH",
+   "titik": 21172,
+   "km": 2117.2,
+   "rata_iri": 5.37,
+   "kelas": {
+    "baik": 5112,
+    "sedang": 14247,
+    "rusak_ringan": 1536,
+    "rusak_berat": 277
+   },
+   "persen": {
+    "baik": 24.15,
+    "sedang": 67.29,
+    "rusak_ringan": 7.25,
+    "rusak_berat": 1.31
+   }
+  },
+  {
+   "provinsi": "NTT",
+   "titik": 21490,
+   "km": 2149.0,
+   "rata_iri": 5.2,
+   "kelas": {
+    "baik": 4388,
+    "sedang": 16209,
+    "rusak_ringan": 754,
+    "rusak_berat": 139
+   },
+   "persen": {
+    "baik": 20.42,
+    "sedang": 75.43,
+    "rusak_ringan": 3.51,
+    "rusak_berat": 0.65
+   }
+  },
+  {
+   "provinsi": "BENGKULU",
+   "titik": 7828,
+   "km": 782.8,
+   "rata_iri": 5.01,
+   "kelas": {
+    "baik": 2818,
+    "sedang": 4132,
+    "rusak_ringan": 819,
+    "rusak_berat": 59
+   },
+   "persen": {
+    "baik": 36.0,
+    "sedang": 52.78,
+    "rusak_ringan": 10.46,
+    "rusak_berat": 0.75
+   }
+  },
+  {
+   "provinsi": "JAWA TIMUR ",
+   "titik": 22753,
+   "km": 2275.3,
+   "rata_iri": 4.97,
+   "kelas": {
+    "baik": 8131,
+    "sedang": 12556,
+    "rusak_ringan": 2047,
+    "rusak_berat": 19
+   },
+   "persen": {
+    "baik": 35.74,
+    "sedang": 55.18,
+    "rusak_ringan": 9.0,
+    "rusak_berat": 0.08
+   }
+  },
+  {
+   "provinsi": "R I A U",
+   "titik": 12603,
+   "km": 1260.3,
+   "rata_iri": 4.87,
+   "kelas": {
+    "baik": 4508,
+    "sedang": 7360,
+    "rusak_ringan": 726,
+    "rusak_berat": 9
+   },
+   "persen": {
+    "baik": 35.77,
+    "sedang": 58.4,
+    "rusak_ringan": 5.76,
+    "rusak_berat": 0.07
+   }
+  },
+  {
+   "provinsi": "KALIMANTAN SELATAN",
+   "titik": 12077,
+   "km": 1207.7,
+   "rata_iri": 4.84,
+   "kelas": {
+    "baik": 4457,
+    "sedang": 7112,
+    "rusak_ringan": 440,
+    "rusak_berat": 68
+   },
+   "persen": {
+    "baik": 36.9,
+    "sedang": 58.89,
+    "rusak_ringan": 3.64,
+    "rusak_berat": 0.56
+   }
+  },
+  {
+   "provinsi": "SUMATERA UTARA",
+   "titik": 26270,
+   "km": 2627.0,
+   "rata_iri": 4.78,
+   "kelas": {
+    "baik": 10118,
+    "sedang": 14907,
+    "rusak_ringan": 1153,
+    "rusak_berat": 92
+   },
+   "persen": {
+    "baik": 38.52,
+    "sedang": 56.75,
+    "rusak_ringan": 4.39,
+    "rusak_berat": 0.35
+   }
+  },
+  {
+   "provinsi": "KALIMANTAN UTARA",
+   "titik": 6471,
+   "km": 647.1,
+   "rata_iri": 4.66,
+   "kelas": {
+    "baik": 2819,
+    "sedang": 3334,
+    "rusak_ringan": 264,
+    "rusak_berat": 54
+   },
+   "persen": {
+    "baik": 43.56,
+    "sedang": 51.52,
+    "rusak_ringan": 4.08,
+    "rusak_berat": 0.83
+   }
+  },
+  {
+   "provinsi": "SULAWESI UTARA ",
+   "titik": 16867,
+   "km": 1686.7,
+   "rata_iri": 4.66,
+   "kelas": {
+    "baik": 6419,
+    "sedang": 10135,
+    "rusak_ringan": 289,
+    "rusak_berat": 24
+   },
+   "persen": {
+    "baik": 38.06,
+    "sedang": 60.09,
+    "rusak_ringan": 1.71,
+    "rusak_berat": 0.14
+   }
+  },
+  {
+   "provinsi": "SULAWESI TENGAH",
+   "titik": 23662,
+   "km": 2366.2,
+   "rata_iri": 4.65,
+   "kelas": {
+    "baik": 9625,
+    "sedang": 13554,
+    "rusak_ringan": 425,
+    "rusak_berat": 58
+   },
+   "persen": {
+    "baik": 40.68,
+    "sedang": 57.28,
+    "rusak_ringan": 1.8,
+    "rusak_berat": 0.25
+   }
+  },
+  {
+   "provinsi": "JAWA TENGAH",
+   "titik": 15908,
+   "km": 1590.8,
+   "rata_iri": 4.52,
+   "kelas": {
+    "baik": 6795,
+    "sedang": 8272,
+    "rusak_ringan": 841,
+    "rusak_berat": 0
+   },
+   "persen": {
+    "baik": 42.71,
+    "sedang": 52.0,
+    "rusak_ringan": 5.29,
+    "rusak_berat": 0.0
+   }
+  },
+  {
+   "provinsi": "MALUKU UTARA",
+   "titik": 12091,
+   "km": 1209.1,
+   "rata_iri": 4.48,
+   "kelas": {
+    "baik": 5651,
+    "sedang": 5934,
+    "rusak_ringan": 442,
+    "rusak_berat": 64
+   },
+   "persen": {
+    "baik": 46.74,
+    "sedang": 49.08,
+    "rusak_ringan": 3.66,
+    "rusak_berat": 0.53
+   }
+  },
+  {
+   "provinsi": "SULAWESI TENGGARA",
+   "titik": 14951,
+   "km": 1495.1,
+   "rata_iri": 4.48,
+   "kelas": {
+    "baik": 6677,
+    "sedang": 7790,
+    "rusak_ringan": 446,
+    "rusak_berat": 38
+   },
+   "persen": {
+    "baik": 44.66,
+    "sedang": 52.1,
+    "rusak_ringan": 2.98,
+    "rusak_berat": 0.25
+   }
+  },
+  {
+   "provinsi": "KALIMANTAN BARAT",
+   "titik": 22891,
+   "km": 2289.1,
+   "rata_iri": 4.44,
+   "kelas": {
+    "baik": 11070,
+    "sedang": 11153,
+    "rusak_ringan": 434,
+    "rusak_berat": 234
+   },
+   "persen": {
+    "baik": 48.36,
+    "sedang": 48.72,
+    "rusak_ringan": 1.9,
+    "rusak_berat": 1.02
+   }
+  },
+  {
+   "provinsi": "JAWA BARAT",
+   "titik": 17873,
+   "km": 1787.3,
+   "rata_iri": 4.42,
+   "kelas": {
+    "baik": 8229,
+    "sedang": 9169,
+    "rusak_ringan": 464,
+    "rusak_berat": 11
+   },
+   "persen": {
+    "baik": 46.04,
+    "sedang": 51.3,
+    "rusak_ringan": 2.6,
+    "rusak_berat": 0.06
+   }
+  },
+  {
+   "provinsi": "BALI ",
+   "titik": 5905,
+   "km": 590.5,
+   "rata_iri": 4.28,
+   "kelas": {
+    "baik": 2931,
+    "sedang": 2845,
+    "rusak_ringan": 128,
+    "rusak_berat": 1
+   },
+   "persen": {
+    "baik": 49.64,
+    "sedang": 48.18,
+    "rusak_ringan": 2.17,
+    "rusak_berat": 0.02
+   }
+  },
+  {
+   "provinsi": "MALUKU ",
+   "titik": 18632,
+   "km": 1863.2,
+   "rata_iri": 4.18,
+   "kelas": {
+    "baik": 10845,
+    "sedang": 7097,
+    "rusak_ringan": 299,
+    "rusak_berat": 391
+   },
+   "persen": {
+    "baik": 58.21,
+    "sedang": 38.09,
+    "rusak_ringan": 1.6,
+    "rusak_berat": 2.1
+   }
+  },
+  {
+   "provinsi": "NTB",
+   "titik": 9428,
+   "km": 942.8,
+   "rata_iri": 4.05,
+   "kelas": {
+    "baik": 5359,
+    "sedang": 3896,
+    "rusak_ringan": 173,
+    "rusak_berat": 0
+   },
+   "persen": {
+    "baik": 56.84,
+    "sedang": 41.32,
+    "rusak_ringan": 1.83,
+    "rusak_berat": 0.0
+   }
+  },
+  {
+   "provinsi": "GORONTALO",
+   "titik": 7522,
+   "km": 752.2,
+   "rata_iri": 3.9,
+   "kelas": {
+    "baik": 4684,
+    "sedang": 2661,
+    "rusak_ringan": 130,
+    "rusak_berat": 47
+   },
+   "persen": {
+    "baik": 62.27,
+    "sedang": 35.38,
+    "rusak_ringan": 1.73,
+    "rusak_berat": 0.62
+   }
+  },
+  {
+   "provinsi": "DI YOGYAKARTA",
+   "titik": 3079,
+   "km": 307.9,
+   "rata_iri": 3.61,
+   "kelas": {
+    "baik": 2272,
+    "sedang": 774,
+    "rusak_ringan": 33,
+    "rusak_berat": 0
+   },
+   "persen": {
+    "baik": 73.79,
+    "sedang": 25.14,
+    "rusak_ringan": 1.07,
+    "rusak_berat": 0.0
+   }
+  },
+  {
+   "provinsi": "KEPULAUAN RIAU",
+   "titik": 4311,
+   "km": 431.1,
+   "rata_iri": 3.43,
+   "kelas": {
+    "baik": 3258,
+    "sedang": 1053,
+    "rusak_ringan": 0,
+    "rusak_berat": 0
+   },
+   "persen": {
+    "baik": 75.57,
+    "sedang": 24.43,
+    "rusak_ringan": 0.0,
+    "rusak_berat": 0.0
+   }
+  },
+  {
+   "provinsi": "KEPULAUAN BANGKA BELITUNG ",
+   "titik": 6004,
+   "km": 600.4,
+   "rata_iri": 3.13,
+   "kelas": {
+    "baik": 4904,
+    "sedang": 1089,
+    "rusak_ringan": 9,
+    "rusak_berat": 2
+   },
+   "persen": {
+    "baik": 81.68,
+    "sedang": 18.14,
+    "rusak_ringan": 0.15,
+    "rusak_berat": 0.03
+   }
+  }
+ ]
+}
