@@ -1,57 +1,737 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   SAKSI — Register Lapangan
+   Token & komponen identitas. Lihat DESIGN.md sebelum mengubah.
+   ───────────────────────────────────────────────────────────── */
+
 @theme {
+  /* Kertas & tinta */
   --color-paper: #fbf7f0;
+  --color-paper-recess: #f4eee4;
   --color-card: #fffdf8;
   --color-ink: #16120e;
+  --color-ink-soft: #3a332b;
   --color-muted: #6b6259;
   --color-line: #e3dcd1;
+  --color-line-strong: #cfc4b5;
+
+  /* Saksi */
   --color-accent: #b3261e;
-  --color-accent-soft: #fdecea;
+  --color-accent-deep: #8b1b15;
+  --color-accent-soft: #fbeae7;
+
+  /* Badge */
+  --color-badge-asli: #1b5c47;
+  --color-badge-asli-soft: #e7efe9;
+  --color-badge-simulasi: #8a5a00;
+  --color-badge-simulasi-soft: #faeecd;
+  --color-badge-presisi: #5b5348;
+  --color-badge-presisi-soft: #ede7dc;
+
+  /* Data peta */
+  --color-koridor: #1d4e89;
+  --color-kabupaten: #a79c8c;
+
+  /* Tipografi */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "DejaVu Sans Mono", Menlo, monospace;
+
+  --text-2xs: 0.65625rem; /* 10.5 */
+  --text-2xs--line-height: 1.4;
+  --text-xs: 0.71875rem; /* 11.5 */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.8125rem; /* 13 */
+  --text-sm--line-height: 1.5;
+  --text-base: 0.9375rem; /* 15 */
+  --text-base--line-height: 1.55;
+  --text-lg: 1.0625rem; /* 17 */
+  --text-lg--line-height: 1.3;
+  --text-xl: 1.375rem; /* 22 */
+  --text-xl--line-height: 1.25;
+  --text-2xl: 1.75rem; /* 28 */
+  --text-2xl--line-height: 1.15;
+  --text-3xl: 2.25rem; /* 36 */
+  --text-3xl--line-height: 1.05;
+  --text-4xl: 3rem; /* 48 */
+  --text-4xl--line-height: 1;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
 }
 
-html {
-  background: var(--color-paper);
-  color: var(--color-ink);
-  -webkit-font-smoothing: antialiased;
-  scroll-behavior: smooth;
+@layer base {
+  :root {
+    color-scheme: light;
+    --ring: 0 0 0 2px var(--color-accent);
+  }
+
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar milik palette, bukan milik browser. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border: 3px solid var(--color-paper);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-}
+@layer components {
+  /* ── Angka & label ───────────────────────────────────────── */
 
-.num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
 
-.label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-muted);
-}
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.2;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
 
-.receipt {
-  background: var(--color-card);
-  border-top: 1px dashed var(--color-line);
-  border-bottom: 1px dashed var(--color-line);
-  box-shadow: 0 1px 0 rgb(22 18 14 / 0.04), 0 12px 30px -22px rgb(22 18 14 / 0.35);
-}
+  .label-strong {
+    color: var(--color-ink-soft);
+  }
 
-.dotted {
-  flex: 1;
-  border-bottom: 1px dotted var(--color-line);
-  margin: 0 0.5rem 0.35rem;
-}
+  /* ── Strip metrik (header register) ──────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  * { animation: none !important; transition: none !important; }
+  .metrik {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrik > * {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .metrik > *:nth-child(2n) {
+    border-left: 1px solid var(--color-line);
+  }
+
+  @media (min-width: 640px) {
+    .metrik {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .metrik > * {
+      border-bottom: 1px solid var(--color-line);
+      border-left: 1px solid var(--color-line);
+    }
+    .metrik > *:nth-child(3n + 1) {
+      border-left: 0;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .metrik {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .metrik > * {
+      border-bottom: 0;
+      border-left: 1px solid var(--color-line);
+    }
+    .metrik > *:nth-child(3n + 1) {
+      border-left: 1px solid var(--color-line);
+    }
+    .metrik > *:nth-child(6n + 1) {
+      border-left: 0;
+    }
+  }
+
+  /* ── Garis saksi ─────────────────────────────────────────── */
+
+  .witness-rule {
+    height: 2px;
+    background: var(--color-accent);
+  }
+
+  .hair-t {
+    border-top: 1px solid var(--color-line);
+  }
+  .hair-b {
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  /* ── Badge / stempel ─────────────────────────────────────── */
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-xs);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: 1;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .badge--asli {
+    color: var(--color-badge-asli);
+    background: var(--color-badge-asli-soft);
+    border-color: color-mix(in srgb, var(--color-badge-asli) 26%, transparent);
+  }
+
+  .badge--simulasi {
+    color: var(--color-badge-simulasi);
+    background: var(--color-badge-simulasi-soft);
+    border-color: var(--color-badge-simulasi);
+    border-style: dashed;
+  }
+
+  /* Badge presisi adalah anotasi lapangan, bukan stempel: huruf besar-kecil
+     dipertahankan ("Titik Desa"), bukan di-uppercase. */
+  .badge--presisi {
+    color: var(--color-badge-presisi);
+    background: var(--color-badge-presisi-soft);
+    border-color: color-mix(in srgb, var(--color-badge-presisi) 22%, transparent);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.01em;
+    text-transform: none;
+  }
+
+  .badge--indikator {
+    color: var(--color-accent-deep);
+    background: var(--color-accent-soft);
+    border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+
+  .badge--netral {
+    color: var(--color-muted);
+    background: var(--color-paper-recess);
+    border-color: var(--color-line-strong);
+  }
+
+  /* ── Tombol ──────────────────────────────────────────────── */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      border-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      color 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .btn:hover {
+    background: var(--color-paper-recess);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn:disabled:hover {
+    background: transparent;
+  }
+
+  .btn--primary {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn--primary:hover {
+    background: var(--color-ink-soft);
+    border-color: var(--color-ink-soft);
+  }
+
+  .btn--saksi {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fffdf8;
+  }
+  .btn--saksi:hover {
+    background: var(--color-accent-deep);
+    border-color: var(--color-accent-deep);
+  }
+
+  .btn--ghost {
+    border-color: transparent;
+    padding: 0 4px;
+    min-height: 32px;
+    color: var(--color-ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--color-line-strong);
+  }
+  .btn--ghost:hover {
+    background: transparent;
+    text-decoration-color: var(--color-accent);
+    color: var(--color-accent-deep);
+  }
+
+  .btn--sm {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: var(--text-xs);
+  }
+
+  /* ── Kontrol isian ───────────────────────────────────────── */
+
+  .field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .field > label,
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  .input,
+  .select {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    background: var(--color-card);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    transition:
+      border-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      box-shadow 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .select {
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5l5-5' fill='none' stroke='%236b6259' stroke-width='1.5'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  .input::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input:focus,
+  .select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+
+  .input[aria-invalid="true"] {
+    border-color: var(--color-accent);
+  }
+
+  /* ── Segmented (satu kotak, bukan pil) ───────────────────── */
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    background: var(--color-card);
+    overflow: hidden;
+  }
+
+  .seg > button {
+    padding: 0 12px;
+    min-height: 32px;
+    border: 0;
+    border-right: 1px solid var(--color-line);
+    background: transparent;
+    color: var(--color-ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      color 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .seg > button:last-child {
+    border-right: 0;
+  }
+
+  .seg > button:hover {
+    background: var(--color-paper-recess);
+  }
+
+  .seg > button[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* ── Chip ────────────────────────────────────────────────── */
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    background: var(--color-card);
+    color: var(--color-ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition:
+      background-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      border-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      color 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .chip:hover {
+    border-color: var(--color-ink-soft);
+  }
+
+  .chip[aria-pressed="true"] {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* ── Kartu kandidat paket (alur lapor) ───────────────────── */
+
+  .kandidat {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-xs);
+    background: var(--color-card);
+    transition:
+      border-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      background-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .kandidat:hover {
+    border-color: var(--color-line-strong);
+  }
+
+  .kandidat:has(input:checked) {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+  }
+
+  .kandidat[data-luar="true"] {
+    opacity: 0.72;
+  }
+
+  .kandidat[data-luar="true"]:hover {
+    opacity: 1;
+  }
+
+  input[type="range"] {
+    accent-color: var(--color-accent);
+  }
+
+  /* ── Panel & callout ─────────────────────────────────────── */
+
+  .panel {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-xs);
+  }
+
+  .callout {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    background: var(--color-paper-recess);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .callout--simulasi {
+    background: var(--color-badge-simulasi-soft);
+    border-color: color-mix(in srgb, var(--color-badge-simulasi) 40%, transparent);
+    color: var(--color-ink-soft);
+  }
+
+  .callout--asli {
+    background: var(--color-badge-asli-soft);
+    border-color: color-mix(in srgb, var(--color-badge-asli) 30%, transparent);
+    color: var(--color-ink-soft);
+  }
+
+  .callout--saksi {
+    background: var(--color-accent-soft);
+    border-color: color-mix(in srgb, var(--color-accent) 32%, transparent);
+    color: var(--color-ink-soft);
+  }
+
+  /* ── Register tabel ──────────────────────────────────────── */
+
+  .register {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .register thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 7px 10px;
+    background: var(--color-paper-recess);
+    border-bottom: 1px solid var(--color-line-strong);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .register tbody tr {
+    border-bottom: 1px solid var(--color-line);
+    cursor: pointer;
+    transition: background-color 120ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .register tbody tr:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  .register tbody tr:hover {
+    background: var(--color-paper-recess);
+  }
+
+  .register tbody tr[aria-selected="true"] {
+    background: var(--color-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+  }
+
+  .register td {
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+
+  /* ── Stepper ─────────────────────────────────────────────── */
+
+  .stepper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .step {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 12px 12px 12px 0;
+    background: transparent;
+    border: 0;
+    border-top: 2px solid transparent;
+    margin-top: -1px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-muted);
+    transition:
+      color 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+      border-color 140ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .step[aria-current="step"] {
+    color: var(--color-ink);
+    border-top-color: var(--color-accent);
+  }
+
+  .step[data-selesai="true"] {
+    color: var(--color-ink-soft);
+  }
+
+  /* Di layar sempit stepper menjadi rel vertikal: tiga kolom tidak cukup. */
+  @media (max-width: 639px) {
+    .stepper {
+      grid-template-columns: 1fr;
+      border-top: 0;
+    }
+    .step {
+      border-top: 0;
+      border-left: 2px solid var(--color-line);
+      margin-top: 0;
+      padding: 10px 12px;
+    }
+    .step[aria-current="step"] {
+      border-top-color: transparent;
+      border-left-color: var(--color-accent);
+      background: var(--color-paper-recess);
+    }
+  }
+
+  .step[data-nonaktif="true"] {
+    color: var(--color-muted);
+  }
+
+  .step[data-nonaktif="true"]:hover {
+    color: var(--color-ink-soft);
+  }
+
+  /* ── Peta ────────────────────────────────────────────────── */
+
+  .peta {
+    position: relative;
+    background: var(--color-paper-recess);
+  }
+
+  .peta .leaflet-container {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    background: var(--color-paper-recess);
+    outline: none;
+  }
+
+  .peta .leaflet-tile-pane {
+    filter: saturate(0.45) contrast(1.02) brightness(1.03);
+  }
+
+  .peta .leaflet-control-attribution {
+    background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .peta .leaflet-control-attribution a {
+    color: var(--color-ink-soft);
+  }
+
+  .peta .leaflet-bar {
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .peta .leaflet-bar a {
+    background: var(--color-card);
+    color: var(--color-ink);
+    border-bottom-color: var(--color-line);
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+  }
+
+  .peta .leaflet-bar a:hover {
+    background: var(--color-paper-recess);
+  }
+
+  .peta .leaflet-popup-content-wrapper {
+    background: var(--color-card);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-xs);
+    box-shadow: 0 10px 24px -18px rgb(22 18 14 / 0.5);
+    color: var(--color-ink);
+  }
+
+  .peta .leaflet-popup-tip {
+    background: var(--color-card);
+    border: 1px solid var(--color-line-strong);
+    box-shadow: none;
+  }
+
+  .peta .leaflet-popup-content {
+    margin: 10px 12px;
+    line-height: 1.45;
+  }
+
+  .peta .leaflet-tooltip {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border: 0;
+    border-radius: var(--radius-xs);
+    box-shadow: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-2xs);
+    padding: 4px 7px;
+  }
+
+  .peta .leaflet-tooltip-top::before {
+    border-top-color: var(--color-ink);
+  }
+
+  .peta .leaflet-interactive:focus-visible {
+    outline: none;
+  }
 }

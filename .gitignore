@@ -8,3 +8,4 @@ __pycache__/
 data/scratch/
 docs/.work-*/
 *.wav
+.impeccable/review/
