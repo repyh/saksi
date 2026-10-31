@@ -1,0 +1,2242 @@
+[
+  {
+    "id_desa": "3204052001",
+    "desa": "Cileunyi Kulon",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.944224959,
+    "lon": 107.7399605312
+  },
+  {
+    "id_desa": "3204052002",
+    "desa": "Cileunyi Wetan",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.9326660984,
+    "lon": 107.749474367
+  },
+  {
+    "id_desa": "3204052003",
+    "desa": "Cimekar",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.9361507163,
+    "lon": 107.7380740646
+  },
+  {
+    "id_desa": "3204052004",
+    "desa": "Cinunuk",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.9319519725,
+    "lon": 107.732885724
+  },
+  {
+    "id_desa": "3204052005",
+    "desa": "Cibiru Hilir",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.9552820593,
+    "lon": 107.7160557632
+  },
+  {
+    "id_desa": "3204052006",
+    "desa": "Cibiru Wetan",
+    "id_kec": "320405",
+    "kecamatan": "Cileunyi",
+    "lat": -6.9083494708,
+    "lon": 107.7372561305
+  },
+  {
+    "id_desa": "3204061001",
+    "desa": "Padasuka",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8871723673,
+    "lon": 107.6555782739
+  },
+  {
+    "id_desa": "3204061002",
+    "desa": "Cibeunying",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8805553951,
+    "lon": 107.6419234642
+  },
+  {
+    "id_desa": "3204062003",
+    "desa": "Cimenyan",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8586906437,
+    "lon": 107.6693159603
+  },
+  {
+    "id_desa": "3204062004",
+    "desa": "Mandalamekar",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8738119703,
+    "lon": 107.6735213953
+  },
+  {
+    "id_desa": "3204062005",
+    "desa": "Cikadut",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8816171768,
+    "lon": 107.6796051322
+  },
+  {
+    "id_desa": "3204062006",
+    "desa": "Ciburial",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8495763474,
+    "lon": 107.6495934527
+  },
+  {
+    "id_desa": "3204062007",
+    "desa": "Sindanglaya",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8843577223,
+    "lon": 107.68950596
+  },
+  {
+    "id_desa": "3204062008",
+    "desa": "Mekarsaluyu",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8614263161,
+    "lon": 107.6502754851
+  },
+  {
+    "id_desa": "3204062009",
+    "desa": "Mekarmanik",
+    "id_kec": "320406",
+    "kecamatan": "Cimenyan",
+    "lat": -6.8534678773,
+    "lon": 107.694653114
+  },
+  {
+    "id_desa": "3204072001",
+    "desa": "Jatiendah",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.9011541901,
+    "lon": 107.6982868745
+  },
+  {
+    "id_desa": "3204072002",
+    "desa": "Cilengkrang",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.8907098612,
+    "lon": 107.7338440077
+  },
+  {
+    "id_desa": "3204072003",
+    "desa": "Cipanjalu",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.849806843,
+    "lon": 107.7283602316
+  },
+  {
+    "id_desa": "3204072004",
+    "desa": "Melatiwangi",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.8819901253,
+    "lon": 107.7063681608
+  },
+  {
+    "id_desa": "3204072005",
+    "desa": "Ciporeat",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.8783891281,
+    "lon": 107.7275734231
+  },
+  {
+    "id_desa": "3204072006",
+    "desa": "Girimekar",
+    "id_kec": "320407",
+    "kecamatan": "Cilengkrang",
+    "lat": -6.8712552427,
+    "lon": 107.7045303608
+  },
+  {
+    "id_desa": "3204082001",
+    "desa": "Lengkong",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.980271098,
+    "lon": 107.6515522454
+  },
+  {
+    "id_desa": "3204082002",
+    "desa": "Bojongsoang",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.9880902593,
+    "lon": 107.6429345359
+  },
+  {
+    "id_desa": "3204082003",
+    "desa": "Buahbatu",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.9808627147,
+    "lon": 107.6704127783
+  },
+  {
+    "id_desa": "3204082004",
+    "desa": "Cipagalo",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.970395913,
+    "lon": 107.6527989583
+  },
+  {
+    "id_desa": "3204082005",
+    "desa": "Bojongsari",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.999910031,
+    "lon": 107.65162115
+  },
+  {
+    "id_desa": "3204082006",
+    "desa": "Tegalluar",
+    "id_kec": "320408",
+    "kecamatan": "Bojongsoang",
+    "lat": -6.9796525886,
+    "lon": 107.6899303282
+  },
+  {
+    "id_desa": "3204091004",
+    "desa": "Sulaiman",
+    "id_kec": "320409",
+    "kecamatan": "Margahayu",
+    "lat": -6.9852130575,
+    "lon": 107.5735890991
+  },
+  {
+    "id_desa": "3204092001",
+    "desa": "Margahayu Tengah",
+    "id_kec": "320409",
+    "kecamatan": "Margahayu",
+    "lat": -6.9603456749,
+    "lon": 107.5717621693
+  },
+  {
+    "id_desa": "3204092002",
+    "desa": "Margahayu Selatan",
+    "id_kec": "320409",
+    "kecamatan": "Margahayu",
+    "lat": -6.9708202535,
+    "lon": 107.5664076189
+  },
+  {
+    "id_desa": "3204092003",
+    "desa": "Sukamenak",
+    "id_kec": "320409",
+    "kecamatan": "Margahayu",
+    "lat": -6.9713834087,
+    "lon": 107.5842151281
+  },
+  {
+    "id_desa": "3204092005",
+    "desa": "Sayati",
+    "id_kec": "320409",
+    "kecamatan": "Margahayu",
+    "lat": -6.9713688673,
+    "lon": 107.5758781715
+  },
+  {
+    "id_desa": "3204102001",
+    "desa": "Margaasih",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9391350658,
+    "lon": 107.5462384938
+  },
+  {
+    "id_desa": "3204102002",
+    "desa": "Lagadar",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9276947067,
+    "lon": 107.5328164819
+  },
+  {
+    "id_desa": "3204102003",
+    "desa": "Nanjung",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9539530262,
+    "lon": 107.538343289
+  },
+  {
+    "id_desa": "3204102004",
+    "desa": "Mekarrahayu",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9711981032,
+    "lon": 107.5520709005
+  },
+  {
+    "id_desa": "3204102005",
+    "desa": "Rahayu",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9581201035,
+    "lon": 107.5564743813
+  },
+  {
+    "id_desa": "3204102006",
+    "desa": "Cigondewah Hilir",
+    "id_kec": "320410",
+    "kecamatan": "Margaasih",
+    "lat": -6.9520338228,
+    "lon": 107.5511735887
+  },
+  {
+    "id_desa": "3204112001",
+    "desa": "Sangkanhurip",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -6.9985648711,
+    "lon": 107.5669269707
+  },
+  {
+    "id_desa": "3204112002",
+    "desa": "Katapang",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -7.0050486359,
+    "lon": 107.5463802022
+  },
+  {
+    "id_desa": "3204112004",
+    "desa": "Gandasari",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -7.024761747,
+    "lon": 107.5507630073
+  },
+  {
+    "id_desa": "3204112006",
+    "desa": "Sukamukti",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -7.0025601784,
+    "lon": 107.580287616
+  },
+  {
+    "id_desa": "3204112007",
+    "desa": "Cilampeni",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -6.9893163524,
+    "lon": 107.5519841712
+  },
+  {
+    "id_desa": "3204112008",
+    "desa": "Pangauban",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -7.0025107216,
+    "lon": 107.5555919582
+  },
+  {
+    "id_desa": "3204112009",
+    "desa": "Banyusari",
+    "id_kec": "320411",
+    "kecamatan": "Katapang",
+    "lat": -7.0177504517,
+    "lon": 107.5588737578
+  },
+  {
+    "id_desa": "3204121001",
+    "desa": "Pasawahan",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.9687359201,
+    "lon": 107.6145710111
+  },
+  {
+    "id_desa": "3204122002",
+    "desa": "Dayeuhkolot",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.9847741817,
+    "lon": 107.6219535108
+  },
+  {
+    "id_desa": "3204122003",
+    "desa": "Cangkuang Wetan",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.971019066,
+    "lon": 107.6046196578
+  },
+  {
+    "id_desa": "3204122004",
+    "desa": "Cangkuang Kulon",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.9704870167,
+    "lon": 107.5940808025
+  },
+  {
+    "id_desa": "3204122005",
+    "desa": "Sukapura",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.968772079,
+    "lon": 107.6283301266
+  },
+  {
+    "id_desa": "3204122006",
+    "desa": "Citeureup",
+    "id_kec": "320412",
+    "kecamatan": "Dayeuhkolot",
+    "lat": -6.9796942842,
+    "lon": 107.6259793872
+  },
+  {
+    "id_desa": "3204132001",
+    "desa": "Kamasan",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0478227118,
+    "lon": 107.5782704689
+  },
+  {
+    "id_desa": "3204132002",
+    "desa": "Banjaran Wetan",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.082090032,
+    "lon": 107.6111503799
+  },
+  {
+    "id_desa": "3204132003",
+    "desa": "Banjaran",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.047203102,
+    "lon": 107.5886720397
+  },
+  {
+    "id_desa": "3204132005",
+    "desa": "Ciapus",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.067177981,
+    "lon": 107.591845531
+  },
+  {
+    "id_desa": "3204132006",
+    "desa": "Sindangpanon",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.063182804,
+    "lon": 107.5816153541
+  },
+  {
+    "id_desa": "3204132007",
+    "desa": "Kiangroke",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0504843273,
+    "lon": 107.5674744697
+  },
+  {
+    "id_desa": "3204132008",
+    "desa": "Tarajusari",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0369211069,
+    "lon": 107.5843979861
+  },
+  {
+    "id_desa": "3204132012",
+    "desa": "Mekarjaya",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0903871756,
+    "lon": 107.6014940322
+  },
+  {
+    "id_desa": "3204132013",
+    "desa": "Margahurip",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0611714119,
+    "lon": 107.5619225724
+  },
+  {
+    "id_desa": "3204132016",
+    "desa": "Neglasari",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.0635338972,
+    "lon": 107.5723172802
+  },
+  {
+    "id_desa": "3204132018",
+    "desa": "Pasirmulya",
+    "id_kec": "320413",
+    "kecamatan": "Banjaran",
+    "lat": -7.1004354727,
+    "lon": 107.6007601846
+  },
+  {
+    "id_desa": "3204142001",
+    "desa": "Sukasari",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0229416287,
+    "lon": 107.5915559325
+  },
+  {
+    "id_desa": "3204142002",
+    "desa": "Bojongmanggu",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0282286249,
+    "lon": 107.6026399796
+  },
+  {
+    "id_desa": "3204142003",
+    "desa": "Rancatungku",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0227507019,
+    "lon": 107.5787164306
+  },
+  {
+    "id_desa": "3204142004",
+    "desa": "Bojongkunci",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0189996046,
+    "lon": 107.5680517551
+  },
+  {
+    "id_desa": "3204142005",
+    "desa": "Rancamulya",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0092175537,
+    "lon": 107.5924072123
+  },
+  {
+    "id_desa": "3204142006",
+    "desa": "Langonsari",
+    "id_kec": "320414",
+    "kecamatan": "Pameungpeuk",
+    "lat": -7.0204824133,
+    "lon": 107.6076412192
+  },
+  {
+    "id_desa": "3204152001",
+    "desa": "Pangalengan",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1762010559,
+    "lon": 107.5860927299
+  },
+  {
+    "id_desa": "3204152002",
+    "desa": "Margaluyu",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.2285037051,
+    "lon": 107.5556147457
+  },
+  {
+    "id_desa": "3204152003",
+    "desa": "Warnasari",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1907847687,
+    "lon": 107.516107484
+  },
+  {
+    "id_desa": "3204152004",
+    "desa": "Sukamanah",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.2039228818,
+    "lon": 107.6043709658
+  },
+  {
+    "id_desa": "3204152005",
+    "desa": "Lamajang",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1333865906,
+    "lon": 107.539579461
+  },
+  {
+    "id_desa": "3204152006",
+    "desa": "Margamukti",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.181964148,
+    "lon": 107.6205071437
+  },
+  {
+    "id_desa": "3204152007",
+    "desa": "Margamulya",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1595606943,
+    "lon": 107.5903203753
+  },
+  {
+    "id_desa": "3204152008",
+    "desa": "Banjarsari",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.2305908707,
+    "lon": 107.5927510718
+  },
+  {
+    "id_desa": "3204152009",
+    "desa": "Sukaluyu",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.2331556431,
+    "lon": 107.5216970709
+  },
+  {
+    "id_desa": "3204152010",
+    "desa": "Tribaktimulya",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1439011055,
+    "lon": 107.5640098643
+  },
+  {
+    "id_desa": "3204152011",
+    "desa": "Pulosari",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.1744430498,
+    "lon": 107.5444601342
+  },
+  {
+    "id_desa": "3204152012",
+    "desa": "Wanasuka",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.265082421,
+    "lon": 107.6089559417
+  },
+  {
+    "id_desa": "3204152013",
+    "desa": "Margamekar",
+    "id_kec": "320415",
+    "kecamatan": "Pangalengan",
+    "lat": -7.2019007955,
+    "lon": 107.5715720757
+  },
+  {
+    "id_desa": "3204162001",
+    "desa": "Arjasari",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0609034276,
+    "lon": 107.6420512389
+  },
+  {
+    "id_desa": "3204162002",
+    "desa": "Lebakwangi",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0423439242,
+    "lon": 107.6085987884
+  },
+  {
+    "id_desa": "3204162003",
+    "desa": "Batukarut",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0463015405,
+    "lon": 107.6006400052
+  },
+  {
+    "id_desa": "3204162004",
+    "desa": "Ancolmekar",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0907214954,
+    "lon": 107.6679685573
+  },
+  {
+    "id_desa": "3204162005",
+    "desa": "Baros",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0657722642,
+    "lon": 107.6301740057
+  },
+  {
+    "id_desa": "3204162006",
+    "desa": "Mangunjaya",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0817216671,
+    "lon": 107.6195184105
+  },
+  {
+    "id_desa": "3204162007",
+    "desa": "Mekarjaya",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0830359014,
+    "lon": 107.6309496223
+  },
+  {
+    "id_desa": "3204162008",
+    "desa": "Pinggirsari",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0816253166,
+    "lon": 107.6518223705
+  },
+  {
+    "id_desa": "3204162009",
+    "desa": "Patrolsari",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0559806223,
+    "lon": 107.6698058293
+  },
+  {
+    "id_desa": "3204162010",
+    "desa": "Rancakole",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.0712714903,
+    "lon": 107.6778067845
+  },
+  {
+    "id_desa": "3204162011",
+    "desa": "Wargaluyu",
+    "id_kec": "320416",
+    "kecamatan": "Arjasari",
+    "lat": -7.035539342,
+    "lon": 107.6235618973
+  },
+  {
+    "id_desa": "3204172001",
+    "desa": "Cimaung",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.0918606122,
+    "lon": 107.5635903789
+  },
+  {
+    "id_desa": "3204172002",
+    "desa": "Jagabaya",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.0773351646,
+    "lon": 107.5634952151
+  },
+  {
+    "id_desa": "3204172003",
+    "desa": "Pasirhuni",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.0910918372,
+    "lon": 107.5767187511
+  },
+  {
+    "id_desa": "3204172004",
+    "desa": "Campakamulya",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.1173652017,
+    "lon": 107.6062999995
+  },
+  {
+    "id_desa": "3204172005",
+    "desa": "Cipinang",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.1019364827,
+    "lon": 107.5603889273
+  },
+  {
+    "id_desa": "3204172006",
+    "desa": "Mekarsari",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.125059869,
+    "lon": 107.5928963197
+  },
+  {
+    "id_desa": "3204172007",
+    "desa": "Sukamaju",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.1076728214,
+    "lon": 107.5329219793
+  },
+  {
+    "id_desa": "3204172008",
+    "desa": "Cikalong",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.1194633742,
+    "lon": 107.5577630801
+  },
+  {
+    "id_desa": "3204172009",
+    "desa": "Malasari",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.0875286611,
+    "lon": 107.5389571298
+  },
+  {
+    "id_desa": "3204172010",
+    "desa": "Warjabakti",
+    "id_kec": "320417",
+    "kecamatan": "Cimaung",
+    "lat": -7.1384638031,
+    "lon": 107.5896117937
+  },
+  {
+    "id_desa": "3204252001",
+    "desa": "Cicalengka Kulon",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9867671307,
+    "lon": 107.8395661177
+  },
+  {
+    "id_desa": "3204252002",
+    "desa": "Cicalengka Wetan",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9913601636,
+    "lon": 107.8470240143
+  },
+  {
+    "id_desa": "3204252003",
+    "desa": "Babakan Peuteuy",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9864155089,
+    "lon": 107.8592681694
+  },
+  {
+    "id_desa": "3204252004",
+    "desa": "Cikuya",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9828538265,
+    "lon": 107.823382539
+  },
+  {
+    "id_desa": "3204252005",
+    "desa": "Dampit",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9750405809,
+    "lon": 107.8627895019
+  },
+  {
+    "id_desa": "3204252006",
+    "desa": "Margaasih",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -7.0102948284,
+    "lon": 107.8462842423
+  },
+  {
+    "id_desa": "3204252007",
+    "desa": "Narawita",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -7.0227257842,
+    "lon": 107.8525187266
+  },
+  {
+    "id_desa": "3204252008",
+    "desa": "Panenjoan",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9737486435,
+    "lon": 107.8233570005
+  },
+  {
+    "id_desa": "3204252009",
+    "desa": "Tanjungwangi",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9673341555,
+    "lon": 107.8932933612
+  },
+  {
+    "id_desa": "3204252010",
+    "desa": "Tenjolaya",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9775472127,
+    "lon": 107.8404763161
+  },
+  {
+    "id_desa": "3204252011",
+    "desa": "Waluya",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9951003262,
+    "lon": 107.8390003617
+  },
+  {
+    "id_desa": "3204252012",
+    "desa": "Nagrog",
+    "id_kec": "320425",
+    "kecamatan": "Cicalengka",
+    "lat": -6.9990628669,
+    "lon": 107.8683492273
+  },
+  {
+    "id_desa": "3204262001",
+    "desa": "Nagreg",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0252512164,
+    "lon": 107.8867150856
+  },
+  {
+    "id_desa": "3204262002",
+    "desa": "Bojong",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0397057131,
+    "lon": 107.8752194696
+  },
+  {
+    "id_desa": "3204262003",
+    "desa": "Ciaro",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0434463948,
+    "lon": 107.9224816395
+  },
+  {
+    "id_desa": "3204262004",
+    "desa": "Ciherang",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0384547083,
+    "lon": 107.900779536
+  },
+  {
+    "id_desa": "3204262005",
+    "desa": "Citaman",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0046910367,
+    "lon": 107.8843067949
+  },
+  {
+    "id_desa": "3204262006",
+    "desa": "Mandalawangi",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0336732513,
+    "lon": 107.860696739
+  },
+  {
+    "id_desa": "3204262007",
+    "desa": "Nagreg Kendan",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0034909893,
+    "lon": 107.8978703727
+  },
+  {
+    "id_desa": "3204262008",
+    "desa": "Ganjar Sabar",
+    "id_kec": "320426",
+    "kecamatan": "Nagreg",
+    "lat": -7.0172319203,
+    "lon": 107.8748894376
+  },
+  {
+    "id_desa": "3204272001",
+    "desa": "Mandalasari",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0342529157,
+    "lon": 107.8403646169
+  },
+  {
+    "id_desa": "3204272002",
+    "desa": "Cikancung",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.028103594,
+    "lon": 107.8310152448
+  },
+  {
+    "id_desa": "3204272003",
+    "desa": "Cikasungka",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0047575025,
+    "lon": 107.8188407542
+  },
+  {
+    "id_desa": "3204272004",
+    "desa": "Cihanyir",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.026631625,
+    "lon": 107.8191939099
+  },
+  {
+    "id_desa": "3204272005",
+    "desa": "Ciluluk",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0342066536,
+    "lon": 107.813204438
+  },
+  {
+    "id_desa": "3204272006",
+    "desa": "Hegarmanah",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0021431838,
+    "lon": 107.8318198072
+  },
+  {
+    "id_desa": "3204272007",
+    "desa": "Mekarlaksana",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0539351144,
+    "lon": 107.8333947791
+  },
+  {
+    "id_desa": "3204272008",
+    "desa": "Tanjunglaya",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -6.9985319451,
+    "lon": 107.8104722308
+  },
+  {
+    "id_desa": "3204272009",
+    "desa": "Srirahayu",
+    "id_kec": "320427",
+    "kecamatan": "Cikancung",
+    "lat": -7.0456730085,
+    "lon": 107.8128992694
+  },
+  {
+    "id_desa": "3204281014",
+    "desa": "Rancaekek Kencana",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9735061737,
+    "lon": 107.7572853595
+  },
+  {
+    "id_desa": "3204282001",
+    "desa": "Rancaekek Wetan",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9678629898,
+    "lon": 107.754972951
+  },
+  {
+    "id_desa": "3204282002",
+    "desa": "Rancaekek Kulon",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9710199659,
+    "lon": 107.7429995197
+  },
+  {
+    "id_desa": "3204282003",
+    "desa": "Bojongsalam",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9887593329,
+    "lon": 107.8096800357
+  },
+  {
+    "id_desa": "3204282004",
+    "desa": "Bojongloa",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9768961689,
+    "lon": 107.7607816467
+  },
+  {
+    "id_desa": "3204282005",
+    "desa": "Jelegong",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9734814859,
+    "lon": 107.772105978
+  },
+  {
+    "id_desa": "3204282006",
+    "desa": "Linggar",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9729883858,
+    "lon": 107.7828680722
+  },
+  {
+    "id_desa": "3204282007",
+    "desa": "Cangkuang",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9760618467,
+    "lon": 107.7977166347
+  },
+  {
+    "id_desa": "3204282008",
+    "desa": "Haurpugur",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9930673442,
+    "lon": 107.7882050615
+  },
+  {
+    "id_desa": "3204282009",
+    "desa": "Sukamanah",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.988413218,
+    "lon": 107.7316788326
+  },
+  {
+    "id_desa": "3204282010",
+    "desa": "Sukamulya",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9847086376,
+    "lon": 107.7807790491
+  },
+  {
+    "id_desa": "3204282011",
+    "desa": "Tegal Sumedang",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.977120749,
+    "lon": 107.7226241935
+  },
+  {
+    "id_desa": "3204282012",
+    "desa": "Sangiang",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -7.0014498485,
+    "lon": 107.7928003709
+  },
+  {
+    "id_desa": "3204282013",
+    "desa": "Nanjung Mekar",
+    "id_kec": "320428",
+    "kecamatan": "Rancaekek",
+    "lat": -6.9705048155,
+    "lon": 107.8137029381
+  },
+  {
+    "id_desa": "3204292001",
+    "desa": "Ciparay",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0253714031,
+    "lon": 107.720068939
+  },
+  {
+    "id_desa": "3204292002",
+    "desa": "Gunungleutik",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0368393817,
+    "lon": 107.7040045585
+  },
+  {
+    "id_desa": "3204292003",
+    "desa": "Mekarsari",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0319279136,
+    "lon": 107.7357176748
+  },
+  {
+    "id_desa": "3204292004",
+    "desa": "Cikoneng",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0768121386,
+    "lon": 107.7082352268
+  },
+  {
+    "id_desa": "3204292005",
+    "desa": "Ciheulang",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0259767578,
+    "lon": 107.6841825109
+  },
+  {
+    "id_desa": "3204292006",
+    "desa": "Pakutandang",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0481399807,
+    "lon": 107.7092179856
+  },
+  {
+    "id_desa": "3204292007",
+    "desa": "Sumbersari",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0024573029,
+    "lon": 107.7037363773
+  },
+  {
+    "id_desa": "3204292008",
+    "desa": "Manggungharja",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0425825319,
+    "lon": 107.7196269551
+  },
+  {
+    "id_desa": "3204292009",
+    "desa": "Sagaracipta",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.066859444,
+    "lon": 107.71384954
+  },
+  {
+    "id_desa": "3204292010",
+    "desa": "Sarimahi",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0207337955,
+    "lon": 107.7066959621
+  },
+  {
+    "id_desa": "3204292011",
+    "desa": "Serangmekar",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0205276027,
+    "lon": 107.6981680552
+  },
+  {
+    "id_desa": "3204292012",
+    "desa": "Babakan",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.1012382257,
+    "lon": 107.6680003012
+  },
+  {
+    "id_desa": "3204292013",
+    "desa": "Bumiwangi",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0393428989,
+    "lon": 107.6942699017
+  },
+  {
+    "id_desa": "3204292014",
+    "desa": "Mekarlaksana",
+    "id_kec": "320429",
+    "kecamatan": "Ciparay",
+    "lat": -7.0646790495,
+    "lon": 107.6954743429
+  },
+  {
+    "id_desa": "3204302001",
+    "desa": "Cipeujeuh",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.0923978922,
+    "lon": 107.7109582553
+  },
+  {
+    "id_desa": "3204302002",
+    "desa": "Cikitu",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1383185265,
+    "lon": 107.6924385232
+  },
+  {
+    "id_desa": "3204302003",
+    "desa": "Cinanggela",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1329596134,
+    "lon": 107.661151925
+  },
+  {
+    "id_desa": "3204302004",
+    "desa": "Maruyung",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1080911082,
+    "lon": 107.703461393
+  },
+  {
+    "id_desa": "3204302005",
+    "desa": "Sukarame",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1568589454,
+    "lon": 107.7199406616
+  },
+  {
+    "id_desa": "3204302006",
+    "desa": "Nagrak",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.115561684,
+    "lon": 107.7279054475
+  },
+  {
+    "id_desa": "3204302007",
+    "desa": "Cikawao",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1257800703,
+    "lon": 107.7385818115
+  },
+  {
+    "id_desa": "3204302008",
+    "desa": "Mekarjaya",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1166212379,
+    "lon": 107.6717209163
+  },
+  {
+    "id_desa": "3204302009",
+    "desa": "Pangauban",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.140431739,
+    "lon": 107.6704061205
+  },
+  {
+    "id_desa": "3204302010",
+    "desa": "Mandalahaji",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1131684048,
+    "lon": 107.7149755411
+  },
+  {
+    "id_desa": "3204302011",
+    "desa": "Girimulya",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.1622432496,
+    "lon": 107.6676164063
+  },
+  {
+    "id_desa": "3204302012",
+    "desa": "Tanjungwangi",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.0854130471,
+    "lon": 107.7211627475
+  },
+  {
+    "id_desa": "3204302013",
+    "desa": "Mekarsari",
+    "id_kec": "320430",
+    "kecamatan": "Pacet",
+    "lat": -7.0978965929,
+    "lon": 107.6900645644
+  },
+  {
+    "id_desa": "3204312001",
+    "desa": "Sukapura",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.1678431231,
+    "lon": 107.69092167
+  },
+  {
+    "id_desa": "3204312002",
+    "desa": "Cibeureum",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.1875590191,
+    "lon": 107.6680957697
+  },
+  {
+    "id_desa": "3204312003",
+    "desa": "Santosa",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.2707281238,
+    "lon": 107.63833807
+  },
+  {
+    "id_desa": "3204312004",
+    "desa": "Tarumajaya",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.2306118819,
+    "lon": 107.6649648121
+  },
+  {
+    "id_desa": "3204312005",
+    "desa": "Neglawangi",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.2736802818,
+    "lon": 107.6949895794
+  },
+  {
+    "id_desa": "3204312006",
+    "desa": "Cihawuk",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.1949291941,
+    "lon": 107.7079467639
+  },
+  {
+    "id_desa": "3204312007",
+    "desa": "Cikembang",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.2131924252,
+    "lon": 107.6890821848
+  },
+  {
+    "id_desa": "3204312008",
+    "desa": "Resmi Tingal",
+    "id_kec": "320431",
+    "kecamatan": "Kertasari",
+    "lat": -7.152374615,
+    "lon": 107.69525208
+  },
+  {
+    "id_desa": "3204321001",
+    "desa": "Baleendah",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -7.010215327,
+    "lon": 107.6269627521
+  },
+  {
+    "id_desa": "3204321002",
+    "desa": "Andir",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -6.996846381,
+    "lon": 107.615827447
+  },
+  {
+    "id_desa": "3204321003",
+    "desa": "Manggahang",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -7.0195673232,
+    "lon": 107.6456204422
+  },
+  {
+    "id_desa": "3204321004",
+    "desa": "Jelekong",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -7.0254728736,
+    "lon": 107.66078972
+  },
+  {
+    "id_desa": "3204321008",
+    "desa": "Wargamekar",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -7.0220819486,
+    "lon": 107.6749722071
+  },
+  {
+    "id_desa": "3204322005",
+    "desa": "Bojongmalaka",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -6.9929807723,
+    "lon": 107.6082079735
+  },
+  {
+    "id_desa": "3204322006",
+    "desa": "Rancamanyar",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -6.9904188754,
+    "lon": 107.5948704157
+  },
+  {
+    "id_desa": "3204322007",
+    "desa": "Malakasari",
+    "id_kec": "320432",
+    "kecamatan": "Baleendah",
+    "lat": -7.0098481223,
+    "lon": 107.6048598488
+  },
+  {
+    "id_desa": "3204332001",
+    "desa": "Majalaya",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0449660842,
+    "lon": 107.7594125238
+  },
+  {
+    "id_desa": "3204332002",
+    "desa": "Wangisagara",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0750615652,
+    "lon": 107.7417174164
+  },
+  {
+    "id_desa": "3204332003",
+    "desa": "Biru",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0528622106,
+    "lon": 107.7256670232
+  },
+  {
+    "id_desa": "3204332004",
+    "desa": "Padamulya",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0560228448,
+    "lon": 107.7483106102
+  },
+  {
+    "id_desa": "3204332005",
+    "desa": "Bojong",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0390942863,
+    "lon": 107.7753189469
+  },
+  {
+    "id_desa": "3204332006",
+    "desa": "Majasetra",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0339172252,
+    "lon": 107.7557586941
+  },
+  {
+    "id_desa": "3204332007",
+    "desa": "Majakerta",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0415543126,
+    "lon": 107.7641992199
+  },
+  {
+    "id_desa": "3204332008",
+    "desa": "Sukamaju",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0494295759,
+    "lon": 107.7533117866
+  },
+  {
+    "id_desa": "3204332009",
+    "desa": "Padaulun",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0542414408,
+    "lon": 107.7354288076
+  },
+  {
+    "id_desa": "3204332010",
+    "desa": "Neglasari",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.0757764971,
+    "lon": 107.7307961296
+  },
+  {
+    "id_desa": "3204332011",
+    "desa": "Sukamukti",
+    "id_kec": "320433",
+    "kecamatan": "Majalaya",
+    "lat": -7.059555634,
+    "lon": 107.7429184699
+  },
+  {
+    "id_desa": "3204342001",
+    "desa": "Rancakasumba",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.0186670698,
+    "lon": 107.7351089632
+  },
+  {
+    "id_desa": "3204342002",
+    "desa": "Solokanjeruk",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.0084711697,
+    "lon": 107.7443460965
+  },
+  {
+    "id_desa": "3204342003",
+    "desa": "Cibodas",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.0114394589,
+    "lon": 107.7627163905
+  },
+  {
+    "id_desa": "3204342004",
+    "desa": "Panyadap",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.0259401636,
+    "lon": 107.7727123775
+  },
+  {
+    "id_desa": "3204342005",
+    "desa": "Bojongemas",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -6.9981637952,
+    "lon": 107.7222491947
+  },
+  {
+    "id_desa": "3204342006",
+    "desa": "Padamukti",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.0118385389,
+    "lon": 107.771947475
+  },
+  {
+    "id_desa": "3204342007",
+    "desa": "Langensari",
+    "id_kec": "320434",
+    "kecamatan": "Solokanjeruk",
+    "lat": -7.008172758,
+    "lon": 107.7549104388
+  },
+  {
+    "id_desa": "3204352001",
+    "desa": "Cigentur",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0191069713,
+    "lon": 107.7947075109
+  },
+  {
+    "id_desa": "3204352002",
+    "desa": "Cipedes",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0316952224,
+    "lon": 107.7937703253
+  },
+  {
+    "id_desa": "3204352003",
+    "desa": "Loa",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.1008587346,
+    "lon": 107.7973474701
+  },
+  {
+    "id_desa": "3204352004",
+    "desa": "Cijagra",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0402950168,
+    "lon": 107.7881256454
+  },
+  {
+    "id_desa": "3204352005",
+    "desa": "Cipaku",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0593552011,
+    "lon": 107.7829434207
+  },
+  {
+    "id_desa": "3204352006",
+    "desa": "Sindangsari",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0735590944,
+    "lon": 107.7767570195
+  },
+  {
+    "id_desa": "3204352007",
+    "desa": "Drawati",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.078928983,
+    "lon": 107.8110030544
+  },
+  {
+    "id_desa": "3204352008",
+    "desa": "Sukamanah",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0446073246,
+    "lon": 107.77019016
+  },
+  {
+    "id_desa": "3204352009",
+    "desa": "Sukamantri",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0558459776,
+    "lon": 107.7693906263
+  },
+  {
+    "id_desa": "3204352010",
+    "desa": "Karangtunggal",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0599516556,
+    "lon": 107.8122913122
+  },
+  {
+    "id_desa": "3204352011",
+    "desa": "Mekarpawitan",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0467365987,
+    "lon": 107.7839189994
+  },
+  {
+    "id_desa": "3204352012",
+    "desa": "Tangsimekar",
+    "id_kec": "320435",
+    "kecamatan": "Paseh",
+    "lat": -7.0278627969,
+    "lon": 107.7877542728
+  },
+  {
+    "id_desa": "3204362001",
+    "desa": "Ibun",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.129959159,
+    "lon": 107.7716556896
+  },
+  {
+    "id_desa": "3204362002",
+    "desa": "Laksana",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.1330267121,
+    "lon": 107.7846906414
+  },
+  {
+    "id_desa": "3204362003",
+    "desa": "Dukuh",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.1305979151,
+    "lon": 107.7589020512
+  },
+  {
+    "id_desa": "3204362004",
+    "desa": "Talun",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.065725099,
+    "lon": 107.7656765471
+  },
+  {
+    "id_desa": "3204362005",
+    "desa": "Pangguh",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.0973431554,
+    "lon": 107.7486031441
+  },
+  {
+    "id_desa": "3204362006",
+    "desa": "Lampegan",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.0702214353,
+    "lon": 107.7587043388
+  },
+  {
+    "id_desa": "3204362007",
+    "desa": "Neglasari",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.1311523074,
+    "lon": 107.7478583742
+  },
+  {
+    "id_desa": "3204362008",
+    "desa": "Mekarwangi",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.1124123498,
+    "lon": 107.7876528216
+  },
+  {
+    "id_desa": "3204362009",
+    "desa": "Sudi",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.0801841341,
+    "lon": 107.7687817686
+  },
+  {
+    "id_desa": "3204362010",
+    "desa": "Tanggulun",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.055412757,
+    "lon": 107.7621028354
+  },
+  {
+    "id_desa": "3204362011",
+    "desa": "Cibeet",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.0858944588,
+    "lon": 107.7609930719
+  },
+  {
+    "id_desa": "3204362012",
+    "desa": "Karyalaksana",
+    "id_kec": "320436",
+    "kecamatan": "Ibun",
+    "lat": -7.0779819946,
+    "lon": 107.7526759751
+  },
+  {
+    "id_desa": "3204372001",
+    "desa": "Soreang",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0338324408,
+    "lon": 107.5294513762
+  },
+  {
+    "id_desa": "3204372002",
+    "desa": "Sadu",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0342924909,
+    "lon": 107.5052215799
+  },
+  {
+    "id_desa": "3204372004",
+    "desa": "Panyirapan",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0411749541,
+    "lon": 107.52427432
+  },
+  {
+    "id_desa": "3204372010",
+    "desa": "Sukajadi",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0647387294,
+    "lon": 107.503475289
+  },
+  {
+    "id_desa": "3204372011",
+    "desa": "Pamekaran",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0236400887,
+    "lon": 107.5259012098
+  },
+  {
+    "id_desa": "3204372017",
+    "desa": "Karamatmulya",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0395440238,
+    "lon": 107.5108569553
+  },
+  {
+    "id_desa": "3204372018",
+    "desa": "Sukanagara",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0580415659,
+    "lon": 107.5147838002
+  },
+  {
+    "id_desa": "3204372019",
+    "desa": "Cingcin",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0261407613,
+    "lon": 107.5403122396
+  },
+  {
+    "id_desa": "3204372020",
+    "desa": "Parungserab",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0117093376,
+    "lon": 107.5317918948
+  },
+  {
+    "id_desa": "3204372021",
+    "desa": "Sekarwangi",
+    "id_kec": "320437",
+    "kecamatan": "Soreang",
+    "lat": -7.0149304582,
+    "lon": 107.5400958082
+  },
+  {
+    "id_desa": "3204382001",
+    "desa": "Pasirjambu",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.0906214593,
+    "lon": 107.4774004598
+  },
+  {
+    "id_desa": "3204382002",
+    "desa": "Cibodas",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1009819953,
+    "lon": 107.5032083671
+  },
+  {
+    "id_desa": "3204382003",
+    "desa": "Cikoneng",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.0650864825,
+    "lon": 107.4844695486
+  },
+  {
+    "id_desa": "3204382004",
+    "desa": "Cukanggenteng",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.0810977948,
+    "lon": 107.4963453909
+  },
+  {
+    "id_desa": "3204382005",
+    "desa": "Cisondari",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1245210524,
+    "lon": 107.4872333246
+  },
+  {
+    "id_desa": "3204382006",
+    "desa": "Margamulya",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1213471798,
+    "lon": 107.4573362356
+  },
+  {
+    "id_desa": "3204382007",
+    "desa": "Mekarsari",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1493059047,
+    "lon": 107.5005105801
+  },
+  {
+    "id_desa": "3204382008",
+    "desa": "Mekarmaju",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.0868642805,
+    "lon": 107.4670064808
+  },
+  {
+    "id_desa": "3204382009",
+    "desa": "Sugihmukti",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1995970437,
+    "lon": 107.4255641245
+  },
+  {
+    "id_desa": "3204382010",
+    "desa": "Tenjolaya",
+    "id_kec": "320438",
+    "kecamatan": "Pasirjambu",
+    "lat": -7.1936763612,
+    "lon": 107.4752358685
+  },
+  {
+    "id_desa": "3204392001",
+    "desa": "Lebakmuncang",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.102632211,
+    "lon": 107.4154058743
+  },
+  {
+    "id_desa": "3204392002",
+    "desa": "Ciwidey",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.1024331836,
+    "lon": 107.4543651977
+  },
+  {
+    "id_desa": "3204392003",
+    "desa": "Nengkelan",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.0677126521,
+    "lon": 107.4527186825
+  },
+  {
+    "id_desa": "3204392004",
+    "desa": "Panundaan",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.10988394,
+    "lon": 107.4389098487
+  },
+  {
+    "id_desa": "3204392005",
+    "desa": "Panyocokan",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.0930497892,
+    "lon": 107.4565137759
+  },
+  {
+    "id_desa": "3204392006",
+    "desa": "Rawabogo",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.0659722568,
+    "lon": 107.4348881481
+  },
+  {
+    "id_desa": "3204392007",
+    "desa": "Sukawening",
+    "id_kec": "320439",
+    "kecamatan": "Ciwidey",
+    "lat": -7.0658613633,
+    "lon": 107.466538736
+  },
+  {
+    "id_desa": "3204402001",
+    "desa": "Patengan",
+    "id_kec": "320440",
+    "kecamatan": "Rancabali",
+    "lat": -7.1442716129,
+    "lon": 107.374103478
+  },
+  {
+    "id_desa": "3204402002",
+    "desa": "Sukaresmi",
+    "id_kec": "320440",
+    "kecamatan": "Rancabali",
+    "lat": -7.1953463388,
+    "lon": 107.3551783527
+  },
+  {
+    "id_desa": "3204402003",
+    "desa": "Indragiri",
+    "id_kec": "320440",
+    "kecamatan": "Rancabali",
+    "lat": -7.1252181168,
+    "lon": 107.3390717303
+  },
+  {
+    "id_desa": "3204402004",
+    "desa": "Cipelah",
+    "id_kec": "320440",
+    "kecamatan": "Rancabali",
+    "lat": -7.184169842,
+    "lon": 107.2912198066
+  },
+  {
+    "id_desa": "3204402005",
+    "desa": "Alamendah",
+    "id_kec": "320440",
+    "kecamatan": "Rancabali",
+    "lat": -7.1396528844,
+    "lon": 107.4148126601
+  },
+  {
+    "id_desa": "3204442001",
+    "desa": "Cangkuang",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0396021783,
+    "lon": 107.5568171731
+  },
+  {
+    "id_desa": "3204442002",
+    "desa": "Ciluncat",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0448246173,
+    "lon": 107.5475266778
+  },
+  {
+    "id_desa": "3204442003",
+    "desa": "Nagrak",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0592241206,
+    "lon": 107.5461953673
+  },
+  {
+    "id_desa": "3204442004",
+    "desa": "Bandasari",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0680711278,
+    "lon": 107.528055707
+  },
+  {
+    "id_desa": "3204442005",
+    "desa": "Pananjung",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.054739272,
+    "lon": 107.5278216626
+  },
+  {
+    "id_desa": "3204442006",
+    "desa": "Jatisari",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0756798279,
+    "lon": 107.5375043854
+  },
+  {
+    "id_desa": "3204442007",
+    "desa": "Tanjungsari",
+    "id_kec": "320444",
+    "kecamatan": "Cangkuang",
+    "lat": -7.0377794222,
+    "lon": 107.5690729495
+  },
+  {
+    "id_desa": "3204462001",
+    "desa": "Jelegong",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9556678914,
+    "lon": 107.5272327565
+  },
+  {
+    "id_desa": "3204462002",
+    "desa": "Jatisari",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9762237684,
+    "lon": 107.5202948085
+  },
+  {
+    "id_desa": "3204462003",
+    "desa": "Pameuntasan",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9814742753,
+    "lon": 107.5447141836
+  },
+  {
+    "id_desa": "3204462004",
+    "desa": "Kopo",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9976462696,
+    "lon": 107.5339308538
+  },
+  {
+    "id_desa": "3204462005",
+    "desa": "Cibodas",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9868239313,
+    "lon": 107.5071979212
+  },
+  {
+    "id_desa": "3204462006",
+    "desa": "Kutawaringin",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.999217399,
+    "lon": 107.5066040656
+  },
+  {
+    "id_desa": "3204462007",
+    "desa": "Sukamulya",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -7.0092135987,
+    "lon": 107.4890689752
+  },
+  {
+    "id_desa": "3204462008",
+    "desa": "Padasuka",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -7.0136725974,
+    "lon": 107.5180276762
+  },
+  {
+    "id_desa": "3204462009",
+    "desa": "Buninagara",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -7.0223364434,
+    "lon": 107.4978958968
+  },
+  {
+    "id_desa": "3204462010",
+    "desa": "Gajah Mekar",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -6.9755735103,
+    "lon": 107.5343981426
+  },
+  {
+    "id_desa": "3204462011",
+    "desa": "Cilame",
+    "id_kec": "320446",
+    "kecamatan": "Kutawaringin",
+    "lat": -7.0409241614,
+    "lon": 107.4867013237
+  }
+]

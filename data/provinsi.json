@@ -1,0 +1,1402 @@
+{
+ "sumber": [
+  {
+   "nama": "SIKD — DJPK Kementerian Keuangan",
+   "endpoint": "https://djpk.kemenkeu.go.id/portal/csv_apbd?type=apbd&periode={3,6,9,12}&tahun=2025&provinsi={01-38}&pemda=--",
+   "format": "XML SpreadsheetML (CSV)",
+   "keterangan": "Pagu, realisasi, dan persentase per akun belanja, per periode kumulatif."
+  },
+  {
+   "nama": "BNPB — DIBI (Data Informasi Bencana Indonesia)",
+   "endpoint": "https://data.bnpb.go.id/api/3/action/datastore_search?resource_id=df39e8c3-117e-40fa-b518-ff1037743955",
+   "format": "JSON (CKAN DataStore)",
+   "keterangan": "Jumlah kejadian bencana per provinsi per jenis, tahun 2025."
+  }
+ ],
+ "tarik": "2026-10-21",
+ "ringkas": {
+  "tarik": "2026-10-21",
+  "jumlah_provinsi": 38,
+  "pagu_total": 1414615052293901.0,
+  "realisasi_total": 1300434703673414.5,
+  "sisa_total": 114180348620486.6,
+  "btt_pagu_total": 12900770111571.34,
+  "btt_realisasi_total": 2590371868643.73,
+  "btt_persen_total": 20.08,
+  "bencana_total": 4728,
+  "median": {
+   "bencana": 86.5,
+   "btt_persen": 26.145
+  }
+ },
+ "provinsi": [
+  {
+   "kode": "01",
+   "nama": "Aceh",
+   "pagu": 41065055516364.0,
+   "realisasi": 38196268450170.0,
+   "persen": 93.01,
+   "sisa": 2868787066194.0,
+   "modal_persen": 86.02,
+   "modal_persen_h1": 8.68,
+   "indeks_desember": 37.76,
+   "indeks_desember_modal": 64.25,
+   "btt": {
+    "pagu": 266570058479.27,
+    "realisasi": 162553201062.0,
+    "persen": 60.98,
+    "persen_h1": 5.87
+   },
+   "bencana": {
+    "total": 168,
+    "per_jenis": {
+     "BANJIR": 48,
+     "CUACA EKSTREM": 21,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 94,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 3,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "02",
+   "nama": "Sumatera Utara",
+   "pagu": 64181886874223.0,
+   "realisasi": 57803197264233.0,
+   "persen": 90.06,
+   "sisa": 6378689609990.0,
+   "modal_persen": 89.51,
+   "modal_persen_h1": 18.2,
+   "indeks_desember": 41.34,
+   "indeks_desember_modal": 66.71,
+   "btt": {
+    "pagu": 513573213704.3,
+    "realisasi": 156065467379.8,
+    "persen": 30.39,
+    "persen_h1": 3.93
+   },
+   "bencana": {
+    "total": 336,
+    "per_jenis": {
+     "BANJIR": 97,
+     "CUACA EKSTREM": 68,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 155,
+     "KEKERINGAN": 8,
+     "TANAH LONGSOR": 6,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "03",
+   "nama": "Sumatera Barat",
+   "pagu": 28617412986465.0,
+   "realisasi": 26522600956922.0,
+   "persen": 92.68,
+   "sisa": 2094812029543.0,
+   "modal_persen": 83.22,
+   "modal_persen_h1": 9.93,
+   "indeks_desember": 38.11,
+   "indeks_desember_modal": 65.07,
+   "btt": {
+    "pagu": 84380903196.91,
+    "realisasi": 57072524099.85,
+    "persen": 67.64,
+    "persen_h1": 12.14
+   },
+   "bencana": {
+    "total": 135,
+    "per_jenis": {
+     "BANJIR": 37,
+     "CUACA EKSTREM": 15,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 2,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 75,
+     "KEKERINGAN": 1,
+     "TANAH LONGSOR": 5,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "04",
+   "nama": "Riau",
+   "pagu": 38371630407131.0,
+   "realisasi": 33831877186648.0,
+   "persen": 88.17,
+   "sisa": 4539753220483.0,
+   "modal_persen": 78.48,
+   "modal_persen_h1": 12.45,
+   "indeks_desember": 37.93,
+   "indeks_desember_modal": 57.93,
+   "btt": {
+    "pagu": 319792652502.48,
+    "realisasi": 20049447597.0,
+    "persen": 6.27,
+    "persen_h1": 4.37
+   },
+   "bencana": {
+    "total": 396,
+    "per_jenis": {
+     "BANJIR": 104,
+     "CUACA EKSTREM": 5,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 287,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "05",
+   "nama": "Jambi",
+   "pagu": 21088460700620.0,
+   "realisasi": 19599658504155.0,
+   "persen": 92.94,
+   "sisa": 1488802196465.0,
+   "modal_persen": 90.43,
+   "modal_persen_h1": 13.2,
+   "indeks_desember": 39.22,
+   "indeks_desember_modal": 61.42,
+   "btt": {
+    "pagu": 99867471788.0,
+    "realisasi": 8151150147.48,
+    "persen": 8.16,
+    "persen_h1": 4.07
+   },
+   "bencana": {
+    "total": 103,
+    "per_jenis": {
+     "BANJIR": 29,
+     "CUACA EKSTREM": 9,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 64,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 1,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "06",
+   "nama": "Sumatera Selatan",
+   "pagu": 49041657676497.0,
+   "realisasi": 47043143613755.0,
+   "persen": 95.92,
+   "sisa": 1998514062742.0,
+   "modal_persen": 107.21,
+   "modal_persen_h1": 9.89,
+   "indeks_desember": 45.47,
+   "indeks_desember_modal": 67.52,
+   "btt": {
+    "pagu": 216372519572.64,
+    "realisasi": 7856767880.0,
+    "persen": 3.63,
+    "persen_h1": 1.13
+   },
+   "bencana": {
+    "total": 135,
+    "per_jenis": {
+     "BANJIR": 71,
+     "CUACA EKSTREM": 14,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 47,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 3,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "07",
+   "nama": "Bengkulu",
+   "pagu": 13543823434176.0,
+   "realisasi": 12253620993739.0,
+   "persen": 90.47,
+   "sisa": 1290202440437.0,
+   "modal_persen": 82.2,
+   "modal_persen_h1": 5.97,
+   "indeks_desember": 37.78,
+   "indeks_desember_modal": 66.26,
+   "btt": {
+    "pagu": 59489079418.0,
+    "realisasi": 910302508.0,
+    "persen": 1.53,
+    "persen_h1": 0.0
+   },
+   "bencana": {
+    "total": 21,
+    "per_jenis": {
+     "BANJIR": 15,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 2,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "08",
+   "nama": "Lampung",
+   "pagu": 32766022871376.0,
+   "realisasi": 29326027180363.0,
+   "persen": 89.5,
+   "sisa": 3439995691013.0,
+   "modal_persen": 94.84,
+   "modal_persen_h1": 20.22,
+   "indeks_desember": 37.29,
+   "indeks_desember_modal": 58.61,
+   "btt": {
+    "pagu": 236426443449.0,
+    "realisasi": 87061001199.0,
+    "persen": 36.82,
+    "persen_h1": 14.05
+   },
+   "bencana": {
+    "total": 153,
+    "per_jenis": {
+     "BANJIR": 106,
+     "CUACA EKSTREM": 43,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 3,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "09",
+   "nama": "DKI Jakarta",
+   "pagu": 82663062617784.0,
+   "realisasi": 76098159818559.0,
+   "persen": 92.06,
+   "sisa": 6564902799225.0,
+   "modal_persen": 86.02,
+   "modal_persen_h1": 6.51,
+   "indeks_desember": 45.46,
+   "indeks_desember_modal": 76.38,
+   "btt": {
+    "pagu": 2049506060694.0,
+    "realisasi": 0.0,
+    "persen": 0.0,
+    "persen_h1": 0.0
+   },
+   "bencana": {
+    "total": 36,
+    "per_jenis": {
+     "BANJIR": 31,
+     "CUACA EKSTREM": 5,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "10",
+   "nama": "Jawa Barat",
+   "pagu": 144620240888000.0,
+   "realisasi": 138560237735390.0,
+   "persen": 95.81,
+   "sisa": 6060003152610.0,
+   "modal_persen": 114.7,
+   "modal_persen_h1": 15.1,
+   "indeks_desember": 38.14,
+   "indeks_desember_modal": 64.8,
+   "btt": {
+    "pagu": 2146237907430.5,
+    "realisasi": 285294390956.37,
+    "persen": 13.29,
+    "persen_h1": 4.88
+   },
+   "bencana": {
+    "total": 586,
+    "per_jenis": {
+     "BANJIR": 229,
+     "CUACA EKSTREM": 235,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 4,
+     "KEBAKARAN HUTAN DAN LAHAN": 2,
+     "KEKERINGAN": 5,
+     "TANAH LONGSOR": 111,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "11",
+   "nama": "Jawa Tengah",
+   "pagu": 117136653419230.0,
+   "realisasi": 111330215931470.0,
+   "persen": 95.04,
+   "sisa": 5806437487760.0,
+   "modal_persen": 92.65,
+   "modal_persen_h1": 8.21,
+   "indeks_desember": 34.77,
+   "indeks_desember_modal": 67.91,
+   "btt": {
+    "pagu": 475804388103.0,
+    "realisasi": 75444159877.0,
+    "persen": 15.86,
+    "persen_h1": 5.8
+   },
+   "bencana": {
+    "total": 335,
+    "per_jenis": {
+     "BANJIR": 140,
+     "CUACA EKSTREM": 119,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 19,
+     "KEKERINGAN": 11,
+     "TANAH LONGSOR": 45,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "12",
+   "nama": "DI Yogyakarta",
+   "pagu": 17243732295275.0,
+   "realisasi": 16065134984420.0,
+   "persen": 93.17,
+   "sisa": 1178597310855.0,
+   "modal_persen": 88.75,
+   "modal_persen_h1": 15.16,
+   "indeks_desember": 34.85,
+   "indeks_desember_modal": 62.0,
+   "btt": {
+    "pagu": 120254367164.2,
+    "realisasi": 25919504361.0,
+    "persen": 21.55,
+    "persen_h1": 9.3
+   },
+   "bencana": {
+    "total": 55,
+    "per_jenis": {
+     "BANJIR": 10,
+     "CUACA EKSTREM": 32,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 4,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 9,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "13",
+   "nama": "Jawa Timur",
+   "pagu": 149018881973170.0,
+   "realisasi": 136515147393710.0,
+   "persen": 91.61,
+   "sisa": 12503734579460.0,
+   "modal_persen": 86.45,
+   "modal_persen_h1": 11.26,
+   "indeks_desember": 38.79,
+   "indeks_desember_modal": 68.1,
+   "btt": {
+    "pagu": 1027868585051.1,
+    "realisasi": 261900543739.87,
+    "persen": 25.48,
+    "persen_h1": 12.34
+   },
+   "bencana": {
+    "total": 390,
+    "per_jenis": {
+     "BANJIR": 184,
+     "CUACA EKSTREM": 146,
+     "ERUPSI GUNUNG API": 3,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 3,
+     "KEBAKARAN HUTAN DAN LAHAN": 25,
+     "KEKERINGAN": 3,
+     "TANAH LONGSOR": 26,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "14",
+   "nama": "Kalimantan Barat",
+   "pagu": 29396709794931.0,
+   "realisasi": 26982374278989.0,
+   "persen": 91.79,
+   "sisa": 2414335515942.0,
+   "modal_persen": 86.94,
+   "modal_persen_h1": 8.32,
+   "indeks_desember": 45.14,
+   "indeks_desember_modal": 72.31,
+   "btt": {
+    "pagu": 103333175466.99,
+    "realisasi": 33167320686.13,
+    "persen": 32.1,
+    "persen_h1": 14.23
+   },
+   "bencana": {
+    "total": 39,
+    "per_jenis": {
+     "BANJIR": 28,
+     "CUACA EKSTREM": 2,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 9,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "15",
+   "nama": "Kalimantan Tengah",
+   "pagu": 35840290243460.0,
+   "realisasi": 31355647246282.0,
+   "persen": 87.49,
+   "sisa": 4484642997178.0,
+   "modal_persen": 92.12,
+   "modal_persen_h1": 14.53,
+   "indeks_desember": 46.28,
+   "indeks_desember_modal": 63.09,
+   "btt": {
+    "pagu": 406631003038.13,
+    "realisasi": 34180102665.0,
+    "persen": 8.41,
+    "persen_h1": 4.08
+   },
+   "bencana": {
+    "total": 214,
+    "per_jenis": {
+     "BANJIR": 58,
+     "CUACA EKSTREM": 3,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 151,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "16",
+   "nama": "Kalimantan Selatan",
+   "pagu": 50249108710412.0,
+   "realisasi": 43050161313802.0,
+   "persen": 85.67,
+   "sisa": 7198947396610.0,
+   "modal_persen": 87.95,
+   "modal_persen_h1": 9.23,
+   "indeks_desember": 45.93,
+   "indeks_desember_modal": 67.84,
+   "btt": {
+    "pagu": 433481899605.43,
+    "realisasi": 29584981784.01,
+    "persen": 6.82,
+    "persen_h1": 1.82
+   },
+   "bencana": {
+    "total": 276,
+    "per_jenis": {
+     "BANJIR": 46,
+     "CUACA EKSTREM": 8,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 2,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 220,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "17",
+   "nama": "Kalimantan Timur",
+   "pagu": 76342695737137.0,
+   "realisasi": 72894444451149.0,
+   "persen": 95.48,
+   "sisa": 3448251285988.0,
+   "modal_persen": 98.82,
+   "modal_persen_h1": 13.78,
+   "indeks_desember": 50.42,
+   "indeks_desember_modal": 63.83,
+   "btt": {
+    "pagu": 539697624868.0,
+    "realisasi": 144699024068.0,
+    "persen": 26.81,
+    "persen_h1": 0.62
+   },
+   "bencana": {
+    "total": 96,
+    "per_jenis": {
+     "BANJIR": 53,
+     "CUACA EKSTREM": 3,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 22,
+     "KEKERINGAN": 1,
+     "TANAH LONGSOR": 16,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "18",
+   "nama": "Sulawesi Utara",
+   "pagu": 17655632446610.0,
+   "realisasi": 15540115949540.0,
+   "persen": 88.02,
+   "sisa": 2115516497070.0,
+   "modal_persen": 88.32,
+   "modal_persen_h1": 8.45,
+   "indeks_desember": 39.07,
+   "indeks_desember_modal": 69.73,
+   "btt": {
+    "pagu": 74977847526.63,
+    "realisasi": 22539929507.0,
+    "persen": 30.06,
+    "persen_h1": 11.49
+   },
+   "bencana": {
+    "total": 38,
+    "per_jenis": {
+     "BANJIR": 30,
+     "CUACA EKSTREM": 3,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 1,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 3,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "19",
+   "nama": "Sulawesi Tengah",
+   "pagu": 27003758890235.0,
+   "realisasi": 24626874720915.0,
+   "persen": 91.2,
+   "sisa": 2376884169320.0,
+   "modal_persen": 84.19,
+   "modal_persen_h1": 10.49,
+   "indeks_desember": 43.83,
+   "indeks_desember_modal": 68.85,
+   "btt": {
+    "pagu": 69521963735.62,
+    "realisasi": 38431806378.25,
+    "persen": 55.28,
+    "persen_h1": 15.99
+   },
+   "bencana": {
+    "total": 135,
+    "per_jenis": {
+     "BANJIR": 103,
+     "CUACA EKSTREM": 14,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 7,
+     "GEMPABUMI": 4,
+     "KEBAKARAN HUTAN DAN LAHAN": 2,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 5,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "20",
+   "nama": "Sulawesi Selatan",
+   "pagu": 48248986704666.0,
+   "realisasi": 43868783577483.0,
+   "persen": 90.92,
+   "sisa": 4380203127183.0,
+   "modal_persen": 84.47,
+   "modal_persen_h1": 5.83,
+   "indeks_desember": 43.04,
+   "indeks_desember_modal": 74.62,
+   "btt": {
+    "pagu": 328893804848.3,
+    "realisasi": 51967081549.0,
+    "persen": 15.8,
+    "persen_h1": 8.29
+   },
+   "bencana": {
+    "total": 147,
+    "per_jenis": {
+     "BANJIR": 63,
+     "CUACA EKSTREM": 65,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 2,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 3,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 14,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "21",
+   "nama": "Sulawesi Tenggara",
+   "pagu": 24429499732473.0,
+   "realisasi": 22249463879549.0,
+   "persen": 91.08,
+   "sisa": 2180035852924.0,
+   "modal_persen": 84.04,
+   "modal_persen_h1": 9.44,
+   "indeks_desember": 42.68,
+   "indeks_desember_modal": 65.85,
+   "btt": {
+    "pagu": 186279049933.76,
+    "realisasi": 39701763849.0,
+    "persen": 21.31,
+    "persen_h1": 7.16
+   },
+   "bencana": {
+    "total": 59,
+    "per_jenis": {
+     "BANJIR": 43,
+     "CUACA EKSTREM": 6,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 3,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 6,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "22",
+   "nama": "Bali",
+   "pagu": 38137719225403.0,
+   "realisasi": 32196334386958.0,
+   "persen": 84.42,
+   "sisa": 5941384838445.0,
+   "modal_persen": 68.23,
+   "modal_persen_h1": 7.88,
+   "indeks_desember": 40.39,
+   "indeks_desember_modal": 66.98,
+   "btt": {
+    "pagu": 542631040528.0,
+    "realisasi": 68330580614.3,
+    "persen": 12.59,
+    "persen_h1": 5.78
+   },
+   "bencana": {
+    "total": 52,
+    "per_jenis": {
+     "BANJIR": 9,
+     "CUACA EKSTREM": 26,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 4,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 8,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 4,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "23",
+   "nama": "Nusa Tenggara Barat",
+   "pagu": 27256178595485.0,
+   "realisasi": 26141613980034.0,
+   "persen": 95.91,
+   "sisa": 1114564615451.0,
+   "modal_persen": 97.28,
+   "modal_persen_h1": 12.95,
+   "indeks_desember": 41.71,
+   "indeks_desember_modal": 67.21,
+   "btt": {
+    "pagu": 603984402173.6,
+    "realisasi": 43528886212.31,
+    "persen": 7.21,
+    "persen_h1": 2.85
+   },
+   "bencana": {
+    "total": 132,
+    "per_jenis": {
+     "BANJIR": 95,
+     "CUACA EKSTREM": 25,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 2,
+     "KEKERINGAN": 7,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "24",
+   "nama": "Nusa Tenggara Timur",
+   "pagu": 30208978401785.0,
+   "realisasi": 26657482766775.0,
+   "persen": 88.24,
+   "sisa": 3551495635010.0,
+   "modal_persen": 80.71,
+   "modal_persen_h1": 4.71,
+   "indeks_desember": 43.68,
+   "indeks_desember_modal": 71.73,
+   "btt": {
+    "pagu": 144339868093.31,
+    "realisasi": 46175113139.89,
+    "persen": 31.99,
+    "persen_h1": 9.74
+   },
+   "bencana": {
+    "total": 95,
+    "per_jenis": {
+     "BANJIR": 43,
+     "CUACA EKSTREM": 10,
+     "ERUPSI GUNUNG API": 3,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 23,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 15,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "25",
+   "nama": "Maluku",
+   "pagu": 14459827955331.0,
+   "realisasi": 12383530397387.0,
+   "persen": 85.64,
+   "sisa": 2076297557944.0,
+   "modal_persen": 68.7,
+   "modal_persen_h1": 9.72,
+   "indeks_desember": 43.53,
+   "indeks_desember_modal": 62.29,
+   "btt": {
+    "pagu": 64417626849.0,
+    "realisasi": 28323326602.0,
+    "persen": 43.97,
+    "persen_h1": 10.8
+   },
+   "bencana": {
+    "total": 51,
+    "per_jenis": {
+     "BANJIR": 32,
+     "CUACA EKSTREM": 4,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 2,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 12,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "26",
+   "nama": "Papua",
+   "pagu": 13050442986421.0,
+   "realisasi": 12492819907858.0,
+   "persen": 95.73,
+   "sisa": 557623078563.0,
+   "modal_persen": 99.79,
+   "modal_persen_h1": 7.2,
+   "indeks_desember": 45.17,
+   "indeks_desember_modal": 74.41,
+   "btt": {
+    "pagu": 85955893721.0,
+    "realisasi": 74835249315.0,
+    "persen": 87.06,
+    "persen_h1": 32.99
+   },
+   "bencana": {
+    "total": 17,
+    "per_jenis": {
+     "BANJIR": 12,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 3,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "27",
+   "nama": "Maluku Utara",
+   "pagu": 17304919195757.0,
+   "realisasi": 15354866759571.0,
+   "persen": 88.73,
+   "sisa": 1950052436186.0,
+   "modal_persen": 87.08,
+   "modal_persen_h1": 13.72,
+   "indeks_desember": 44.7,
+   "indeks_desember_modal": 60.99,
+   "btt": {
+    "pagu": 184649078635.0,
+    "realisasi": 53969930164.0,
+    "persen": 29.23,
+    "persen_h1": 8.15
+   },
+   "bencana": {
+    "total": 78,
+    "per_jenis": {
+     "BANJIR": 59,
+     "CUACA EKSTREM": 11,
+     "ERUPSI GUNUNG API": 1,
+     "GELOMBANG PASANG DAN ABRASI": 2,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 5,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "28",
+   "nama": "Banten",
+   "pagu": 44612949310212.0,
+   "realisasi": 41712885234191.0,
+   "persen": 93.5,
+   "sisa": 2900064076021.0,
+   "modal_persen": 91.54,
+   "modal_persen_h1": 17.88,
+   "indeks_desember": 37.47,
+   "indeks_desember_modal": 55.65,
+   "btt": {
+    "pagu": 346960698135.89,
+    "realisasi": 65344585715.0,
+    "persen": 18.83,
+    "persen_h1": 3.79
+   },
+   "bencana": {
+    "total": 115,
+    "per_jenis": {
+     "BANJIR": 93,
+     "CUACA EKSTREM": 12,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 1,
+     "KEKERINGAN": 1,
+     "TANAH LONGSOR": 8,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "29",
+   "nama": "Bangka Belitung",
+   "pagu": 9784396864744.2,
+   "realisasi": 8662127692363.0,
+   "persen": 88.53,
+   "sisa": 1122269172381.1992,
+   "modal_persen": 81.21,
+   "modal_persen_h1": 5.9,
+   "indeks_desember": 34.41,
+   "indeks_desember_modal": 67.7,
+   "btt": {
+    "pagu": 87757284204.09,
+    "realisasi": 5272101177.0,
+    "persen": 6.01,
+    "persen_h1": 2.13
+   },
+   "bencana": {
+    "total": 57,
+    "per_jenis": {
+     "BANJIR": 20,
+     "CUACA EKSTREM": 21,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 15,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 1,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "30",
+   "nama": "Gorontalo",
+   "pagu": 7883899110175.6,
+   "realisasi": 7188350280181.5,
+   "persen": 91.18,
+   "sisa": 695548829994.0996,
+   "modal_persen": 74.93,
+   "modal_persen_h1": 6.6,
+   "indeks_desember": 32.83,
+   "indeks_desember_modal": 60.03,
+   "btt": {
+    "pagu": 33826879301.0,
+    "realisasi": 16978172303.0,
+    "persen": 50.19,
+    "persen_h1": 30.03
+   },
+   "bencana": {
+    "total": 71,
+    "per_jenis": {
+     "BANJIR": 65,
+     "CUACA EKSTREM": 4,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 1,
+     "TSUNAMI": 1
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "31",
+   "nama": "Kepulauan Riau",
+   "pagu": 15364309715372.0,
+   "realisasi": 13583451756954.0,
+   "persen": 88.41,
+   "sisa": 1780857958418.0,
+   "modal_persen": 75.7,
+   "modal_persen_h1": 13.97,
+   "indeks_desember": 35.81,
+   "indeks_desember_modal": 56.15,
+   "btt": {
+    "pagu": 61922693437.12,
+    "realisasi": 6412487095.87,
+    "persen": 10.36,
+    "persen_h1": 4.37
+   },
+   "bencana": {
+    "total": 109,
+    "per_jenis": {
+     "BANJIR": 8,
+     "CUACA EKSTREM": 22,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 1,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 75,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 3,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": true,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "32",
+   "nama": "Papua Barat",
+   "pagu": 13279377966521.0,
+   "realisasi": 12188049831140.0,
+   "persen": 91.78,
+   "sisa": 1091328135381.0,
+   "modal_persen": 92.23,
+   "modal_persen_h1": 3.82,
+   "indeks_desember": 52.09,
+   "indeks_desember_modal": 73.19,
+   "btt": {
+    "pagu": 78558198183.5,
+    "realisasi": 90667509113.0,
+    "persen": 115.41,
+    "persen_h1": 43.38
+   },
+   "bencana": {
+    "total": 9,
+    "per_jenis": {
+     "BANJIR": 7,
+     "CUACA EKSTREM": 2,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "33",
+   "nama": "Sulawesi Barat",
+   "pagu": 8594804628151.5,
+   "realisasi": 7636312759188.1,
+   "persen": 88.85,
+   "sisa": 958491868963.4004,
+   "modal_persen": 68.41,
+   "modal_persen_h1": 7.76,
+   "indeks_desember": 37.78,
+   "indeks_desember_modal": 61.02,
+   "btt": {
+    "pagu": 29560000000.0,
+    "realisasi": 10112590151.0,
+    "persen": 34.21,
+    "persen_h1": 18.91
+   },
+   "bencana": {
+    "total": 27,
+    "per_jenis": {
+     "BANJIR": 15,
+     "CUACA EKSTREM": 5,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 7,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "34",
+   "nama": "Kalimantan Utara",
+   "pagu": 12986735654819.0,
+   "realisasi": 11648464918429.0,
+   "persen": 89.7,
+   "sisa": 1338270736390.0,
+   "modal_persen": 89.17,
+   "modal_persen_h1": 2.19,
+   "indeks_desember": 48.84,
+   "indeks_desember_modal": 80.38,
+   "btt": {
+    "pagu": 73892778421.0,
+    "realisasi": 39609642196.6,
+    "persen": 53.6,
+    "persen_h1": 4.97
+   },
+   "bencana": {
+    "total": 42,
+    "per_jenis": {
+     "BANJIR": 15,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 2,
+     "KEBAKARAN HUTAN DAN LAHAN": 23,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "35",
+   "nama": "Papua Selatan",
+   "pagu": 8605709382637.9,
+   "realisasi": 7692824851714.5,
+   "persen": 89.39,
+   "sisa": 912884530923.4004,
+   "modal_persen": 95.15,
+   "modal_persen_h1": 2.79,
+   "indeks_desember": 51.27,
+   "indeks_desember_modal": 74.21,
+   "btt": {
+    "pagu": 70424766737.86,
+    "realisasi": 13728354493.0,
+    "persen": 19.49,
+    "persen_h1": 7.34
+   },
+   "bencana": {
+    "total": 1,
+    "per_jenis": {
+     "BANJIR": 1,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 0,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": true
+   }
+  },
+  {
+   "kode": "36",
+   "nama": "Papua Tengah",
+   "pagu": 22797554081562.0,
+   "realisasi": 20132961194045.0,
+   "persen": 88.31,
+   "sisa": 2664592887517.0,
+   "modal_persen": 70.57,
+   "modal_persen_h1": 5.41,
+   "indeks_desember": 49.05,
+   "indeks_desember_modal": 63.01,
+   "btt": {
+    "pagu": 603964696722.1,
+    "realisasi": 284869133163.0,
+    "persen": 47.17,
+    "persen_h1": 21.98
+   },
+   "bencana": {
+    "total": 4,
+    "per_jenis": {
+     "BANJIR": 1,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 1,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "37",
+   "nama": "Papua Pegunungan",
+   "pagu": 13033319004695.0,
+   "realisasi": 12182599407696.0,
+   "persen": 93.47,
+   "sisa": 850719596999.0,
+   "modal_persen": 84.61,
+   "modal_persen_h1": 7.54,
+   "indeks_desember": 51.96,
+   "indeks_desember_modal": 71.64,
+   "btt": {
+    "pagu": 76698537794.0,
+    "realisasi": 164812267349.0,
+    "persen": 214.88,
+    "persen_h1": 108.01
+   },
+   "bencana": {
+    "total": 10,
+    "per_jenis": {
+     "BANJIR": 6,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 4,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  },
+  {
+   "kode": "38",
+   "nama": "Papua Barat Daya",
+   "pagu": 8728726294593.9,
+   "realisasi": 8866872117686.4,
+   "persen": 101.58,
+   "sisa": -138145823092.5,
+   "modal_persen": 107.83,
+   "modal_persen_h1": 2.84,
+   "indeks_desember": 56.77,
+   "indeks_desember_modal": 79.97,
+   "btt": {
+    "pagu": 52265649058.61,
+    "realisasi": 34851468546.0,
+    "persen": 66.68,
+    "persen_h1": 10.64
+   },
+   "bencana": {
+    "total": 5,
+    "per_jenis": {
+     "BANJIR": 3,
+     "CUACA EKSTREM": 0,
+     "ERUPSI GUNUNG API": 0,
+     "GELOMBANG PASANG DAN ABRASI": 0,
+     "GEMPABUMI": 0,
+     "KEBAKARAN HUTAN DAN LAHAN": 0,
+     "KEKERINGAN": 0,
+     "TANAH LONGSOR": 2,
+     "TSUNAMI": 0
+    }
+   },
+   "kuadran": {
+    "risiko_tinggi": false,
+    "serapan_rendah": false
+   }
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+{
+ "produk": "SAKSI",
+ "versi_data": "20261029",
+ "ditarik": "2026-10-29",
+ "studi_kasus": "Kabupaten Tangerang (idKldi D50, kode BPS 3603)",
+ "fokus_produk": "jalan (jalan, jembatan, drainase/saluran, trotoar, TPT/turap)",
+ "tahun_anggaran": [2025, 2026],
+ "sumber": [
+  {
+   "nama": "SIRUP Inaproc — RUP per K/L/PD",
+   "endpoint": "https://sirup.inaproc.id/sirup/datatablectr/dataruppenyediakldi?idKldi={D50|D107}&tahun={2025|2026}&iDisplayStart=0&iDisplayLength=4000&sEcho=1",
+   "format": "JSON (aaData)",
+   "keterangan": "Tanpa login; wajib header X-Requested-With: XMLHttpRequest + Referer. Kolom: kode paket, satker, nama paket, pagu, metode, sumber dana, id, bulan.",
+   "catatan": "Di endpoint /sirup/caripaketctr/search, parameter kldi/idsLokasi TIDAK menyaring (mengembalikan seluruh nasional)."
+  },
+  {
+   "nama": "Gazetteer desa/kelurahan — kode wilayah BPS 3603 + koordinat Nominatim (OSM)",
+   "endpoint": "https://ibnux.github.io/data-indonesia/ | https://nominatim.openstreetmap.org/search",
+   "format": "JSON",
+   "keterangan": "274 desa/kelurahan & 29 kecamatan Kab. Tangerang; 245 titik berpresisi desa, 29 memakai sentroid kecamatan.",
+   "berkas": "data/tangerang_desa_coords.json"
+  },
+  {
+   "nama": "GIS Ditjen Bina Marga",
+   "endpoint": "https://gisportal.binamarga.pu.go.id/arcgis/rest/services/Hosted/{layer}/FeatureServer/0/query",
+   "format": "ArcGIS FeatureServer (JSON)",
+   "keterangan": "Layer IRI_1_2026: 477.032 titik kerataan jalan nasional (47.703 km), snapshot semester 1 2026."
+  },
+  {
+   "nama": "LPSE / SPSE — halaman paket",
+   "endpoint": "https://spse.inaproc.id/{instansi}/nontender/{id}/pengumumanpl",
+   "format": "HTML server-rendered",
+   "keterangan": "Pagu, HPS, lokasi pekerjaan (teks), pemenang. Tidak memuat koordinat."
+  }
+ ],
+ "jumlah": {
+  "rup_tangerang_2025_2026": 51322,
+  "paket_fisik": 5487,
+  "pagu_fisik_miliar_rp": 1709.17,
+  "desa_terpetakan": 4272,
+  "koridor": 110,
+  "kecamatan": 635,
+  "tanpa_lokus": 470,
+  "persen_terpetakan": 91.4,
+  "jalan": {
+   "paket": 3602,
+   "pagu_miliar_rp": 848.6,
+   "desa": 251,
+   "terpetakan": 3331,
+   "persen_terpetakan": 92.5,
+   "titik_desa": 3000,
+   "koridor": 102,
+   "kecamatan": 229,
+   "tanpa_lokus": 271,
+   "median_pagu_juta_rp": 100
+  }
+ },
+ "peringatan": [
+  "Semua angka adalah snapshot 29 Oktober 2026; SIRUP menambah paket sepanjang tahun anggaran.",
+  "Tidak ada dataset pengadaan Indonesia yang memuat koordinat paket; titik di peta diturunkan dari teks nama paket + gazetteer desa, dan diberi badge presisi.",
+  "Paket tanpa penanda tempat (464) tidak dipetakan dan hanya tampil di tabel.",
+  "Nama penyedia pada mode simulasi wajib disamarkan; indikator memakai bahasa 'Diduga Tidak Sesuai'."
+ ]
+}
