@@ -1,8 +1,11 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
-import { FiArrowDownRight } from "react-icons/fi";
+import { type FormEvent, useState } from "react";
+import { FiSearch } from "react-icons/fi";
 import { CoverageSection } from "./coverage-section";
 import type { AuditSummaryMetrics } from "../audit-types";
+import { dispatchMapSearch } from "@/features/map/map-search-events";
 
 interface AuditHeaderProps {
   metrics?: AuditSummaryMetrics;
@@ -32,6 +35,7 @@ export const DEFAULT_TANGERANG_METRICS: AuditSummaryMetrics = {
 };
 
 export function AuditHeader({ metrics = DEFAULT_TANGERANG_METRICS }: AuditHeaderProps) {
+  const [heroQuery, setHeroQuery] = useState("");
   const {
     regionName,
     fiscalYears,
@@ -41,6 +45,11 @@ export function AuditHeader({ metrics = DEFAULT_TANGERANG_METRICS }: AuditHeader
   } = metrics;
 
   const [budgetAmount, budgetUnit = ""] = totalBudgetBillionRp.split(/\s+([\s\S]*)/);
+
+  function handleHeroSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    dispatchMapSearch(heroQuery.trim());
+  }
 
   return (
     <>
@@ -63,12 +72,28 @@ export function AuditHeader({ metrics = DEFAULT_TANGERANG_METRICS }: AuditHeader
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/90 sm:text-lg sm:leading-8">
                 Telusuri paket pekerjaan jalan di {regionName}, lalu cocokkan data anggaran dengan kondisi ruas yang Anda temui.
               </p>
-              <Link
-                href="#jelajahi"
-                className="mt-7 inline-flex min-h-11 items-center gap-3 border-b-2 border-secondary pb-1 text-base font-bold text-white transition-colors hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+              <form
+                onSubmit={handleHeroSearch}
+                role="search"
+                className="mx-auto mt-7 flex min-h-14 w-full max-w-2xl items-center gap-3 border border-white/80 bg-white/95 px-4 text-left text-foreground transition-colors focus-within:border-secondary sm:gap-4 sm:px-5"
               >
-                Telusuri paket jalan <FiArrowDownRight className="size-4 text-secondary" aria-hidden="true" />
-              </Link>
+                <FiSearch className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={heroQuery}
+                  onChange={(event) => setHeroQuery(event.target.value)}
+                  aria-label="Cari paket berdasarkan desa, ruas jalan, atau nomor RUP"
+                  placeholder="Cari desa, ruas jalan, atau nomor RUP"
+                  className="h-12 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground sm:text-base"
+                />
+                <button
+                  type="submit"
+                  aria-label="Cari di peta"
+                  className="flex h-10 shrink-0 items-center justify-center bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Cari
+                </button>
+              </form>
             </div>
             <figcaption className="absolute right-4 bottom-4 left-4 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] leading-4 text-white/80 sm:justify-between">
               <span>Foto ilustrasi · Jakarta</span>

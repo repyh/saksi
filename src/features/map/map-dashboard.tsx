@@ -14,11 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  formatPrecisionBadgeLabel,
-  formatRupiahFull,
-} from "./road-types";
+import { formatRupiahFull } from "./road-types";
 import { MapIntroSection } from "./map-intro-section";
+import { MAP_SEARCH_EVENT } from "./map-search-events";
 import { fetchRoadPackages } from "./package-api";
 import type {
   RoadPackageItem,
@@ -52,6 +50,19 @@ export default function MapDashboard({ initialData }: MapDashboardProps) {
   const [selectedWork, setSelectedWork] = useState<RoadWorkCategory>("SEMUA");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(null);
+
+  useEffect(() => {
+    function handleMapSearch(event: Event) {
+      const query = (event as CustomEvent<string>).detail;
+      setSearchQuery(query);
+      document.getElementById("jelajahi")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(() => document.getElementById("map-package-search")?.focus({ preventScroll: true }), 350);
+    }
+
+    window.addEventListener(MAP_SEARCH_EVENT, handleMapSearch);
+    return () => window.removeEventListener(MAP_SEARCH_EVENT, handleMapSearch);
+  }, []);
+
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     if (selectedYear !== "SEMUA") params.set("year", selectedYear);
@@ -168,16 +179,12 @@ export default function MapDashboard({ initialData }: MapDashboardProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-12">
             <aside className="order-1 flex h-[580px] flex-col border-r border-border bg-white lg:col-span-3">
-              <div className="flex items-center justify-between border-b border-border bg-muted/20 px-4 py-3">
-                <span className="font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Daftar Paket ({isLoading ? "…" : filteredCount.toLocaleString("id-ID")})</span>
-                {hasActiveFilter && <Button type="button" variant="ghost" size="xs" onClick={() => { setSelectedYear("SEMUA"); setSelectedDistrict("SEMUA"); setSelectedWork("SEMUA"); setSearchQuery(""); }} className="h-6 px-2 font-sans text-[10px] font-bold uppercase text-muted-foreground hover:text-primary">Reset filter</Button>}
-              </div>
               <ScrollArea className="flex-1">
                 <div className="divide-y divide-border">
                   {filteredPackages.slice(0, 120).map((pkg) => (
                     <article key={pkg.kode_rup} className="px-4 py-3 transition-colors hover:bg-muted/30">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-primary">{formatPrecisionBadgeLabel(pkg.presisi_peta)}</span>
+                        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-primary">RUP {pkg.kode_rup}</span>
                         <span className="font-sans text-xs font-extrabold tabular-nums text-primary">{formatRupiahFull(pkg.pagu)}</span>
                       </div>
                       <p className="mt-1 line-clamp-2 font-sans text-xs font-semibold text-foreground">{pkg.nama}</p>

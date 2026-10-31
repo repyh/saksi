@@ -58,7 +58,7 @@ export default function MapCanvas({
       zoom={15}
       scrollWheelZoom
       preferCanvas
-      className="h-[580px] w-full bg-muted/30"
+      className="relative z-0 isolate h-[580px] w-full bg-muted/30"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

@@ -32,7 +32,7 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
   return (
     <nav
       aria-label="Navigasi Utama"
-      className={cn("-mb-px flex h-full items-stretch gap-5 sm:gap-7", className)}
+      className={cn("-mb-px flex h-full items-stretch gap-4 sm:gap-7", className)}
     >
       {actions.map((item) => {
         const isActive = pathname === item.href;
@@ -40,14 +40,14 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
         return (
           <Button
             key={item.id}
-            render={<Link href={item.href} />}
+            render={<Link href={item.href} aria-current={isActive ? "page" : undefined} />}
             nativeButton={false}
             variant={item.variant ?? "ghost"}
             className={cn(
-              "h-full rounded-none border-0 border-b-2 px-1 py-0 bg-transparent hover:bg-transparent font-sans text-[11px] font-bold uppercase tracking-[0.15em] transition-colors active:translate-y-0",
+              "h-full rounded-none border-0 border-b-[3px] px-1 py-0 bg-transparent hover:bg-transparent font-sans text-[11px] font-bold uppercase tracking-[0.15em] transition-colors active:translate-y-0",
               isActive
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-primary"
+                ? "border-secondary text-secondary"
+                : "border-transparent text-white/85 hover:border-white/35 hover:text-secondary"
             )}
           >
             {item.icon}

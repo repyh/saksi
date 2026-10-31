@@ -21,6 +21,7 @@ export function MapIntroSection({ searchQuery, onSearchChange }: MapIntroSection
         <div className="relative min-w-0">
           <FiSearch aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="map-package-search"
             aria-label="Cari paket berdasarkan desa, jalan, kecamatan, atau nomor RUP"
             type="search"
             value={searchQuery}

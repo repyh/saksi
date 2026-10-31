@@ -13,12 +13,12 @@ export function Navbar({
   return (
     <header
       className={cn(
-        "w-full border-b border-border bg-white transition-colors",
+        "w-full border-b border-white/25 bg-primary/90 supports-[backdrop-filter]:backdrop-blur-sm",
         sticky ? "sticky top-0 z-50" : "relative",
         className
       )}
     >
-      <div className="flex h-14 w-full items-stretch justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex h-16 w-full items-stretch justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
         <div className="flex items-center">
           <NavBrand config={brand} />
         </div>

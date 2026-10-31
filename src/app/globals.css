@@ -99,4 +99,7 @@ body {
   html {
     @apply font-sans;
   }
+  button:enabled {
+    cursor: pointer;
+  }
 }
