@@ -178,6 +178,15 @@ salah dibaca sebagai "hanya 32 bernama", dikoreksi 31 Okt setelah user memeriksa
 gazetteer kelurahan baru, pipeline + UI ulang. Disimpan sebagai rencana v2 dengan bukti di
 `docs/INVENTARIS-ARCGIS-KOTA-TANGERANG.md`. Peta tetap koroplet GADM Kab. Tangerang.
 
+## 31 Okt: uji matching paket → ruas (Kota Tangerang, `idKldi=D44`)
+
+RUP Kota Tangerang 2025+2026 = **21.402 baris**; kandidat paket fisik **1.557**. Hasil uji: hanya
+**232 (15%)** yang menyebut nama jalan spesifik; dari 242 nama itu **94 cocok persis + 17 fuzzy
+(≈46%)** → **±7% paket** bisa dipasang ke satu ruas bernama (91 paket, Rp108,05 M). Anchor yang
+sebenarnya dominan adalah **RW: 853 paket (54,8%)**, kelurahan 320 (20,6%), kecamatan 19 (1,2%),
+tanpa anchor 365 (23,4%) — dan server punya 1.020 poligon RW + 5.167 RT. Jadi jalur v2 yang benar =
+paket → RW, bukan paket → ruas. Detail: `docs/UJI-MATCHING-KOTA-TANGERANG.md` + CSV 232 baris.
+
 ## Modul yang harus ada (SPEC §4)
 
 FR-01 peta audit jalan · FR-02 pencari mikro "jalan mana yang dibangun di dekat saya" (desa/kampung/nama jalan) · FR-03 form lapor (blur privasi, **kategorisasi jenis & penyebab kerusakan oleh pelapor**, ukuran kasar, rekomendasi paket + skor) · FR-04 kartu sandingan · FR-05 verifikasi komunitas dua kunci · FR-06 rapor **29 kecamatan** & jenis kerusakan · FR-07 rekam jejak penyedia berimbang.
