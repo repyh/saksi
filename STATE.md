@@ -148,8 +148,20 @@ Badge berubah: `Titik Desa` → `Pusat Desa`, `Garis Koridor` → `Koridor Indik
 Alasan tambahan: `presisi_peta` adalah **provenans** (dari mana lokasi diturunkan), bukan akurasi —
 dokumen sebelumnya memakai kata "presisi" sehingga terbaca sebagai tingkat ketelitian.
 
-Sudah diterapkan di `AGENTS.md` (aturan 5 & 8), `BRIEF.md` (Layar 1), `SPEC.md` (FR-01, layar,
-aturan tampilan), `KONSEP.md` (tabel provenans + etika butir 2), `README.md`.
+**Revisi keputusan (larut 31 Okt):** agregat lingkaran diganti **koroplet batas desa**. User benar
+bahwa poligon resmi lebih jujur dan lebih kuat daripada bubble. Sumber: **GADM 4.1 level 4**, subset
+Kab. Tangerang = **274 desa / 29 kecamatan** (cocok persis dengan gazetteer BPS), disederhanakan jadi
+**136 KB** (`web/public/data/desa-batas.geojson`, dibuat ulang oleh `tools/buat_batas_desa.py`).
+274/274 poligon kini punya `id_desa` BPS; 5 nama GADM dipetakan eksplisit (`Kelebet→Klebet`,
+`KampungMelayuTimur/Barat`, `Bunisari→Bonisari`, `Salembaran→Salembaran Jaya`). Batasan GADM (bukan
+batas resmi, rilis 2022) dicatat di `docs/DATA-BATAS-DESA.md`. Catatan angka: **252 wilayah** desa
+berpaket vs **251 nama unik** (`Jatimulya` ada di Sepatan Timur dan Kosambi) — kartu KPI memakai nama,
+legenda peta memakai wilayah.
+
+Sudah diterapkan di `web/src/components/Peta.tsx` (koroplet 6 kelas + sorot batas desa saat paket
+dipilih), `AGENTS.md` (aturan 5 & 8), `BRIEF.md` (Layar 1), `SPEC.md` (FR-01, layar, aturan tampilan),
+`KONSEP.md`, `README.md`. Diverifikasi: `typecheck` 0 error, `vite build` 441 kB, screenshot Chromium
+menunjukkan koroplet tanpa titik paket.
 
 ## Modul yang harus ada (SPEC §4)
 

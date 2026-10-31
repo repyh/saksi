@@ -397,8 +397,8 @@ export function statistik(paket: Paket[], desa: Desa[]): Statistik {
 /* ── Label presisi untuk UI ─────────────────────────────────── */
 
 export function labelPresisi(p: Paket): string {
-  if (p.presisi_peta === "Desa/Kelurahan") return "Titik Desa";
-  if (p.presisi_peta === "Garis Koridor") return "Garis Koridor";
+  if (p.presisi_peta === "Desa/Kelurahan") return "Pusat Desa";
+  if (p.presisi_peta === "Garis Koridor") return "Koridor Indikatif";
   if (p.presisi_peta === "Kecamatan") return "Kecamatan";
   return "Tanpa lokasi";
 }

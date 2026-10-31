@@ -44,23 +44,23 @@ menggeser titik (lihat Layar 1 angka 2).
 **Header metrik** (angka diambil dari data, jangan hardcode kecuali label):
 `3.602 paket jalan · Rp848,60 M · 251 desa · 29 kecamatan · 102 koridor indikatif`
 
-**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh) — **agregat per desa, bukan titik per paket**:
+**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh) — **koroplet batas desa, bukan titik per paket**:
 
-1. **Satu lingkaran per desa** (251 lingkaran). Radius `6 + 10*sqrt(jumlah_paket_desa / max)`,
-   `fillOpacity 0.35`, `weight 1`. Tooltip: `Desa X · 12 paket · Rp1,42 M` (pagu dijumlah dari paket
-   desa itu). Klik → panel berisi tabel paket desa tersebut.
-2. **Jangan** membuat marker per paket, dan **jangan** memakai offset/jitter apa pun. Koordinat desa
-   dipakai apa adanya sebagai pusat, tidak digeser.
-3. **Paket terpilih** (dari tabel) → tampilkan `L.circle` radius **1.500 m**, `dashArray 6 6`, tanpa
-   isi, ditambah label `Lokasi indikatif · ±1,5 km` di popup. Tidak ada dot, tidak ada crosshair.
-4. **Koridor** → busur putus-putus antara dua pusat desa (hitung titik tengah lalu lengkungkan dengan
-   `quadraticBezier` agar terbaca skematis, bukan rute): `dashArray 4 6`, `opacity 0.6`, tooltip
-   `Koridor indikatif: Kresek ↔ Cempaka — bukan geometri ruas`.
-5. **Legenda wajib** di pojok peta, teks persis:
-   `1 lingkaran = 1 desa · ukuran = jumlah paket` dan `Busur = koridor indikatif antar desa`.
-6. **Banner tetap di atas peta** (bukan tooltip, tidak bisa ditutup):
-   `Tidak ada paket yang punya koordinat resmi. Peta menunjukkan desa, bukan lokasi pekerjaan.`
-   dengan tautan ke `#/metode`.
+1. **GeoJSON batas desa** `web/public/data/desa-batas.geojson` (274 desa, 136 KB, dari GADM 4.1 level 4;
+   asal-usul dan batasannya di `docs/DATA-BATAS-DESA.md`). Digambar dengan `L.geoJSON`, satu poligon
+   satu desa.
+2. **Warna = jumlah paket desa**, 6 kelas: 0 (putih), 1–4, 5–9, 10–24, 25–59, 60+ (merah makin gelap).
+   Stroke tipis 0,7 px; hover menebalkan stroke. **Jangan** memakai ukuran lingkaran, jitter, atau
+   titik apa pun untuk paket.
+3. **Paket terpilih** (klik baris di tabel) → sorot **batas desanya** (stroke hitam putus-putus 2,6 px)
+   + flyTo ke batas itu + tooltip tetap: `Paket ini dikaitkan ke desa ini. Lokasi pekerjaan di dalam
+   desa tidak diketahui.` Tidak ada marker titik.
+4. **Koridor** → busur putus-putus antar pusat dua desa, di atas koroplet, tooltip
+   `Koridor indikatif: X ↔ Y — bukan geometri ruas`.
+5. **Legenda wajib** di pojok peta: 6 kelas warna, masing-masing dengan **jumlah desa**, plus baris
+   `N wilayah desa berpaket · M nama unik` (Jatimulya ada di 2 kecamatan).
+6. **Banner tetap di atas peta** (tidak bisa ditutup):
+   `Peta ini mewarnai batas desa menurut jumlah paket. Tidak ada paket yang punya koordinat pekerjaan — lokasi di dalam desa tidak diketahui.`
 
 **Filter** (satu baris, sticky): tahun (2025/2026/semua) · kecamatan (dropdown dari data) · jenis
 pekerjaan (semua / permukaan / drainase / jembatan — klasifikasi kata kunci dari `nama`).

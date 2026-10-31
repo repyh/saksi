@@ -104,11 +104,11 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
                 {stats ? (
                   <>
                     <span className="num text-ink-soft">{angka(stats.paket)}</span> paket jalan,
-                    jembatan, dan drainase TA 2025–2026. Setiap titik menyatakan cara ia diketahui;
-                    paket tanpa penanda tempat tidak dipetakan.
+                    jembatan, dan drainase TA 2025–2026. Peta menampilkan desa, bukan titik paket:
+                    nama paket tidak memuat koordinat pekerjaan.
                   </>
                 ) : (
-                  "Paket jalan, jembatan, dan drainase TA 2025–2026 dengan presisi lokasi yang dinyatakan terbuka."
+                  "Paket jalan, jembatan, dan drainase TA 2025–2026, dikaitkan ke desa — bukan ke titik pekerjaan."
                 )}
               </p>
             </div>
@@ -142,19 +142,21 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
               catatan={stats ? `dari ${angka(stats.desaTotal)} desa · ${stats.kecamatan} kecamatan` : "—"}
             />
             <Sel
-              label="Bertitik"
-              nilai={stats ? persen(stats.persenTitik) : "—"}
-              catatan={stats ? `${angka(stats.bertitik)} dari ${angka(stats.paket)} paket` : "—"}
+              label="Lokus turunan"
+              nilai={stats ? angka(stats.bertitik) : "—"}
+              catatan={
+                stats ? `${persen(stats.persenTitik)} · pusat desa/kecamatan` : "memuat data…"
+              }
             />
             <Sel
               label="Koridor ruas"
               nilai={stats ? angka(stats.koridor) : "—"}
-              catatan="garis antar dua desa"
+              catatan="busur indikatif antar desa"
             />
             <Sel
               label="Tanpa lokasi"
               nilai={stats ? angka(stats.tanpaLokus) : "—"}
-              catatan="tidak dipetakan · hanya di tabel"
+              catatan="tidak tampil di peta · hanya di tabel"
               tone="redup"
             />
           </dl>

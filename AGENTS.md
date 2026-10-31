@@ -26,9 +26,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.
 5. **Peta tidak boleh berpura-pura presisi.** Tidak ada marker/dot per paket di peta — paket tidak
    punya koordinat, dan offset acak di dalam desa membuat titik terlihat seperti berada di ruas jalan
-   padahal bukan. Peta hanya menampilkan **agregat per desa** (satu lingkaran per desa) dan **busur
-   koridor indikatif**; paket terpilih ditandai **cincin radius ketidakpastian** berlabel
-   "lokasi indikatif ±1,5 km". Paket tanpa penanda desa (271) hanya tampil di tabel dengan label
+   padahal bukan. Peta memakai **koroplet batas desa** (GeoJSON GADM, lihat
+   `docs/DATA-BATAS-DESA.md`): warna = jumlah paket per desa, dan paket terpilih menyorot **batas
+   desanya**, bukan titik. Paket tanpa penanda desa (271) hanya tampil di tabel dengan label
    `Lokasi: Kab. Tangerang (Umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
 7. **Penyedia disebut nama asli** (data publik LPSE) tetapi **berimbang**: tanpa skor gabungan,

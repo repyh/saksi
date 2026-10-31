@@ -56,8 +56,8 @@ export function StempelSimulasi() {
 /* ── Badge presisi ─────────────────────────────────────────── */
 
 export function labelPresisiDari(presisi: Presisi): string {
-  if (presisi === "Desa/Kelurahan") return "Titik Desa";
-  if (presisi === "Garis Koridor") return "Garis Koridor";
+  if (presisi === "Desa/Kelurahan") return "Pusat Desa";
+  if (presisi === "Garis Koridor") return "Koridor Indikatif";
   if (presisi === "Kecamatan") return "Kecamatan";
   return "Tanpa lokasi";
 }
