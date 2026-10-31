@@ -96,12 +96,15 @@ persis jenis pekerjaan yang paling sering dikeluhkan warga.
 
 ### Presisi peta — dinyatakan terbuka
 
-| Tingkat | Paket | Arti di peta |
+| Tingkat | Paket | Arti |
 |---|---:|---|
-| Desa/Kelurahan | 3.000 (83,3%) | titik di desa yang disebut nama paket (offset deterministik ±250 m) |
-| Garis koridor | 102 (2,8%) | dua desa pada nama paket (`Kresek - Cempaka`, `… Menuju …`) → garis antar titik |
-| Kecamatan | 229 (6,4%) | hanya kecamatan disebut → sentroid kecamatan |
-| Tanpa lokus | 271 (7,5%) | tidak menyebut tempat → **tidak dipetakan**, hanya di tabel |
+| Desa/Kelurahan | 3.000 (83,3%) | nama desa disebut pada nama paket → lokasi diturunkan ke **pusat desa** |
+| Garis koridor | 102 (2,8%) | dua desa pada nama paket (`Kresek - Cempaka`) → **busur indikatif** antar dua pusat desa |
+| Kecamatan | 229 (6,4%) | hanya kecamatan disebut → titik **pusat kecamatan** |
+| Tanpa lokus | 271 (7,5%) | tidak menyebut tempat → tidak diberi lokasi, hanya tampil di tabel |
+
+Keempat tingkat ini adalah **provenans** (dari mana lokasi diturunkan), bukan akurasi. Tidak ada paket
+yang punya koordinat pekerjaan, dan peta tidak memplot paket satu per satu — lihat §6 butir 2.
 
 Kecamatan dengan paket terbanyak: Pasar Kemis 261 · Sepatan 226 · Kelapa Dua 202 · Curug 197 ·
 Sepatan Timur 193.
@@ -142,7 +145,10 @@ mengatakan laporan itu tidak ada.
 
 1. **Bahasa indikator "Diduga", bukan tuduhan.** Status tertinggi *"Diduga Tidak Sesuai — Perlu
    Tinjauan Lapangan"*; tidak ada label korupsi atau fiktif.
-2. **Tidak memaksa titik.** 271 paket (7,5%) tanpa penanda tempat tidak dipetakan.
+2. **Tidak ada titik paket di peta.** Paket tidak punya koordinat pekerjaan; menggambar satu titik per
+   paket — apalagi dengan offset acak di dalam desa — membuat titik itu tampak berada di ruas jalan
+   tertentu padahal bukan. Peta menampilkan **agregat per desa** dan **busur koridor indikatif**; detail
+   paket selalu di tabel. 271 paket (7,5%) tanpa penanda tempat bahkan tidak diberi lokasi sama sekali.
 3. **IRI hanya mencakup jalan nasional** (8,6% jaringan), sedangkan paket kita mayoritas jalan
    kabupaten. Komparasi IRI hanya berlaku bila paket berimpit dengan ruas nasional; selebihnya
    triangulasi berjalan antara anggaran dan laporan warga. Ditulis apa adanya, tidak jadi headline.

@@ -35,19 +35,32 @@ lokasi_mikro
 ```
 
 `presisi_peta` ∈ `Desa/Kelurahan` (3.000) · `Garis Koridor` (102) · `Kecamatan` (229) ·
-`Kabupaten` (271 — **tidak dipetakan**).
+`Kabupaten` (271 — tidak tampil di peta). Nilai ini adalah **provenans** (dari mana lokasinya
+diturunkan), bukan akurasi: jangan ditampilkan sebagai tingkat presisi dan jangan dipakai untuk
+menggeser titik (lihat Layar 1 angka 2).
 
 ## Layar 1 — Peta audit jalan (`#/`)
 
 **Header metrik** (angka diambil dari data, jangan hardcode kecuali label):
-`3.602 paket jalan · Rp848,60 M · 251 desa · 92,5% bertitik · 102 koridor ruas`
+`3.602 paket jalan · Rp848,60 M · 251 desa · 29 kecamatan · 102 koridor indikatif`
 
-**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh):
-- Marker `L.circleMarker` dengan renderer canvas (3.331 titik harus tetap lancar).
-- Warna per presisi: desa = accent, koridor = biru, kecamatan = abu tua. Badge presisi muncul di
-  tooltip/popup dan di panel detail.
-- Koridor: `L.polyline` dari `(lat_dari, lon_dari)` ke `(lat_ke, lon_ke)`, tooltip `dari – ke`.
-- Paket `Kabupaten` **tidak** dibuat marker.
+**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh) — **agregat per desa, bukan titik per paket**:
+
+1. **Satu lingkaran per desa** (251 lingkaran). Radius `6 + 10*sqrt(jumlah_paket_desa / max)`,
+   `fillOpacity 0.35`, `weight 1`. Tooltip: `Desa X · 12 paket · Rp1,42 M` (pagu dijumlah dari paket
+   desa itu). Klik → panel berisi tabel paket desa tersebut.
+2. **Jangan** membuat marker per paket, dan **jangan** memakai offset/jitter apa pun. Koordinat desa
+   dipakai apa adanya sebagai pusat, tidak digeser.
+3. **Paket terpilih** (dari tabel) → tampilkan `L.circle` radius **1.500 m**, `dashArray 6 6`, tanpa
+   isi, ditambah label `Lokasi indikatif · ±1,5 km` di popup. Tidak ada dot, tidak ada crosshair.
+4. **Koridor** → busur putus-putus antara dua pusat desa (hitung titik tengah lalu lengkungkan dengan
+   `quadraticBezier` agar terbaca skematis, bukan rute): `dashArray 4 6`, `opacity 0.6`, tooltip
+   `Koridor indikatif: Kresek ↔ Cempaka — bukan geometri ruas`.
+5. **Legenda wajib** di pojok peta, teks persis:
+   `1 lingkaran = 1 desa · ukuran = jumlah paket` dan `Busur = koridor indikatif antar desa`.
+6. **Banner tetap di atas peta** (bukan tooltip, tidak bisa ditutup):
+   `Tidak ada paket yang punya koordinat resmi. Peta menunjukkan desa, bukan lokasi pekerjaan.`
+   dengan tautan ke `#/metode`.
 
 **Filter** (satu baris, sticky): tahun (2025/2026/semua) · kecamatan (dropdown dari data) · jenis
 pekerjaan (semua / permukaan / drainase / jembatan — klasifikasi kata kunci dari `nama`).
@@ -96,8 +109,8 @@ Pakai token yang sudah ada di `web/src/index.css` (`--color-paper`, `--color-ink
 dst.). Tambahkan hanya yang perlu: `--color-badge-asli` (hijau/biru), `--color-badge-simulasi`
 (amber), `--color-badge-presisi` (netral). Tanpa font baru, tanpa 3D, tanpa animasi berat.
 
-Badge text **persis**: `DATA RESMI (SIRUP / BINA MARGA)`, `SIMULASI PROTOTIPE`, `Titik Desa`,
-`Garis Koridor`, `Kecamatan`.
+Badge text **persis**: `DATA RESMI (SIRUP / BINA MARGA)`, `SIMULASI PROTOTIPE`, `Pusat Desa`,
+`Koridor Indikatif`, `Kecamatan`. Jangan memakai kata "Titik Desa" atau "presisi" untuk lokasi.
 
 ## Kode yang ada: tulis ulang, jangan ditambal
 

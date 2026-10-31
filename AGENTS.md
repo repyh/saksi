@@ -10,7 +10,8 @@ menyentuh kode.
 jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 - Studi kasus: **Kabupaten Tangerang** (`idKldi=D50`, BPS `3603`), TA 2025–2026.
-- Angka kunci: **3.602 paket jalan · Rp848,60 M · 3.331 (92,5%) bertitik · 102 koridor · 251 desa**.
+- Angka kunci: **3.602 paket jalan · Rp848,60 M · 251 desa · 102 koridor (indikatif)**.
+- **Peta tidak menampilkan titik per paket.** Lihat aturan 5.
 - Lomba: MIA 2026 / Web In Action. **FDS 1 Nov 2026** (wajib: repo publik + README + PDF ≤10 hlm +
   screenshot landing + 1 halaman fitur hidup), penyisihan 11 Nov, final onsite 28 Nov.
 
@@ -23,14 +24,18 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 3. **Tanpa NLP/LLM di pipeline lokasi.** Sudah diuji dan ditolak; hasil uji ada di `SPEC.md` §2.4.
 4. **Tanpa computer vision / pengukuran cm².** Ditolak user + dosen. Kerusakan dikategorikan
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.
-5. **Jangan memaksa titik.** 271 paket tanpa penanda lokasi tidak dipetakan; tampil di tabel dengan
-   label `Lokasi: Kab. Tangerang (Umum)`.
+5. **Peta tidak boleh berpura-pura presisi.** Tidak ada marker/dot per paket di peta — paket tidak
+   punya koordinat, dan offset acak di dalam desa membuat titik terlihat seperti berada di ruas jalan
+   padahal bukan. Peta hanya menampilkan **agregat per desa** (satu lingkaran per desa) dan **busur
+   koridor indikatif**; paket terpilih ditandai **cincin radius ketidakpastian** berlabel
+   "lokasi indikatif ±1,5 km". Paket tanpa penanda desa (271) hanya tampil di tabel dengan label
+   `Lokasi: Kab. Tangerang (Umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
 7. **Penyedia disebut nama asli** (data publik LPSE) tetapi **berimbang**: tanpa skor gabungan,
    selalu dengan penyebut (jumlah paket, kelas jalan, tahun).
 8. **Badge wajib**: `SIMULASI PROTOTIPE` (amber) untuk laporan warga, `DATA RESMI (SIRUP / BINA
-   MARGA)` untuk data asli, dan badge presisi (`Titik Desa` / `Garis Koridor` / `Kecamatan`) melekat
-   pada setiap marker.
+   MARGA)` untuk data asli, dan badge sumber lokasi (`Pusat Desa` / `Koridor Indikatif` /
+   `Kecamatan`) — bukan "Titik Desa".
 9. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
 10. **Format angka Indonesia**: `3.602`, `92,5%`, `Rp848,60 Miliar`.
 

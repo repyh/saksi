@@ -70,7 +70,9 @@ Aturan yang menjaga presisi:
 - Koridor hanya sah bila penandanya `" - "` ber-spasi atau `menuju/arah/s-d` — bukan sembarang tanda
   hubung (`"Tangerang- Banten"` bukan koridor).
 - Kecamatan dipakai hanya bila tidak ada desa.
-- **Paket tanpa penanda tempat tidak dipetakan.** Hasil: 3.331 dari 3.602 (**92,5%**).
+- **Paket tanpa penanda tempat tidak diberi lokasi.** Hasil: 3.331 dari 3.602 (**92,5%**) punya
+  lokasi turunan (pusat desa / sentroid kecamatan). **Tidak satu pun** punya koordinat pekerjaan —
+  karena itu peta tidak memplot paket (lihat §5, aturan tampilan).
 
 ### 2.4 Keputusan yang sudah diuji (jangan diulang)
 
@@ -116,7 +118,7 @@ $$\text{MatchScore}(p) = 50\max\left(0, 1-\frac{d(w,p)}{2000}\right) + 25\,\math
 
 | Kode | Modul | Deskripsi | Nilai rubrik |
 |---|---|---|---|
-| **FR-01** | **Peta audit jalan** | 3.331 titik/garis paket jalan Kab. Tangerang; filter tahun (2025/2026), kecamatan/desa, jenis pekerjaan; badge presisi per titik; layer IRI nasional; klik → tabel paket. | Fungsionalitas 25%, Desain 20%, Tema 15% |
+| **FR-01** | **Peta audit jalan (agregat per desa)** | **Tidak memplot paket.** Satu lingkaran per desa (251) — radius ∝ jumlah paket; tooltip `desa · jumlah paket · pagu`; klik → tabel paket desa. Paket terpilih ditandai cincin radius 1,5 km berlabel "lokasi indikatif". Koridor digambar sebagai busur putus-putus antar desa. Filter: tahun, kecamatan, jenis pekerjaan. | Fungsionalitas 25%, Desain 20%, Tema 15% |
 | **FR-02** | **Pencari mikro "Jalan mana yang dibangun di dekat saya?"** | Ketik desa/kampung/nama jalan → kartu desa: total pagu jalan, daftar paket 2025–2026, bulan pelaksanaan, tombol "Laporkan Kerusakan". | Konten 20% |
 | **FR-03** | **Form lapor** | 3 langkah: (1) foto + blur wajah/plat + pembersihan EXIF; (2) **kategorisasi jenis kerusakan & penyebab** oleh pelapor + ukuran kasar; (3) lokasi GPS/desa → rekomendasi paket dengan skor kecocokan yang ditampilkan apa adanya. Tanpa CV, tanpa klaim cm². | Fungsionalitas 25%, Orisinalitas 20% |
 | **FR-04** | **Kartu sandingan (triangulasi)** | Kiri: data resmi (kode RUP, pagu, jadwal, status masa pemeliharaan, IRI bila berimpit ruas nasional). Kanan: bukti warga (foto, jenis/penyebab, ukuran kasar, waktu, konfirmasi). | Orisinalitas 20% |
@@ -130,9 +132,10 @@ $$\text{MatchScore}(p) = 50\max\left(0, 1-\frac{d(w,p)}{2000}\right) + 25\,\math
 
 ### Daftar layar
 1. **`/` — Beranda & peta audit jalan.** Metrik: **3.602 paket jalan · Rp848,60 M · 251 desa ·
-   92,5% bertitik · 102 koridor ruas**. Peta Kab. Tangerang + panel detail paket.
-2. **`/jelajah` — Eksplorasi desa & paket.** Pencarian desa/kampung/jalan, filter tahun & jenis
-   pekerjaan, badge presisi (`Titik Desa`, `Garis Koridor`, `Kecamatan`), unduh CSV/JSON.
+   29 kecamatan · 102 koridor indikatif**. Peta = agregat desa (lihat aturan tampilan), panel kanan
+   berisi tabel paket.
+2. **`/jelajah` — Eksplorasi desa & paket.** Pencarian desa/kampung/nama jalan, filter tahun & jenis
+   pekerjaan, badge sumber lokasi (`Pusat Desa`, `Koridor Indikatif`, `Kecamatan`), unduh CSV/JSON.
 3. **`/lapor` — Lapor & tautkan paket.** 3 langkah seperti FR-03.
 4. **`/kasus/:id` — Detail kasus & verifikasi dua kunci.** Sandingan resmi vs warga, indikator masa
    pemeliharaan, lini masa, tombol konfirmasi.
@@ -145,9 +148,15 @@ Screenshot wajib: **landing page + minimal satu halaman fitur**. Yang dibangun l
 untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
 
 ### Aturan tampilan
+- **Tidak ada marker per paket di peta.** Titik paket tidak boleh digambar, termasuk dengan offset
+  acak di dalam desa: itu membuat paket terlihat berada di ruas jalan tertentu padahal koordinatnya
+  tidak diketahui. Peta menampilkan **agregat desa** + **busur koridor indikatif**; detail selalu di
+  tabel.
+- **Banner tetap** di atas peta: `Tidak ada paket yang punya koordinat resmi. Peta menunjukkan desa,
+  bukan lokasi pekerjaan.` — tidak bisa ditutup.
 - Format angka Indonesia: `3.602`, `92,5%`, `Rp848,60 Miliar`.
 - Badge **`SIMULASI PROTOTIPE`** (amber) untuk laporan warga; **`DATA RESMI (SIRUP / BINA MARGA)`**
-  (hijau/biru) untuk data asli; badge presisi wajib melekat pada marker.
+  (hijau/biru) untuk data asli; badge sumber lokasi (`Pusat Desa` / `Koridor Indikatif` / `Kecamatan`).
 - Nama penyedia **ditampilkan asli** di modul rekam jejak (data publik LPSE), tanpa skor gabungan,
   selalu dengan penyebut; frasa tetap "paket dengan laporan kerusakan dalam masa pemeliharaan".
 - Paket tanpa lokus tampil di tabel dengan label `Lokasi: Kab. Tangerang (Umum)` — tidak dipetakan.

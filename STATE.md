@@ -133,6 +133,24 @@ Permintaan dosen dari rekaman pra-28 Okt yang **belum** masuk: (a) penekanan dam
 
 **Sisa pekerjaan:** dua layar hidup — peta audit jalan + alur lapor.
 
+## KEPUTUSAN 31 Okt: peta tidak memplot paket (anti-misleading)
+
+Masalah yang ditemukan user pada prototipe: 3.331 titik hasil offset hash ±250 m tampil seolah berada
+di ruas jalan tertentu (contoh nyata: titik tersebar di atas lapangan golf dan blok perumahan),
+padahal pipeline tidak mungkin mengetahui ruas dari nama paket. Itu klaim presisi palsu.
+
+**Keputusan:** peta menampilkan **agregat per desa** (satu lingkaran per desa, radius ∝ jumlah paket)
+dan **busur koridor indikatif** antar pusat desa; paket terpilih ditandai **cincin radius 1,5 km**
+berlabel "lokasi indikatif". Tidak ada marker per paket, tidak ada jitter. Banner tetap di atas peta:
+*"Tidak ada paket yang punya koordinat resmi. Peta menunjukkan desa, bukan lokasi pekerjaan."*
+Badge berubah: `Titik Desa` → `Pusat Desa`, `Garis Koridor` → `Koridor Indikatif`.
+
+Alasan tambahan: `presisi_peta` adalah **provenans** (dari mana lokasi diturunkan), bukan akurasi —
+dokumen sebelumnya memakai kata "presisi" sehingga terbaca sebagai tingkat ketelitian.
+
+Sudah diterapkan di `AGENTS.md` (aturan 5 & 8), `BRIEF.md` (Layar 1), `SPEC.md` (FR-01, layar,
+aturan tampilan), `KONSEP.md` (tabel provenans + etika butir 2), `README.md`.
+
 ## Modul yang harus ada (SPEC §4)
 
 FR-01 peta audit jalan · FR-02 pencari mikro "jalan mana yang dibangun di dekat saya" (desa/kampung/nama jalan) · FR-03 form lapor (blur privasi, **kategorisasi jenis & penyebab kerusakan oleh pelapor**, ukuran kasar, rekomendasi paket + skor) · FR-04 kartu sandingan · FR-05 verifikasi komunitas dua kunci · FR-06 rapor **29 kecamatan** & jenis kerusakan · FR-07 rekam jejak penyedia berimbang.

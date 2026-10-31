@@ -21,8 +21,9 @@ untuk menangkap kerusakan dini selagi **masa pemeliharaan (garansi kontraktor)**
 SAKSI mengisi celah itu untuk jalan:
 
 1. **Menyaring & memetakan belanja jalan** — 3.602 paket (Rp848,60 M) dari 51.322 baris RUP Kab.
-   Tangerang TA 2025–2026, dipetakan ke **251 desa** dan 29 kecamatan. **92,5% (3.331 paket)** punya
-   titik, masing-masing dengan badge presisi; **102** di antaranya berupa garis koridor antar-desa.
+   Tangerang TA 2025–2026, dikaitkan ke **251 desa** dan 29 kecamatan. Setiap paket punya **sumber
+   lokasi turunan** (pusat desa / kecamatan); tidak ada yang punya koordinat pekerjaan, dan peta
+   menampilkan **agregat per desa**, bukan titik paket.
 2. **Menautkan laporan warga ke paket anggaran** — foto (EXIF dibersihkan, wajah/plat diburamkan),
    jenis & penyebab kerusakan yang dikategorikan pelapor, lalu dicocokkan ke paket RUP di desa/koridor
    yang sama dengan skor kecocokan yang ditampilkan apa adanya.
@@ -65,8 +66,11 @@ SAKSI mengisi celah itu untuk jalan:
 | Median nilai paket | Rp100 juta |
 | TA 2025 / TA 2026 | 2.156 / 1.446 |
 | Desa/kelurahan | 251 dari 274 · 29 kecamatan |
-| Terpetakan | **3.331 (92,5%)** — desa 3.000 · koridor 102 · kecamatan 229 |
-| Tanpa lokus (tidak dipetakan) | 271 (7,5%) |
+| Punya lokasi turunan | **3.331 (92,5%)** — pusat desa 3.000 · busur koridor 102 · pusat kecamatan 229 |
+| Tanpa lokus (tidak tampil di peta) | 271 (7,5%) |
+
+**Tidak ada paket yang punya koordinat pekerjaan.** Angka di atas adalah provenans lokasi, bukan
+akurasi; karena itu peta menampilkan agregat per desa, bukan titik per paket.
 
 Komposisi: paving/beton 1.186 · drainase/saluran 946 · hotmix/aspal 560 · turap/talud/TPT 103 ·
 jembatan/gorong-gorong 78.
@@ -105,8 +109,9 @@ python3 ingest/build_saksi.py tangerang_kab 2025 2026
 - ✅ Pipeline reproducible: `sirup_search.py` → `geocode_desa.py` → `build_saksi.py`.
 - ✅ Dokumen (KONSEP/SPEC/README) versi **jalan-only**.
 - 🚧 Frontend: dua layar FDS (peta audit jalan + alur lapor) sedang dibangun di atas dataset ini.
-- 📌 Tidak ada dataset pengadaan Indonesia yang memuat koordinat paket; titik di SAKSI diturunkan
-  dari teks nama paket dan selalu diberi badge presisi.
+- 📌 Tidak ada dataset pengadaan Indonesia yang memuat koordinat paket. Lokasi di SAKSI diturunkan
+  dari teks nama paket ke **pusat desa/kecamatan**; peta tidak memplot titik paket agar tidak
+  menyesatkan.
 
 ---
 
