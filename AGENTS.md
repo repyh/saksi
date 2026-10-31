@@ -9,8 +9,8 @@ menyentuh kode.
 **SAKSI** — platform pelaporan warga + audit silang anggaran untuk **satu jenis infrastruktur:
 jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
-- Studi kasus: **Kabupaten Tangerang** (`idKldi=D50`, BPS `3603`), TA 2025–2026.
-- Angka kunci: **3.602 paket jalan · Rp848,60 M · 251 desa · 102 koridor (indikatif)**.
+- Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
+- Angka kunci: **1.557 paket jalan · Rp650,18 M · 80 kelurahan · 818 ber-anchor RW (indikatif)**.
 - **Peta tidak menampilkan titik per paket.** Lihat aturan 5.
 - Lomba: MIA 2026 / Web In Action. **FDS 1 Nov 2026** (wajib: repo publik + README + PDF ≤10 hlm +
   screenshot landing + 1 halaman fitur hidup), penyisihan 11 Nov, final onsite 28 Nov.
@@ -28,8 +28,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    punya koordinat, dan offset acak di dalam desa membuat titik terlihat seperti berada di ruas jalan
    padahal bukan. Peta memakai **koroplet batas desa** (GeoJSON GADM, lihat
    `docs/DATA-BATAS-DESA.md`): warna = jumlah paket per desa, dan paket terpilih menyorot **batas
-   desanya**, bukan titik. Paket tanpa penanda desa (271) hanya tampil di tabel dengan label
-   `Lokasi: Kab. Tangerang (Umum)`.
+   desanya**, bukan titik. Paket tanpa penanda desa (402) hanya tampil di tabel dengan label
+   `Lokasi: Kota Tangerang (Umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
 7. **Penyedia disebut nama asli** (data publik LPSE) tetapi **berimbang**: tanpa skor gabungan,
    selalu dengan penyebut (jumlah paket, kelas jalan, tahun).
@@ -37,7 +37,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    MARGA)` untuk data asli, dan badge sumber lokasi (`Pusat Desa` / `Koridor Indikatif` /
    `Kecamatan`) — bukan "Titik Desa".
 9. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
-10. **Format angka Indonesia**: `3.602`, `92,5%`, `Rp848,60 Miliar`.
+10. **Format angka Indonesia**: `1.557`, `74,2%`, `Rp650,18 Miliar`.
 
 ## Konvensi repo
 

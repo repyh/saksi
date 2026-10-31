@@ -73,6 +73,10 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
   }, [muat]);
 
   const stats = useMemo(() => (data ? statistik(data.paket, data.desa) : null), [data]);
+  const jumlahKelurahan = useMemo(
+    () => (data ? new Set(data.desa.map((d) => d.kelurahan)).size : 0),
+    [data],
+  );
   const kecamatan = useMemo(() => (data ? daftarKecamatan(data.paket) : []), [data]);
   const hasil = useMemo(
     () => (data ? terapkanFilter(data.paket, filter) : []),
@@ -98,17 +102,17 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
           <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 py-4">
             <div className="min-w-0">
               <h1 className="text-xl font-semibold tracking-tight text-ink">
-                Peta audit jalan Kab. Tangerang
+                Peta audit jalan Kota Tangerang
               </h1>
               <p className="mt-1 max-w-[74ch] text-sm leading-relaxed text-muted">
                 {stats ? (
                   <>
                     <span className="num text-ink-soft">{angka(stats.paket)}</span> paket jalan,
-                    jembatan, dan drainase TA 2025–2026. Peta menampilkan desa, bukan titik paket:
-                    nama paket tidak memuat koordinat pekerjaan.
+                    jembatan, dan drainase TA 2025–2026. Peta menampilkan batas RW/kelurahan, bukan titik
+                    paket: nama paket tidak memuat koordinat pekerjaan.
                   </>
                 ) : (
-                  "Paket jalan, jembatan, dan drainase TA 2025–2026, dikaitkan ke desa — bukan ke titik pekerjaan."
+                  "Paket jalan, jembatan, dan drainase TA 2025–2026, dikaitkan ke RW/kelurahan — bukan ke titik pekerjaan."
                 )}
               </p>
             </div>
@@ -137,21 +141,23 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
               catatan={stats ? `median ${rupiahRingkas(stats.medianPagu)}` : "memuat data…"}
             />
             <Sel
-              label="Desa tersentuh"
+              label="Kelurahan tersentuh"
               nilai={stats ? angka(stats.desa) : "—"}
-              catatan={stats ? `dari ${angka(stats.desaTotal)} desa · ${stats.kecamatan} kecamatan` : "—"}
+              catatan={
+                stats ? `dari ${jumlahKelurahan} kelurahan · ${stats.kecamatan} kecamatan` : "—"
+              }
+            />
+            <Sel
+              label="Ber-anchor RW"
+              nilai={stats ? angka(stats.koridor) : "—"}
+              catatan="paket dengan nomor RW di namanya"
             />
             <Sel
               label="Lokus turunan"
               nilai={stats ? angka(stats.bertitik) : "—"}
               catatan={
-                stats ? `${persen(stats.persenTitik)} · pusat desa/kecamatan` : "memuat data…"
+                stats ? `${persen(stats.persenTitik)} · RW/kelurahan` : "memuat data…"
               }
-            />
-            <Sel
-              label="Koridor ruas"
-              nilai={stats ? angka(stats.koridor) : "—"}
-              catatan="busur indikatif antar desa"
             />
             <Sel
               label="Tanpa lokasi"
@@ -203,7 +209,7 @@ export default function PetaAudit({ paketAwal }: { paketAwal?: string | null }) 
                   <div className="text-center">
                     <p className="label">Memuat register paket…</p>
                     <p className="num mt-2 text-2xs text-muted">
-                      public/data/paket.json · 3.331 titik
+                      public/data/paket.json · 1.020 RW
                     </p>
                   </div>
                 </div>

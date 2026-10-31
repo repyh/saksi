@@ -7,17 +7,7 @@
 
 export const SEKTOR_JALAN = "Jalan, Jembatan & Drainase";
 
-export type Presisi = "Desa/Kelurahan" | "Garis Koridor" | "Kecamatan" | "Kabupaten";
-
-export type Koridor = {
-  dari: string;
-  ke: string;
-  kecamatan: string;
-  lat_dari: number;
-  lon_dari: number;
-  lat_ke: number;
-  lon_ke: number;
-};
+export type Presisi = "RW" | "Kelurahan" | "Kecamatan" | "Kabupaten";
 
 export type Paket = {
   kode_rup: string;
@@ -30,23 +20,24 @@ export type Paket = {
   bulan: string;
   sektor: string;
   desa_resmi: string | null;
+  rw: string | null;
+  unit_id: string | null;
   kecamatan_resmi: string | null;
   lat: number | null;
   lon: number | null;
   presisi_peta: Presisi;
-  koridor?: Koridor;
   lokasi_mikro: string | null;
 };
 
+/** Unit wilayah (RW bila diketahui, jatuh ke kelurahan). */
 export type Desa = {
   id_desa: string;
   desa: string;
+  kelurahan: string;
+  rw: string;
   kecamatan: string;
-  id_kec: string;
   lat: number;
   lon: number;
-  presisi: string;
-  label: string;
 };
 
 export type Dataset = {
@@ -88,9 +79,9 @@ export async function muatData(signal?: AbortSignal): Promise<Dataset> {
 
 /* ── Klasifikasi jenis pekerjaan (kata kunci, urutan penting) ─ */
 
-const RE_JEMBATAN = /jembatan|gorong[\s-]?gorong|box[-\s]?culvert/i;
+const RE_JEMBATAN = /jembatan|box[-\s]?culvert/i;
 const RE_DRAINASE =
-  /drainase|saluran|u[-\s]?ditch|siring|turap|talud|\btpt\b|bronjong|penahan/i;
+  /drainase|saluran|u[-\s]?ditch|siring|turap|talud|\btpt\b|bronjong|penahan|gorong/i;
 
 export function kelasPekerjaan(nama: string): Exclude<JenisPekerjaan, "semua"> {
   if (RE_JEMBATAN.test(nama)) return "jembatan";
@@ -348,6 +339,7 @@ export type Statistik = {
   koridor: number;
   kecamatan: number;
   tanpaLokus: number;
+  unitRw: number;
 };
 
 export function statistik(paket: Paket[], desa: Desa[]): Statistik {
@@ -357,6 +349,7 @@ export function statistik(paket: Paket[], desa: Desa[]): Statistik {
   let tanpaLokus = 0;
   const setDesa = new Set<string>();
   const setKec = new Set<string>();
+  const setRw = new Set<string>();
   const perTahun: Record<number, number> = {};
   const nilai: number[] = [];
 
@@ -365,10 +358,11 @@ export function statistik(paket: Paket[], desa: Desa[]): Statistik {
     nilai.push(p.pagu);
     perTahun[p.tahun] = (perTahun[p.tahun] ?? 0) + 1;
     if (p.lat != null && p.lon != null) bertitik += 1;
-    if (p.presisi_peta === "Garis Koridor") koridor += 1;
+    if (p.presisi_peta === "RW") koridor += 1;
     if (p.presisi_peta === "Kabupaten" || p.lat == null) tanpaLokus += 1;
     if (p.desa_resmi) setDesa.add(p.desa_resmi);
     if (p.kecamatan_resmi) setKec.add(p.kecamatan_resmi);
+    if (p.unit_id) setRw.add(p.unit_id);
   }
 
   nilai.sort((a, b) => a - b);
@@ -391,14 +385,15 @@ export function statistik(paket: Paket[], desa: Desa[]): Statistik {
     koridor,
     kecamatan: setKec.size,
     tanpaLokus,
+    unitRw: setRw.size,
   };
 }
 
 /* ── Label presisi untuk UI ─────────────────────────────────── */
 
 export function labelPresisi(p: Paket): string {
-  if (p.presisi_peta === "Desa/Kelurahan") return "Pusat Desa";
-  if (p.presisi_peta === "Garis Koridor") return "Koridor Indikatif";
+  if (p.presisi_peta === "RW") return p.rw ? `RW ${p.rw}` : "RW";
+  if (p.presisi_peta === "Kelurahan") return "Kelurahan";
   if (p.presisi_peta === "Kecamatan") return "Kecamatan";
   return "Tanpa lokasi";
 }
@@ -408,13 +403,13 @@ export function badgePresisi(p: Paket): Presisi {
 }
 
 export function lokasiPaket(p: Paket): string {
-  if (p.presisi_peta === "Garis Koridor" && p.koridor) {
-    return `${p.koridor.dari} – ${p.koridor.ke}`;
-  }
   if (p.presisi_peta === "Kabupaten" || p.lat == null) {
-    return "Kab. Tangerang (Umum)";
+    return "Kota Tangerang (umum)";
   }
-  return p.desa_resmi ?? "Kab. Tangerang";
+  if (p.desa_resmi && p.rw && p.presisi_peta === "RW") {
+    return `${p.desa_resmi} · RW ${p.rw}`;
+  }
+  return p.desa_resmi ?? "Kota Tangerang";
 }
 
 /** Kecamatan unik, terurut abjad Indonesia. */

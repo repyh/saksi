@@ -217,7 +217,7 @@ function Ringkasan({
             kosong: !foto,
           },
           { label: "Kerusakan", nilai: jenis ? labelJenis(jenis) : "Belum dipilih", kosong: !jenis },
-          { label: "Desa", nilai: desa || "Belum dipilih", kosong: !desa },
+          { label: "Wilayah (RW)", nilai: desa || "Belum dipilih", kosong: !desa },
           {
             label: "Paket",
             nilai: paket ? `RUP ${paket.kode_rup}${skor != null ? ` · skor ${skor}` : ""}` : "Belum ditautkan",
@@ -595,7 +595,7 @@ export default function Lapor({
   function kirim() {
     if (!data || !jenis) return;
     if (lat == null || lon == null) {
-      setGalatLangkah("Pilih desa atau gunakan lokasi saya agar laporan punya titik.");
+      setGalatLangkah("Pilih kelurahan/RW atau gunakan lokasi saya agar laporan punya titik.");
       return;
     }
 
@@ -983,11 +983,11 @@ export default function Lapor({
                             setGalatLangkah(null);
                           }}
                         >
-                          <option value="">Pilih desa…</option>
+                          <option value="">Pilih kelurahan/RW…</option>
                           {kelompokDesa.map(([kec, isi]) => (
                             <optgroup key={kec} label={`${kec} (${isi.length})`}>
                               {isi.map((d) => (
-                                <option key={d.id_desa} value={d.desa}>
+                                <option key={d.id_desa ?? d.desa} value={d.desa}>
                                   {d.desa}
                                 </option>
                               ))}
@@ -1016,7 +1016,7 @@ export default function Lapor({
                       <div className="callout mt-3">
                         <Info size={16} className="mt-0.5 flex-none" />
                         <span>
-                          Izin lokasi tidak diberikan. Pilih desa secara manual — laporan tetap bisa
+                          Izin lokasi tidak diberikan. Pilih kelurahan/RW secara manual — laporan tetap bisa
                           dikirim.
                         </span>
                       </div>
@@ -1048,7 +1048,7 @@ export default function Lapor({
                       ) : !hasil ? (
                         <div className="callout">
                           <Info size={16} className="mt-0.5 flex-none" />
-                          <span>Pilih desa atau gunakan lokasi saya untuk menghitung kandidat.</span>
+                          <span>Pilih kelurahan/RW atau gunakan lokasi saya untuk menghitung kandidat.</span>
                         </div>
                       ) : (
                         <>

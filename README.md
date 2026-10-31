@@ -2,12 +2,12 @@
 **Sistem Akuntabilitas & Komparasi Spasial Infrastruktur**
 
 > Platform pelaporan warga dan audit silang spasial untuk **satu jenis infrastruktur: jalan** —
-> menautkan **3.602 paket pekerjaan jalan Kab. Tangerang (Rp848,60 Miliar)** dengan **bukti foto warga
+> menautkan **1.557 paket pekerjaan jalan Kota Tangerang (Rp650,18 Miliar)** dengan **bukti foto warga
 > di ruas yang sama**, ditambah pembanding kondisi resmi dari GIS Bina Marga.
 >
 > Disusun untuk lomba **MIA 2026 — Web In Action (WIA)**
 > **Tema:** *Designing Digital Futures – Powering Public Transparency* · **Subtema:** *Civic Reporting & Accountability*
-> **Studi kasus:** Kabupaten Tangerang (`idKldi=D50`, BPS `3603`) · **replikasi:** Kabupaten Bandung
+> **Studi kasus:** Kota Tangerang (`idKldi=D44`, BPS `3671`) · **replikasi:** Kabupaten Bandung
 
 ---
 
@@ -20,10 +20,10 @@ untuk menangkap kerusakan dini selagi **masa pemeliharaan (garansi kontraktor)**
 
 SAKSI mengisi celah itu untuk jalan:
 
-1. **Menyaring & memetakan belanja jalan** — 3.602 paket (Rp848,60 M) dari 51.322 baris RUP Kab.
-   Tangerang TA 2025–2026, dikaitkan ke **251 desa** dan 29 kecamatan. Setiap paket punya **sumber
-   lokasi turunan** (pusat desa / kecamatan); tidak ada yang punya koordinat pekerjaan, dan peta
-   menampilkan **agregat per desa**, bukan titik paket.
+1. **Menyaring & memetakan belanja jalan** — 1.557 paket (Rp650,18 M) dari 21.402 baris RUP **Kota
+   Tangerang** TA 2025–2026, dikaitkan ke **80 kelurahan**, **483 RW**, dan 13 kecamatan. Setiap paket
+   punya **sumber lokasi turunan** (RW / kelurahan); tidak ada yang punya koordinat pekerjaan, dan
+   peta menampilkan **batas RW/kelurahan**, bukan titik paket.
 2. **Menautkan laporan warga ke paket anggaran** — foto (EXIF dibersihkan, wajah/plat diburamkan),
    jenis & penyebab kerusakan yang dikategorikan pelapor, lalu dicocokkan ke paket RUP di desa/koridor
    yang sama dengan skor kecocokan yang ditampilkan apa adanya.
@@ -49,31 +49,32 @@ SAKSI mengisi celah itu untuk jalan:
 
 | Berkas | Sumber | Isi |
 |---|---|---|
-| `saksi_tangerang_2025_2026.json` | SIRUP Inaproc (`idKldi=D50`) | 5.487 paket fisik (5 sektor) + koordinat & presisi; **produk memakai 3.602 paket jalan** |
-| `tangerang_desa_coords.json` | Kode wilayah BPS `3603` + koordinat OSM | 274 desa/kelurahan, 29 kecamatan (245 presisi desa, 29 sentroid) |
-| `saksi_bandung_2025_2026.json` | SIRUP Inaproc (`idKldi=D107`) | dataset **replikasi**: 5.013 paket, Rp993,95 M, 86,4% terpetakan |
-| `bandung_desa_coords.json` | Gazetteer BPS `3204` | 280 desa, 31 kecamatan |
-| `jalan.json`, `provinsi.json` | GIS Bina Marga (`IRI_1_2026`) | 477.032 titik IRI nasional (47.703 km) + 33 provinsi |
-| `vendor_jakarta.json` | LPSE / SPSE | sampel paket: pagu, HPS, pemenang |
-| `manifest.json` | — | metadata sumber, tanggal snapshot, peringatan metodologis |
+| `web/public/data/paket.json` | SIRUP Inaproc `idKldi=D44` | **1.557 paket jalan** TA 2025–2026 + anchor RW/kelurahan |
+| `web/public/data/rw.geojson` | ArcGIS Kota Tangerang (`batas_rw_2021`) | **1.020 poligon RW** |
+| `web/public/data/kel.geojson` | ArcGIS Kota Tangerang (`Batas_Wilayah_Kelurahan_def`) | **104 poligon kelurahan** |
+| `web/public/data/desa.json` | turunan `rw.geojson` | unit wilayah (RW) + titik tengah untuk pencarian terdekat |
+| `data/scratch/kota_tng/rup_kota_*.json` | tarikan mentah SIRUP | 21.402 baris RUP 2025 + 2026 (tidak di-commit) |
+| `saksi_tangerang_2025_2026.json` | arsip | dataset **Kabupaten** Tangerang (studi kasus sebelumnya) |
+| `saksi_bandung_2025_2026.json` | arsip | dataset replikasi Bandung |
 
-### Cakupan jalan — Kab. Tangerang (2025–2026)
+### Cakupan jalan — Kota Tangerang (2025–2026)
 
 | | |
 |---|---:|
-| Paket jalan, jembatan & drainase | **3.602** |
-| Pagu | **Rp848,60 M** |
-| Median nilai paket | Rp100 juta |
-| TA 2025 / TA 2026 | 2.156 / 1.446 |
-| Desa/kelurahan | 251 dari 274 · 29 kecamatan |
-| Punya lokasi turunan | **3.331 (92,5%)** — pusat desa 3.000 · busur koridor 102 · pusat kecamatan 229 |
-| Tanpa lokus (tidak tampil di peta) | 271 (7,5%) |
+| Paket jalan, jembatan & drainase | **1.557** |
+| Pagu | **Rp650,18 M** |
+| Median nilai paket | Rp200 juta |
+| TA 2025 / TA 2026 | 939 / 618 |
+| Kelurahan tersentuh | **80 dari 104** · 13 kecamatan |
+| RW tersentuh | **483 dari 1.020** |
+| Anchor RW di nama paket | **818 (52,5%)** |
+| Anchor kelurahan | 337 (21,6%) |
+| Tanpa lokus (tidak tampil di peta) | 402 (25,8%) |
 
 **Tidak ada paket yang punya koordinat pekerjaan.** Angka di atas adalah provenans lokasi, bukan
-akurasi; karena itu peta menampilkan agregat per desa, bukan titik per paket.
+akurasi; karena itu peta mewarnai **batas RW/kelurahan resmi**, bukan titik per paket.
 
-Komposisi: paving/beton 1.186 · drainase/saluran 946 · hotmix/aspal 560 · turap/talud/TPT 103 ·
-jembatan/gorong-gorong 78.
+Komposisi: drainase/saluran 1.238 · permukaan (paving/hotmix) 269 · jembatan 50.
 
 ---
 
@@ -105,7 +106,7 @@ python3 ingest/build_saksi.py tangerang_kab 2025 2026
 
 ## Status (29 Oktober 2026)
 
-- ✅ Dataset Tangerang selesai & diverifikasi (5.487 paket unik; produk memakai subset jalan 3.602).
+- ✅ Dataset Tangerang selesai & diverifikasi (5.487 paket unik; produk memakai subset jalan 1.557).
 - ✅ Pipeline reproducible: `sirup_search.py` → `geocode_desa.py` → `build_saksi.py`.
 - ✅ Dokumen (KONSEP/SPEC/README) versi **jalan-only**.
 - 🚧 Frontend: dua layar FDS (peta audit jalan + alur lapor) sedang dibangun di atas dataset ini.

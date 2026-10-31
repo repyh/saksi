@@ -151,14 +151,14 @@ const ada = (paket: Paket[], kode: string) => paket.some((p) => p.kode_rup === k
 export function contohLaporan(desa: Desa[], paket: Paket[]): Laporan[] {
   const berpaket = new Set(paket.map((p) => p.desa_resmi));
   const desaKosong = desa.find((d) => !berpaket.has(d.desa));
-  const tanpaPaket = desaKosong?.desa ?? "Pasir Gadung";
-  const kecTanpaPaket = desaKosong?.kecamatan ?? "Teluknaga";
+  const tanpaPaket = desaKosong?.desa ?? "Cibodas RW 04";
+  const kecTanpaPaket = desaKosong?.kecamatan ?? "Cibodas";
 
   const daftar: Laporan[] = [
     {
       kode: "SAKSI-2026-7K2M",
       waktu: "2026-10-24T08:42:00+07:00",
-      desa: "Kutabumi",
+      desa: "Karawaci RW 03",
       kecamatan: "Pasar Kemis",
       jenis: "lubang",
       penyebab: ["dilalui_kendaraan_berat", "genangan_berulang"],
@@ -176,15 +176,15 @@ export function contohLaporan(desa: Desa[], paket: Paket[]): Laporan[] {
     {
       kode: "SAKSI-2026-4QDY",
       waktu: "2026-10-22T15:10:00+07:00",
-      desa: "Kresek",
-      kecamatan: "Kresek",
+      desa: "Ciledug RW 05",
+      kecamatan: "Ciledug",
       jenis: "retak",
       penyebab: ["kepadatan_lalu_lintas"],
       ukuran: "lebih_1_m2",
       lat: -6.1312,
       lon: 106.3808,
       sumber_lokasi: "gps",
-      patokan: "Ruas Kresek – Cempaka, dekat jembatan",
+      patokan: "Jl. Ciledug Raya, dekat jembatan",
       kode_rup: ada(paket, "61312211") ? "61312211" : null,
       skor: 81,
       status: "tertaut",

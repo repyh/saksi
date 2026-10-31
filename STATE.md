@@ -187,6 +187,34 @@ sebenarnya dominan adalah **RW: 853 paket (54,8%)**, kelurahan 320 (20,6%), keca
 tanpa anchor 365 (23,4%) — dan server punya 1.020 poligon RW + 5.167 RT. Jadi jalur v2 yang benar =
 paket → RW, bukan paket → ruas. Detail: `docs/UJI-MATCHING-KOTA-TANGERANG.md` + CSV 232 baris.
 
+## 31 Okt: PINDAH STUDI KASUS KE KOTA TANGERANG (keputusan user)
+
+User memutuskan FDS memakai **Kota Tangerang**, dengan rencana extend ke kab/kota lain saat server GIS
+mereka didapat. Pencocokan lokasi memakai **RW**, sesuai uji: anchor nama paket 54,8% RW, 20,6%
+kelurahan, 1,2% kecamatan, 23,4% tanpa anchor — dan Kota punya 1.020 poligon RW + 104 kelurahan resmi.
+
+Yang dikerjakan:
+- `tools/build_kota.py` menulis ulang dataset dari 21.402 baris RUP `idKldi=D44` → **1.557 paket,
+  Rp650,18 M** (TA2025 939 · TA2026 618); anchor **RW 818 · kelurahan 337 · tanpa 402**; 80 kelurahan,
+  483 unit RW, 13 kecamatan.
+- Geometri resmi: `web/public/data/rw.geojson` (1.020 poligon, 810 KB) + `kel.geojson` (104, 191 KB),
+  disederhanakan `maxAllowableOffset=0,00004`; GADM/`desa-batas.geojson` dibuang.
+- `web/src/components/Peta.tsx` ditulis ulang: koroplet dua tingkat (kelurahan < zoom 12, RW ≥ 12),
+  sorotan batas wilayah saat paket dipilih, tanpa titik paket. `lib/paket.ts`: `Presisi` =
+  RW/Kelurahan/Kecamatan/Kabupaten, statistik baru (`unitRw`), label `RW 04`/`Kelurahan`.
+- `lib/paket.ts` juga memperbaiki klasifikasi pekerjaan: "gorong-gorong" dipindah dari jembatan ke
+  drainase (sebelumnya 978 paket salah kelas jadi "jembatan"; sekarang jembatan 50, drainase 1.238,
+  permukaan 269).
+- Angka di AGENTS/BRIEF/README/KONSEP/SPEC/HANDOFF diganti seragam (1.557 · Rp650,18 M · 80 kelurahan
+  · 483 RW · 818 anchor · 402 tanpa lokus · 13 kecamatan · `idKldi=D44` · BPS 3671).
+
+Verifikasi: `typecheck` 0 error, `vite build` 439,98 kB, screenshot Chromium: judul "Peta audit jalan
+Kota Tangerang", metrik 1.557/Rp650,18 M/80 kelurahan/818 anchor/1.155 lokus/402 tanpa lokus,
+koroplet RW dengan legenda 537 RW kosong · 252 (1 paket) · 213 (2–3) · 17 (4–6) · 1 (7–10).
+
+Sisa: AGENTS.md aturan 5 & badge (8) belum ikut diperbarui — penulisan ke berkas itu diblokir
+menunggu persetujuan user. `Lapor.tsx` masih memakai nama contoh Kabupaten (Kutabumi, Kresek).
+
 ## Modul yang harus ada (SPEC §4)
 
 FR-01 peta audit jalan · FR-02 pencari mikro "jalan mana yang dibangun di dekat saya" (desa/kampung/nama jalan) · FR-03 form lapor (blur privasi, **kategorisasi jenis & penyebab kerusakan oleh pelapor**, ukuran kasar, rekomendasi paket + skor) · FR-04 kartu sandingan · FR-05 verifikasi komunitas dua kunci · FR-06 rapor **29 kecamatan** & jenis kerusakan · FR-07 rekam jejak penyedia berimbang.

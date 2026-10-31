@@ -5,71 +5,44 @@ import type { Desa, Paket } from "../lib/paket";
 import { angka, rupiahRingkas } from "../lib/paket";
 
 /**
- * Peta koroplet batas desa.
+ * Peta koroplet batas wilayah resmi Kota Tangerang.
  *
- * Aturan produk (AGENTS.md §5): paket tidak punya koordinat pekerjaan, jadi peta TIDAK memplot titik
- * paket. Yang diwarnai adalah **batas desa** (GeoJSON GADM level 4, 274 desa Kab. Tangerang) dengan
- * intensitas = jumlah paket di desa itu. Ini pernyataan yang benar dan bisa diperiksa:
- * "sekian paket berada di Desa X" — bukan "paket ini ada di titik ini".
+ * Sumber: ArcGIS Kota Tangerang — `Batas_Adminsitratif/batas_rw_2021` (1.020 poligon RW) dan
+ * `Batas_Wilayah_Kelurahan_def` (104 poligon kelurahan). Paket TIDAK dipetakan sebagai titik:
+ * nama paket memuat RW/kelurahan, bukan koordinat pekerjaan, jadi yang diwarnai adalah wilayah.
  *
- * Batas desa diambil dari ../../public/data/desa-batas.geojson (lihat docs/DATA-BATAS-DESA.md).
+ * Disclosure bertahap: zoom < 12 → kelurahan (104), zoom ≥ 12 → RW (1.020).
  */
 
 const esc = (s: string) =>
   String(s).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 
-type BatasDesa = {
-  desa: string;
-  kecamatan: string;
-  id_desa: string | null;
-};
+const ZOOM_RW = 12;
 
-type FiturBatas = {
-  type: "Feature";
-  properties: BatasDesa;
-  geometry: unknown;
-};
-
-/* Kelas warna: ambang jumlah paket, warna, label legenda. */
 const KELAS = [
-  { min: 0, maks: 0, isi: "#ffffff", garis: "#bdb5ac", label: "Tidak ada paket jalan" },
-  { min: 1, maks: 4, isi: "#f7ddd8", garis: "#c9a29c", label: "1–4 paket" },
-  { min: 5, maks: 9, isi: "#eda9a0", garis: "#b5736b", label: "5–9 paket" },
-  { min: 10, maks: 24, isi: "#d4695e", garis: "#8f4038", label: "10–24 paket" },
-  { min: 25, maks: 59, isi: "#b3261e", garis: "#6f1711", label: "25–59 paket" },
-  { min: 60, maks: Number.MAX_SAFE_INTEGER, isi: "#7d150f", garis: "#4c0d09", label: "60+ paket" },
+  { min: 0, maks: 0, isi: "#ffffff", garis: "#bdb5ac", label: "Tidak ada paket" },
+  { min: 1, maks: 1, isi: "#f7ddd8", garis: "#c9a29c", label: "1 paket" },
+  { min: 2, maks: 3, isi: "#eda9a0", garis: "#b5736b", label: "2–3 paket" },
+  { min: 4, maks: 6, isi: "#d4695e", garis: "#8f4038", label: "4–6 paket" },
+  { min: 7, maks: 10, isi: "#b3261e", garis: "#6f1711", label: "7–10 paket" },
+  { min: 11, maks: Number.MAX_SAFE_INTEGER, isi: "#7d150f", garis: "#4c0d09", label: "11+ paket" },
 ] as const;
 
-function kelas(n: number) {
-  return KELAS.find((k) => n >= k.min && n <= k.maks) ?? KELAS[0];
-}
+const kelas = (n: number) => KELAS.find((k) => n >= k.min && n <= k.maks) ?? KELAS[0];
 
-/** Busur kuadratik — sengaja melengkung agar terbaca "hubungan", bukan rute. */
-function busur(a: [number, number], b: [number, number]): Array<[number, number]> {
-  const [lat1, lon1] = a;
-  const [lat2, lon2] = b;
-  const cLat = (lat1 + lat2) / 2 - (lon2 - lon1) * 0.18;
-  const cLon = (lon1 + lon2) / 2 + (lat2 - lat1) * 0.18;
-  const titik: Array<[number, number]> = [];
-  for (let i = 0; i <= 24; i += 1) {
-    const t = i / 24;
-    const u = 1 - t;
-    titik.push([
-      u * u * lat1 + 2 * u * t * cLat + t * t * lat2,
-      u * u * lon1 + 2 * u * t * cLon + t * t * lon2,
-    ]);
-  }
-  return titik;
-}
+const norm = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const norm = (s: string) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
+const judul = (s: unknown) =>
+  String(s ?? "")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
-/** GADM menulis "BalaRaja"/"PasarKemis" tanpa spasi; paket menulis "Balaraja"/"Pasar Kemis". */
-const kunciDesa = (kec: string, desa: string) => `${norm(kec)}|${norm(desa)}`;
+type Props = Record<string, string | number | null>;
+type Fitur = { type: "Feature"; properties: Props; geometry: unknown };
+type FC = { type: string; features: Fitur[] };
 
 export default function Peta({
   paket,
-  desa,
   terpilih,
   onPilih,
 }: {
@@ -80,287 +53,236 @@ export default function Peta({
 }) {
   const wadah = useRef<HTMLDivElement | null>(null);
   const peta = useRef<L.Map | null>(null);
-  const lapisBatas = useRef<L.GeoJSON | null>(null);
-  const lapisBusur = useRef<L.LayerGroup | null>(null);
-  const sorotan = useRef<L.Layer | null>(null);
-  const perFitur = useRef<Map<string, L.Path>>(new Map());
+  const lapisRw = useRef<L.GeoJSON | null>(null);
+  const lapisKel = useRef<L.GeoJSON | null>(null);
+  const perWilayah = useRef<Map<string, L.Polygon>>(new Map());
   const pilihRef = useRef(onPilih);
   pilihRef.current = onPilih;
 
-  const [batas, setBatas] = useState<{ type: string; features: FiturBatas[] } | null>(null);
-  const [gagalBatas, setGagalBatas] = useState(false);
+  const [rw, setRw] = useState<FC | null>(null);
+  const [kel, setKel] = useState<FC | null>(null);
+  const [gagal, setGagal] = useState(false);
 
-  /* Batas desa — sekali. */
   useEffect(() => {
     let hidup = true;
-    fetch("/data/desa-batas.geojson")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((j) => {
-        if (hidup) setBatas(j);
+    Promise.all([
+      fetch("/data/rw.geojson").then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+      fetch("/data/kel.geojson").then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+    ])
+      .then(([a, b]) => {
+        if (!hidup) return;
+        setRw(a);
+        setKel(b);
       })
       .catch(() => {
-        if (hidup) setGagalBatas(true);
+        if (hidup) setGagal(true);
       });
     return () => {
       hidup = false;
     };
   }, []);
 
-  /* Jumlah & pagu per desa. */
-  const perDesa = useMemo(() => {
-    const idPerNama = new Map<string, string | null>();
-    for (const d of desa) idPerNama.set(kunciDesa(d.kecamatan, d.desa), d.id_desa ?? null);
-
-    const hasil = new Map<string, { jumlah: number; pagu: number }>();
+  /* Hitungan paket per unit RW dan per kelurahan. */
+  const hitung = useMemo(() => {
+    const perRw = new Map<string, { jumlah: number; pagu: number }>();
+    const perKel = new Map<string, { jumlah: number; pagu: number }>();
     for (const p of paket) {
-      if (!p.desa_resmi) continue;
-      const kunci = kunciDesa(p.kecamatan_resmi ?? "", p.desa_resmi);
-      const lama = hasil.get(kunci);
-      if (lama) {
-        lama.jumlah += 1;
-        lama.pagu += p.pagu;
-      } else {
-        hasil.set(kunci, { jumlah: 1, pagu: p.pagu });
+      if (p.presisi_peta === "RW" && p.unit_id) {
+        const k = norm(p.unit_id);
+        const lama = perRw.get(k);
+        if (lama) {
+          lama.jumlah += 1;
+          lama.pagu += p.pagu;
+        } else perRw.set(k, { jumlah: 1, pagu: p.pagu });
+      }
+      if (p.desa_resmi) {
+        const k = norm(p.desa_resmi);
+        const lama = perKel.get(k);
+        if (lama) {
+          lama.jumlah += 1;
+          lama.pagu += p.pagu;
+        } else perKel.set(k, { jumlah: 1, pagu: p.pagu });
       }
     }
-    return { hasil, idPerNama };
-  }, [paket, desa]);
+    return { perRw, perKel };
+  }, [paket]);
 
-  const namaUnik = useMemo(
-    () => new Set(paket.filter((p) => p.desa_resmi).map((p) => norm(p.desa_resmi ?? ""))).size,
-    [paket],
-  );
+  const aturZoom = (zoom: number) => {
+    const m = peta.current;
+    if (!m) return;
+    const rinci = zoom >= ZOOM_RW;
+    const pasang = (g: L.LayerGroup | null, tampil: boolean) => {
+      if (!g) return;
+      if (tampil && !m.hasLayer(g)) g.addTo(m);
+      if (!tampil && m.hasLayer(g)) m.removeLayer(g);
+    };
+    pasang(lapisKel.current, !rinci);
+    pasang(lapisRw.current, rinci);
+  };
 
-  /* Peta dasar — sekali. */
   useEffect(() => {
     if (!wadah.current || peta.current) return;
-
-    const m = L.map(wadah.current, {
-      zoomControl: true,
-      attributionControl: true,
-      minZoom: 9,
-      maxZoom: 18,
-      zoomSnap: 0.5,
-      preferCanvas: false,
-    });
-
+    const m = L.map(wadah.current, { zoomControl: true, minZoom: 10, maxZoom: 18, zoomSnap: 0.5 });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
     }).addTo(m);
-
-    lapisBusur.current = L.layerGroup().addTo(m);
-
-    if (desa.length > 0) {
-      m.fitBounds(L.latLngBounds(desa.map((d) => [d.lat, d.lon] as [number, number])), {
-        padding: [28, 28],
-        maxZoom: 11,
-      });
-    } else {
-      m.setView([-6.18, 106.5], 10);
-    }
-
+    m.setView([-6.178, 106.63], 12);
     peta.current = m;
+    m.on("zoomend", () => aturZoom(m.getZoom()));
     const ro = new ResizeObserver(() => m.invalidateSize());
     ro.observe(wadah.current);
-
     return () => {
       ro.disconnect();
       m.remove();
       peta.current = null;
-      lapisBatas.current = null;
-      lapisBusur.current = null;
-      sorotan.current = null;
+      lapisRw.current = null;
+      lapisKel.current = null;
     };
-  }, [desa]);
+  }, []);
 
-  /* Koroplet batas desa. */
+  /* Dua lapis koroplet: RW (rinci) dan kelurahan (ringkas). */
   useEffect(() => {
     const m = peta.current;
-    if (!m || !batas) return;
+    if (!m || !rw || !kel) return;
 
-    if (lapisBatas.current) {
-      lapisBatas.current.remove();
-      lapisBatas.current = null;
-    }
-    perFitur.current = new Map();
+    const buat = (
+      fc: FC,
+      kunciDari: (pr: Props) => string,
+      data: Map<string, { jumlah: number; pagu: number }>,
+      label: (pr: Props) => string,
+      sub: (pr: Props) => string,
+    ) =>
+      L.geoJSON(fc as unknown as GeoJSON.GeoJsonObject, {
+        style: (f) => {
+          const pr = (f as unknown as Fitur).properties;
+          const n = data.get(kunciDari(pr))?.jumlah ?? 0;
+          const k = kelas(n);
+          return {
+            color: k.garis,
+            weight: n === 0 ? 0.4 : 0.7,
+            opacity: 0.65,
+            fillColor: k.isi,
+            fillOpacity: n === 0 ? 0.15 : 0.62,
+          };
+        },
+        onEachFeature: (f, layer) => {
+          const pr = (f as unknown as Fitur).properties;
+          const kunci = kunciDari(pr);
+          const d = data.get(kunci);
+          perWilayah.current.set(kunci, layer as L.Polygon);
+          (layer as L.Polygon).bindTooltip(
+            `<div style="max-width:250px;line-height:1.4">
+               <div style="font-weight:600">${esc(label(pr))}</div>
+               <div style="opacity:.7">${esc(sub(pr))}</div>
+               ${
+                 d
+                   ? `<div style="margin-top:4px">${angka(d.jumlah)} paket · ${rupiahRingkas(d.pagu)}</div>`
+                   : `<div style="margin-top:4px;opacity:.7">Tidak ada paket jalan</div>`
+               }
+               <div style="margin-top:3px;opacity:.55">Batas wilayah resmi Kota Tangerang; paket dikaitkan lewat nama RW/kelurahan.</div>
+             </div>`,
+            { sticky: true, direction: "top" },
+          );
+          (layer as L.Polygon).on("mouseover", () =>
+            (layer as L.Polygon).setStyle({ weight: 1.6, opacity: 1 }),
+          );
+          (layer as L.Polygon).on("mouseout", () => {
+            const nn = data.get(kunci)?.jumlah ?? 0;
+            (layer as L.Polygon).setStyle({ weight: nn === 0 ? 0.4 : 0.7, opacity: 0.65 });
+          });
+        },
+      });
 
-    const lapis = L.geoJSON(batas as unknown as GeoJSON.GeoJsonObject, {
-      style: (f) => {
-        const pr = (f as unknown as FiturBatas).properties;
-        const kunci = kunciDesa(pr.kecamatan, pr.desa);
-        const j = perDesa.hasil.get(kunci)?.jumlah ?? 0;
-        const k = kelas(j);
-        return {
-          color: k.garis,
-          weight: 0.7,
-          opacity: 0.7,
-          fillColor: k.isi,
-          fillOpacity: j === 0 ? 0.18 : 0.62,
-        };
-      },
-      onEachFeature: (f, layer) => {
-        const pr = (f as unknown as FiturBatas).properties;
-        const kunci = kunciDesa(pr.kecamatan, pr.desa);
-        const data = perDesa.hasil.get(kunci);
-        perFitur.current.set(kunci, layer as L.Path);
+    perWilayah.current.clear();
 
-        (layer as L.Path).bindTooltip(
-          `<div style="max-width:250px;line-height:1.4">
-             <div style="font-weight:600">Desa ${esc(pr.desa)}</div>
-             <div style="opacity:.7">Kec. ${esc(pr.kecamatan)}${pr.id_desa ? ` · ${esc(pr.id_desa)}` : ""}</div>
-             ${
-               data
-                 ? `<div style="margin-top:4px">${angka(data.jumlah)} paket jalan · ${rupiahRingkas(data.pagu)}</div>`
-                 : `<div style="margin-top:4px;opacity:.7">Tidak ada paket jalan pada data ini</div>`
-             }
-             <div style="margin-top:3px;opacity:.55">Batas desa dari GADM; paket dikaitkan lewat nama desa.</div>
-           </div>`,
-          { sticky: true, direction: "top" },
-        );
-        (layer as L.Path).on("mouseover", () => {
-          (layer as L.Path).setStyle({ weight: 1.6, opacity: 1 });
-        });
-        (layer as L.Path).on("mouseout", () => {
-          const jj = perDesa.hasil.get(kunci)?.jumlah ?? 0;
-          (layer as L.Path).setStyle({ weight: 0.7, opacity: 0.7, color: kelas(jj).garis });
-        });
-      },
-    }).addTo(m);
+    if (lapisRw.current) lapisRw.current.remove();
+    lapisRw.current = buat(
+      rw,
+      (pr) => norm(`${pr.wadmkd}|${pr.rw}`),
+      hitung.perRw,
+      (pr) => `RW ${pr.rw}`,
+      (pr) => `Kelurahan ${judul(String(pr.wadmkd))} · Kec. ${judul(String(pr.wadmkc))}`,
+    );
 
-    lapisBatas.current = lapis;
-    const kotak = lapis.getBounds();
-    if (kotak.isValid()) m.fitBounds(kotak, { padding: [20, 20], maxZoom: 11 });
-  }, [batas, perDesa]);
+    if (lapisKel.current) lapisKel.current.remove();
+    lapisKel.current = buat(
+      kel,
+      (pr) => norm(pr.wadmkd),
+      hitung.perKel,
+      (pr) => judul(String(pr.wadmkd)),
+      (pr) => `Kec. ${judul(String(pr.wadmkc))}`,
+    );
 
-  /* Busur koridor — di atas koroplet, putus-putus, non-interaktif. */
-  useEffect(() => {
-    const g = lapisBusur.current;
-    if (!g) return;
-    g.clearLayers();
+    const kotak = lapisKel.current.getBounds();
+    if (kotak.isValid()) m.fitBounds(kotak, { padding: [20, 20] });
+    aturZoom(m.getZoom());
+  }, [rw, kel, hitung]);
 
-    const sudah = new Set<string>();
-    for (const p of paket) {
-      if (p.presisi_peta !== "Garis Koridor" || !p.koridor) continue;
-      const tanda = [p.koridor.dari, p.koridor.ke].sort().join("|");
-      if (sudah.has(tanda)) continue;
-      sudah.add(tanda);
-      L.polyline(
-        busur([p.koridor.lat_dari, p.koridor.lon_dari], [p.koridor.lat_ke, p.koridor.lon_ke]),
-        { color: "#1d4e89", weight: 1.6, opacity: 0.65, dashArray: "3 7", interactive: false },
-      )
-        .bindTooltip(
-          `<div style="max-width:230px;line-height:1.4">
-             <div style="font-weight:500">Koridor indikatif</div>
-             <div style="opacity:.75">${esc(p.koridor.dari)} ↔ ${esc(p.koridor.ke)}</div>
-             <div style="margin-top:3px;opacity:.6">Bukan geometri ruas — dua pusat desa dihubungkan.</div>
-           </div>`,
-          { sticky: true, direction: "top" },
-        )
-        .addTo(g);
-    }
-  }, [paket]);
-
-  /* Paket terpilih: sorot batas desanya, bukan memberi titik. */
+  /* Sorot wilayah paket terpilih — bukan titik. */
   useEffect(() => {
     const m = peta.current;
     if (!m) return;
-
-    if (sorotan.current) {
-      sorotan.current.remove();
-      sorotan.current = null;
-    }
-    for (const l of perFitur.current.values()) {
-      l.setStyle({ weight: 0.7, opacity: 0.7, dashArray: undefined, fillOpacity: 0.62 });
+    for (const l of perWilayah.current.values()) {
+      l.setStyle({ weight: 0.7, opacity: 0.65, dashArray: undefined });
     }
     if (!terpilih) return;
 
-    const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const kurangi = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rinci = terpilih.presisi_peta === "RW" && !!terpilih.unit_id;
+    const kunci = rinci ? norm(terpilih.unit_id as string) : norm(terpilih.desa_resmi ?? "");
+    if (!kunci) return;
 
-    if (terpilih.presisi_peta === "Garis Koridor" && terpilih.koridor) {
-      const a: [number, number] = [terpilih.koridor.lat_dari, terpilih.koridor.lon_dari];
-      const b: [number, number] = [terpilih.koridor.lat_ke, terpilih.koridor.lon_ke];
-      sorotan.current = L.polyline(busur(a, b), {
-        color: "#1d4e89",
-        weight: 3,
-        opacity: 1,
-        dashArray: "7 6",
-        interactive: false,
-      })
-        .bindTooltip(
-          `<div style="max-width:250px;line-height:1.4">
-             <div style="font-weight:600">Ruas indikatif</div>
-             <div style="opacity:.75">${esc(terpilih.koridor.dari)} ↔ ${esc(terpilih.koridor.ke)}</div>
-             <div style="margin-top:3px;opacity:.6">Ujung busur = pusat desa, bukan ujung ruas.</div>
-           </div>`,
-          { permanent: true, direction: "top", className: "tooltip-saksi" },
-        )
-        .addTo(m);
-      const kotak = L.latLngBounds([a, b]);
-      if (kurangiGerak) m.fitBounds(kotak, { padding: [64, 64], maxZoom: 14 });
-      else m.flyToBounds(kotak, { padding: [64, 64], maxZoom: 14, duration: 0.9 });
-      return;
+    if (rinci && m.getZoom() < ZOOM_RW) {
+      if (kurangi) m.setZoom(ZOOM_RW);
+      else m.flyTo(m.getCenter(), ZOOM_RW, { duration: 0.7 });
     }
 
-    if (!terpilih.desa_resmi) return;
-    const kunci = kunciDesa(terpilih.kecamatan_resmi ?? "", terpilih.desa_resmi);
-    const path = perFitur.current.get(kunci) as L.Polygon | undefined;
+    const bentuk = perWilayah.current.get(kunci);
+    if (!bentuk) return;
 
-    if (path) {
-      path.setStyle({
-        color: "#111111",
-        weight: 2.6,
-        opacity: 1,
-        dashArray: "6 4",
-        fillOpacity: 0.72,
-      });
-      path.bringToFront();
-      path.bindTooltip(
-        `<div style="max-width:260px;line-height:1.4">
-           <div style="font-weight:600">Desa ${esc(terpilih.desa_resmi ?? "")}</div>
-           <div style="opacity:.75">Kec. ${esc(terpilih.kecamatan_resmi ?? "")}</div>
-           <div style="margin-top:3px;opacity:.7">Paket ini dikaitkan ke desa ini. Lokasi pekerjaan di dalam desa tidak diketahui.</div>
-         </div>`,
-        { permanent: true, direction: "top", className: "tooltip-saksi", sticky: false },
-      );
-      const kotak = path.getBounds();
-      if (kurangiGerak) m.fitBounds(kotak, { padding: [80, 80], maxZoom: 14 });
-      else m.flyToBounds(kotak, { padding: [80, 80], maxZoom: 14, duration: 0.9 });
-      return;
-    }
+    bentuk.setStyle({
+      color: "#111111",
+      weight: 2.6,
+      opacity: 1,
+      dashArray: "6 4",
+      fillOpacity: 0.72,
+    });
+    bentuk.bringToFront();
+    bentuk.bindTooltip(
+      `<div style="max-width:260px;line-height:1.4">
+         <div style="font-weight:600">${esc(terpilih.desa_resmi ?? "Wilayah")}${terpilih.rw ? ` · RW ${esc(terpilih.rw)}` : ""}</div>
+         <div style="opacity:.7">Paket ini dikaitkan ke wilayah ini. Lokasi pekerjaan di dalam wilayah tidak diketahui.</div>
+       </div>`,
+      { permanent: true, direction: "top", className: "tooltip-saksi", sticky: false },
+    );
+    const kotak = bentuk.getBounds();
+    if (kurangi) m.fitBounds(kotak, { padding: [80, 80], maxZoom: 15 });
+    else m.flyToBounds(kotak, { padding: [80, 80], maxZoom: 15, duration: 0.9 });
+  }, [terpilih, rw, kel]);
 
-    /* Desa tidak ada di batas (mis. nama beda) — jatuh ke pusat desa. */
-    if (terpilih.lat != null && terpilih.lon != null) {
-      sorotan.current = L.circleMarker([terpilih.lat, terpilih.lon], {
-        radius: 6,
-        color: "#111111",
-        weight: 2,
-        fillColor: "#ffffff",
-        fillOpacity: 0.9,
-      })
-        .bindTooltip(
-          `<div style="max-width:240px">Batas desa tidak ditemukan; ini pusat desa dari gazetteer.</div>`,
-          { permanent: true, direction: "top", className: "tooltip-saksi" },
-        )
-        .addTo(m);
-      if (kurangiGerak) m.setView([terpilih.lat, terpilih.lon], 13);
-      else m.flyTo([terpilih.lat, terpilih.lon], 13, { duration: 0.9 });
-    }
-  }, [terpilih]);
-
-  /* Hitungan desa per kelas warna untuk legenda. */
   const legenda = useMemo(() => {
-    const jumlah = new Map<string, number>();
-    if (!batas) return KELAS.map((k) => ({ ...k, desa: 0 }));
-    for (const f of batas.features) {
-      const pr = f.properties;
-      const n = perDesa.hasil.get(kunciDesa(pr.kecamatan, pr.desa))?.jumlah ?? 0;
-      const k = kelas(n);
-      jumlah.set(k.label, (jumlah.get(k.label) ?? 0) + 1);
-    }
-    return KELAS.map((k) => ({ ...k, desa: jumlah.get(k.label) ?? 0 }));
-  }, [batas, perDesa]);
+    const perKelas = (
+      fc: FC | null,
+      data: Map<string, { jumlah: number }>,
+      kunciDari: (pr: Props) => string,
+    ) => {
+      const m = new Map<string, number>();
+      if (!fc) return m;
+      for (const f of fc.features) {
+        const k = kelas(data.get(kunciDari(f.properties))?.jumlah ?? 0);
+        m.set(k.label, (m.get(k.label) ?? 0) + 1);
+      }
+      return m;
+    };
+    const a = perKelas(rw, hitung.perRw, (pr) => norm(`${pr.wadmkd}|${pr.rw}`));
+    const b = perKelas(kel, hitung.perKel, (pr) => norm(pr.wadmkd));
+    return KELAS.map((k) => ({ ...k, rw: a.get(k.label) ?? 0, kel: b.get(k.label) ?? 0 }));
+  }, [rw, kel, hitung]);
+
+  const totalRw = legenda.reduce((s, k) => s + k.rw, 0);
+  const berpaket = totalRw - (legenda[0]?.rw ?? 0);
 
   return (
     <div className="peta relative h-full w-full">
@@ -368,20 +290,20 @@ export default function Peta({
         ref={wadah}
         className="h-full w-full"
         role="application"
-        aria-label="Peta koroplet jumlah paket jalan per desa di Kabupaten Tangerang"
+        aria-label="Peta koroplet paket jalan per RW Kota Tangerang"
       />
 
-      <div className="pointer-events-none absolute inset-x-3 top-3 z-[800] mx-auto w-[min(96%,580px)] border border-line bg-card/95 px-3 py-2 text-center">
+      <div className="pointer-events-none absolute inset-x-3 top-3 z-[800] mx-auto w-[min(96%,600px)] border border-line bg-card/95 px-3 py-2 text-center">
         <p className="text-xs leading-snug text-ink-soft">
-          Peta ini mewarnai <strong>batas desa</strong> menurut jumlah paket. Tidak ada paket yang
-          punya koordinat pekerjaan — lokasi di dalam desa tidak diketahui.
+          Peta mewarnai <strong>batas RW/kelurahan resmi</strong> menurut jumlah paket. Tidak ada paket
+          yang punya koordinat pekerjaan — lokasi di dalam wilayah tidak diketahui.
         </p>
       </div>
 
-      {gagalBatas && (
+      {gagal && (
         <div className="pointer-events-none absolute left-1/2 top-20 z-[800] w-[min(92%,420px)] -translate-x-1/2 border border-line bg-card px-3 py-2 text-center">
-          <p className="text-xs text-ink-soft">Batas desa gagal dimuat.</p>
-          <p className="mt-0.5 text-2xs text-muted">Pilih paket di tabel untuk melihat desanya.</p>
+          <p className="text-xs text-ink-soft">Batas wilayah gagal dimuat.</p>
+          <p className="mt-0.5 text-2xs text-muted">Pilih paket di tabel untuk melihat wilayahnya.</p>
         </div>
       )}
 
@@ -395,19 +317,15 @@ export default function Peta({
                 style={{ background: k.isi, borderColor: k.garis, opacity: k.min === 0 ? 0.35 : 1 }}
               />
               <span className="flex-1">{k.label}</span>
-              <span className="num text-muted">{k.desa} desa</span>
+              <span className="num text-muted">{k.rw} RW</span>
             </li>
           ))}
         </ul>
         <p className="mt-2 border-t border-line pt-2 text-2xs text-muted">
-          Busur putus-putus = koridor indikatif antar dua desa, bukan geometri ruas.
+          Perbesar peta untuk melihat per RW (1.020 wilayah). Kelurahan: 104.
         </p>
-        <p className="num mt-2 border-t border-line pt-2 text-2xs text-muted">
-          {angka(legenda.reduce((s, k) => s + k.desa, 0) - (legenda[0]?.desa ?? 0))} wilayah desa
-          berpaket · {angka(namaUnik)} nama unik
-        </p>
-        <p className="mt-1 text-2xs text-muted">
-          "Jatimulya" tercatat di dua kecamatan, jadi wilayah &gt; nama.
+        <p className="num mt-1 text-2xs text-muted">
+          {angka(berpaket)} RW berpaket · {angka(totalRw)} RW total
         </p>
       </div>
     </div>

@@ -3,8 +3,8 @@ import type { Paket, Presisi } from "../lib/paket";
 /* ── Glyph presisi (DESIGN.md §4) ──────────────────────────── */
 
 const WARNA: Record<Presisi, string> = {
-  "Desa/Kelurahan": "var(--color-accent)",
-  "Garis Koridor": "var(--color-koridor)",
+  RW: "var(--color-accent)",
+  Kelurahan: "var(--color-koridor)",
   Kecamatan: "var(--color-badge-presisi)",
   Kabupaten: "var(--color-kabupaten)",
 };
@@ -29,8 +29,8 @@ export function Glyph({
       className={className}
       style={{ flex: "none" }}
     >
-      {presisi === "Desa/Kelurahan" && <circle cx="5" cy="5" r="3.5" fill={isi} />}
-      {presisi === "Garis Koridor" && <rect x="1" y="4" width="8" height="2" fill={isi} />}
+      {presisi === "RW" && <circle cx="5" cy="5" r="3.5" fill={isi} />}
+      {presisi === "Kelurahan" && <rect x="1" y="4" width="8" height="2" fill={isi} />}
       {presisi === "Kecamatan" && <rect x="1.6" y="1.6" width="6.8" height="6.8" fill={isi} />}
       {presisi === "Kabupaten" && (
         <>
@@ -56,8 +56,8 @@ export function StempelSimulasi() {
 /* ── Badge presisi ─────────────────────────────────────────── */
 
 export function labelPresisiDari(presisi: Presisi): string {
-  if (presisi === "Desa/Kelurahan") return "Pusat Desa";
-  if (presisi === "Garis Koridor") return "Koridor Indikatif";
+  if (presisi === "RW") return "RW";
+  if (presisi === "Kelurahan") return "Kelurahan";
   if (presisi === "Kecamatan") return "Kecamatan";
   return "Tanpa lokasi";
 }

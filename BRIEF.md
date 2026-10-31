@@ -23,7 +23,7 @@ cp data/tangerang_desa_coords.json     web/public/data/desa.json
 ```
 
 Ambil saat runtime dengan `fetch('/data/paket.json')`. **Filter wajib di klien:**
-`paket.filter(p => p.sektor === 'Jalan, Jembatan & Drainase')` → **3.602** paket.
+`paket.filter(p => p.sektor === 'Jalan, Jembatan & Drainase')` → **1.557** paket.
 
 Field yang dipakai (jangan mengarang field baru):
 
@@ -35,41 +35,39 @@ lokasi_mikro
 ```
 
 `presisi_peta` ∈ `Desa/Kelurahan` (3.000) · `Garis Koridor` (102) · `Kecamatan` (229) ·
-`Kabupaten` (271 — tidak tampil di peta). Nilai ini adalah **provenans** (dari mana lokasinya
+`Kabupaten` (402 — tidak tampil di peta). Nilai ini adalah **provenans** (dari mana lokasinya
 diturunkan), bukan akurasi: jangan ditampilkan sebagai tingkat presisi dan jangan dipakai untuk
 menggeser titik (lihat Layar 1 angka 2).
 
 ## Layar 1 — Peta audit jalan (`#/`)
 
 **Header metrik** (angka diambil dari data, jangan hardcode kecuali label):
-`3.602 paket jalan · Rp848,60 M · 251 desa · 29 kecamatan · 102 koridor indikatif`
+`1.557 paket jalan · Rp650,18 M · 80 kelurahan · 13 kecamatan · 818 ber-anchor RW indikatif`
 
-**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh) — **koroplet batas desa, bukan titik per paket**:
+**Peta** (Leaflet + tile OSM, tinggi ≥ 60vh) — **koroplet batas wilayah resmi, bukan titik per paket**:
 
-1. **GeoJSON batas desa** `web/public/data/desa-batas.geojson` (274 desa, 136 KB, dari GADM 4.1 level 4;
-   asal-usul dan batasannya di `docs/DATA-BATAS-DESA.md`). Digambar dengan `L.geoJSON`, satu poligon
-   satu desa.
-2. **Warna = jumlah paket desa**, 6 kelas: 0 (putih), 1–4, 5–9, 10–24, 25–59, 60+ (merah makin gelap).
-   Stroke tipis 0,7 px; hover menebalkan stroke. **Jangan** memakai ukuran lingkaran, jitter, atau
-   titik apa pun untuk paket.
-3. **Paket terpilih** (klik baris di tabel) → sorot **batas desanya** (stroke hitam putus-putus 2,6 px)
-   + flyTo ke batas itu + tooltip tetap: `Paket ini dikaitkan ke desa ini. Lokasi pekerjaan di dalam
-   desa tidak diketahui.` Tidak ada marker titik.
-4. **Koridor** → busur putus-putus antar pusat dua desa, di atas koroplet, tooltip
-   `Koridor indikatif: X ↔ Y — bukan geometri ruas`.
-5. **Legenda wajib** di pojok peta: 6 kelas warna, masing-masing dengan **jumlah desa**, plus baris
-   `N wilayah desa berpaket · M nama unik` (Jatimulya ada di 2 kecamatan).
+1. **GeoJSON batas** dari ArcGIS Kota Tangerang: `web/public/data/rw.geojson` (1.020 poligon RW,
+   810 KB) dan `kel.geojson` (104 kelurahan, 191 KB). Digambar dengan `L.geoJSON`.
+2. **Disclosure bertahap**: zoom < 12 → lapis kelurahan; zoom ≥ 12 → lapis RW. **Warna = jumlah
+   paket**, 6 kelas: 0 (putih), 1, 2–3, 4–6, 7–10, 11+ (merah makin gelap). Stroke 0,7 px, hover
+   menebalkan. **Jangan** memakai marker, jitter, atau titik untuk paket.
+3. **Paket terpilih** (klik baris di tabel) → sorot **batas wilayahnya** (stroke hitam putus-putus
+   2,6 px) + flyTo + tooltip tetap: `Paket ini dikaitkan ke wilayah ini. Lokasi pekerjaan di dalam
+   wilayah tidak diketahui.`
+4. **Tidak ada layer koridor/ruas** di FDS: pencocokan ke ruas hanya 7% dan tidak dipakai.
+5. **Legenda wajib** di pojok peta: 6 kelas warna dengan **jumlah RW** per kelas, plus baris
+   `483 RW berpaket · 1.020 RW total` dan catatan `Perbesar peta untuk melihat per RW`.
 6. **Banner tetap di atas peta** (tidak bisa ditutup):
-   `Peta ini mewarnai batas desa menurut jumlah paket. Tidak ada paket yang punya koordinat pekerjaan — lokasi di dalam desa tidak diketahui.`
+   `Peta mewarnai batas RW/kelurahan resmi menurut jumlah paket. Tidak ada paket yang punya koordinat pekerjaan — lokasi di dalam wilayah tidak diketahui.`
 
 **Filter** (satu baris, sticky): tahun (2025/2026/semua) · kecamatan (dropdown dari data) · jenis
 pekerjaan (semua / permukaan / drainase / jembatan — klasifikasi kata kunci dari `nama`).
 Tampilkan jumlah hasil filter secara langsung.
 
-**Panel/tabel**: daftar paket hasil filter (kolom: nama, desa, kecamatan, pagu, tahun, badge presisi),
-klik baris → peta `flyTo` + panel detail berisi: kode RUP, pagu, satker, metode, sumber dana, bulan,
-badge `DATA RESMI (SIRUP / BINA MARGA)`, dan tombol `Laporkan kerusakan` yang membuka `#/lapor`
-dengan `kode_rup` terisi.
+**Panel/tabel**: daftar paket hasil filter (kolom: nama, kelurahan/RW, kecamatan, pagu, tahun, badge
+presisi), klik baris → peta `flyTo` + panel detail berisi: kode RUP, pagu, satker, metode, sumber
+dana, bulan, badge `DATA RESMI (SIRUP / BINA MARGA)`, dan tombol `Laporkan kerusakan` yang membuka
+`#/lapor` dengan `kode_rup` terisi.
 
 ## Layar 2 — Lapor (`#/lapor`)
 
@@ -91,7 +89,7 @@ Tiga langkah dalam satu halaman (stepper jelas, bisa mundur):
 - **Jangan** menambahkan input luas cm² atau apa pun berbau CV.
 
 **Langkah 3 — Lokasi & paket**
-- Pilih desa (dropdown 274 desa) atau `Gunakan lokasi saya` (Geolocation API; kalau ditolak, tetap
+- Pilih desa (dropdown 104 kelurahan) atau `Gunakan lokasi saya` (Geolocation API; kalau ditolak, tetap
   bisa lanjut dengan desa).
 - Hitung 3 kandidat paket terdekat dengan rumus `MatchScore` di `SPEC.md` §3 (Haversine + desa sama +
   jendela pelaksanaan + kemiripan teks), tampilkan skor apa adanya (bilangan bulat 0–100).
