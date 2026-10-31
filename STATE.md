@@ -169,11 +169,10 @@ menunjukkan koroplet tanpa titik paket.
 Semua **Kota Tangerang**. Kabupaten tidak punya ArcGIS publik (`maps.tangerangkab` = TileServer GL
 OSM; `geoportal.tangerangkab` menutup koneksi).
 
-Yang terverifikasi: jaringan jalan PU 6.373 garis tetapi **hanya 32 bernama** dan atribut
-kelas/status/kondisi kosong; `UTILITAS/jalan_tngkota` 129 jalan utama (semua bernama) + 12.384 jalan
-lokal (8.105 bernama); jembatan 168 titik (kategori + kondisi); batas kecamatan 13 / kelurahan 104 /
-RW 1.020 / RT 5.167 poligon (query + GeoJSON); `DISPERKIM/jalan_lingkungan` 310 garis ber-RT/RW dengan
-progres 0/30/70/100%; aduan drainase 156 titik (hanya `bulan`, tanpa teks).
+Yang terverifikasi: jaringan jalan PU **6.373 segmen dan semuanya bernama** (`namobj` 6.373/6.373,
+5.751 nama unik, 1.374,6 km, lebar rata-rata 3,49 m, fungsi jalan berkode `fgsrjl`); atribut
+kelas/status/kondisi/material kosong, `nama_ruas` hanya 32 (duplikat `namobj` untuk arteri) — sempat
+salah dibaca sebagai "hanya 32 bernama", dikoreksi 31 Okt setelah user memeriksa kolom "Nama Objek".
 
 **Keputusan:** tidak dipakai untuk FDS — cakupan kota, dan pindah studi kasus berarti tarik RUP Kota,
 gazetteer kelurahan baru, pipeline + UI ulang. Disimpan sebagai rencana v2 dengan bukti di
