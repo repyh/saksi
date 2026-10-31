@@ -163,6 +163,22 @@ dipilih), `AGENTS.md` (aturan 5 & 8), `BRIEF.md` (Layar 1), `SPEC.md` (FR-01, la
 `KONSEP.md`, `README.md`. Diverifikasi: `typecheck` 0 error, `vite build` 441 kB, screenshot Chromium
 menunjukkan koroplet tanpa titik paket.
 
+## 31 Okt: inventaris ArcGIS Kota Tangerang (bukan Kabupaten)
+
+`maps.tangerangkota.go.id` = ArcGIS 10.71, **522 layanan**, 53 folder, 11 folder terkunci token.
+Semua **Kota Tangerang**. Kabupaten tidak punya ArcGIS publik (`maps.tangerangkab` = TileServer GL
+OSM; `geoportal.tangerangkab` menutup koneksi).
+
+Yang terverifikasi: jaringan jalan PU 6.373 garis tetapi **hanya 32 bernama** dan atribut
+kelas/status/kondisi kosong; `UTILITAS/jalan_tngkota` 129 jalan utama (semua bernama) + 12.384 jalan
+lokal (8.105 bernama); jembatan 168 titik (kategori + kondisi); batas kecamatan 13 / kelurahan 104 /
+RW 1.020 / RT 5.167 poligon (query + GeoJSON); `DISPERKIM/jalan_lingkungan` 310 garis ber-RT/RW dengan
+progres 0/30/70/100%; aduan drainase 156 titik (hanya `bulan`, tanpa teks).
+
+**Keputusan:** tidak dipakai untuk FDS — cakupan kota, dan pindah studi kasus berarti tarik RUP Kota,
+gazetteer kelurahan baru, pipeline + UI ulang. Disimpan sebagai rencana v2 dengan bukti di
+`docs/INVENTARIS-ARCGIS-KOTA-TANGERANG.md`. Peta tetap koroplet GADM Kab. Tangerang.
+
 ## Modul yang harus ada (SPEC §4)
 
 FR-01 peta audit jalan · FR-02 pencari mikro "jalan mana yang dibangun di dekat saya" (desa/kampung/nama jalan) · FR-03 form lapor (blur privasi, **kategorisasi jenis & penyebab kerusakan oleh pelapor**, ukuran kasar, rekomendasi paket + skor) · FR-04 kartu sandingan · FR-05 verifikasi komunitas dua kunci · FR-06 rapor **29 kecamatan** & jenis kerusakan · FR-07 rekam jejak penyedia berimbang.
