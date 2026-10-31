@@ -1,31 +1,30 @@
-# RUAS
+# SAKSI
 
-RUAS is a civic road-condition reporting platform that uses on-device AI to assess reports and compare them with official Bina Marga data. The goal is not to add another complaints channel, but to make **consistency scores** and **data gaps** visible, using neutral language and avoiding blame.
+**SAKSI** (*Sistem Akuntabilitas & Komparasi Spasial Infrastruktur*) makes public road-work packages in Kabupaten Tangerang easier to explore by linking procurement records with their mapped location and location precision.
 
-## How the product works
+The product uses neutral, evidence-led language. A map location or a citizen report is a signal for review, not proof of wrongdoing or a guarantee of government action.
 
-1. **People report without an account.** The form accepts text, location, and a photo for on-device analysis. Photos are not sent to RUAS servers; the browser runs the ONNX model, removes EXIF metadata, and handles image privacy locally. Location is blurred before submission.
-2. **AI helps assess reports.** Computer vision suggests the damage type and severity with a confidence score. NLP classifies the issue, extracts location references from text, helps detect spam, and flags likely duplicate reports.
-3. **Reports are matched to road segments.** PostGIS finds nearby road segments within documented distance and uncertainty limits.
-4. **Official data provides a comparison.** IRI, PCI, and official road-condition data are compared with citizen reports for comparable road segments and time periods.
-5. **Results are presented as evidence for review.** The map, road pages, consistency scores, gap list, and methodology include sources and data dates. Report statuses: `suspected → verified → followed up`.
+## Current implementation
 
-Reports are signals for review, not accusations or proof of wrongdoing. Use neutral terms such as **“suspected,” “unverified,”** and **“inconsistent with measurements.”**
+- The home page presents the audit overview and an interactive road-package map.
+- The map shows the 2025–2026 snapshot, with filters for year, kecamatan, work type, and search.
+- Selecting a package opens its details and RUP reference.
+- Package data is read by a server-only repository. The initial page uses a Next.js Server Component; interactive filters use `GET /api/packages`.
+- The current repository adapter reads the checked-in JSON snapshot. It does not query Supabase for package records.
+- Better Auth and Prisma are configured for server use. PostGIS is enabled in the Supabase project, but package, GIS, report, and ingestion domain tables are not yet modeled.
+- The report draft store uses IndexedDB. The report page and submission API are not implemented.
+- Government and social-source scrapers are planned as separately deployed scheduled workers; they are not implemented yet.
 
 ## Technology
 
-- Next.js App Router, React, TypeScript, Tailwind CSS, and React Icons
-- Bun for project installation and scripts
-- Leaflet with OpenStreetMap tiles and visible attribution
-- Supabase Postgres + PostGIS for the database and geospatial queries
-- Prisma ORM for data access; parameterized SQL for PostGIS queries
-- Better Auth is available in the application foundation, but public reporters do not need to log in
-- ONNX model in the browser for photo analysis (planned)
-- Installable PWA foundation with local-only report draft storage; offline map tiles are not cached
+- Next.js App Router, React, TypeScript, Tailwind CSS, React Icons, and Bun
+- Leaflet / React Leaflet with OpenStreetMap tiles and attribution
+- Supabase Postgres with PostGIS, Prisma ORM, and Better Auth foundations
+- PWA install and offline fallback foundations; map tiles and API responses are not cached by the service worker
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for component details and data flows.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the frontend/backend boundary, API contract, repository design, and planned scraper flow. See [docs/DESIGN.md](docs/DESIGN.md) for interface rules.
 
-The app manifest and service worker support installation and an offline fallback page. Report drafts can be stored in browser IndexedDB; they stay on the device until the user explicitly submits them online. The report form and submission flow are still to be built. OpenStreetMap tiles, API responses, and photos are not cached by the service worker. Install prompts require HTTPS in production (localhost is supported for development).
+Report drafts are stored locally in IndexedDB and stay on the device until a future submission flow is explicitly implemented. Do not add a server photo upload path; image privacy processing is intended to happen in the browser before submission.
 
 ## Data sources and early findings
 
@@ -42,18 +41,13 @@ An initial IRI analysis found a national average of 4.97 and about 6.8% of point
 
 Every figure shown on the site must come from processed data and its source manifest, not a hard-coded UI value. Include the retrieval date, measurement period, methodology, coverage, and limits on interpretation.
 
-## Implementation status
+## Remaining implementation
 
-As of October 26, 2026, this repository contains the Next.js foundation and a Leaflet/OpenStreetMap map view. Prisma, Better Auth, Supabase Postgres, and PostGIS migration configuration are prepared. The map does not yet show reports or road-condition data.
-
-The following features still need to be built:
-
-- RUAS landing page with sourced data highlights and a report call to action
-- Anonymous report form with location and on-device ONNX photo analysis
-- Storage for text, blurred location, and model results without uploading photos
-- Map/list of reports and road detail pages with IRI/PCI comparisons
-- Official data ingestion with paging, provenance, and validation
-- NLP processing, geospatial matching, basic moderation, consistency scoring, and a gap list
+- A citizen report page and submission API, including moderation and abuse controls
+- Prisma domain models and repository backed by Supabase Postgres/PostGIS
+- Separate government-site and social-source scraper workers with provenance, validation, retries, and run history
+- Viewport-aware map queries and a separately paginated package register
+- Published methodology and source metadata for every displayed metric
 
 ### FDS priorities — November 1, 2026
 
@@ -64,7 +58,7 @@ The following must be working for the First Draft Submission:
 - Map or list of reports
 - Public repository and a PDF of up to 10 pages with the concept, sitemap, wireframes, key features, and screenshots of at least two pages (the landing page and one other page)
 
-Additional features such as road detail pages, scoring, full methodology, and moderation can follow after the core flow works. Do not show regency/city figures until paging and matching are complete.
+Do not present inferred location precision as an official contract coordinate. Keep report status and uncertainty explicit, and do not show derived comparisons without their source, period, coverage, and methodology.
 
 ## Running the project
 
@@ -109,12 +103,15 @@ Open <http://localhost:3000>. Prisma Migrate in development also requires a shad
 
 ```text
 src/
-  app/          # Next.js routes, layouts, and API
-  contracts/    # API contracts grouped by domain
-  features/     # Application features; currently the map
-  lib/          # Better Auth and Prisma
-prisma/         # Postgres/PostGIS schema and migrations
-docs/           # Project and architecture documentation
+  app/          # Server-rendered pages and HTTP route handlers
+  contracts/    # Shared request and response DTOs
+  features/     # Browser UI and feature interactions
+  server/       # Use cases, repository interfaces, server-only adapters
+  lib/          # Better Auth and Prisma clients
+workers/        # Planned, independently deployed scraper processes
+data/           # Versioned source snapshots
+prisma/         # Postgres schema and migrations
+docs/           # Product, design, handoff, and architecture documentation
 ```
 
 Government and social media scrapers will run as two scheduled workloads on a server separate from Next.js. Scraper implementations are not yet in this repository.
@@ -122,7 +119,7 @@ Government and social media scrapers will run as two scheduled workloads on a se
 ## Privacy and data quality principles
 
 - Public reporters do not need accounts. Do not request names, national ID numbers, phone numbers, or social media accounts.
-- Photos are processed on-device and are not sent to RUAS. Do not add a photo upload path to the server.
+- The report submission flow is not implemented. Keep its privacy design explicit; do not add a photo upload path if photos are promised to stay on-device.
 - Ask for consent before accessing location; blur it before submission and show public locations at an appropriately coarse level.
 - Clearly label report status and uncertainty. Rejected reports remain recorded as unverified so patterns can still be studied.
 - Show the source, date, coverage, and methodology alongside every figure.

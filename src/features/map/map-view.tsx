@@ -10,5 +10,5 @@ const MapCanvas = dynamic(() => import("./map-canvas"), {
 });
 
 export default function MapView() {
-  return <MapCanvas />;
+  return <MapCanvas packages={[]} selectedPackage={null} onSelectPackage={() => {}} />;
 }

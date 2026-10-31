@@ -28,8 +28,10 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 1. **Fokus jalan.** Jangan menampilkan filter 5 sektor. Dataset memuat 5 sektor, tapi produk =
    jalan; filter yang boleh ada: tahun, kecamatan/desa, jenis pekerjaan (permukaan/drainase/jembatan).
-2. **Tanpa backend untuk FDS.** Data disajikan sebagai JSON statis dari `web/public/data/`.
-   Backend (FastAPI + Postgres) menyusul setelah 1 Nov — jangan membangunnya sekarang.
+2. **Batas frontend/backend SAKSI.** Next.js Route Handlers menjadi BFF; browser tidak mengambil
+   snapshot paket secara langsung. Snapshot saat ini dibaca oleh repository server-only dari `data/`.
+   Supabase domain tables dan scraper workers adalah tahap terpisah; jangan mengarang skema atau
+   pipeline sebelum provenance, presisi lokasi, validasi, dan kebijakan retensinya ditentukan.
 3. **Tanpa NLP/LLM di pipeline lokasi.** Sudah diuji dan ditolak; hasil uji ada di `SPEC.md` §2.4.
 4. **Tanpa computer vision / pengukuran cm².** Ditolak user + dosen. Kerusakan dikategorikan
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.
@@ -57,6 +59,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 | Berkas | Isi |
 |---|---|
-| `docs/KONSEP.md` | masalah, klaim inovasi, cakupan, dampak, etika |
-| `docs/SPEC.md` | data, pipeline, model data laporan, `MatchScore`, FR, layar |
-| `docs/README.md` | ringkasan publik + cara menjalankan |
+| `docs/ARCHITECTURE.md` | batas frontend/backend, API, repository, database, worker, tahapan |
+| `docs/PRODUCT.md` | produk, masalah, sasaran, dan batas interpretasi |
+| `docs/DESIGN.md` | sistem visual dan aturan antarmuka |
+| `docs/HANDOFF.md` | status operasional dan keputusan kerja |

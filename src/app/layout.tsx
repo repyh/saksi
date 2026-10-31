@@ -1,22 +1,37 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Raleway, Open_Sans } from "next/font/google";
+import { Navbar } from "@/components/navbar";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import PwaRuntime from "@/features/pwa/components/pwa-runtime";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const raleway = Raleway({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const openSans = Open_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  applicationName: "RUAS",
-  title: "RUAS — Road condition reporting",
-  description: "Community road reports compared with official road-condition data.",
+  applicationName: "SAKSI",
+  title: "SAKSI — Sistem Akuntabilitas & Komparasi Spasial Infrastruktur",
+  description: "Platform pelaporan warga dan audit silang anggaran jalan Kabupaten Tangerang.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full">
-        {children}
+    <html lang="id" className={`${raleway.variable} ${openSans.variable} h-full antialiased`}>
+      <body className="min-h-full font-sans bg-background text-foreground flex flex-col">
+        <Navbar />
+        <div className="flex-1">
+          {children}
+        </div>
+        <SiteFooter />
         <PwaRuntime />
       </body>
     </html>
