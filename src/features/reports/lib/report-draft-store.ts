@@ -1,6 +1,6 @@
 import type { ReportDraft, SaveReportDraftInput } from "@/contracts/reports/report-draft.contract";
 
-const DATABASE_NAME = "ruas-local-reports";
+const DATABASE_NAME = "saksi-local-reports";
 const DATABASE_VERSION = 1;
 const STORE_NAME = "drafts";
 

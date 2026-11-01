@@ -14,7 +14,7 @@ export default function OfflinePage() {
       }}
     >
       <section style={{ maxWidth: "28rem", textAlign: "center" }}>
-        <p style={{ color: "#1d4ed8", fontWeight: 700, letterSpacing: "0.12em" }}>RUAS</p>
+        <p style={{ color: "#1d4ed8", fontWeight: 700, letterSpacing: "0.12em" }}>SAKSI</p>
         <h1 style={{ fontSize: "2rem", margin: "0.5rem 0" }}>You’re offline</h1>
         <p style={{ color: "#475569", lineHeight: 1.6 }}>
           Reconnect to load the map and submit reports. Drafts saved on this device remain here.

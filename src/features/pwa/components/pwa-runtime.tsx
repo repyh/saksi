@@ -9,7 +9,7 @@ export default function PwaRuntime() {
     void navigator.serviceWorker
       .register("/sw.js", { scope: "/", updateViaCache: "none" })
       .catch((error: unknown) => {
-        console.error("RUAS service worker registration failed.", error);
+        console.error("Pendaftaran service worker SAKSI gagal.", error);
       });
   }, []);
 

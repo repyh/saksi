@@ -3,17 +3,15 @@ import { defineConfig } from "prisma/config";
 
 dotenv.config({ path: [".env.local", ".env"] });
 
+// Database hanya wajib untuk perintah `db:*` (migrate/status). `prisma generate` dan
+// `next build` harus tetap jalan tanpa DATABASE_URL supaya repo bisa dibangun di mesin
+// bersih sebelum Postgres disiapkan.
 const databaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("Set DIRECT_URL (preferred) or DATABASE_URL before running Prisma commands.");
-}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
-  datasource: {
-    url: databaseUrl,
-  },
+  ...(databaseUrl ? { datasource: { url: databaseUrl } } : {}),
 });

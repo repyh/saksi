@@ -1,7 +1,7 @@
 # STATE — Kondisi Terkini Proyek SAKSI
 
-**Tanggal Pembaruan:** 31 Oktober 2026, 14:35 WIB
-**Target Terdekat:** First Draft Submission (FDS) — **1 November 2026** (T-1 Hari)
+**Tanggal Pembaruan:** 1 November 2026
+**Target Terdekat:** First Draft Submission (FDS) — **1 November 2026**
 **Kompetisi:** Web In Action (WIA) — MIA 2026 (KSM Multimedia UPN Veteran Jakarta)
 **Tema / Subtema:** *Designing Digital Futures – Powering Public Transparency* / **Civic Reporting & Accountability**
 **Identitas Produk:** **SAKSI** (*Sistem Akuntabilitas & Komparasi Spasial Infrastruktur*)
@@ -10,71 +10,93 @@
 
 ## 1. Ringkasan Eksekutif & Posisi Saat Ini
 
-Proyek telah melakukan pivot strategis dari konsep awal (**RUAS** — pemindaian CV/ONNX dan NLP pada jalan nasional) menuju **SAKSI** (v3, disepakati 29 Oktober 2026 berdasarkan arahan dosen pembimbing dan hasil uji terukur).
+Fokus dipersempit ke **satu jenis infrastruktur: JALAN**, studi kasus **Kota Tangerang**
+(`idKldi=D44`, BPS `3671`), TA 2025–2026. Studi kasus Kabupaten Tangerang (D50) dan Bandung tetap
+disimpan sebagai arsip pipeline, bukan produk.
 
-Fokus saat ini dipersempit secara ketat ke **satu jenis infrastruktur: JALAN** di **Kabupaten Tangerang** (`idKldi=D50`, BPS `3603`) TA 2025–2026:
-- **3.602 paket jalan**, pagu total **Rp848,60 Miliar**.
-- **3.331 paket bertitik (92,5%)** terpetakan (3.000 titik desa, 102 garis koridor, 229 sentroid kecamatan).
-- **271 paket (7,5%)** tanpa lokus mikro (tidak dipaksakan titik, ditampilkan di tabel dengan label `Lokasi: Kab. Tangerang (Umum)`).
-- **251 dari 274 desa/kelurahan** tersentuh di 29 kecamatan.
+Angka snapshot **31 Oktober 2026**:
+
+- **1.557 paket jalan/jembatan/drainase**, pagu **Rp650,18 Miliar** (TA2025 939 · TA2026 618).
+- Anchor lokasi: **RW 818 (52,5%)**, **kelurahan 337 (21,6%)**, **tanpa lokus 402 (25,8%)**.
+- **80 dari 104 kelurahan** dan **483 dari 1.020 RW** tersentuh, di **13 kecamatan**.
+- **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
+
+Alasan pindah dari Kabupaten: Kabupaten tidak punya GIS publik (hanya TileServer GL OSM), sedangkan
+Kota punya ArcGIS 10.71 dengan batas RW/kelurahan resmi. Alasan anchor RW: uji 31 Oktober menunjukkan
+hanya **7%** paket menyebut nama ruas yang bisa dicocokkan, sementara **54,8%** menyebut nomor RW.
 
 ### Status Kesiapan FDS (1 November 2026)
-Wajib dikumpulkan:
-1. **Repositori Publik GitHub** + `README.md` mutakhir.
-2. **Dokumen PDF FDS maks 10 halaman** (`WIA_FSDMIA2026_<NamaTim>.pdf`): konsep, sitemap, wireframe, penjelasan fitur, dan **screenshot minimal 2 halaman hidup**.
-3. **Dua Layar Hidup yang Wajib Ada:**
-   - **Layar 1 (`/`):** Peta Audit Jalan Kabupaten Tangerang (3.331 titik/garis, ringkasan Rp848,60 M, filter tahun/kecamatan/pekerjaan, register paket).
-   - **Layar 2 (`/lapor`):** Alur Lapor Warga 3 Langkah (Foto + blur privasi/hapus EXIF di browser, kategorisasi kerusakan tanpa CV cm², rekomendasi paket via `MatchScore`).
+
+1. **Repositori Publik GitHub** — ada (`github.com/repyh/saksi`), README diperbarui ke angka Kota.
+2. **Dokumen PDF FDS maks 10 halaman** — belum dibuat.
+3. **Dua Layar Hidup** — sudah ada:
+   - **Landing + peta audit (`/`, `/project`):** koroplet RW/kelurahan, filter tahun/kecamatan/jenis/
+     tampilan, panel register paket.
+   - **Alur lapor (`/laporan`, `/laporan/paket/[rup]`):** 4 langkah, kategorisasi kerusakan oleh
+     pelapor, draf lokal di IndexedDB, tanpa unggah foto.
 
 ---
 
 ## 2. Inventaris Aset & Keadaan Repositori
 
 ### 2.1 Basis Teknologi (Active Stack)
+
 - **Framework:** Next.js 16.4.3 (Turbopack, App Router, React 19.3.0, TypeScript 5).
-- **Styling & UI Kit:** Tailwind CSS v4, `shadcn/ui` (preset `base-nova`, `@base-ui/react`, `class-variance-authority`, `tw-animate-css`, ikon `lucide-react`).
+- **Styling & UI Kit:** Tailwind CSS v4, `shadcn/ui` (`@base-ui/react`, `class-variance-authority`,
+  `tw-animate-css`, ikon `lucide-react` + `react-icons`).
 - **Peta:** Leaflet 1.9.4 & `react-leaflet` 5.0.0 dengan tile OpenStreetMap.
-- **Package Manager:** Bun 1.4.2 (`bun.lock`).
-- **Verifikasi Build & Lint:** `bun run build` lolos (sukses render 9 rute statis), `bun run lint` lolos (0 warning, 0 error).
+- **Package Manager:** Bun 1.4.2 (`bun.lock`); `npm` juga jalan. Node dipin di `.nvmrc` = 24.
+- **Verifikasi:** `npm run lint` bersih, `npm run build` sukses **tanpa `DATABASE_URL`**.
 
-### 2.2 Dataset Tersedia (`data/`)
-Semua dataset hasil snapshot per 29 Oktober 2026 telah terkomit di repositori:
-- `data/saksi_tangerang_2025_2026.json` (2,9 MB): 5.487 paket fisik (3.602 paket jalan, Rp848,60 M).
-- `data/tangerang_desa_coords.json`: 274 desa/kelurahan BPS `3603` di 29 kecamatan dengan koordinat sentroid OSM.
-- `data/manifest.json`: Metadata sumber resmi (SIRUP Inaproc, BPS, OSM).
-- `data/jalan.json` & `data/provinsi.json`: Data GIS Ditjen Bina Marga (IRI nasional) sebagai pembanding sekunder.
-- `data/saksi_bandung_2025_2026.json` & `data/bandung_desa_coords.json`: Arsip bukti generalisasi pipeline multi-wilayah.
+### 2.2 Dataset Tersedia (`data/` dan `public/data/`)
 
-Paket jalan sekarang dibaca oleh repository server-only dari `data/saksi_tangerang_2025_2026.json`. Jangan salin snapshot ke `public/` atau memuatnya langsung dari komponen client.
+- `data/saksi_kota_tangerang_2025_2026.json` (**681 KB**): 1.557 paket jalan + field anchor
+  (`rw`, `unit_id`, `presisi_peta`) — dibaca server-only, tidak disalin ke `public/`.
+- `public/data/rw.geojson` (**810 KB**): 1.020 poligon RW dari `Batas_Adminsitratif/batas_rw_2021`.
+- `public/data/kel.geojson` (**191 KB**): 104 poligon kelurahan.
+- Arsip: `saksi_tangerang_2025_2026.json` (Kabupaten), `saksi_bandung_2025_2026.json`,
+  `tangerang_desa_coords.json`, `bandung_desa_coords.json`, `jalan.json`, `provinsi.json`,
+  `nasional.json`, `manifest.json`, `vendor_jakarta.json`.
+
+Sumber: SIRUP Inaproc (`dataruppenyediakldi?idKldi=D44`, 21.402 baris 2025+2026) dan ArcGIS Kota
+Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota.py`).
 
 ### 2.3 Implementasi dan Batas Frontend/Backend
-- `src/app/page.tsx` adalah Server Component yang meminta data awal kepada use case paket.
-- `src/features/map/map-dashboard.tsx` mengelola kontrol filter dan interaksi peta; filter lanjutan meminta `GET /api/packages`.
-- `src/app/api/packages/route.ts` memvalidasi parameter dan memanggil `src/server/packages/service.ts`.
-- `src/server/packages/snapshot-repository.ts` menjadi adapter snapshot server-only; batas repository dapat dipertahankan saat implementasi Prisma menggantikannya.
-- `src/features/reports/lib/report-draft-store.ts` menyimpan draf lokal. Halaman `/lapor` dan API submit belum tersedia.
-- `src/lib/prisma.ts`, `src/lib/auth.ts`, dan Better Auth API sudah aktif sebagai fondasi autentikasi. Prisma belum memiliki tabel domain paket, laporan, atau ingestion; migrasi PostGIS baru mengaktifkan ekstensi.
-- `docs/ARCHITECTURE.md` mendefinisikan keputusan, alur API, batas worker scraper, dan tahapan pengembangan.
+
+- `src/app/page.tsx` — Server Component yang meminta data awal kepada use case paket.
+- `src/features/map/map-dashboard.tsx` + `map-canvas.tsx` — filter, mode tampilan (Jumlah paket /
+  Nilai anggaran / Jenis pekerjaan), koroplet dua tingkat zoom (RW ≥ 12, kelurahan di bawahnya).
+- `src/app/api/packages/route.ts` → `src/server/packages/service.ts` → `snapshot-repository.ts`
+  (server-only + type guard runtime).
+- `src/features/reports/components/report-prototype.tsx` — alur lapor; draf disimpan di IndexedDB
+  (`saksi-local-reports`); belum ada API submit.
+- `src/lib/prisma.ts` + `src/lib/auth.ts` — **opsional**: klien Prisma dibuat saat dipakai, route
+  `/api/auth/*` menjawab `503` bila `DATABASE_URL` kosong, dan build tidak menuntut database.
+- `docs/ARCHITECTURE.md` — batas frontend/backend, kontrak API, rencana worker scraper.
 
 ---
 
 ## 3. Matriks Kesenjangan Implementasi (Gap Analysis)
 
-| Komponen / Fitur | Target | Status di Kode Saat Ini | Tindakan yang Dibutuhkan |
+| Komponen / Fitur | Target | Status di kode | Tindakan yang dibutuhkan |
 |---|---|---|---|
-| **Penyajian paket** | UI mengakses paket melalui server contract | Initial data via Server Component; filter via `GET /api/packages`; snapshot dibaca server-only | Ganti snapshot adapter dengan Prisma setelah domain schema siap |
-| **Peta dan register (`/`)** | Peta audit, daftar paket, filter tahun/kecamatan/jenis pekerjaan | Sudah terhubung ke 3.602 paket jalan; list menampilkan maksimal 120 item dan peta memakai hasil filter | Pisahkan halaman register dari compact map features; tambah query viewport saat skala membutuhkannya |
-| **Supabase/PostGIS domain** | Paket, lokasi dengan presisi, provenance, dan query spasial | PostGIS aktif; Prisma saat ini hanya memodelkan Better Auth | Definisikan model sumber/provenance dan geometri sebelum migrasi data |
-| **Scraper pemerintah dan sosial** | Proses terjadwal, terpisah dari web | Belum diimplementasikan | Tentukan akses sumber, validasi, idempotensi, log, retry, dan kredensial khusus |
-| **Lapor warga (`/lapor`)** | Draf privat lokal dan submit dengan status moderasi | IndexedDB draf tersedia; halaman dan API submit belum ada | Tetapkan aturan privasi, moderasi, abuse control, serta retensi sebelum persistensi |
-| **Dokumentasi arsitektur** | Menjelaskan boundary dan alur data terkini | `docs/ARCHITECTURE.md` tersedia | Jaga README, handoff, dan status proyek selaras |
+| **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; snapshot server-only | Ganti adapter snapshot dengan Prisma setelah skema domain siap |
+| **Peta & register** | Koroplet RW/kelurahan + register | Jalan: koroplet 2 tingkat, filter, register | Paginasi/limit API; mode "Jenis pekerjaan" masih ikon pin di centroid → ganti bentuk agregat |
+| **Metrik header** | Angka diturunkan dari data | Konstanta `DEFAULT_KOTA_TANGERANG_METRICS` (benar per 31 Okt) | Turunkan dari data + asersi saat build |
+| **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | Belum ada | Tambahkan di header peta dan halaman laporan |
+| **Supabase/PostGIS domain** | Model paket, laporan, geometri | PostGIS aktif; Prisma baru memodelkan auth | Definisikan model provenance + geometri |
+| **Scraper pemerintah/sosial** | Worker terjadwal terpisah | Belum ada | Tentukan akses, validasi, idempotensi, log |
+| **Lapor warga** | Draf lokal + submit bermoderasi | Draf IndexedDB; tanpa submit | Tetapkan privasi, moderasi, abuse control, retensi |
+| **Dokumentasi** | Selaras dengan kode | README & STATE diperbarui 1 Nov | `AGENTS.md` masih versi Kabupaten — selaraskan |
 
 ---
 
 ## 4. Kesehatan Teknis & Build
 
-- **Node/Bun Environment:** Windows x64, Bun 1.4.2, Node 24 kompatibel.
-- **Git Branch:** `master`, sinkron dengan `origin/master` (commit terakhir `ec98936`).
-- **Build Status:** `PASS` (`bun run build`).
-- **Lint Status:** `PASS` (`bun run lint`).
-- **Kepatuhan Privasi:** Kredensial lokal terisolasi di `.env.local` (diabaikan git).
+- **Node/Bun:** Node 24 (`.nvmrc`), Bun 1.4.2.
+- **Git:** branch `master`, remote `origin` = `github.com/repyh/saksi`.
+- **Build:** `PASS` — `npm run build` sukses tanpa `DATABASE_URL` (11 rute, 10 statis).
+- **Lint:** `PASS` — `npm run lint` tanpa temuan.
+- **Database:** opsional. Tanpa `DATABASE_URL`, auth menjawab `503` dan data paket tetap penuh dari
+  snapshot.
+- **Privasi:** kredensial lokal hanya di `.env.local` (diabaikan git).

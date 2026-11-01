@@ -96,14 +96,14 @@ export default function PwaControls() {
           onClick={() => void installApp()}
           type="button"
         >
-          Install RUAS
+          Pasang SAKSI
         </button>
       )}
 
       {!isStandalone && isIOS && (
         <details className="relative text-xs text-slate-600">
           <summary className="cursor-pointer list-none rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50">
-            Install RUAS
+            Pasang SAKSI
           </summary>
           <p className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-lg">
             In Safari, tap Share, then choose “Add to Home Screen.”

@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "RUAS — Road condition reporting",
-    short_name: "RUAS",
-    description: "Community road reports compared with official road-condition data.",
+    name: "SAKSI — Sistem Akuntabilitas & Komparasi Spasial Infrastruktur",
+    short_name: "SAKSI",
+    description: "Pelaporan warga dan audit silang anggaran jalan Kota Tangerang.",
     start_url: "/",
     scope: "/",
     display: "standalone",
