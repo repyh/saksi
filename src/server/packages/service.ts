@@ -3,31 +3,17 @@ import type {
   RoadPackageItem,
   RoadPackageSearchData,
   RoadPackageSearchFilters,
-  RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
+import { classifyRoadWork } from "@/contracts/packages/road-work";
 import type { RoadPackageRepository } from "./repository";
 import { snapshotRoadPackageRepository } from "./snapshot-repository";
-
-function classifyRoadWork(name: string): Exclude<RoadWorkCategory, "SEMUA"> {
-  const lower = name.toLowerCase();
-  if (["jembatan", "gorong", "culvert"].some((term) => lower.includes(term))) {
-    return "JEMBATAN";
-  }
-  if (
-    ["drainase", "saluran", "u-ditch", "uditch", "spal", "turap", "talud", "tpt", "bronjong"].some(
-      (term) => lower.includes(term),
-    )
-  ) {
-    return "DRAINASE";
-  }
-  return "PERMUKAAN";
-}
 
 function matchesQuery(item: RoadPackageItem, query: string): boolean {
   const searchableText = [
     item.nama,
     item.kode_rup,
     item.desa_resmi ?? "",
+    item.rw ?? "",
     item.kecamatan_resmi ?? "",
   ]
     .join(" ")

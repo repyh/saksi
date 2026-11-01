@@ -1,10 +1,10 @@
 import "server-only";
-import snapshot from "../../../data/saksi_tangerang_2025_2026.json";
+import snapshot from "../../../data/saksi_kota_tangerang_2025_2026.json";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageRepository } from "./repository";
 
 const ROAD_SECTOR = "Jalan, Jembatan & Drainase";
-const PRECISION_TYPES = new Set(["Desa/Kelurahan", "Garis Koridor", "Kecamatan", "Kabupaten"]);
+const PRECISION_TYPES = new Set(["RW", "Kelurahan", "Kecamatan", "Kabupaten"]);
 
 function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
@@ -12,20 +12,6 @@ function isNullableString(value: unknown): value is string | null {
 
 function isNullableCoordinate(value: unknown): value is number | null {
   return value === null || (typeof value === "number" && Number.isFinite(value));
-}
-
-function isRoadCorridor(value: unknown): boolean {
-  if (typeof value !== "object" || value === null) return false;
-
-  const corridor = value as Record<string, unknown>;
-  return (
-    typeof corridor.dari === "string" &&
-    typeof corridor.ke === "string" &&
-    typeof corridor.kecamatan === "string" &&
-    [corridor.lat_dari, corridor.lon_dari, corridor.lat_ke, corridor.lon_ke].every(
-      (coordinate) => typeof coordinate === "number" && Number.isFinite(coordinate),
-    )
-  );
 }
 
 function isRoadPackageItem(value: unknown): value is RoadPackageItem {
@@ -44,13 +30,13 @@ function isRoadPackageItem(value: unknown): value is RoadPackageItem {
     typeof item.bulan === "string" &&
     isNullableString(item.lokasi_mikro) &&
     isNullableString(item.desa_resmi) &&
+    isNullableString(item.rw) &&
+    isNullableString(item.unit_id) &&
     isNullableString(item.kecamatan_resmi) &&
-    isNullableString(item.id_desa) &&
     isNullableCoordinate(item.lat) &&
     isNullableCoordinate(item.lon) &&
     typeof item.presisi_peta === "string" &&
-    PRECISION_TYPES.has(item.presisi_peta) &&
-    (item.koridor === undefined || isRoadCorridor(item.koridor))
+    PRECISION_TYPES.has(item.presisi_peta)
   );
 }
 
@@ -58,7 +44,7 @@ export const snapshotRoadPackageRepository: RoadPackageRepository = {
   async listRoadPackages() {
     const packageRows: unknown = snapshot.paket;
     if (!Array.isArray(packageRows)) {
-      throw new Error("The road package snapshot has an invalid format.");
+      throw new Error("The Kota Tangerang road package snapshot has an invalid format.");
     }
 
     return (packageRows as unknown[]).filter(

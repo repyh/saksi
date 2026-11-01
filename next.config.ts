@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
+  // React-Leaflet 5's MapContainer is incompatible with React's dev-only
+  // Strict Mode effect replay; it can leave a removed Leaflet instance
+  // attached to a reused DOM node during development navigation.
+  reactStrictMode: false,
   turbopack: {
     root: process.cwd(),
     rules: {

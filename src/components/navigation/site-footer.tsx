@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FiExternalLink } from "react-icons/fi";
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  if (pathname === "/project" || pathname.startsWith("/project/") || pathname === "/laporan" || pathname.startsWith("/laporan/")) return null;
+
   return (
     <footer className="border-t-4 border-secondary bg-foreground text-white">
       <div className="w-full px-4 pt-8 pb-5 sm:px-6 lg:px-8">
@@ -22,9 +28,9 @@ export function SiteFooter() {
                 </p>
               </div>
               <ul className="mt-4 space-y-1 text-sm leading-6 text-white/80">
-                <li>Christian Jonathan Hiroshi Oroh</li>
-                <li>Christopher Marchel Mark Gijoh</li>
-                <li>Valdosi Hilkia Masehito Djarang</li>
+                <li>Christian Jonathan Hiroshi Oroh - 01082240019</li>
+                <li>Christopher Marchel Mark Gijoh - 01082240011</li>
+                <li>Valdosi Hilkia Masehito Djarang - 01021240015</li>
               </ul>
               <div className="mt-6">
                 <p className="text-[11px] leading-4 font-bold uppercase tracking-[0.14em] text-secondary">Dosen pembimbing</p>

@@ -11,40 +11,36 @@ interface AuditHeaderProps {
   metrics?: AuditSummaryMetrics;
 }
 
-export const DEFAULT_TANGERANG_METRICS: AuditSummaryMetrics = {
-  regionName: "Kab. Tangerang",
-  kldiCode: "D50",
-  bpsCode: "3603",
-  snapshotDate: "29 OKT 2026",
+export const DEFAULT_KOTA_TANGERANG_METRICS: AuditSummaryMetrics = {
+  regionName: "Kota Tangerang",
+  snapshotDate: "31 OKT 2026",
   fiscalYears: [2025, 2026],
-  totalPackages: 3602,
-  packagesByYear: { y2025: 2156, y2026: 1446 },
-  totalBudgetBillionRp: "Rp848,60 Miliar",
-  medianBudgetMillionRp: "Rp100,00 jt",
-  coveredVillages: 251,
-  totalVillages: 274,
-  totalDistricts: 29,
-  mappedCount: 3331,
-  mappedPercent: "92,5%",
+  totalPackages: 1557,
+  packagesByYear: { y2025: 939, y2026: 618 },
+  totalBudgetDisplay: "Rp650,18 M",
+  coveredKelurahan: 80,
+  totalKelurahan: 104,
+  totalDistricts: 13,
+  mappedCount: 1155,
+  mappedPercent: "74,2%",
   spatial: {
-    villagePoints: 3000,
-    corridorLines: 102,
-    districtCentroids: 229,
-    unmappedPackages: 271,
+    rwPackages: 818,
+    kelurahanPackages: 337,
+    unmappedPackages: 402,
   },
 };
 
-export function AuditHeader({ metrics = DEFAULT_TANGERANG_METRICS }: AuditHeaderProps) {
+export function AuditHeader({ metrics = DEFAULT_KOTA_TANGERANG_METRICS }: AuditHeaderProps) {
   const [heroQuery, setHeroQuery] = useState("");
   const {
     regionName,
     fiscalYears,
     totalPackages,
     packagesByYear,
-    totalBudgetBillionRp,
+    totalBudgetDisplay,
   } = metrics;
 
-  const [budgetAmount, budgetUnit = ""] = totalBudgetBillionRp.split(/\s+([\s\S]*)/);
+  const [budgetAmount, budgetUnit = ""] = totalBudgetDisplay.split(/\s+([\s\S]*)/);
 
   function handleHeroSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -13,15 +13,21 @@ interface NavActionsProps {
 
 const DEFAULT_ACTIONS: NavActionItem[] = [
   {
-    id: "peta-audit",
-    label: "Peta Audit",
+    id: "home",
+    label: "Home",
     href: "/",
     variant: "ghost",
   },
   {
-    id: "lapor",
-    label: "Lapor",
-    href: "/lapor",
+    id: "peta-pekerjaan",
+    label: "Peta Pekerjaan",
+    href: "/project",
+    variant: "ghost",
+  },
+  {
+    id: "laporkan-jalan",
+    label: "Laporkan Jalan",
+    href: "/laporan/",
     variant: "ghost",
   },
 ];
@@ -35,7 +41,8 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
       className={cn("-mb-px flex h-full items-stretch gap-4 sm:gap-7", className)}
     >
       {actions.map((item) => {
-        const isActive = pathname === item.href;
+        const normalizedHref = item.href.replace(/\/+$/, "") || "/";
+        const isActive = pathname === normalizedHref || (normalizedHref !== "/" && pathname.startsWith(`${normalizedHref}/`));
 
         return (
           <Button

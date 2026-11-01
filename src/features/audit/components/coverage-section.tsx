@@ -1,16 +1,15 @@
 import type { AuditSummaryMetrics } from "../audit-types";
-import { FiGitBranch, FiMap, FiMapPin, FiX } from "react-icons/fi";
+import { FiMap, FiMapPin, FiX } from "react-icons/fi";
 
 interface CoverageSectionProps {
   metrics: AuditSummaryMetrics;
 }
 
-function LocationMark({ kind }: { kind: "village" | "corridor" | "district" | "none" }) {
+function LocationMark({ kind }: { kind: "rw" | "kelurahan" | "none" }) {
   const iconClass = "size-6 shrink-0";
 
-  if (kind === "village") return <FiMapPin aria-hidden="true" className={iconClass} />;
-  if (kind === "corridor") return <FiGitBranch aria-hidden="true" className={iconClass} />;
-  if (kind === "district") return <FiMap aria-hidden="true" className={iconClass} />;
+  if (kind === "rw") return <FiMapPin aria-hidden="true" className={iconClass} />;
+  if (kind === "kelurahan") return <FiMap aria-hidden="true" className={iconClass} />;
 
   return (
     <span aria-hidden="true" className="relative inline-flex size-6 shrink-0 items-center justify-center">
@@ -23,8 +22,8 @@ function LocationMark({ kind }: { kind: "village" | "corridor" | "district" | "n
 export function CoverageSection({ metrics }: CoverageSectionProps) {
   const {
     totalPackages,
-    coveredVillages,
-    totalVillages,
+    coveredKelurahan,
+    totalKelurahan,
     totalDistricts,
     mappedCount,
     mappedPercent,
@@ -33,22 +32,16 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
 
   const locations = [
     {
-      kind: "village" as const,
-      label: "Titik desa",
-      count: spatial.villagePoints,
-      description: "Nama desa ditemukan dalam nama paket.",
+      kind: "rw" as const,
+      label: "RW",
+      count: spatial.rwPackages,
+      description: "Nomor RW pada paket cocok dengan batas wilayah.",
     },
     {
-      kind: "corridor" as const,
-      label: "Garis koridor",
-      count: spatial.corridorLines,
-      description: "Paket merujuk ke ruas jalan.",
-    },
-    {
-      kind: "district" as const,
-      label: "Kecamatan",
-      count: spatial.districtCentroids,
-      description: "Lokasi hanya diketahui sampai kecamatan.",
+      kind: "kelurahan" as const,
+      label: "Kelurahan",
+      count: spatial.kelurahanPackages,
+      description: "Nama kelurahan cocok, tanpa kecocokan RW.",
     },
     {
       kind: "none" as const,
@@ -58,7 +51,7 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
     },
   ];
   const mappedRatio = totalPackages > 0 ? (mappedCount / totalPackages) * 100 : 0;
-  const villageRatio = totalVillages > 0 ? (coveredVillages / totalVillages) * 100 : 0;
+  const kelurahanRatio = totalKelurahan > 0 ? (coveredKelurahan / totalKelurahan) * 100 : 0;
 
   return (
     <section aria-labelledby="coverage-section-title" className="border-t border-border bg-white">
@@ -76,8 +69,8 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
           <div className="flex flex-col justify-center gap-9 sm:flex-row sm:items-start sm:gap-12 lg:flex-col lg:items-stretch lg:gap-10">
             <div className="min-w-0 flex-1">
               <p className="font-heading text-6xl leading-[0.95] font-extrabold tracking-[-0.05em] text-primary sm:text-7xl">{mappedPercent}</p>
-              <p className="mt-2 text-base font-semibold leading-6 text-foreground">Paket memiliki penanda peta</p>
-              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${mappedPercent} paket memiliki penanda peta`}>
+              <p className="mt-2 text-base font-semibold leading-6 text-foreground">Paket terhubung ke wilayah peta</p>
+              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${mappedPercent} paket terhubung ke wilayah peta`}>
                 <div className="h-full bg-primary" style={{ width: `${mappedRatio}%` }} />
               </div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -86,11 +79,11 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-heading text-4xl leading-[1.05] font-extrabold tracking-[-0.04em] text-foreground sm:text-5xl">
-                {coveredVillages}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalVillages}</span>
+                {coveredKelurahan}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalKelurahan}</span>
               </p>
-              <p className="mt-2 text-base font-semibold leading-6 text-foreground">Desa/kelurahan terjangkau</p>
-              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredVillages} dari ${totalVillages} desa dan kelurahan terjangkau`}>
-                <div className="h-full bg-secondary" style={{ width: `${villageRatio}%` }} />
+              <p className="mt-2 text-base font-semibold leading-6 text-foreground">Kelurahan tersentuh paket</p>
+              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredKelurahan} dari ${totalKelurahan} kelurahan tersentuh paket`}>
+                <div className="h-full bg-secondary" style={{ width: `${kelurahanRatio}%` }} />
               </div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">Di {totalDistricts} kecamatan</p>
             </div>
@@ -123,7 +116,7 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
               })}
           </ul>
             <figcaption className="pt-3 text-xs leading-5 text-muted-foreground">
-              Bentuk menunjukkan jenis penanda, bukan posisi atau batas geografis sebenarnya.
+              Peta menampilkan batas administrasi, bukan titik lokasi pekerjaan.
             </figcaption>
           </figure>
         </div>

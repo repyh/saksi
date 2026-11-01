@@ -1,7 +1,7 @@
 export type { SignInContract, SignUpContract } from "./auth/auth.contract";
 export type {
-  RoadCorridorGeometry,
   RoadPackageItem,
+  RoadMapUnit,
   RoadPackageSearchData,
   RoadPackageSearchFilters,
   RoadPrecisionType,

@@ -1,14 +1,11 @@
 export interface AuditSpatialBreakdown {
-  villagePoints: number;
-  corridorLines: number;
-  districtCentroids: number;
+  rwPackages: number;
+  kelurahanPackages: number;
   unmappedPackages: number;
 }
 
 export interface AuditSummaryMetrics {
   regionName: string;
-  kldiCode: string;
-  bpsCode: string;
   snapshotDate: string;
   fiscalYears: [number, number];
   totalPackages: number;
@@ -16,10 +13,9 @@ export interface AuditSummaryMetrics {
     y2025: number;
     y2026: number;
   };
-  totalBudgetBillionRp: string;
-  medianBudgetMillionRp: string;
-  coveredVillages: number;
-  totalVillages: number;
+  totalBudgetDisplay: string;
+  coveredKelurahan: number;
+  totalKelurahan: number;
   totalDistricts: number;
   mappedCount: number;
   mappedPercent: string;
