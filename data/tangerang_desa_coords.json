@@ -1,0 +1,2742 @@
+[
+ {
+  "id_desa": "3603011001",
+  "desa": "Balaraja",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2142738,
+  "lon": 106.4388818,
+  "presisi": "Desa/Kelurahan",
+  "label": "Surya Balaraja, Sentul Jaya, Balaraja, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603012003",
+  "desa": "Cangkudu",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2310853,
+  "lon": 106.4352285,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cangkudu, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603012005",
+  "desa": "Talagasari",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2053962,
+  "lon": 106.4627867,
+  "presisi": "Desa/Kelurahan",
+  "label": "Talagasari, Balaraja, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603012009",
+  "desa": "Tobat",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.1946522,
+  "lon": 106.4435497,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tobat, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603012010",
+  "desa": "Sentul",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2104591,
+  "lon": 106.4479038,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sentul Jaya, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603012011",
+  "desa": "Gembong",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2223126,
+  "lon": 106.4179235,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gembong, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603012013",
+  "desa": "Sukamurni",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.1911184,
+  "lon": 106.4627867,
+  "presisi": "Kecamatan",
+  "label": "Balaraja, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603012014",
+  "desa": "Saga",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.1808918,
+  "lon": 106.4555908,
+  "presisi": "Desa/Kelurahan",
+  "label": "Saga, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603012016",
+  "desa": "Sentul Jaya",
+  "kecamatan": "Balaraja",
+  "id_kec": "360301",
+  "lat": -6.2104591,
+  "lon": 106.4479038,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sentul Jaya, Balaraja, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022001",
+  "desa": "Pangkat",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.1962117,
+  "lon": 106.3953714,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pangkat, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022002",
+  "desa": "Pabuaran",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.1867098,
+  "lon": 106.4179737,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pabuaran, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022004",
+  "desa": "Pasir Muncang",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.2261981,
+  "lon": 106.3942621,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Muncang, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022005",
+  "desa": "Sumur Bandung",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.2105573,
+  "lon": 106.4055856,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sumur Bandung, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022006",
+  "desa": "Jayanti",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.2182192,
+  "lon": 106.383516,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022007",
+  "desa": "Dangdeur",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.2640074,
+  "lon": 106.5402185,
+  "presisi": "Desa/Kelurahan",
+  "label": "TPU Dangdeur Cipari, Ciakar, Panongan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603022008",
+  "desa": "Cikande",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.2067771,
+  "lon": 106.3831038,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cikande, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603022009",
+  "desa": "Pasir Gintung",
+  "kecamatan": "Jayanti",
+  "id_kec": "360302",
+  "lat": -6.1946624,
+  "lon": 106.3807164,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Gintung, Jayanti, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603031001",
+  "desa": "Tigaraksa",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2691134,
+  "lon": 106.484353,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tigaraksa, Jalan H. Somawinata, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603031007",
+  "desa": "Kadu Agung",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2707884,
+  "lon": 106.5059144,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kadu Agung, Tigaraksa, Kabupaten Tangerang, Banten, 15711, Indonesia"
+ },
+ {
+  "id_desa": "3603032002",
+  "desa": "Pasir Bolang",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.22542,
+  "lon": 106.4750585,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Bolang, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032003",
+  "desa": "Matagara",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2486481,
+  "lon": 106.4881311,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jalan Haji Kanung Matagara, Mata Gara, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032004",
+  "desa": "Pasir Nangka",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2521124,
+  "lon": 106.4721421,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Nangka, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032005",
+  "desa": "Pete",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2546183,
+  "lon": 106.4518256,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pete, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032006",
+  "desa": "Tegalsari",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2557316,
+  "lon": 106.4454381,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tegalsari, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032008",
+  "desa": "Pematang",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2482077,
+  "lon": 106.4620174,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pematang, Tigaraksa, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603032009",
+  "desa": "Cisereh",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2306822,
+  "lon": 106.458525,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cisereh, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032010",
+  "desa": "Margasari",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.328836,
+  "lon": 106.4340596,
+  "presisi": "Kecamatan",
+  "label": "Tigaraksa, Jalan Dahlia V, Puri Adiyasa Residence, Cibayana, Cikuya, Solear, Kabupaten Tangerang, Banten, 15370, Indones"
+ },
+ {
+  "id_desa": "3603032011",
+  "desa": "Cileles",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.3177865,
+  "lon": 106.4423076,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cileles, Tigaraksa, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603032012",
+  "desa": "Sodong",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2777182,
+  "lon": 106.476119,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sodong, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032013",
+  "desa": "Tapos",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2858625,
+  "lon": 106.4744646,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tapos, Tigaraksa, Kabupaten Tangerang, Banten, 15720, Indonesia"
+ },
+ {
+  "id_desa": "3603032014",
+  "desa": "Bantar Panjang",
+  "kecamatan": "Tigaraksa",
+  "id_kec": "360303",
+  "lat": -6.2939608,
+  "lon": 106.4543187,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bantar Panjang, Tigaraksa, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603042001",
+  "desa": "Sukamanah",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3488261,
+  "lon": 106.5239198,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukamanah, Suka Manah, Jambe, Kabupaten Tangerang, Banten, 16360, Indonesia"
+ },
+ {
+  "id_desa": "3603042002",
+  "desa": "Jambe",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3006842,
+  "lon": 106.4776036,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jambe, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603042003",
+  "desa": "Tipar Raya",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3211108,
+  "lon": 106.4971194,
+  "presisi": "Kecamatan",
+  "label": "Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042004",
+  "desa": "Taban",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3303325,
+  "lon": 106.5014847,
+  "presisi": "Desa/Kelurahan",
+  "label": "Taban, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042005",
+  "desa": "Daru",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3379704,
+  "lon": 106.4925632,
+  "presisi": "Desa/Kelurahan",
+  "label": "Daru, Jalan Buyut Awi Tali, Perumahan Daru Indah, Darupos, Daru, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042006",
+  "desa": "Kutruk",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3028827,
+  "lon": 106.5059998,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kutruk, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042007",
+  "desa": "Ranca Buaya",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3211108,
+  "lon": 106.4971194,
+  "presisi": "Kecamatan",
+  "label": "Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042008",
+  "desa": "Mekarsari",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3438798,
+  "lon": 106.4918312,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekarsari, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042009",
+  "desa": "Ancol Pasir",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3167487,
+  "lon": 106.5070585,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ancol Pasir, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603042010",
+  "desa": "Pasir Barat",
+  "kecamatan": "Jambe",
+  "id_kec": "360304",
+  "lat": -6.3438928,
+  "lon": 106.5044326,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Barat, Jambe, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603052001",
+  "desa": "Cisoka",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2629447,
+  "lon": 106.4221611,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052002",
+  "desa": "Caringin",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2568472,
+  "lon": 106.4261453,
+  "presisi": "Desa/Kelurahan",
+  "label": "Caringin, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052003",
+  "desa": "Selapajang",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2421567,
+  "lon": 106.4291482,
+  "presisi": "Desa/Kelurahan",
+  "label": "Selapajang, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052004",
+  "desa": "Sukatani",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2739172,
+  "lon": 106.4192172,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukatani, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052006",
+  "desa": "Bojong Loa",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2575274,
+  "lon": 106.4118031,
+  "presisi": "Kecamatan",
+  "label": "Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052007",
+  "desa": "Cibugel",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2485261,
+  "lon": 106.4239226,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cibugel, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052008",
+  "desa": "Cempaka",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2649268,
+  "lon": 106.4146488,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cempaka, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052009",
+  "desa": "Carenang",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.259168,
+  "lon": 106.3874223,
+  "presisi": "Desa/Kelurahan",
+  "label": "Carenang, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052014",
+  "desa": "Karang Harja",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2575274,
+  "lon": 106.4118031,
+  "presisi": "Kecamatan",
+  "label": "Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603052017",
+  "desa": "Jeungjing",
+  "kecamatan": "Cisoka",
+  "id_kec": "360305",
+  "lat": -6.2575274,
+  "lon": 106.4118031,
+  "presisi": "Kecamatan",
+  "label": "Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603062001",
+  "desa": "Pasir Ampo",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1682687,
+  "lon": 106.4082539,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Ampo, Kresek, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603062003",
+  "desa": "Rancailat",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1483655,
+  "lon": 106.4031377,
+  "presisi": "Kecamatan",
+  "label": "Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603062007",
+  "desa": "Kemuning",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1323579,
+  "lon": 106.4248119,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kemuning, Kresek, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603062009",
+  "desa": "Renged",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1458139,
+  "lon": 106.3891639,
+  "presisi": "Desa/Kelurahan",
+  "label": "Renged, Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603062011",
+  "desa": "Talok",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1292213,
+  "lon": 106.3938714,
+  "presisi": "Desa/Kelurahan",
+  "label": "Talok, Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603062013",
+  "desa": "Koper",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1844306,
+  "lon": 106.4083634,
+  "presisi": "Desa/Kelurahan",
+  "label": "Koper, Kresek, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603062014",
+  "desa": "Jengkol",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.14626,
+  "lon": 106.4139914,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jengkol, Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603062015",
+  "desa": "Patrasana",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1558651,
+  "lon": 106.4038741,
+  "presisi": "Desa/Kelurahan",
+  "label": "SD Negeri Patrasana 02, Jalan Raya Balaraja - Kresek, Patra Sana, Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603062018",
+  "desa": "Kresek",
+  "kecamatan": "Kresek",
+  "id_kec": "360306",
+  "lat": -6.1307028,
+  "lon": 106.3801918,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kresek, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603072001",
+  "desa": "Kronjo",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.05021,
+  "lon": 106.4294553,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kronjo, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603072002",
+  "desa": "Pagenjahan",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.0853811,
+  "lon": 106.4134098,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pagenjahan, Kronjo, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603072006",
+  "desa": "Pasir",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.1032502,
+  "lon": 106.4361015,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir, Kronjo, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603072007",
+  "desa": "Muncung",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.0468979,
+  "lon": 106.4153991,
+  "presisi": "Desa/Kelurahan",
+  "label": "Muncung, Kronjo, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603072008",
+  "desa": "Pagedangan Ilir",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.060382,
+  "lon": 106.4270524,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pagedangan Ilir, Kronjo, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603072009",
+  "desa": "Pagedangan Udik",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.0869125,
+  "lon": 106.4326576,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pagedangan Udik, Kronjo, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603072010",
+  "desa": "Pasilian",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.0753698,
+  "lon": 106.422344,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasilian, Kronjo, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603072013",
+  "desa": "Bakung",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.1002467,
+  "lon": 106.4269813,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bakung, Kronjo, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603072015",
+  "desa": "Blukbuk",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.1052483,
+  "lon": 106.4187369,
+  "presisi": "Desa/Kelurahan",
+  "label": "Blukbuk, Kronjo, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603072017",
+  "desa": "Cirumpak",
+  "kecamatan": "Kronjo",
+  "id_kec": "360307",
+  "lat": -6.107301,
+  "lon": 106.4439241,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cirumpak, Kronjo, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603081002",
+  "desa": "Mauk Timur",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0612062,
+  "lon": 106.50642,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mauk Timur, Mauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082001",
+  "desa": "Mauk Barat",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.057401,
+  "lon": 106.4945289,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mauk Barat, Mauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082003",
+  "desa": "Tegal Kunir Kidul",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0664083,
+  "lon": 106.5334741,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tegal Kunir Kidul, Mauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082004",
+  "desa": "Tegal Kunir Lor",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0542244,
+  "lon": 106.5331176,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tegal Kunir Lor, Mauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082005",
+  "desa": "Sasak",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0767908,
+  "lon": 106.5104493,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sasak, Mauk, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603082006",
+  "desa": "Gunung Sari",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0790461,
+  "lon": 106.4946647,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gunung Sari, Mauk, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603082007",
+  "desa": "Kedung Dalem",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0771696,
+  "lon": 106.5224599,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kedung Dalem, Mauk, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603082008",
+  "desa": "Marga Mulya",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.035507,
+  "lon": 106.5230712,
+  "presisi": "Desa/Kelurahan",
+  "label": "Marga Mulya, Mauk, Kabupaten Tangerang, Banten, 12440, Indonesia"
+ },
+ {
+  "id_desa": "3603082009",
+  "desa": "Tanjung Anom",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0272623,
+  "lon": 106.5409525,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanjung Anom, Mauk, Kabupaten Tangerang, Banten, 12440, Indonesia"
+ },
+ {
+  "id_desa": "3603082010",
+  "desa": "Jatiwaringin",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.1018537,
+  "lon": 106.5432787,
+  "presisi": "Desa/Kelurahan",
+  "label": "TPA Jatiwaringin, Gintung, Sukadiri, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082011",
+  "desa": "Banyu Asih",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0608559,
+  "lon": 106.5220463,
+  "presisi": "Desa/Kelurahan",
+  "label": "Banyu Asih, Mauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603082012",
+  "desa": "Ketapang",
+  "kecamatan": "Mauk",
+  "id_kec": "360308",
+  "lat": -6.0439246,
+  "lon": 106.5134012,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ketapang, Mauk, Kabupaten Tangerang, Banten, 12440, Indonesia"
+ },
+ {
+  "id_desa": "3603092001",
+  "desa": "Patramanggala",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.0899884,
+  "lon": 106.4643347,
+  "presisi": "Kecamatan",
+  "label": "Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603092002",
+  "desa": "Karang Anyar",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.0717322,
+  "lon": 106.4654033,
+  "presisi": "Desa/Kelurahan",
+  "label": "Karang Anyar, Kemiri, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603092003",
+  "desa": "Lontar",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.0594531,
+  "lon": 106.4551167,
+  "presisi": "Desa/Kelurahan",
+  "label": "Lontar, Kemiri, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603092004",
+  "desa": "Kemiri",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.1006809,
+  "lon": 106.4662112,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603092005",
+  "desa": "Ranca Labuh",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.1297106,
+  "lon": 106.4634448,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ranca Labuh, Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603092006",
+  "desa": "Klebet",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.0899884,
+  "lon": 106.4643347,
+  "presisi": "Kecamatan",
+  "label": "Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603092007",
+  "desa": "Legok Suka Maju",
+  "kecamatan": "Kemiri",
+  "id_kec": "360309",
+  "lat": -6.0899884,
+  "lon": 106.4643347,
+  "presisi": "Kecamatan",
+  "label": "Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603102001",
+  "desa": "Sukadiri",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.05551,
+  "lon": 106.5614012,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukadiri, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603102002",
+  "desa": "Buaran Jati",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.0781073,
+  "lon": 106.5518864,
+  "presisi": "Desa/Kelurahan",
+  "label": "Buaran Jati, Sukadiri, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603102003",
+  "desa": "Rawa Kidang",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.0708515,
+  "lon": 106.564706,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rawa Kidang, Sukadiri, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603102004",
+  "desa": "Pekayon",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.0551774,
+  "lon": 106.5479816,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pekayon, Sukadiri, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603102005",
+  "desa": "Karang Serang",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.0350534,
+  "lon": 106.5564094,
+  "presisi": "Desa/Kelurahan",
+  "label": "Karang Serang, Sukadiri, Kabupaten Tangerang, Banten, 12440, Indonesia"
+ },
+ {
+  "id_desa": "3603102006",
+  "desa": "Kosambi",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.1032356,
+  "lon": 106.5644584,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kosambi, Sukadiri, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603102007",
+  "desa": "Mekar Kondang",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.0827448,
+  "lon": 106.5723431,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekar Kondang, Sukadiri, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603102008",
+  "desa": "Gintung",
+  "kecamatan": "Sukadiri",
+  "id_kec": "360310",
+  "lat": -6.097697,
+  "lon": 106.5549109,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gintung, Sukadiri, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603111010",
+  "desa": "Sukatani",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.2739172,
+  "lon": 106.4192172,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukatani, Cisoka, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603112001",
+  "desa": "Rajeg",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1193004,
+  "lon": 106.5052612,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603112002",
+  "desa": "Rajeg Mulya",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1146414,
+  "lon": 106.5296571,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rajeg Mulya Residence, Rajegmulya, Rajeg, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603112003",
+  "desa": "Pangarengan",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1045827,
+  "lon": 106.4804187,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pangarengan, Kemiri, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603112005",
+  "desa": "Jambu Karya",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1337153,
+  "lon": 106.4713192,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jambu Karya, Rajeg, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603112006",
+  "desa": "Lembangsari",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1116105,
+  "lon": 106.5105045,
+  "presisi": "Kecamatan",
+  "label": "Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603112007",
+  "desa": "Sukamanah",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1256177,
+  "lon": 106.5212521,
+  "presisi": "Desa/Kelurahan",
+  "label": "Griya Asri Sukamanah 2, Mekarsari, Rajeg, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603112008",
+  "desa": "Tanjakan",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1022903,
+  "lon": 106.5150896,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanjakan, Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603112009",
+  "desa": "Tanjakan Mekar",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.0971436,
+  "lon": 106.53616,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanjakan Mekar, Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603112011",
+  "desa": "Sukasari",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1201607,
+  "lon": 106.5570044,
+  "presisi": "Desa/Kelurahan",
+  "label": "Griya Artha Sukasari Residence, Suka Sari, Rajeg, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603112012",
+  "desa": "Ranca Bango",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1016001,
+  "lon": 106.49297,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ranca Bango, Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603112013",
+  "desa": "Daon",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1278749,
+  "lon": 106.4837168,
+  "presisi": "Desa/Kelurahan",
+  "label": "Daon, Rajeg, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603112014",
+  "desa": "Mekarsari",
+  "kecamatan": "Rajeg",
+  "id_kec": "360311",
+  "lat": -6.1251758,
+  "lon": 106.5381201,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekarsari, Rajeg, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603121005",
+  "desa": "Sindangsari",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1329022,
+  "lon": 106.5478986,
+  "presisi": "Desa/Kelurahan",
+  "label": "D'Leaf Permata Sindangsari, Pangadegan, Pasar Kemis, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603121010",
+  "desa": "Kutabumi",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1573874,
+  "lon": 106.5451204,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kutabumi 5, Pasar Kemis, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603121012",
+  "desa": "Kuta Jaya",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1726202,
+  "lon": 106.5599014,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kuta Jaya, Pasar Kemis, Kabupaten Tangerang, Banten, 15561, Indonesia"
+ },
+ {
+  "id_desa": "3603121014",
+  "desa": "Kuta Baru",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1540831,
+  "lon": 106.5750709,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kuta Baru, Pasar Kemis, Kabupaten Tangerang, Banten, 15561, Indonesia"
+ },
+ {
+  "id_desa": "3603122001",
+  "desa": "Pasar Kemis",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1719917,
+  "lon": 106.5334967,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasar Kemis, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603122008",
+  "desa": "Sukamantri",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1701591,
+  "lon": 106.546514,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukamantri, Pasar Kemis, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603122011",
+  "desa": "Pangadegan",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1394076,
+  "lon": 106.555931,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pangadegan, Pasar Kemis, Kabupaten Tangerang, Banten, 16551, Indonesia"
+ },
+ {
+  "id_desa": "3603122013",
+  "desa": "Gelam Jaya",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1653605,
+  "lon": 106.5755014,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gelam Jaya, Pasar Kemis, Kabupaten Tangerang, Banten, 11513, Indonesia"
+ },
+ {
+  "id_desa": "3603122015",
+  "desa": "Suka Asih",
+  "kecamatan": "Pasar Kemis",
+  "id_kec": "360312",
+  "lat": -6.1610033,
+  "lon": 106.55981,
+  "presisi": "Kecamatan",
+  "label": "Pasar Kemis, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603132001",
+  "desa": "Teluknaga",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0985377,
+  "lon": 106.6505313,
+  "presisi": "Desa/Kelurahan",
+  "label": "Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132002",
+  "desa": "Bojong Renged",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.1046417,
+  "lon": 106.6465046,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bojong Renged, Teluknaga, Kabupaten Tangerang, Banten, 15126, Indonesia"
+ },
+ {
+  "id_desa": "3603132003",
+  "desa": "Babakan Asem",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0839809,
+  "lon": 106.6535177,
+  "presisi": "Desa/Kelurahan",
+  "label": "Babakan Asem, Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132004",
+  "desa": "Keboncau",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0536646,
+  "lon": 106.6578901,
+  "presisi": "Kecamatan",
+  "label": "Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132005",
+  "desa": "Pangkalan",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0583186,
+  "lon": 106.6446984,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pangkalan, Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132006",
+  "desa": "Kmp Melayu Tim",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0536646,
+  "lon": 106.6578901,
+  "presisi": "Kecamatan",
+  "label": "Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132007",
+  "desa": "Kmp Melayu Brt",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0536646,
+  "lon": 106.6578901,
+  "presisi": "Kecamatan",
+  "label": "Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603132008",
+  "desa": "Muara",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0347832,
+  "lon": 106.6842348,
+  "presisi": "Desa/Kelurahan",
+  "label": "Muara, Teluknaga, Kabupaten Tangerang, Banten, 13950, Indonesia"
+ },
+ {
+  "id_desa": "3603132009",
+  "desa": "Lemo",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0387152,
+  "lon": 106.6746711,
+  "presisi": "Desa/Kelurahan",
+  "label": "Lemo, Teluknaga, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603132010",
+  "desa": "Tanjung Pasir",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0324216,
+  "lon": 106.6635974,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanjung Pasir, Teluknaga, Kabupaten Tangerang, Banten, 13950, Indonesia"
+ },
+ {
+  "id_desa": "3603132011",
+  "desa": "Tegal Angus",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0422476,
+  "lon": 106.6652021,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tegal Angus, Teluknaga, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603132012",
+  "desa": "Tanjung Burung",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.0335457,
+  "lon": 106.6349633,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanjung Burung, Teluknaga, Kabupaten Tangerang, Banten, 13950, Indonesia"
+ },
+ {
+  "id_desa": "3603132013",
+  "desa": "Kampung Besar",
+  "kecamatan": "Teluknaga",
+  "id_kec": "360313",
+  "lat": -6.055139,
+  "lon": 106.6554084,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kampung Besar, Teluknaga, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603141001",
+  "desa": "Kosambi Barat",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0700162,
+  "lon": 106.6990677,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kosambi Barat, Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603141003",
+  "desa": "Salembaran Jaya",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0819217,
+  "lon": 106.6939497,
+  "presisi": "Kecamatan",
+  "label": "Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603141010",
+  "desa": "Dadap",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0874339,
+  "lon": 106.7071904,
+  "presisi": "Desa/Kelurahan",
+  "label": "Dadap, Kosambi, Kabupaten Tangerang, Banten, 11810, Indonesia"
+ },
+ {
+  "id_desa": "3603142002",
+  "desa": "Kosambi Timur",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0789766,
+  "lon": 106.7005106,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kosambi Timur, Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603142004",
+  "desa": "Salembaran Jati",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0667004,
+  "lon": 106.685805,
+  "presisi": "Desa/Kelurahan",
+  "label": "Salembaran Jati, Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603142005",
+  "desa": "Rawa Rengas",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.1115197,
+  "lon": 106.6478725,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rawa Rengas, Kosambi, Kabupaten Tangerang, Banten, 15126, Indonesia"
+ },
+ {
+  "id_desa": "3603142006",
+  "desa": "Rawa Burung",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.1039215,
+  "lon": 106.6637136,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rawa Burung, Kosambi, Kabupaten Tangerang, Banten, 19120, Indonesia"
+ },
+ {
+  "id_desa": "3603142007",
+  "desa": "Cengklong",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0808257,
+  "lon": 106.6858721,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cengklong, Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603142008",
+  "desa": "Belimbing",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.0872725,
+  "lon": 106.6725389,
+  "presisi": "Desa/Kelurahan",
+  "label": "Belimbing, Kosambi, Kabupaten Tangerang, Banten, 15214, Indonesia"
+ },
+ {
+  "id_desa": "3603142009",
+  "desa": "Jati Mulya",
+  "kecamatan": "Kosambi",
+  "id_kec": "360314",
+  "lat": -6.1137067,
+  "lon": 106.6048264,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jati Mulya, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603151001",
+  "desa": "Pakuhaji",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0798634,
+  "lon": 106.5883001,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152002",
+  "desa": "Paku Alam",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0684094,
+  "lon": 106.5892293,
+  "presisi": "Desa/Kelurahan",
+  "label": "Paku Alam, Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152003",
+  "desa": "Bonisari",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0540089,
+  "lon": 106.6053231,
+  "presisi": "Kecamatan",
+  "label": "Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152004",
+  "desa": "Rawa Boni",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0840856,
+  "lon": 106.603148,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rawa Boni, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603152005",
+  "desa": "Buaran Mangga",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0656327,
+  "lon": 106.5752735,
+  "presisi": "Desa/Kelurahan",
+  "label": "Buaran Mangga, Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152006",
+  "desa": "Buaran Bambu",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0663018,
+  "lon": 106.60448,
+  "presisi": "Desa/Kelurahan",
+  "label": "Buaran Bambu, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603152007",
+  "desa": "Kalibaru",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0538733,
+  "lon": 106.6232258,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kalibaru, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603152008",
+  "desa": "Kohod",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0322941,
+  "lon": 106.6192044,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kohod, Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152009",
+  "desa": "Kramat",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0517374,
+  "lon": 106.6002832,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kramat, Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152010",
+  "desa": "Sukawali",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0385592,
+  "lon": 106.5893634,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukawali, Pakuhaji, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603152011",
+  "desa": "Surya Bahari",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0426554,
+  "lon": 106.574665,
+  "presisi": "Desa/Kelurahan",
+  "label": "Surya Bahari, Pakuhaji, Kabupaten Tangerang, Banten, 12440, Indonesia"
+ },
+ {
+  "id_desa": "3603152012",
+  "desa": "Kiara Payung",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0899571,
+  "lon": 106.6191306,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kiara Payung, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603152013",
+  "desa": "Laksana",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.0742167,
+  "lon": 106.6151444,
+  "presisi": "Desa/Kelurahan",
+  "label": "Laksana, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603152014",
+  "desa": "Gaga",
+  "kecamatan": "Pakuhaji",
+  "id_kec": "360315",
+  "lat": -6.080574,
+  "lon": 106.6303997,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gaga, Pakuhaji, Kabupaten Tangerang, Banten, 15510, Indonesia"
+ },
+ {
+  "id_desa": "3603161001",
+  "desa": "Sepatan",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.1194746,
+  "lon": 106.5766946,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sepatan, Kabupaten Tangerang, Banten, 16551, Indonesia"
+ },
+ {
+  "id_desa": "3603162002",
+  "desa": "Karet",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.1478892,
+  "lon": 106.5850707,
+  "presisi": "Desa/Kelurahan",
+  "label": "Karet, Sepatan, Kabupaten Tangerang, Banten, 15561, Indonesia"
+ },
+ {
+  "id_desa": "3603162003",
+  "desa": "Kayu Agung",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.0972301,
+  "lon": 106.5873925,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kayu Agung, Sepatan, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603162004",
+  "desa": "Kayu Bongkok",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.0943304,
+  "lon": 106.5761729,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kayu Bongkok, Sepatan, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603162008",
+  "desa": "Pondok Jaya",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.1230457,
+  "lon": 106.5891983,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pondok Jaya, Sepatan, Kabupaten Tangerang, Banten, 16551, Indonesia"
+ },
+ {
+  "id_desa": "3603162011",
+  "desa": "Pisangan Jaya",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.1114727,
+  "lon": 106.5694495,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pisangan Jaya, Sepatan, Kabupaten Tangerang, Banten, 15540, Indonesia"
+ },
+ {
+  "id_desa": "3603162012",
+  "desa": "Mekar Jaya",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.1294758,
+  "lon": 106.573132,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekar Jaya, Sepatan, Kabupaten Tangerang, Banten, 16551, Indonesia"
+ },
+ {
+  "id_desa": "3603162015",
+  "desa": "Sarakan",
+  "kecamatan": "Sepatan",
+  "id_kec": "360316",
+  "lat": -6.105501,
+  "lon": 106.5848297,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sarakan, Sepatan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603171001",
+  "desa": "Curug Kulon",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2618917,
+  "lon": 106.5517615,
+  "presisi": "Desa/Kelurahan",
+  "label": "Curug Kulon, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603171005",
+  "desa": "Sukabakti",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2512602,
+  "lon": 106.5732224,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukabakti, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603171006",
+  "desa": "Binong",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2325952,
+  "lon": 106.5852566,
+  "presisi": "Desa/Kelurahan",
+  "label": "Binong, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603172002",
+  "desa": "Curug Wetan",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2652844,
+  "lon": 106.5679352,
+  "presisi": "Desa/Kelurahan",
+  "label": "Curug Wetan, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603172003",
+  "desa": "Kadu",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2262432,
+  "lon": 106.5695115,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kadu, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603172004",
+  "desa": "Kadu Jaya",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2346036,
+  "lon": 106.5552165,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kadujaya, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603172010",
+  "desa": "Cukanggalih",
+  "kecamatan": "Curug",
+  "id_kec": "360317",
+  "lat": -6.2454122,
+  "lon": 106.5484376,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cukanggalih, Curug, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603181001",
+  "desa": "Sukamulya",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.1589544,
+  "lon": 106.4410133,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukamulya, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603181003",
+  "desa": "Bunder",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2081477,
+  "lon": 106.5526194,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bunder, Cikupa, Kabupaten Tangerang, Banten, 15135, Indonesia"
+ },
+ {
+  "id_desa": "3603182002",
+  "desa": "Cibadak",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2033259,
+  "lon": 106.4794415,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cibadak, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182004",
+  "desa": "Talaga",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2166128,
+  "lon": 106.5025099,
+  "presisi": "Desa/Kelurahan",
+  "label": "Talaga, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182005",
+  "desa": "Talagasari",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2286677,
+  "lon": 106.5170858,
+  "presisi": "Desa/Kelurahan",
+  "label": "PSC 119 Kabupaten Tangerang, NO 15, Jalan Raya Serang, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182006",
+  "desa": "Dukuh",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.236016,
+  "lon": 106.5321832,
+  "presisi": "Desa/Kelurahan",
+  "label": "Dukuh, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182007",
+  "desa": "Cikupa",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2407879,
+  "lon": 106.5203821,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182008",
+  "desa": "Sukanagara",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2180813,
+  "lon": 106.5171524,
+  "presisi": "Kecamatan",
+  "label": "Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182009",
+  "desa": "Bitung Jaya",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2286367,
+  "lon": 106.5425454,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bitung Jaya, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182010",
+  "desa": "Pasir Gadung",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2171125,
+  "lon": 106.5236613,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Gadung, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182011",
+  "desa": "Sukadamai",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2180813,
+  "lon": 106.5171524,
+  "presisi": "Kecamatan",
+  "label": "Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182012",
+  "desa": "Pasir Jaya",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2034377,
+  "lon": 106.5303345,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasir Jaya, Cikupa, Kabupaten Tangerang, Banten, 15135, Indonesia"
+ },
+ {
+  "id_desa": "3603182013",
+  "desa": "Budi Mulya",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.2180813,
+  "lon": 106.5171524,
+  "presisi": "Kecamatan",
+  "label": "Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603182014",
+  "desa": "Bojong",
+  "kecamatan": "Cikupa",
+  "id_kec": "360318",
+  "lat": -6.228482,
+  "lon": 106.4952765,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bojong, Cikupa, Kabupaten Tangerang, Banten, 15710, Indonesia"
+ },
+ {
+  "id_desa": "3603191002",
+  "desa": "Mekar Bakti",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2600606,
+  "lon": 106.5182773,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekar Bakti, Panongan, Kabupaten Tangerang, Banten, 15711, Indonesia"
+ },
+ {
+  "id_desa": "3603192001",
+  "desa": "Ranca Iyuh",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.3064276,
+  "lon": 106.526003,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ranca Iyuh, Panongan, Kabupaten Tangerang, Banten, 16361, Indonesia"
+ },
+ {
+  "id_desa": "3603192003",
+  "desa": "Peusar",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2579545,
+  "lon": 106.5052467,
+  "presisi": "Desa/Kelurahan",
+  "label": "Peusar, Panongan, Kabupaten Tangerang, Banten, 15711, Indonesia"
+ },
+ {
+  "id_desa": "3603192004",
+  "desa": "Ranca Kalapa",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2950947,
+  "lon": 106.5296708,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ranca Kalapa, Panongan, Kabupaten Tangerang, Banten, 15820, Indonesia"
+ },
+ {
+  "id_desa": "3603192005",
+  "desa": "Serdang Kulon",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2843662,
+  "lon": 106.5493684,
+  "presisi": "Desa/Kelurahan",
+  "label": "Serdang Kulon, Panongan, Kabupaten Tangerang, Banten, 15820, Indonesia"
+ },
+ {
+  "id_desa": "3603192006",
+  "desa": "Mekar Jaya",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.297946,
+  "lon": 106.5495558,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekar Jaya, Panongan, Kabupaten Tangerang, Banten, 15820, Indonesia"
+ },
+ {
+  "id_desa": "3603192007",
+  "desa": "Ciakar",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2656668,
+  "lon": 106.5309215,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ciakar, Panongan, Kabupaten Tangerang, Banten, 15711, Indonesia"
+ },
+ {
+  "id_desa": "3603192008",
+  "desa": "Panongan",
+  "kecamatan": "Panongan",
+  "id_kec": "360319",
+  "lat": -6.2834938,
+  "lon": 106.5304204,
+  "presisi": "Desa/Kelurahan",
+  "label": "Panongan, Kabupaten Tangerang, Banten, 15711, Indonesia"
+ },
+ {
+  "id_desa": "3603201011",
+  "desa": "Babakan",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.2987375,
+  "lon": 106.590973,
+  "presisi": "Desa/Kelurahan",
+  "label": "Babakan, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202002",
+  "desa": "Caringin",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.3170455,
+  "lon": 106.5821137,
+  "presisi": "Desa/Kelurahan",
+  "label": "Caringin, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202003",
+  "desa": "Serdang Wetan",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.2842452,
+  "lon": 106.5537139,
+  "presisi": "Desa/Kelurahan",
+  "label": "Serdang Wetan, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202004",
+  "desa": "Babat",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.3241678,
+  "lon": 106.5469215,
+  "presisi": "Desa/Kelurahan",
+  "label": "Babat, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202005",
+  "desa": "Ciangir",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.324487,
+  "lon": 106.5304993,
+  "presisi": "Desa/Kelurahan",
+  "label": "Ciangir, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202006",
+  "desa": "Legok",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.284298,
+  "lon": 106.5905577,
+  "presisi": "Desa/Kelurahan",
+  "label": "Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202007",
+  "desa": "Palasari",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.3075224,
+  "lon": 106.5705136,
+  "presisi": "Desa/Kelurahan",
+  "label": "Palasari, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603202008",
+  "desa": "Bojongkamal",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.3024829,
+  "lon": 106.5746584,
+  "presisi": "Kecamatan",
+  "label": "Legok, Kabupaten Tangerang, Banten, 15820, Indonesia"
+ },
+ {
+  "id_desa": "3603202009",
+  "desa": "Rancagong",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.2767362,
+  "lon": 106.5780088,
+  "presisi": "Desa/Kelurahan",
+  "label": "Rancagong, Legok, Kabupaten Tangerang, Banten, 15820, Indonesia"
+ },
+ {
+  "id_desa": "3603202010",
+  "desa": "Kemuning",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.1323579,
+  "lon": 106.4248119,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kemuning, Kresek, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603202012",
+  "desa": "Cirarab",
+  "kecamatan": "Legok",
+  "id_kec": "360320",
+  "lat": -6.3287482,
+  "lon": 106.5658191,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cirarab, Legok, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603221004",
+  "desa": "Medang",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.266547,
+  "lon": 106.6120278,
+  "presisi": "Desa/Kelurahan",
+  "label": "Medang, Pagedangan, Kabupaten Tangerang, Banten, 15334, Indonesia"
+ },
+ {
+  "id_desa": "3603222002",
+  "desa": "Cicalengka",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.2983093,
+  "lon": 106.6180239,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cicalengka, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222003",
+  "desa": "Pagedangan",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.2979628,
+  "lon": 106.6335536,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pagedangan, Kabupaten Tangerang, Banten, 15339, Indonesia"
+ },
+ {
+  "id_desa": "3603222005",
+  "desa": "Cijantra",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.2813971,
+  "lon": 106.600952,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cijantra, Pagedangan, Kabupaten Tangerang, Banten, 15335, Indonesia"
+ },
+ {
+  "id_desa": "3603222006",
+  "desa": "Lengkong Kulon",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.2814293,
+  "lon": 106.6342448,
+  "presisi": "Desa/Kelurahan",
+  "label": "Lengkong Kulon, Pagedangan, Kabupaten Tangerang, Banten, 15331, Indonesia"
+ },
+ {
+  "id_desa": "3603222007",
+  "desa": "Situ Gadung",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.3257103,
+  "lon": 106.6194787,
+  "presisi": "Desa/Kelurahan",
+  "label": "Situ Gadung, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222008",
+  "desa": "Jatake",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.3202591,
+  "lon": 106.5925084,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jatake, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222009",
+  "desa": "Cihuni",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.2623314,
+  "lon": 106.6399263,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cihuni, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222010",
+  "desa": "Kadu Sirung",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.3264761,
+  "lon": 106.6069916,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kadu Sirung, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222011",
+  "desa": "Malang Nengah",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.3258451,
+  "lon": 106.5791881,
+  "presisi": "Desa/Kelurahan",
+  "label": "Malang Nengah, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603222012",
+  "desa": "Karang Tengah",
+  "kecamatan": "Pagedangan",
+  "id_kec": "360322",
+  "lat": -6.3385768,
+  "lon": 106.5807295,
+  "presisi": "Desa/Kelurahan",
+  "label": "Karang Tengah, Pagedangan, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603231001",
+  "desa": "Cisauk",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3244445,
+  "lon": 106.6416257,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cisauk, Jalan Raya Cisauk, Sampora, Cisauk, Kabupaten Tangerang, Banten, 15341, Indonesia"
+ },
+ {
+  "id_desa": "3603232003",
+  "desa": "Mekar Wangi",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3244445,
+  "lon": 106.6416257,
+  "presisi": "Kecamatan",
+  "label": "Cisauk, Jalan Raya Cisauk, Sampora, Cisauk, Kabupaten Tangerang, Banten, 15341, Indonesia"
+ },
+ {
+  "id_desa": "3603232005",
+  "desa": "Suradita",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3504093,
+  "lon": 106.6391801,
+  "presisi": "Desa/Kelurahan",
+  "label": "Suradita, Cisauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603232006",
+  "desa": "Sampora",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3079617,
+  "lon": 106.649823,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sampora, Cisauk, Kabupaten Tangerang, Banten, 15345, Indonesia"
+ },
+ {
+  "id_desa": "3603232009",
+  "desa": "Dangdang",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3558142,
+  "lon": 106.6170954,
+  "presisi": "Desa/Kelurahan",
+  "label": "Dangdang, Cisauk, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603232011",
+  "desa": "Cibogo",
+  "kecamatan": "Cisauk",
+  "id_kec": "360323",
+  "lat": -6.3300505,
+  "lon": 106.6480361,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cibogo, Cisauk, Kabupaten Tangerang, Banten, 15344, Indonesia"
+ },
+ {
+  "id_desa": "3603272001",
+  "desa": "Benda",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1498321,
+  "lon": 106.4443724,
+  "presisi": "Desa/Kelurahan",
+  "label": "Benda, Sukamulya, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603272002",
+  "desa": "Sukamulya",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1516774,
+  "lon": 106.423777,
+  "presisi": "Desa/Kelurahan",
+  "label": "Puskesmas Kecamatan Sukamulya, Jalan Raya Kresek, Suka Mulya, Sukamulya, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603272003",
+  "desa": "Kaliasin",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1492505,
+  "lon": 106.4244496,
+  "presisi": "Desa/Kelurahan",
+  "label": "SD N Kaliasin 1, Jalan Raya Balaraja - Kresek, Suka Mulya, Sukamulya, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603272004",
+  "desa": "Buniayu",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1589544,
+  "lon": 106.4410133,
+  "presisi": "Kecamatan",
+  "label": "Sukamulya, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603272005",
+  "desa": "Parahu",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1788575,
+  "lon": 106.4411637,
+  "presisi": "Desa/Kelurahan",
+  "label": "Parahu, Sukamulya, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603272006",
+  "desa": "Merak",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1701006,
+  "lon": 106.4412499,
+  "presisi": "Desa/Kelurahan",
+  "label": "Merak, Sukamulya, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603272007",
+  "desa": "Bunar",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1575252,
+  "lon": 106.458879,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bunar, Sukamulya, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603272008",
+  "desa": "Kubang",
+  "kecamatan": "Sukamulya",
+  "id_kec": "360327",
+  "lat": -6.1766728,
+  "lon": 106.4171882,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kubang, Sukamulya, Kabupaten Tangerang, Banten, 15610, Indonesia"
+ },
+ {
+  "id_desa": "3603281001",
+  "desa": "Kelapa Dua",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.2354025,
+  "lon": 106.6162438,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kelapa Dua, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603281002",
+  "desa": "Bencongan",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.2156528,
+  "lon": 106.6014447,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bencongan, Kelapa Dua, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603281003",
+  "desa": "Bencongan Indah",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.2357228,
+  "lon": 106.5984965,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bencongan Indah, Kelapa Dua, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603281004",
+  "desa": "Pakulonan Barat",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.237098,
+  "lon": 106.6325416,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pakulonan Barat, Kelapa Dua, Kabupaten Tangerang, Banten, 15180, Indonesia"
+ },
+ {
+  "id_desa": "3603281005",
+  "desa": "Bojong Nangka",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.2565832,
+  "lon": 106.596326,
+  "presisi": "Desa/Kelurahan",
+  "label": "Bojong Nangka, Kelapa Dua, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603282006",
+  "desa": "Curug Sangereng",
+  "kecamatan": "Kelapa Dua",
+  "id_kec": "360328",
+  "lat": -6.2564314,
+  "lon": 106.6263055,
+  "presisi": "Desa/Kelurahan",
+  "label": "Curug Sangereng, Kelapa Dua, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603292001",
+  "desa": "Sindang Jaya",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1556172,
+  "lon": 106.5739517,
+  "presisi": "Desa/Kelurahan",
+  "label": "PAC LDII Kelurahan Kutabaru, No 17 Pondok Sejahtera Kutabaru Kecamatan Pasar Kemis Kabupaten Tangerang, Jalan Kenari 4, "
+ },
+ {
+  "id_desa": "3603292002",
+  "desa": "Wanakerta",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1957341,
+  "lon": 106.4990546,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kantor Desa Wanakerta, Gang Elang, Taman Palem, Sumur, Wana Kerta, Sindangjaya, Kabupaten Tangerang, Banten, 15710, Indo"
+ },
+ {
+  "id_desa": "3603292003",
+  "desa": "Sukaharja",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1857955,
+  "lon": 106.5197954,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sukaharja, Sindangjaya, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603292004",
+  "desa": "Sindangasih",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1571012,
+  "lon": 106.5034901,
+  "presisi": "Kecamatan",
+  "label": "Sindang Jaya, Sindangjaya, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603292005",
+  "desa": "Sindangpanon",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1571012,
+  "lon": 106.5034901,
+  "presisi": "Kecamatan",
+  "label": "Sindang Jaya, Sindangjaya, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603292006",
+  "desa": "Sindangsono",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1571012,
+  "lon": 106.5034901,
+  "presisi": "Kecamatan",
+  "label": "Sindang Jaya, Sindangjaya, Kabupaten Tangerang, Banten, 15560, Indonesia"
+ },
+ {
+  "id_desa": "3603292007",
+  "desa": "Badak Anom",
+  "kecamatan": "Sindang Jaya",
+  "id_kec": "360329",
+  "lat": -6.1494029,
+  "lon": 106.4736474,
+  "presisi": "Desa/Kelurahan",
+  "label": "Badak Anom, Sindangjaya, Kabupaten Tangerang, Banten, 15530, Indonesia"
+ },
+ {
+  "id_desa": "3603302001",
+  "desa": "Kedaung Barat",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1263449,
+  "lon": 106.6074916,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kedaung Barat, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302002",
+  "desa": "Lebak Wangi",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1400158,
+  "lon": 106.598252,
+  "presisi": "Desa/Kelurahan",
+  "label": "Lebak Wangi, Sepatan Timur, Kabupaten Tangerang, Banten, 15561, Indonesia"
+ },
+ {
+  "id_desa": "3603302003",
+  "desa": "Jati Mulya",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1137067,
+  "lon": 106.6048264,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jati Mulya, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302004",
+  "desa": "Sangiang",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1058727,
+  "lon": 106.5996683,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sangiang, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302005",
+  "desa": "Gempol Sari",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1103458,
+  "lon": 106.6143563,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gempol Sari, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302006",
+  "desa": "Kampung Kelor",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1171788,
+  "lon": 106.6240593,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kampung Kelor, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302007",
+  "desa": "Pondok Kelor",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.1040943,
+  "lon": 106.6259298,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pondok Kelor, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603302008",
+  "desa": "Tanah Merah",
+  "kecamatan": "Sepatan Timur",
+  "id_kec": "360330",
+  "lat": -6.115568,
+  "lon": 106.5914702,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tanah Merah, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603312001",
+  "desa": "Solear",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.2950783,
+  "lon": 106.4049342,
+  "presisi": "Desa/Kelurahan",
+  "label": "Solear, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603312002",
+  "desa": "Cikuya",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.3237106,
+  "lon": 106.4170515,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cikuya, Solear, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603312003",
+  "desa": "Cikasungka",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.3357917,
+  "lon": 106.4139532,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cikasungka, Solear, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603312004",
+  "desa": "Cireundeu",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.3079573,
+  "lon": 106.411157,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cireundeu, Solear, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603312005",
+  "desa": "Cikareo",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.3112532,
+  "lon": 106.4172265,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cikareo, Solear, Kabupaten Tangerang, Banten, 15370, Indonesia"
+ },
+ {
+  "id_desa": "3603312006",
+  "desa": "Pasanggrahan",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.2917679,
+  "lon": 106.4255339,
+  "presisi": "Desa/Kelurahan",
+  "label": "Pasanggrahan, Solear, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603312007",
+  "desa": "Munjul",
+  "kecamatan": "Solear",
+  "id_kec": "360331",
+  "lat": -6.2808618,
+  "lon": 106.4555714,
+  "presisi": "Desa/Kelurahan",
+  "label": "Munjul, Solear, Kabupaten Tangerang, Banten, 15730, Indonesia"
+ },
+ {
+  "id_desa": "3603322001",
+  "desa": "Gunung Kaler",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0976834,
+  "lon": 106.359935,
+  "presisi": "Desa/Kelurahan",
+  "label": "Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603322002",
+  "desa": "Sidoko",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0812789,
+  "lon": 106.3563997,
+  "presisi": "Desa/Kelurahan",
+  "label": "Sidoko, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603322003",
+  "desa": "Rancagede",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0955585,
+  "lon": 106.3754425,
+  "presisi": "Kecamatan",
+  "label": "Gunung Kaler, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603322004",
+  "desa": "Kedung",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0716115,
+  "lon": 106.3602903,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kedung, Gunung Kaler, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603322005",
+  "desa": "Cipaeh",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0948055,
+  "lon": 106.3658637,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cipaeh, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603322006",
+  "desa": "Onyam",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.106284,
+  "lon": 106.3543613,
+  "presisi": "Desa/Kelurahan",
+  "label": "Onyam, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603322007",
+  "desa": "Tamiang",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.1113761,
+  "lon": 106.4033157,
+  "presisi": "Desa/Kelurahan",
+  "label": "Tamiang, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603322008",
+  "desa": "Kandawati",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.0955585,
+  "lon": 106.3754425,
+  "presisi": "Kecamatan",
+  "label": "Gunung Kaler, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603322009",
+  "desa": "Cibetok",
+  "kecamatan": "Gunung Kaler",
+  "id_kec": "360332",
+  "lat": -6.1209662,
+  "lon": 106.3931239,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cibetok, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603332001",
+  "desa": "Mekar Baru",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0733275,
+  "lon": 106.3874031,
+  "presisi": "Desa/Kelurahan",
+  "label": "Mekar Baru, Mekarbaru, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603332002",
+  "desa": "Kedaung",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.1263449,
+  "lon": 106.6074916,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kedaung Barat, Sepatan Timur, Kabupaten Tangerang, Banten, 15127, Indonesia"
+ },
+ {
+  "id_desa": "3603332003",
+  "desa": "Cijeruk",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0605728,
+  "lon": 106.3756881,
+  "presisi": "Desa/Kelurahan",
+  "label": "Cijeruk, Mekarbaru, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603332004",
+  "desa": "Waliwis",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0632243,
+  "lon": 106.3955224,
+  "presisi": "Desa/Kelurahan",
+  "label": "Waliwis, Mekarbaru, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603332005",
+  "desa": "Klutuk",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0687253,
+  "lon": 106.4085848,
+  "presisi": "Desa/Kelurahan",
+  "label": "Klutuk, Mekarbaru, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603332006",
+  "desa": "Jenggot",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0419734,
+  "lon": 106.3806454,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jenggot, Mekarbaru, Kabupaten Tangerang, Banten, Indonesia"
+ },
+ {
+  "id_desa": "3603332007",
+  "desa": "Kosambi Dalam",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.0862975,
+  "lon": 106.3952922,
+  "presisi": "Desa/Kelurahan",
+  "label": "Kosambi Dalam, Mekarbaru, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ },
+ {
+  "id_desa": "3603332008",
+  "desa": "Gandaria",
+  "kecamatan": "Mekar Baru",
+  "id_kec": "360333",
+  "lat": -6.1258523,
+  "lon": 106.395106,
+  "presisi": "Desa/Kelurahan",
+  "label": "Jalan Gandaria Kronjo, Cibetok, Gunung Kaler, Kabupaten Tangerang, Banten, 15620, Indonesia"
+ }
+]

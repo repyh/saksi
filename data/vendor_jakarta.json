@@ -1,0 +1,159 @@
+{
+ "sumber": {
+  "nama": "LPSE Provinsi DKI Jakarta (SPSE)",
+  "basis": "https://spse.inaproc.id/jakarta",
+  "cara": "halaman paket individual (server-rendered); listing berbasis JavaScript tidak dapat diambil",
+  "keterangan": "DATA PILOT — bukan sensus pengadaan. Hanya paket yang ID-nya berhasil dikumpulkan."
+ },
+ "diambil": "2026-10-26",
+ "jumlah": {
+  "kandidat": 11,
+  "terbaca": 11,
+  "jalan": 11
+ },
+ "paket": [
+  {
+   "nama_paket": "Pengawasan Pembangunan/Peningkatan Jalan di Provinsi DKI Jakarta (Pekerjaan Jalan Beton Paket 6 Tahun 2026)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 100000000,
+   "hps": 97458000,
+   "lokasi": "Ujung Menteng - Jakarta Timur (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/11011883000/pengumumanpl",
+   "pemenang": "PT. ABADI KARSA MULYA",
+   "alamat": null,
+   "id": "11011883000"
+  },
+  {
+   "nama_paket": "Pengawasan Pembangunan/Peningkatan Jalan di Provinsi DKI Jakarta (Pekerjaan Jalan Beton Paket 4 Tahun 2026)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 100000000,
+   "hps": 97458000,
+   "lokasi": "Jalan Boulevard Raya Kelapa Gading - Jakarta Utara (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/10997126000/pengumumanpl",
+   "pemenang": "DAYA CIPTA PROMOSINDO",
+   "alamat": null,
+   "id": "10997126000"
+  },
+  {
+   "nama_paket": "Pengawasan Pemeliharaan Berkala Jalan/Jembatan/FO/Underpass di Provinsi DKI Jakarta (Pekerjaan Marka Coldplastic Paket 3 Tahun 2026)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 100000000,
+   "hps": 91908000,
+   "lokasi": "5 Wilayah Kota Administrasi - Jakarta Utara (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/11096569000/pengumumanpl",
+   "pemenang": "PT. DEKADE CIPTA CARTA",
+   "alamat": null,
+   "id": "11096569000"
+  },
+  {
+   "nama_paket": "Pengawasan Pemeliharaan Berkala Jalan/Jembatan/FO/Underpass di Provinsi DKI Jakarta (Pekerjaan Expansion Joint Paket 9 Tahun 2026)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 100000000,
+   "hps": 97458000,
+   "lokasi": "Jakarta Barat - Jakarta Barat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/11056235000/pengumumanpl",
+   "pemenang": "PT. PERISAI GADING PERKASA",
+   "alamat": null,
+   "id": "11056235000"
+  },
+  {
+   "nama_paket": "Pengawasan Pembangunan/Peningkatan Jalan di Provinsi DKI Jakarta (Pekerjaan Beton Fast Track 8 Jam Paket 11 Tahun 2026)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 100000000,
+   "hps": 91908000,
+   "lokasi": "Jakarta Timur - Jakarta Timur (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/11035639000/pengumumanpl",
+   "pemenang": null,
+   "alamat": null,
+   "id": "11035639000"
+  },
+  {
+   "nama_paket": "Pemeliharaan Rutin Trotoar Jalan di Provinsi DKI Jakarta (Pengawasan Pemeliharaan Trotoar Bidang Kelengkapan Jalan Paket 4)",
+   "satuan_kerja": "DINAS BINA MARGA",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 98784000,
+   "hps": 97902000,
+   "lokasi": "Lokasi Pemeliharaan Trotoar 2026 - Jakarta Barat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/11030879000/pengumumanpl",
+   "pemenang": "PT. Alsam Brilian Abhipraya",
+   "alamat": null,
+   "id": "11030879000"
+  },
+  {
+   "nama_paket": "Pembangunan/Peningkatan Trotoar dan Bangunan Pelengkap Jalan di Kota Administrasi Jakarta Barat (Jasa Konsultansi Pengawasan Paket 3)",
+   "satuan_kerja": "SUKU DINAS BINA MARGA KOTA - JAKBAR",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 95238000,
+   "hps": 95238000,
+   "lokasi": "Jakarta Barat - Jakarta Barat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/10973858000/pengumumanpl",
+   "pemenang": "BINA ESA KARSA MANDIRI",
+   "alamat": null,
+   "id": "10973858000"
+  },
+  {
+   "nama_paket": "Pembangunan/Peningkatan Trotoar dan Bangunan Pelengkap Jalan di Kota Administrasi Jakarta Pusat (Konsultan Pengawas) - Paket 2",
+   "satuan_kerja": "SUKU DINAS BINA MARGA KOTA - JAKPUS",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2025",
+   "pagu": 98762250,
+   "hps": 95709750,
+   "lokasi": "Jl Tanah Abang I No.1 - Jakarta Pusat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/10373042000/pengumumanpl",
+   "pemenang": null,
+   "alamat": null,
+   "id": "10373042000"
+  },
+  {
+   "nama_paket": "Pembangunan/Peningkatan Trotoar dan Bangunan Pelengkap Jalan di Kota Administrasi Jakarta Barat (Jasa Konsultansi Pengawasan Paket 1)",
+   "satuan_kerja": "SUKU DINAS BINA MARGA KOTA - JAKBAR",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2026",
+   "pagu": 95238000,
+   "hps": 95238000,
+   "lokasi": "Jakarta Barat - Jakarta Barat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/10973848000/pengumumanpl",
+   "pemenang": "GEJA CAHAYA MANDIRI",
+   "alamat": null,
+   "id": "10973848000"
+  },
+  {
+   "nama_paket": "Pembangunan/Peningkatan Trotoar dan Bangunan Pelengkap Jalan di Kota Administrasi Jakarta Selatan (Jasa Konsultansi Pengawasan - Trotoar Jl. Wijaya 1 (Zona 1 dan Zona 2))",
+   "satuan_kerja": "SUKU DINAS BINA MARGA KOTA - JAKSEL",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2024",
+   "pagu": 98901000,
+   "hps": 98901000,
+   "lokasi": "Pembangunan/Peningkatan Trotoar dan Bangunan Pelengkap Jalan di Kota Administrasi Jakarta Selatan (Jasa Konsultansi Pengawasan - Trotoar Jl. Wijaya 1 (Zona 1 dan Zona 2)) - Jakarta Selatan (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/165248127/pengumumanpl",
+   "pemenang": "PT. BUMI MADANI",
+   "alamat": "Harga Kontrak",
+   "id": "165248127"
+  },
+  {
+   "nama_paket": "Pemeliharaan Rutin Jalan, Jembatan, Trotoar dan Bangunan Pelengkapnya di Kota Administrasi Jakarta Pusat (Konsultan Pengawasan Jembatan Penyeberangan Orang Diatas Air)",
+   "satuan_kerja": "SUKU DINAS BINA MARGA KOTA - JAKPUS",
+   "metode": "Pengadaan Langsung",
+   "tahun": "APBD 2023",
+   "pagu": 92180494,
+   "hps": 83655150,
+   "lokasi": "Jl Tanah Abang I No. 1 - Jakarta Pusat (Kota)",
+   "sumber": "https://spse.inaproc.id/jakarta/nontender/60624127/pengumumanpl",
+   "pemenang": "PT. Rudian Hanskoji Konsultan",
+   "alamat": "Harga Kontrak",
+   "id": "60624127"
+  }
+ ]
+}
