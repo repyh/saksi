@@ -1,100 +1,90 @@
-# HANDOFF — Panduan Operasional & Kontrak Pengembangan SAKSI
+# SAKSI — Developer Handoff
 
-**Tanggal Serah Terima:** 31 Oktober 2026
-**Tenggat Kritis:** First Draft Submission (FDS) — **1 November 2026 (Besok)**
-**Target Pengguna Dokumen:** AI Agent / Developer yang melanjutkan implementasi kode repositori ini.
+**Updated:** 1 November 2026
 
----
+**Repository:** `repyh/saksi`
 
-## 1. Konteks Utama & Keputusan Kunci (The Pivot)
+**Branch:** `master`
+**Baseline commit:** `0acb378` (`Add map search and reporting flow`)
 
-Repositori ini awalnya diinisiasi pada 26 Oktober 2026 dengan nama kerja **RUAS** (berdasarkan brief lama: computer vision ONNX untuk lubang jalan, NLP ekstraksi patokan, dan komparasi IRI jalan nasional).
+This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow.
 
-Berdasarkan evaluasi terukur dan arahan dosen pembimbing pada 29 Oktober 2026:
-1. **Fokus Dipersempit:** Dari multi-infrastruktur menjadi **satu jenis: JALAN** (jalan, jembatan, drainase/saluran, trotoar, turap/TPT).
-2. **Studi Kasus:** **Kabupaten Tangerang** (`idKldi=D50`, BPS `3603`) TA 2025–2026.
-3. **Produk Diubah:** Menjadi **SAKSI** (*Sistem Akuntabilitas & Komparasi Spasial Infrastruktur*).
-4. **Inti Inovasi:** Menautkan **3.602 paket pekerjaan jalan (Rp848,60 Miliar)** dengan **laporan berfoto warga di ruas yang sama** melalui jendela masa pemeliharaan (retensi 5%), sehingga laporan warga memiliki konsekuensi administratif langsung dan nomor RUP resmi.
+## Product and data scope
 
----
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The current active snapshot is **Kota Tangerang, 2025–2026**, stored in `data/saksi_kota_tangerang_2025_2026.json`. Do not carry forward old Kabupaten Tangerang totals or assume that a package has an official coordinate. The map geometry is inferred from package text and the available geographic reference data; show its precision honestly.
 
-## 2. Sepuluh Aturan Keras (JANGAN DILANGGAR)
+Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act. Keep packages without a sufficiently specific location in the package list; do not invent map points for them.
 
-1. **Fokus Jalan Saja:** Jangan menambahkan atau menampilkan filter 5 sektor di antarmuka pengguna. Filter yang diizinkan hanya: tahun (2025/2026), kecamatan/desa, dan jenis pekerjaan (`Permukaan Jalan`, `Drainase/Penahan`, `Jembatan`, `Trotoar`).
-2. **Batas Frontend/Backend (keputusan 31 Okt 2026):** Next.js Route Handlers menjadi BFF. Halaman awal membaca snapshot melalui repository server-only dan filter interaktif memakai `GET /api/packages`. Supabase domain tables dan scraper workers belum diimplementasikan; model dan pipeline harus mengikuti provenance, validasi, serta presisi lokasi yang terdokumentasi. Keputusan ini menggantikan arahan lama untuk membaca snapshot langsung dari browser.
-3. **Tanpa NLP/LLM untuk Lokasi:** Jangan pasang model LLM atau ekstraksi NLP untuk lokasi paket. Hasil pengujian membuktikan akurasi rendah dan rawan halusinasi titik. Lokasi 3.331 paket sudah dipetakan secara deterministik melalui gazetteer BPS di berkas data.
-4. **Tanpa Computer Vision / Pengukuran Luas cm²:** Ditolak oleh dosen dan pengujian pengguna. Kerusakan dikategorikan langsung oleh warga pelapor (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`).
-5. **Jangan Memaksa Titik Koordinat:** Terdapat 271 paket (7,5%) tanpa lokus mikro yang spesifik. Paket ini tidak boleh ditaruh sembarangan di peta; tampilkan hanya di tabel/daftar dengan label `Lokasi: Kab. Tangerang (Umum)`.
-6. **Bahasa Indikator Wajib Netral:** Gunakan frasa **"Diduga Tidak Sesuai"** (atau "Perlu Tinjauan Lapangan"). Dilarang keras menggunakan kata "korupsi", "fiktif", "digelapkan", atau tuduhan hukum lainnya.
-7. **Penyedia Disebut Asli tapi Berimbang:** Nama kontraktor/penyedia diambil dari data publik LPSE apa adanya, tanpa skor gabungan sintetis, dan wajib menyertakan penyebut (jumlah paket total, kelas jalan, tahun).
-8. **Badge Wajib:**
-   - `DATA RESMI (SIRUP / BINA MARGA)` (badge hijau/biru) untuk paket anggaran asli.
-   - `SIMULASI PROTOTIPE` (badge amber) untuk setiap contoh laporan warga di fase FDS.
-   - Badge presisi marker peta: `Titik Desa`, `Garis Koridor`, atau `Kecamatan`.
-9. **Privasi di Sisi Klien:** Foto wajib dibersihkan dari metadata EXIF dan fitur blur manual (wajah & plat kendaraan) wajib dieksekusi di canvas browser sebelum disimpan ke `localStorage`.
-10. **Format Angka Indonesia:** Selalu format angka dengan titik ribuan dan koma desimal: `3.602 paket`, `92,5%`, `Rp848,60 Miliar`.
+## Current routes and behavior
 
----
+| Route | Purpose | Current behavior |
+|---|---|---|
+| `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
+| `/project` | Peta Pekerjaan | Full-viewport map and package list with year, district, work-type, and map-view filters; compact search sits beside the filtered/total package count. Selecting a package opens the right detail panel. |
+| `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, map view, and search. Package routes include the RUP and a readable name slug. |
+| `/laporan/` | Laporkan Jalan | Four-step **mockup**: photo, damage, location/package, success. It does not submit or persist a report. The success state says “masih mockup & belum disubmit”. |
+| `/laporan/paket/[rup]` | Report with a package reference | Opens the report mockup with the matching package preselected as a reference. |
+| `/api/packages` | Package search API | Validates filter/search parameters and returns an `ApiResult` response. |
 
-## 3. Konvensi Kode & Repositori
+There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
 
-- **Komponen Baru:** Kode lama di `src/app/page.tsx` dan `src/features/map` adalah artefak RUAS lama. Jangan menambal artefak lama tersebut; tulis ulang komponen baru yang bersih sesuai spesifikasi SAKSI.
-- **Komponen UI:** Gunakan `shadcn/ui` yang sudah terpasang di `src/components/ui/` (preset `base-nova`, CVA, Tailwind v4, Lucide Icons).
-- **Bahasa Antarmuka:** Bahasa Indonesia untuk seluruh teks pengguna, dengan istilah teknis bahasa Inggris yang lazim (dashboard, layer, koridor, filter).
-- **Format Commit Git:** Satu baris conventional commit tanpa pesan body: `feat: …`, `fix: …`, `docs: …`.
-- **Komentar Kode:** Patuhi mentalitas *No-AI-Comment-Slop*; jangan menulis komentar yang menjelaskan apa/bagaimana hal yang sudah jelas terbaca dari kode, tulis hanya penjelasan "MENGAPA" bila ada keputusan penting.
+## Data flow and code ownership
 
----
-
-## 4. Rencana Kerja Sprint FDS (Sisa Waktu < 24 Jam)
-
-Berikut adalah urutan langkah yang wajib diselesaikan agar repositori dan aplikasi siap untuk FDS:
-
-```mermaid
-flowchart TD
-  S1["1. Penyediaan Data Statis<br/>Salin data ke public/data & buat data hook"] --> S2["2. Layar 1: Peta Audit Jalan (/)<br/>Leaflet Tangerang + 3.331 titik + filter + drawer"]
-  S2 --> S3["3. Layar 2: Alur Lapor (/lapor)<br/>Form 3 langkah + blur privasi + MatchScore"]
-  S3 --> S4["4. Data Simulasi Prototipe<br/>Seed 3-5 laporan berlabel SIMULASI PROTOTIPE"]
-  S4 --> S5["5. Pembaruan README & Screenshot FDS<br/>Update README SAKSI + siap untuk PDF 10 hlm"]
+```text
+Next.js server page ─┐
+                     ├─> package service ─> repository interface ─> checked-in snapshot
+Browser filters ─> GET /api/packages ─────┘
 ```
 
-### Langkah 1: Penyajian Data Snapshot
-- Snapshot paket jalan tetap di `data/saksi_tangerang_2025_2026.json` dan dibaca hanya dari kode server.
-- `src/server/packages/` mengisolasi use case dan repository; `GET /api/packages` menjadi batas HTTP untuk filter interaktif.
-- Jangan menyalin dataset ke `public/` atau mengimpor modul server ke komponen client.
+- `src/app/**` owns routes, server-rendered page entry points, and HTTP route handlers.
+- `src/features/map/**` owns map UI, filter/search state, URL selection state, and rendering. Leaflet stays client-side.
+- `src/features/reports/**` owns the local, non-submitting report mockup.
+- `src/app/api/packages/route.ts` validates HTTP query input; it should not contain SQL or scraping logic.
+- `src/server/packages/**` owns package search and the repository implementation. The current `snapshot-repository.ts` is server-only and reads the checked-in Kota Tangerang JSON.
+- `src/contracts/**` owns DTOs shared between client and server.
+- `prisma/**` and `src/lib/**` hold database/auth foundations. The current snapshot package search does not query Supabase.
+- Scraper workers are planned as separately deployed scheduled processes; they are not implemented yet.
 
-### Langkah 2: Bangun Layar 1 (`/`) — Peta Audit Jalan
-- **Header Metrik Utama:**
-  - 3.602 paket jalan · Rp848,60 Miliar pagu · 251 desa tersentuh · 92,5% terpetakan (102 koridor).
-- **Peta Interaktif (Leaflet):**
-  - Bounding box Kabupaten Tangerang (koordinat pusat: `-6.22, 106.48`, zoom level ~11).
-  - Tampilkan marker titik desa dan polyline koridor dengan popup ringkas (Nama paket, Pagu, Satker, Presisi).
-- **Bilah Filter:**
-  - Filter Tahun: Semua, 2025, 2026.
-  - Filter Jenis Pekerjaan: Semua, Permukaan Jalan, Drainase/Penahan, Jembatan, Trotoar.
-  - Filter Kecamatan: Dropdown 29 kecamatan.
-- **Tabel / Register Paket (Sheet/Drawer):**
-  - Menampilkan daftar paket hasil filter, termasuk 271 paket bertanda `Lokasi: Kab. Tangerang (Umum)`.
+Keep the dependency direction: UI → API/contract → server use case → repository → data source. Never import server code, Prisma, database URLs, or Supabase service credentials into browser components.
 
-### Langkah 3: Bangun Layar 2 (`/lapor`) — Alur Lapor Warga
-- **Langkah 1: Unggah Foto & Privasi**
-  - Unggah foto dari perangkat / kamera.
-  - Hapus metadata EXIF otomatis di browser via canvas.
-  - Canvas interaktif untuk memburamkan area sensitif (wajah atau plat nomor kendaraan).
-- **Langkah 2: Kategorisasi Kerusakan**
-  - Pilih Jenis Kerusakan (enum: `Lubang`, `Retak`, `Amblas`, `Genangan`, `Drainase Mampet`, `Jembatan Rusak`, `Lainnya`).
-  - Pilih Penyebab Terlihat (multi-select: `Kendaraan Berat`, `Drainase Tidak Ada`, `Genangan Berulang`, dll.).
-  - Pilih Ukuran Kasar (`Setelapak Tangan`, `Sebesar Ban Mobil`, `Lebih dari 1 Meter Persegi`) — **tanpa klaim cm²**.
-- **Langkah 3: Lokasi & Rekomendasi Paket (`MatchScore`)**
-  - Deteksi lokasi GPS atau pilih desa manual.
-  - Hitung `MatchScore` (0–100) di browser terhadap paket jalan di desa yang sama / radius ≤2 km.
-  - Rekomendasikan 3 paket jalan terdekat yang masih dalam masa garansi/pemeliharaan.
-  - Tombol simpan laporan ke `localStorage` dengan ID laporan unik.
+## Important implementation details
 
-### Langkah 4: Penyemaian Data Uji (Mock Prototipe)
-- Tambahkan contoh laporan warga dengan badge wajib **`SIMULASI PROTOTIPE`** (warna amber) agar layar peta dan detail kasus memiliki visualisasi yang padat data saat di-screenshot untuk PDF FDS.
+- `src/features/map/report-routes.ts` defines address slugs, package paths, filter query parameters, and parsing. Update parsing and generation together when changing route shape.
+- `/project` filter query parameters are `tahun`, `jenis`, `tampilan`, and `q`. The API uses `year`, `district`, `work`, and `q`; the dashboard translates between them.
+- `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching package features are passed to the map.
+- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and map legends. Selecting a region updates the district filter; clicking a non-region clears that selection. A package with broad location precision should show an explanatory note instead of a fabricated specific-region highlight.
+- `src/features/reports/components/report-prototype.tsx` holds report data in component state only. Photo preview uses a local object URL and is not uploaded or persisted. The success step is a confirmation of the mock flow, not a submission receipt.
+- The report’s candidate package list is currently matched against the selected RW/village using the loaded geographic data and package fields. Do not describe it as an authoritative contract-to-road match.
 
-### Langkah 5: Finalisasi FDS
-- Perbarui [README.md](file:///c:/Users/LENOVO/Documents/web/lomba-mia/README.md) dengan deskripsi resmi SAKSI.
-- Jalankan verifikasi akhir: `bun run build` dan `bun run lint`.
-- Ambil screenshot desktop 1440×900 dari Layar 1 dan Layar 2 untuk dimasukkan ke proposal PDF 10 halaman.
+## Current stack and local commands
+
+- Next.js 16.4.3, React 19, TypeScript, Tailwind CSS v4, Bun 1.4.2
+- Leaflet / React Leaflet with OpenStreetMap tiles and attribution
+- Supabase Postgres + PostGIS and Prisma foundations; Better Auth
+- Node.js 24 is required by the package engine range (`>=24 <25`).
+
+```powershell
+bun install
+bun run dev
+bun run lint
+bun run build
+```
+
+Database commands are available (`bun run db:generate`, `bun run db:migrate`, `bun run db:deploy`, `bun run db:status`), but package/report domain tables are not currently implemented. Do not run migrations against production as part of ordinary UI work.
+
+## Known gaps and next implementation decisions
+
+1. **Report persistence:** The report route is still a UI mockup. Before submission is implemented, decide privacy processing, consent, abuse controls, moderation/status states, retention, and what data is public. Do not imply that a report has been sent.
+2. **Spatial/package domain model:** Define source provenance, location precision, and PostGIS geometry semantics before replacing the snapshot adapter with Prisma queries. Keep package DTOs stable where possible.
+3. **Scrapers:** Government website and official/public social-source collectors need separate adapters and schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Determine an allowed X access method before building that collector. Social posts are not official records.
+4. **Map scale:** The current API and map pass all filtered package rows; the list only displays the first 120. Introduce separate paginated list and viewport-bounded map-feature queries when scale requires it.
+5. **Documentation consistency:** `docs/STATE.md`, `README.md`, and some sections in `docs/SPEC.md` still contain older Kabupaten Tangerang, FDS, route, and implementation-status language. Treat the code and this handoff as the latest implementation status; reconcile those documents when their respective scope is next edited.
+
+## Working rules
+
+- Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
+- Keep user-facing interface text in Indonesian; repository documentation currently uses Indonesian or English by document.
+- Format numbers for Indonesian readers (`1.557`, `92,5%`, `Rp…`). Attach source, date, coverage, and methodology to public claims.
+- Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
+- Never present an inferred map location as an official package coordinate.
+- Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.
