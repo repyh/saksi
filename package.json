@@ -12,7 +12,10 @@
     "db:deploy": "prisma migrate deploy",
     "predev": "prisma generate",
     "prebuild": "prisma generate",
-    "db:status": "prisma migrate status"
+    "db:status": "prisma migrate status",
+    "lpse:list": "node scripts/lpse.mjs list",
+    "lpse:detail": "node scripts/lpse.mjs detail",
+    "lpse:match": "node scripts/lpse.mjs match"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
