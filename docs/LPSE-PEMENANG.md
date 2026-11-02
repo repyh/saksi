@@ -161,4 +161,9 @@ baris "Penyedia lain". Contoh: pembangunan jalan sisi Saluran Cisadane Barat = R
 - Realisasi = nilai transaksi, bukan nilai kontrak; untuk e-purchasing satu paket bisa terdiri dari
   puluhan pesanan, sehingga total bisa sedikit di atas pagu bila paket berlanjut antar tahun.
 
+## Sisa yang belum tertutup
+
+176 paket (Rp111,8 M) masih tanpa penyedia. Sebabnya per kategori, daftar kode satker, dan langkah
+penarikan semua satker `D44` (beserta estimasi request) ada di **`docs/SISA-176-PAKET.md`**.
+
 
