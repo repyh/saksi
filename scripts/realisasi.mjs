@@ -10,10 +10,11 @@
  *   x-secret       : base64 dari string waktu itu yang dibalik
  * Paginasi memakai cursor: `tablePagination.nextCursor` → parameter `nextCursor`.
  *
- * Pakai: node scripts/realisasi.mjs [--tahun 2025,2026] [--satker <kode>]
+ * Pakai: node scripts/realisasi.mjs [--tahun 2025,2026] [--satker <kode>,<kode>,...]
+ *        Hasil digabung dengan berkas sebelumnya, jadi aman dijalankan per satker.
  * Keluaran: data/realisasi_kota_tangerang.json
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,7 +31,10 @@ const arg = (nama, bawaan) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : bawaan;
 };
 const TAHUN = arg("tahun", "2025,2026").split(",").map(Number);
-const SATKER = arg("satker", SATKER_PU);
+const SATKERS = arg("satker", SATKER_PU)
+  .split(",")
+  .map((k) => k.trim())
+  .filter(Boolean);
 
 const tidur = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -60,8 +64,8 @@ async function ambil(path) {
   throw new Error("unreachable");
 }
 
-async function tarikTahun(tahun) {
-  const dasar = `/dashboard-api/realisasi/table?tahun=${tahun}&instansi=${INSTANSI}&satker=${SATKER}`;
+async function tarikSatker(tahun, satker, urutan, jumlah) {
+  const dasar = `/dashboard-api/realisasi/table?tahun=${tahun}&instansi=${INSTANSI}&satker=${satker}`;
   const hasil = [];
   let cursor = "";
   let total = null;
@@ -77,24 +81,58 @@ async function tarikTahun(tahun) {
     if (!pag.hasMore || !pag.nextCursor) break;
     if (pag.nextCursor === cursor) break;
     cursor = pag.nextCursor;
-    if (halaman % 25 === 0) console.log(`  ${tahun}: ${hasil.length}/${total ?? "?"}`);
+    if (halaman % 25 === 0) {
+      console.log(`  [${urutan}/${jumlah}] ${tahun} ${satker.slice(0, 18)}: ${hasil.length}/${total ?? "?"}`);
+    }
     await tidur(JEDA_MS);
   }
-  console.log(`${tahun}: ${hasil.length} baris (dilaporkan ${total})`);
-  return { tahun, total, rows: hasil };
+  console.log(`${tahun} ${satker}: ${hasil.length} baris (dilaporkan ${total})`);
+  return { tahun, satker, total, rows: hasil };
 }
 
 const semua = [];
+let urutan = 0;
 for (const tahun of TAHUN) {
-  semua.push(await tarikTahun(tahun));
-  await tidur(JEDA_MS);
+  for (const satker of SATKERS) {
+    urutan += 1;
+    semua.push(await tarikSatker(tahun, satker, urutan, TAHUN.length * SATKERS.length));
+    await tidur(JEDA_MS);
+  }
 }
 
 const rows = semua.flatMap((b) => b.rows);
+// Gabung dengan hasil penarikan sebelumnya supaya bisa menambah satker tanpa menarik ulang.
+const berkas = join(AKAR, "data", "realisasi_kota_tangerang.json");
+let lama = [];
+if (existsSync(berkas)) {
+  try {
+    const isi = JSON.parse(readFileSync(berkas, "utf8"));
+    lama = (isi.item ?? []).map((r) => ({
+      kode_rup: r.kode_rup,
+      kode_paket: r.kode_paket,
+      tahun_anggaran: r.tahun,
+      metode_pengadaan: r.metode,
+      nama_satuan_kerja: r.satker,
+      nama_penyedia: r.penyedia ?? "-",
+      total_nilai: r.nilai,
+      sumber_transaksi: r.sumber_transaksi,
+      sumber_dana: r.sumber_dana,
+      jenis_pengadaan: r.jenis,
+      nama_paket: r.paket,
+      status_paket: r.status,
+      tahapan_pengadaan: r.tahapan,
+      nilai_pagu: r.pagu,
+    }));
+    console.log(`menggabung ${lama.length} baris dari penarikan sebelumnya`);
+  } catch {
+    console.warn("berkas sebelumnya tidak bisa dibaca — mulai dari nol");
+  }
+}
+
 // Satu paket bisa punya beberapa transaksi (mis. e-purchasing beberapa pesanan) —
 // simpan semuanya, jangan dibuang.
 const unik = new Map();
-for (const r of rows) {
+for (const r of [...lama, ...rows]) {
   unik.set(`${r.tahun_anggaran}:${r.kode_paket}:${r.nama_penyedia}:${r.total_nilai}`, r);
 }
 
@@ -110,9 +148,13 @@ for (const r of semuaBaris) {
     transaksi: 0,
     nilai: 0,
     penyedia: [],
+    satker: [],
   };
   agg.transaksi += 1;
   agg.nilai += Number(r.total_nilai ?? 0);
+  if (r.nama_satuan_kerja && !agg.satker.includes(r.nama_satuan_kerja)) {
+    agg.satker.push(r.nama_satuan_kerja);
+  }
   if (r.nama_penyedia && r.nama_penyedia !== "-" && !agg.penyedia.includes(r.nama_penyedia)) {
     agg.penyedia.push(r.nama_penyedia);
   }
@@ -133,8 +175,13 @@ writeFileSync(
       snapshot: new Date().toISOString().slice(0, 10),
       sumber: `${BASE}/realisasi (Data INAPROC, sinkron 02 Nov 2026 02.39 WIB)`,
       instansi: INSTANSI,
-      satker: SATKER,
-      per_tahun: semua.map((b) => ({ tahun: b.tahun, dilaporkan: b.total, ditarik: b.rows.length })),
+      satker: SATKERS,
+      per_penarikan: semua.map((b) => ({
+        tahun: b.tahun,
+        satker: b.satker,
+        dilaporkan: b.total,
+        ditarik: b.rows.length,
+      })),
       per_metode: perMetode,
       jumlah_baris: semuaBaris.length,
       jumlah_rup: perRup.size,

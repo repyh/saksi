@@ -1,7 +1,11 @@
-# Sisa 176 paket tanpa penyedia — sebab dan rencana menutupnya
+# Sisa paket tanpa penyedia — sebab dan rencana menutupnya
 
-Snapshot 2 November 2026. Setelah LPSE (731 paket) dan Data INAPROC realisasi (650 paket),
-**1.381 dari 1.557** paket jalan punya nama penyedia. Sisa **176 paket · Rp111,8 M** (17,2% pagu).
+Snapshot 2 November 2026. Setelah LPSE (731 paket) dan Data INAPROC realisasi (686 paket),
+**1.417 dari 1.557** paket jalan punya nama penyedia. Sisa **140 paket · Rp98,6 M** (15,2% pagu).
+
+> Riwayat angka: sebelum Opsi A dijalankan sisanya **176 paket · Rp111,8 M**; penarikan empat
+> satker lain menutup **36 paket** (Dishub 31, DLH 2, Kecamatan Pinang 2, Dispora 1 — 34 di
+> antaranya e-purchasing, 2 pengadaan langsung).
 
 Dokumen ini mencatat **kenapa** sisanya kosong dan **apa** langkah berikutnya — supaya angka ini
 tidak ditebak ulang di sesi lain.
@@ -10,78 +14,65 @@ tidak ditebak ulang di sesi lain.
 
 | Sebab | Paket | Bukti |
 |---|---:|---|
-| **Satker belum ditarik** — realisasi baru diambil untuk Dinas PUPR | **58** | Dishub 53 · DLH 3 · Kecamatan Pinang 2 · Dispora 1 |
 | **Dinas PUPR, tidak ada transaksi tercatat** | **118** | 59 TA2025 + 59 TA2026; **nol baris** realisasi untuk kode RUP-nya |
+| **Dinas Perhubungan, tidak ada transaksi tercatat** | **22** | dari 53 paket Dishub, 31 tertutup setelah satker ini ditarik |
 | **Tender yang tidak ada di daftar lelang SPSE** | 16 | kemiripan nama tertinggi dengan 192 baris lelang hanya **0,38** |
 | **Dikecualikan** (di luar prosedur pengadaan) | 19 | tidak muncul di LPSE maupun realisasi |
 
-Bukan karena data penyedia kosong: dari 10.131 baris realisasi, **semua punya `kode_rup`**
-(0 tanpa), dan 157 baris berpenyedia `-` — **tidak satu pun** milik paket kita.
+58 paket "satker belum ditarik" yang tercatat di versi pertama dokumen ini **sudah tertutup**:
+Dishub 31, DLH 2, Kecamatan Pinang 2, Dispora 1 (total 36; selisih 22 Dishub kini masuk kategori
+"tidak ada transaksi").
+
+Bukan karena data penyedia kosong: dari 13.240 baris realisasi, **semua punya `kode_rup`**
+(0 tanpa), dan sebagian kecil berpenyedia `-` — **tidak satu pun** milik paket kita.
 
 Rincian menurut satker:
 
 ```
  59  2025  Dinas Pekerjaan Umum Dan Penataan Ruang
  59  2026  Dinas Pekerjaan Umum Dan Penataan Ruang
- 35  2025  Dinas Perhubungan
- 18  2026  Dinas Perhubungan
-  2  2025  Kecamatan Pinang
-  1  2025  Dinas Lingkungan Hidup
-  1  2026  Dinas Lingkungan Hidup
-  1  2025  Dinas Kepemudaan Dan Olahraga
+ 12  2025  Dinas Perhubungan
+ 10  2026  Dinas Perhubungan
 ```
 
 Pola jadwal 118 paket PUPR: 24 Maret 2026 · 15 Januari 2026 · 12 Agustus 2026 (belum/sedang
 berjalan), dan 22 Februari 2025 · 19 Maret 2025 · 13 Oktober 2025 (kemungkinan dibatalkan atau
 dieksekusi dengan kode RUP lain — belum bisa diuji tanpa data semua satker).
 
-## Langkah: tarik semua satker `D44`
+## Langkah yang sudah dijalankan: Opsi A (lima satker `D44`)
 
-`scripts/realisasi.mjs` sekarang hanya memakai `--satker <kode>` tunggal (default PUPR). Dua opsi:
-
-### Opsi A — lima satker yang muncul di snapshot (disarankan)
+`scripts/realisasi.mjs` sekarang menerima **daftar satker dipisah koma** dan **menggabung** hasil
+ke berkas sebelumnya, jadi aman dijalankan bertahap per satker.
 
 | Satker | Kode | 2025 | 2026 | Request (20 baris/hal) |
 |---|---|---:|---:|---:|
-| Dinas PUPR | `1.03.2.10.0.00.01.0000` | 9.210 | 1.143 | 519 (sudah) |
+| Dinas PUPR | `1.03.2.10.0.00.01.0000` | 9.210 | 1.143 | 519 |
 | Dinas Perhubungan | `2.15.0.00.0.00.16.0000` | 390 | 118 | 26 |
 | Dinas Lingkungan Hidup | `2.10.2.11.0.00.27.0000` | 634 | 357 | 50 |
 | Kecamatan Pinang | `7.01.2.13.1.05.40.0000` | 376 | 139 | 26 |
 | Dinas Kepemudaan & Olahraga | `2.19.2.10.0.00.23.0000` | 904 | 199 | 56 |
 
-Tambahan di luar yang sudah ada: **3.117 baris ≈ 158 request ≈ 3–4 menit** (jeda 250 ms + latensi).
-
-### Opsi B — semua 190 satker D44
-
-50.978 baris (37.799 + 13.179) ÷ 20 = **2.549 request ≈ 38–40 menit**. Baru dipakai kalau Opsi A
-masih menyisakan paket yang seharusnya ada, atau kalau mau memastikan tidak ada RUP yang dieksekusi
-satker lain.
-
-### Perubahan skrip yang diperlukan
-
-1. `--satker` menerima **daftar dipisah koma**, atau tambahkan `--semua-satker` yang mengambil
-   daftar dari `/dashboard-api/filter/satker?instansi=D44` (190 entri) lalu menelusuri semuanya.
-2. Kunci dedupe tetap `tahun:kode_paket:penyedia:nilai`; tambahkan `satker` ke ringkasan `per_rup`
-   supaya transaksi lintas satker untuk satu RUP tidak tertukar.
-3. Nama keluaran: `data/realisasi_kota_tangerang.json` (digabung) — jangan bikin berkas per satker
-   supaya `lpse-repository.ts` tidak perlu berubah.
-4. Jeda 250 ms dipertahankan; kalau muncul HTTP 429/503, naikkan ke 600 ms dan ulangi halaman itu
-   (pola retry sudah ada di `scripts/realisasi.mjs`).
-
-### Verifikasi setelah penarikan
+Perintah yang dipakai (4 satker tambahan; PUPR sudah ada di berkas):
 
 ```bash
-node scripts/realisasi.mjs --satker 1.03.2.10.0.00.01.0000,2.15.0.00.0.00.16.0000,2.10.2.11.0.00.27.0000,7.01.2.13.1.05.40.0000,2.19.2.10.0.00.23.0000
-npm run build
+node scripts/realisasi.mjs --tahun 2025,2026 \
+  --satker 2.15.0.00.0.00.16.0000,2.10.2.11.0.00.27.0000,7.01.2.13.1.05.40.0000,2.19.2.10.0.00.23.0000
 ```
 
-Harapan: `?kontrak=ADA` naik dari **1.381** ke sekitar **1.430** (58 paket satker lain), sisa turun
-ke ~118. Setelah itu uji dua hipotesis untuk 118 paket PUPR:
+Hasil: **3.117 baris baru ≈ 158 request ≈ 4 menit**, berkas gabungan **13.240 transaksi · 5.074 RUP**.
+Angka produk: `?kontrak=ADA` **1.381 → 1.417**, `?kontrak=TANPA` **176 → 140**, penyedia unik 518.
 
-- **RUP switch** — cocokkan nama + pagu 118 paket ke seluruh baris realisasi D44; kalau ada pasangan
-  dengan pagu sama dan nama mirip tetapi `kode_rup` berbeda, paket dieksekusi dengan RUP lain.
-- **Belum berjalan** — paket dengan jadwal Oktober–November 2026 memang belum bertransaksi; biarkan
-  kosong dan biarkan UI menyebut "belum ada rekam publik".
+### Opsi B — semua 190 satker D44 (belum dijalankan)
 
-Jangan menaikkan angka di dokumen/proposal sebelum penarikan benar-benar dijalankan dan dihitung
-ulang dari data.
+50.978 baris (37.799 + 13.179) ÷ 20 = **2.549 request ≈ 38–40 menit**. Baru dipakai kalau sisa 140
+masih memuat paket yang seharusnya ada, atau untuk memastikan tidak ada RUP yang dieksekusi satker
+lain di luar lima satker di atas.
+
+### Sisa pekerjaan
+
+1. Uji **RUP switch** untuk 118 paket PUPR: cocokkan nama + pagu ke seluruh baris realisasi D44;
+   kalau ada pasangan dengan pagu sama dan nama mirip tetapi `kode_rup` berbeda, paket dieksekusi
+   dengan RUP lain.
+2. Untuk 22 paket Dishub dan paket berjadwal Oktober–November 2026: kemungkinan besar memang belum
+   bertransaksi — biarkan kosong dan biarkan UI menyebut "belum ada rekam publik".
+3. Jangan menaikkan angka di dokumen/proposal sebelum dihitung ulang dari berkas data.

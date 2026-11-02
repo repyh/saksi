@@ -97,3 +97,4 @@ pemeriksaan yang menuntut Postgres di jalur build.
 | `docs/DESIGN.md` | sistem visual dan aturan antarmuka |
 | `docs/HANDOFF.md` | status operasional dan keputusan kerja |
 | `docs/LPSE-PEMENANG.md` | pipeline LPSE + Data INAPROC: endpoint, header, angka, batasan etika |
+| `docs/SISA-176-PAKET.md` | sebab 176 paket tanpa penyedia + rencana tarik semua satker `D44` |

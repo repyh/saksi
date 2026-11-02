@@ -125,22 +125,23 @@ paket (semua OPD); filter `satker=1.03.2.10.0.00.01.0000` (Dinas PUPR) menyisaka
 ## Hasil
 
 `node scripts/realisasi.mjs --tahun 2025,2026` → `data/realisasi_kota_tangerang.json`:
-**10.131 transaksi · 3.292 RUP** (e-purchasing 7.527 transaksi, pengadaan langsung 2.272).
+**13.240 transaksi · 5.074 RUP** (lima satker D44: PUPR, Dishub, DLH, Kecamatan Pinang, Dispora).
 
 Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 
 | | Sebelum | Sesudah |
 |---|---:|---:|
-| Paket punya nama penyedia | 731 (46,9%) | **1.381 (88,7%)** |
-| Paket tanpa rekam | 826 | **176** |
-| Penyedia unik | 330 | **502** |
+| Paket punya nama penyedia | 731 (46,9%) | **1.417 (91,0%)** |
+| Paket tanpa rekam | 826 | **140** |
+| Penyedia unik | 330 | **518** |
 
-650 paket terisi dari realisasi: **343 e-purchasing**, 293 pengadaan langsung, 14 dikecualikan.
-Yang masih kosong: 105 e-purchasing, 36 pengadaan langsung, 19 dikecualikan, 16 tender.
+686 paket terisi dari realisasi: **377 e-purchasing**, 295 pengadaan langsung, 14 dikecualikan.
+Yang masih kosong: 71 e-purchasing, 34 pengadaan langsung, 19 dikecualikan, 16 tender
+(rinciannya di `docs/SISA-176-PAKET.md`).
 
-23 RUP punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya sebagai
-baris "Penyedia lain". Contoh: pembangunan jalan sisi Saluran Cisadane Barat = Rp4,73 M dari
-**28 transaksi** dengan CV JAYA KONSTRUKSI.
+**3 paket jalan** punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya
+sebagai baris "Penyedia lain". Contoh transaksi terbanyak: pembangunan jalan sisi Saluran Cisadane
+Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Perubahan kode
 
@@ -163,7 +164,6 @@ baris "Penyedia lain". Contoh: pembangunan jalan sisi Saluran Cisadane Barat = R
 
 ## Sisa yang belum tertutup
 
-176 paket (Rp111,8 M) masih tanpa penyedia. Sebabnya per kategori, daftar kode satker, dan langkah
+140 paket (Rp98,6 M) masih tanpa penyedia. Sebabnya per kategori, daftar kode satker, dan langkah
 penarikan semua satker `D44` (beserta estimasi request) ada di **`docs/SISA-176-PAKET.md`**.
-
 
