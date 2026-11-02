@@ -6,6 +6,29 @@ export type RoadPrecisionType =
 
 export type RoadWorkCategory = "SEMUA" | "PERMUKAAN" | "DRAINASE" | "JEMBATAN";
 
+/** Rekam kontrak dari LPSE (SPSE Kota Tangerang), dicocokkan lewat Kode RUP. */
+export interface RoadPackageContract {
+  jenis: "tender" | "nontender";
+  metode: string | null;
+  pemenang: string;
+  npwp: string | null;
+  hps: number | null;
+  nilai_kontrak: number | null;
+  tahun: number;
+  url: string | null;
+}
+
+export type RoadContractFilter = "SEMUA" | "ADA" | "TANPA";
+
+export interface VendorSummary {
+  slug: string;
+  nama: string;
+  paket: number;
+  nilai: number;
+  tahun: number[];
+  kategori: RoadWorkCategory[];
+}
+
 export interface RoadPackageItem {
   kode_rup: string;
   tahun: number;
@@ -24,6 +47,8 @@ export interface RoadPackageItem {
   lat: number | null;
   lon: number | null;
   presisi_peta: RoadPrecisionType;
+  /** Rekam kontrak LPSE; `null` berarti tidak ditemukan (mis. e-purchasing). */
+  kontrak: RoadPackageContract | null;
 }
 
 /** Administrative map unit keyed by the package's unit_id. */
@@ -41,6 +66,7 @@ export interface RoadPackageSearchFilters {
   year?: "2025" | "2026";
   district?: string;
   work?: RoadWorkCategory;
+  contract?: RoadContractFilter;
   query?: string;
 }
 
@@ -49,4 +75,6 @@ export interface RoadPackageSearchData {
   districts: string[];
   totalCount: number;
   filteredCount: number;
+  withContractCount: number;
+  vendorCount: number;
 }

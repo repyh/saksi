@@ -9,6 +9,7 @@ export async function fetchRoadPackages(
   if (filters.year) params.set("year", filters.year);
   if (filters.district) params.set("district", filters.district);
   if (filters.work) params.set("work", filters.work);
+  if (filters.contract && filters.contract !== "SEMUA") params.set("kontrak", filters.contract);
   if (filters.query) params.set("q", filters.query);
 
   const query = params.toString();

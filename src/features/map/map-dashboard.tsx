@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { FiArrowLeft, FiArrowRight, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiExternalLink, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { MapIntroSection } from "./map-intro-section";
 import { MAP_SEARCH_EVENT } from "./map-search-events";
 import { fetchRoadPackages } from "./package-api";
 import { ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
+import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 import {
   addressForPackage,
   addressSlug,
@@ -32,6 +33,7 @@ import {
   type ReportViewMode,
 } from "./report-routes";
 import type {
+  RoadContractFilter,
   RoadPackageItem,
   RoadPackageSearchData,
   RoadWorkCategory,
@@ -46,6 +48,13 @@ const WORK_OPTIONS: RoadWorkCategory[] = ["SEMUA", "PERMUKAAN", "DRAINASE", "JEM
 const WORK_LABELS: Record<RoadWorkCategory, string> = {
   SEMUA: "Semua pekerjaan",
   ...ROAD_WORK_LABELS,
+};
+
+const CONTRACT_OPTIONS: RoadContractFilter[] = ["SEMUA", "ADA", "TANPA"];
+const CONTRACT_LABELS: Record<RoadContractFilter, string> = {
+  SEMUA: "Semua kontrak",
+  ADA: "Ada rekam LPSE",
+  TANPA: "Tanpa rekam LPSE",
 };
 
 function normalizeDistrictName(value: string) {
@@ -91,6 +100,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
   const [selectedYear, setSelectedYear] = useState<"SEMUA" | "2025" | "2026">(initialRouteState?.selectedYear ?? "SEMUA");
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
   const [selectedWork, setSelectedWork] = useState<RoadWorkCategory>(initialRouteState?.selectedWork ?? "SEMUA");
+  const [selectedContract, setSelectedContract] = useState<RoadContractFilter>("SEMUA");
   const [searchQuery, setSearchQuery] = useState<string>(initialRouteState?.searchQuery ?? "");
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
   const selectedPackageRef = useRef<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
@@ -119,9 +129,10 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     if (selectedYear !== "SEMUA") params.set("year", selectedYear);
     if (selectedDistrict !== "SEMUA") params.set("district", selectedDistrict);
     if (selectedWork !== "SEMUA") params.set("work", selectedWork);
+    if (selectedContract !== "SEMUA") params.set("kontrak", selectedContract);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
     return params.toString();
-  }, [selectedYear, selectedDistrict, selectedWork, searchQuery]);
+  }, [selectedYear, selectedDistrict, selectedWork, selectedContract, searchQuery]);
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
   useEffect(() => {
@@ -138,6 +149,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
           year: selectedYear === "SEMUA" ? undefined : selectedYear,
           district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
           work: selectedWork,
+          contract: selectedContract,
           query: searchQuery.trim() || undefined,
         },
         controller.signal,
@@ -169,7 +181,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [addressRouting, queryString, searchQuery, selectedDistrict, selectedWork, selectedYear]);
+  }, [addressRouting, queryString, searchQuery, selectedContract, selectedDistrict, selectedWork, selectedYear]);
 
   const districts = useMemo(() => packageData?.districts ?? [], [packageData]);
   const filteredPackages = packageData?.items ?? [];
@@ -271,7 +283,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
       <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
           <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[132px_220px_220px_180px] xl:gap-2">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[120px_200px_190px_170px_160px] xl:gap-2">
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
                 <Select value={selectedYear} onValueChange={(val) => setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026")}>
@@ -312,6 +324,17 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                   </SelectTrigger>
                   <SelectContent>
                     {WORK_OPTIONS.map((work) => <SelectItem key={work} value={work}>{WORK_LABELS[work]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
+                <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Kontrak</span>
+                <Select value={selectedContract} onValueChange={(val) => setSelectedContract((val ?? "SEMUA") as RoadContractFilter)}>
+                  <SelectTrigger aria-label="Status rekam kontrak LPSE" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
+                    <SelectValue>{CONTRACT_LABELS[selectedContract]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTRACT_OPTIONS.map((kontrak) => <SelectItem key={kontrak} value={kontrak}>{CONTRACT_LABELS[kontrak]}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -363,6 +386,11 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                         <span className="font-sans text-xs font-extrabold tabular-nums text-primary">{formatRupiahFull(pkg.pagu)}</span>
                       </div>
                       <p className="mt-1 line-clamp-2 font-sans text-xs font-semibold text-foreground">{pkg.nama}</p>
+                      {pkg.kontrak && (
+                        <p className="mt-0.5 truncate font-sans text-[10px] text-muted-foreground">
+                          Pemenang: <span className="font-semibold text-foreground/80">{pkg.kontrak.pemenang}</span>
+                        </p>
+                      )}
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, RW ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? "Lokasi umum · Kota Tangerang"} · {pkg.bulan}</p>
                         <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat <FiArrowRight aria-hidden="true" /></Button>
@@ -478,6 +506,76 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                           </tr>
                         </tbody>
                       </table>
+
+                      {selectedPackage.kontrak ? (
+                        <div className="mt-4 border border-border">
+                          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Pemenang &amp; kontrak</p>
+                            <span className="shrink-0 border border-primary/30 bg-primary/5 px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">
+                              Data resmi (LPSE)
+                            </span>
+                          </div>
+                          <table className="w-full border-collapse font-sans text-sm">
+                            <tbody>
+                              <tr className="border-b border-border/60">
+                                <th scope="row" className="w-24 py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia</th>
+                                <td className="py-2 pr-3 font-semibold leading-snug text-foreground">
+                                  <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.pemenang)}`} className="text-primary underline-offset-2 hover:underline">
+                                    {selectedPackage.kontrak.pemenang}
+                                  </Link>
+                                </td>
+                              </tr>
+                              <tr className="border-b border-border/60">
+                                <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Nilai kontrak</th>
+                                <td className="py-2 pr-3 font-semibold tabular-nums text-foreground">
+                                  {selectedPackage.kontrak.nilai_kontrak ? formatRupiahFull(selectedPackage.kontrak.nilai_kontrak) : "Tidak tercatat"}
+                                </td>
+                              </tr>
+                              {selectedPackage.kontrak.hps ? (
+                                <tr className="border-b border-border/60">
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">HPS</th>
+                                  <td className="py-2 pr-3 tabular-nums text-foreground">{formatRupiahFull(selectedPackage.kontrak.hps)}</td>
+                                </tr>
+                              ) : null}
+                              {selectedPackage.kontrak.nilai_kontrak ? (
+                                <tr>
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Selisih pagu</th>
+                                  <td className="py-2 pr-3 tabular-nums text-foreground">
+                                    {formatRupiahFull(selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak)}
+                                    <span className="ml-1 text-[11px] text-muted-foreground">
+                                      ({(((selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak) / selectedPackage.pagu) * 100).toFixed(1)}% dari pagu)
+                                    </span>
+                                  </td>
+                                </tr>
+                              ) : null}
+                            </tbody>
+                          </table>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-2">
+                            <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.pemenang)}`} className="font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
+                              Rekam jejak penyedia
+                            </Link>
+                            {selectedPackage.kontrak.url ? (
+                              <a href={selectedPackage.kontrak.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-sans text-[11px] font-semibold text-muted-foreground underline-offset-2 hover:text-primary hover:underline">
+                                Halaman LPSE <FiExternalLink aria-hidden="true" className="size-3" />
+                              </a>
+                            ) : null}
+                          </div>
+                          <p className="border-t border-border px-3 py-2 font-sans text-[10px] leading-relaxed text-muted-foreground">
+                            Nama penyedia dan nilai kontrak dari LPSE, ditampilkan sebagai fakta kontrak — bukan penilaian kinerja. NPWP disamarkan oleh LPSE.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="mt-4 border border-dashed border-border bg-muted/10 p-3">
+                          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Tanpa rekam kontrak di LPSE</p>
+                          <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
+                            {selectedPackage.metode.toLocaleLowerCase("id-ID").includes("e-purchasing")
+                              ? "Paket ini melalui e-purchasing (e-katalog), yang tidak menerbitkan nama pemenang di LPSE."
+                              : selectedPackage.metode.toLocaleLowerCase("id-ID").includes("dikecualikan")
+                                ? "Paket dikecualikan dari prosedur pengadaan LPSE."
+                                : "Belum ada pencatatan tender atau pengadaan langsung yang cocok di LPSE untuk paket ini."}
+                          </p>
+                        </div>
+                      )}
 
                       {selectedPackage.tahun === 2025 && (
                         <div className="mt-4 bg-secondary p-3.5 text-foreground">

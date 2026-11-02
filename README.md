@@ -13,9 +13,13 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Map (`/project`) as a **choropleth of official boundaries**: RW polygons (1,020) at zoom ≥ 12 and
   kelurahan polygons (104) below that. No per-package pins — a package is tied to an area, never to a
   work-site coordinate.
-- Filters for budget year, kecamatan, work type, and a free-text search (area, road, or RUP code).
+- Filters for budget year, kecamatan, work type, contract record status (LPSE), and a free-text
+  search (area, road, RUP code, or vendor name).
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
   package and ranks candidate packages by RW → kelurahan → landmark, without inventing a score.
+- LPSE contract data (`/penyedia`, `/penyedia/[slug]`): winner and contract value joined to RUP by
+  RUP code, shown with the denominator (package count, year, value) and never as a performance score.
+  Packages without a record say why (e-purchasing, exempt, not recorded).
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
   interactive filters call `GET /api/packages`. The adapter reads the checked-in JSON snapshot.
 - Better Auth and Prisma are wired for server use. They are **optional for the FDS**: when

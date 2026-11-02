@@ -2,6 +2,7 @@ import "server-only";
 import snapshot from "../../../data/saksi_kota_tangerang_2025_2026.json";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageRepository } from "./repository";
+import { kontrakUntukRup } from "./lpse-repository";
 
 const ROAD_SECTOR = "Jalan, Jembatan & Drainase";
 const PRECISION_TYPES = new Set(["RW", "Kelurahan", "Kecamatan", "Kabupaten"]);
@@ -47,9 +48,11 @@ export const snapshotRoadPackageRepository: RoadPackageRepository = {
       throw new Error("The Kota Tangerang road package snapshot has an invalid format.");
     }
 
-    return (packageRows as unknown[]).filter(
-      (item): item is RoadPackageItem =>
-        isRoadPackageItem(item) && item.sektor === ROAD_SECTOR,
-    );
+    return (packageRows as unknown[])
+      .filter(
+        (item): item is RoadPackageItem =>
+          isRoadPackageItem(item) && item.sektor === ROAD_SECTOR,
+      )
+      .map((item) => ({ ...item, kontrak: kontrakUntukRup(item.kode_rup) }));
   },
 };

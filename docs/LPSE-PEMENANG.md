@@ -73,3 +73,19 @@ Ini bukan tuduhan; ini kesenjangan keterbukaan data yang layak ditampilkan apa a
 2. Filter "punya kontrak / tidak" dan kolom penyedia di register.
 3. Halaman rekam jejak penyedia: daftar paket per penyedia + penyebut (jumlah paket, tahun, nilai) —
    tanpa skor gabungan.
+
+Ketiganya sudah dikerjakan 2 November 2026:
+
+- `src/server/packages/lpse-repository.ts` — memuat snapshot, indeks `kode_rup → kontrak`,
+  `kode_rup → penyedia`.
+- `src/server/packages/snapshot-repository.ts` — menempelkan `kontrak` ke setiap paket.
+- `src/server/packages/service.ts` — filter `contract`, pencarian nama penyedia, `listVendors`,
+  `getVendor`.
+- `src/features/map/map-dashboard.tsx` — filter "Kontrak", baris pemenang di daftar, blok
+  "Pemenang & kontrak" di panel detail, dan kotak "Tanpa rekam kontrak di LPSE" yang menyebut
+  alasan (e-purchasing / dikecualikan / belum tercatat).
+- `src/app/penyedia/page.tsx` dan `src/app/penyedia/[slug]/page.tsx` — halaman penyedia.
+
+Hasil verifikasi: `GET /api/packages?kontrak=ADA` → 731 paket, `?kontrak=TANPA` → 826,
+`?q=fakhri` → 12 paket (pencarian nama penyedia), 330 penyedia di `/penyedia`.
+

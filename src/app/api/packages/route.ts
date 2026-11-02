@@ -16,6 +16,7 @@ function parseFilters(url: URL): RoadPackageSearchFilters | string {
   const year = url.searchParams.get("year")?.trim() || undefined;
   const district = url.searchParams.get("district")?.trim() || undefined;
   const work = url.searchParams.get("work")?.trim() || undefined;
+  const kontrak = url.searchParams.get("kontrak")?.trim() || undefined;
   const query = url.searchParams.get("q")?.trim() || undefined;
 
   if (year && year !== "2025" && year !== "2026") {
@@ -27,6 +28,9 @@ function parseFilters(url: URL): RoadPackageSearchFilters | string {
   if (work && !WORK_CATEGORIES.has(work as RoadWorkCategory)) {
     return "Jenis pekerjaan tidak dikenal.";
   }
+  if (kontrak && kontrak !== "ADA" && kontrak !== "TANPA") {
+    return "Filter kontrak harus ADA atau TANPA.";
+  }
   if (query && query.length > 120) {
     return "Pencarian maksimal 120 karakter.";
   }
@@ -35,6 +39,7 @@ function parseFilters(url: URL): RoadPackageSearchFilters | string {
     year: year as RoadPackageSearchFilters["year"],
     district,
     work: work as RoadWorkCategory | undefined,
+    contract: kontrak as RoadPackageSearchFilters["contract"],
     query,
   };
 }
