@@ -1,5 +1,6 @@
 import "server-only";
 import lpse from "../../../data/lpse_kota_tangerang_2025_2026.json";
+import realisasi from "../../../data/realisasi_kota_tangerang.json";
 import type {
   RoadPackageContract,
   VendorSummary,
@@ -7,6 +8,8 @@ import type {
 import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 
 export { slugPenyedia };
+
+const SUMBER_REALISASI = "https://data.inaproc.id/realisasi";
 
 interface LpseRow {
   kode_rup: string;
@@ -36,20 +39,38 @@ interface LpseSnapshot {
   item: LpseRow[];
 }
 
-const data = lpse as unknown as LpseSnapshot;
+interface RealisasiRow {
+  kode_rup: string | null;
+  kode_paket: string;
+  tahun: number;
+  metode: string | null;
+  sumber_transaksi: string | null;
+  penyedia: string | null;
+  nilai: number | null;
+}
 
-/** Indeks kode RUP → kontrak. Hanya baris yang punya nama pemenang. */
+interface RealisasiSnapshot {
+  snapshot: string;
+  sumber: string;
+  jumlah_baris: number;
+  jumlah_rup: number;
+  per_metode: Record<string, number>;
+  item: RealisasiRow[];
+}
+
+const data = lpse as unknown as LpseSnapshot;
+const real = realisasi as unknown as RealisasiSnapshot;
+
+/** Indeks kode RUP → kontrak. LPSE lebih dulu; celahnya diisi Data INAPROC. */
 const kontrakPerRup = new Map<string, RoadPackageContract>();
-/** Nama penyedia (huruf besar) → daftar kode RUP. */
-const rupPerPenyedia = new Map<string, string[]>();
 
 for (const baris of data.item) {
-  if (!baris.pemenang) continue;
-  const nama = baris.pemenang.trim();
+  const nama = baris.pemenang?.trim();
   if (!nama) continue;
 
   kontrakPerRup.set(String(baris.kode_rup), {
     jenis: baris.jenis_lpse === "lelang" ? "tender" : "nontender",
+    sumber: "LPSE",
     metode: baris.metode,
     pemenang: nama,
     npwp: baris.npwp,
@@ -58,11 +79,69 @@ for (const baris of data.item) {
     tahun: baris.tahun,
     url: baris.url,
   });
+}
 
-  const kunci = nama.toLocaleUpperCase("id-ID");
-  const daftar = rupPerPenyedia.get(kunci);
-  if (daftar) daftar.push(String(baris.kode_rup));
-  else rupPerPenyedia.set(kunci, [String(baris.kode_rup)]);
+/** Agregasi realisasi per RUP: satu paket bisa punya beberapa transaksi/penyedia. */
+interface AgregatRealisasi {
+  penyedia: Map<string, number>;
+  total: number;
+  transaksi: number;
+  metode: string | null;
+  tahun: number;
+  sumberTransaksi: string | null;
+}
+
+const realisasiPerRup = new Map<string, AgregatRealisasi>();
+for (const baris of real.item) {
+  if (!baris.kode_rup || !baris.penyedia) continue;
+  const rup = String(baris.kode_rup);
+  const agg = realisasiPerRup.get(rup) ?? {
+    penyedia: new Map<string, number>(),
+    total: 0,
+    transaksi: 0,
+    metode: baris.metode,
+    tahun: baris.tahun,
+    sumberTransaksi: baris.sumber_transaksi,
+  };
+  const nilai = Number(baris.nilai ?? 0);
+  agg.transaksi += 1;
+  agg.total += nilai;
+  agg.penyedia.set(baris.penyedia, (agg.penyedia.get(baris.penyedia) ?? 0) + nilai);
+  realisasiPerRup.set(rup, agg);
+}
+
+let diisiRealisasi = 0;
+for (const [rup, agg] of realisasiPerRup) {
+  if (kontrakPerRup.has(rup)) continue;
+  const urut = [...agg.penyedia.entries()].sort((a, b) => b[1] - a[1]);
+  if (!urut.length) continue;
+
+  kontrakPerRup.set(rup, {
+    jenis: agg.metode === "E-Purchasing" ? "e-purchasing" : "lainnya",
+    sumber: "Data INAPROC",
+    metode: agg.metode,
+    pemenang: urut[0][0],
+    npwp: null,
+    hps: null,
+    nilai_kontrak: agg.total ? Math.round(agg.total) : null,
+    tahun: agg.tahun,
+    url: SUMBER_REALISASI,
+    transaksi: agg.transaksi,
+    penyediaLain: urut.slice(1).map(([nama]) => nama),
+    sumberTransaksi: agg.sumberTransaksi,
+  });
+  diisiRealisasi += 1;
+}
+
+/** Indeks penyedia → kode RUP, dibangun dari kontrak gabungan. */
+const rupPerPenyedia = new Map<string, Set<string>>();
+for (const [rup, kontrak] of kontrakPerRup) {
+  for (const nama of [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])]) {
+    const kunci = nama.trim().toLocaleUpperCase("id-ID");
+    const daftar = rupPerPenyedia.get(kunci);
+    if (daftar) daftar.add(rup);
+    else rupPerPenyedia.set(kunci, new Set([rup]));
+  }
 }
 
 export const lpseMeta = {
@@ -76,6 +155,15 @@ export const lpseMeta = {
   paguBelumTercocok: data.pagu_belum_tercocok,
   metodeBelumTercocok: data.metode_belum_tercocok,
   rasioMedian: data.rasio_kontrak_pagu_median,
+  realisasi: {
+    snapshot: real.snapshot,
+    baris: real.jumlah_baris,
+    rup: real.jumlah_rup,
+    perMetode: real.per_metode,
+    paketDiisiRealisasi: diisiRealisasi,
+  },
+  kontrakTotal: kontrakPerRup.size,
+  penyediaTotal: rupPerPenyedia.size,
 } as const;
 
 export function kontrakUntukRup(kodeRup: string): RoadPackageContract | null {
@@ -83,33 +171,53 @@ export function kontrakUntukRup(kodeRup: string): RoadPackageContract | null {
 }
 
 export function daftarPenyedia(): VendorSummary[] {
-  const hasil: VendorSummary[] = [];
-  for (const [kunci, daftarRup] of rupPerPenyedia) {
-    let nilai = 0;
-    const tahun = new Set<number>();
-    let nama = kunci;
-    for (const rup of daftarRup) {
-      const kontrak = kontrakPerRup.get(rup);
-      if (!kontrak) continue;
-      nama = kontrak.pemenang;
-      nilai += kontrak.nilai_kontrak ?? 0;
-      tahun.add(kontrak.tahun);
+  return ringkasanPenyedia(null);
+}
+
+/**
+ * Ringkasan penyedia, dibatasi ke kode RUP yang diberikan (mis. hanya paket jalan).
+ * `null` = semua RUP yang punya rekam kontrak.
+ */
+export function ringkasanPenyedia(rupDiizinkan: Set<string> | null): VendorSummary[] {
+  const hasil = new Map<string, VendorSummary>();
+
+  for (const [rup, kontrak] of kontrakPerRup) {
+    if (rupDiizinkan && !rupDiizinkan.has(rup)) continue;
+
+    const perPenyedia = realisasiPerRup.get(rup)?.penyedia;
+    const daftar = [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])];
+
+    for (const nama of daftar) {
+      const kunci = nama.trim().toLocaleUpperCase("id-ID");
+      const entri = hasil.get(kunci) ?? {
+        slug: slugPenyedia(nama),
+        nama,
+        paket: 0,
+        nilai: 0,
+        tahun: [],
+        kategori: [],
+      };
+      entri.paket += 1;
+      entri.nilai += Math.round(
+        perPenyedia
+          ? Number(perPenyedia.get(nama) ?? 0)
+          : kunci === kontrak.pemenang.trim().toLocaleUpperCase("id-ID")
+            ? Number(kontrak.nilai_kontrak ?? 0)
+            : 0,
+      );
+      if (!entri.tahun.includes(kontrak.tahun)) entri.tahun.push(kontrak.tahun);
+      hasil.set(kunci, entri);
     }
-    hasil.push({
-      slug: slugPenyedia(nama),
-      nama,
-      paket: daftarRup.length,
-      nilai,
-      tahun: [...tahun].sort(),
-      kategori: [],
-    });
   }
-  return hasil.sort((a, b) => b.nilai - a.nilai || a.nama.localeCompare(b.nama, "id"));
+
+  return [...hasil.values()].sort(
+    (a, b) => b.nilai - a.nilai || a.nama.localeCompare(b.nama, "id"),
+  );
 }
 
 export function rupMilikPenyedia(slug: string): string[] {
   for (const [kunci, daftarRup] of rupPerPenyedia) {
-    if (slugPenyedia(kunci) === slug) return daftarRup;
+    if (slugPenyedia(kunci) === slug) return [...daftarRup];
   }
   return [];
 }

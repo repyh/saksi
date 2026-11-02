@@ -20,6 +20,9 @@ review, not proof of wrongdoing or a guarantee of government action.
 - LPSE contract data (`/penyedia`, `/penyedia/[slug]`): winner and contract value joined to RUP by
   RUP code, shown with the denominator (package count, year, value) and never as a performance score.
   Packages without a record say why (e-purchasing, exempt, not recorded).
+- Two contract sources: **LPSE/SPSE** for tender and direct procurement, **Data INAPROC**
+  (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
+  Together they name a vendor for **1,381 of 1,557** road packages (88.7%).
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
   interactive filters call `GET /api/packages`. The adapter reads the checked-in JSON snapshot.
 - Better Auth and Prisma are wired for server use. They are **optional for the FDS**: when

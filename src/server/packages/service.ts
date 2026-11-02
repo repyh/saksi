@@ -6,7 +6,7 @@ import type {
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
-import { daftarPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
+import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
 import type { RoadPackageRepository } from "./repository";
 import { snapshotRoadPackageRepository } from "./snapshot-repository";
 
@@ -50,7 +50,11 @@ export async function searchRoadPackages(
   const withContractCount = allPackages.filter((item) => item.kontrak).length;
   const vendorCount = new Set(
     allPackages.flatMap((item) =>
-      item.kontrak ? [item.kontrak.pemenang.toLocaleUpperCase("id-ID")] : [],
+      item.kontrak
+        ? [item.kontrak.pemenang, ...(item.kontrak.penyediaLain ?? [])].map((nama) =>
+            nama.toLocaleUpperCase("id-ID"),
+          )
+        : [],
     ),
   ).size;
 
@@ -64,25 +68,29 @@ export async function searchRoadPackages(
   };
 }
 
-/** Ringkasan penyedia dari rekam kontrak LPSE. */
+/** Ringkasan penyedia dari rekam kontrak LPSE + Data INAPROC, dibatasi ke paket jalan. */
 export async function listVendors(query?: string): Promise<VendorSummary[]> {
-  const semua = daftarPenyedia();
   const cari = query?.trim().toLocaleLowerCase("id-ID");
+  const paket = await searchRoadPackages();
+  const rupJalan = new Set(paket.items.map((item) => String(item.kode_rup)));
+  const semua = ringkasanPenyedia(rupJalan);
 
   const kategori = new Map<string, Set<string>>();
-  const paket = await searchRoadPackages();
   for (const item of paket.items) {
     if (!item.kontrak) continue;
-    const kunci = slugPenyedia(item.kontrak.pemenang);
-    const isi = kategori.get(kunci) ?? new Set<string>();
-    isi.add(classifyRoadWork(item.nama));
-    kategori.set(kunci, isi);
+    for (const nama of [item.kontrak.pemenang, ...(item.kontrak.penyediaLain ?? [])]) {
+      const kunci = slugPenyedia(nama);
+      const isi = kategori.get(kunci) ?? new Set<string>();
+      isi.add(classifyRoadWork(item.nama));
+      kategori.set(kunci, isi);
+    }
   }
 
   return semua
     .filter((vendor) => !cari || vendor.nama.toLocaleLowerCase("id-ID").includes(cari))
     .map((vendor) => ({
       ...vendor,
+      tahun: [...vendor.tahun].sort(),
       kategori: [...(kategori.get(vendor.slug) ?? [])] as VendorSummary["kategori"],
     }));
 }

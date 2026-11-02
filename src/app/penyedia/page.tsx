@@ -3,7 +3,7 @@ import Link from "next/link";
 import { FiArrowRight, FiSearch } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { lpseMeta } from "@/server/packages/lpse-repository";
-import { listVendors } from "@/server/packages/service";
+import { listVendors, searchRoadPackages } from "@/server/packages/service";
 
 export const metadata: Metadata = {
   title: "Penyedia & Kontrak Jalan — SAKSI",
@@ -26,24 +26,32 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
   const { q } = await searchParams;
   const query = (q ?? "").trim();
   const vendor = await listVendors(query || undefined);
+  const ringkas = await searchRoadPackages();
   const totalPaket = vendor.reduce((n, item) => n + item.paket, 0);
   const totalNilai = vendor.reduce((n, item) => n + item.nilai, 0);
   const tampil = vendor.slice(0, 60);
+  const persenVendor = ringkas.totalCount
+    ? ((ringkas.withContractCount / ringkas.totalCount) * 100).toLocaleString("id-ID", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      })
+    : "0";
 
   return (
     <main className="min-h-screen bg-white text-foreground">
       <section className="border-b border-border bg-muted/20">
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-primary">
-            Data resmi LPSE · SPSE Kota Tangerang
+            Data resmi LPSE &amp; Data INAPROC · Kota Tangerang
           </p>
           <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
             Penyedia &amp; kontrak jalan
           </h1>
           <p className="mt-3 max-w-3xl font-sans text-sm leading-relaxed text-foreground/80">
-            Nama penyedia diambil dari LPSE dan disandingkan dengan paket RUP lewat Kode RUP —
-            bukan tebakan dari nama paket. Ditampilkan sebagai fakta kontrak, bukan penilaian
-            kinerja: tidak ada skor gabungan di halaman ini.
+            Nama penyedia diambil dari dua sumber resmi dan disandingkan dengan paket RUP lewat{" "}
+            <strong>Kode RUP</strong> — bukan tebakan dari nama paket: LPSE/SPSE untuk tender dan
+            pengadaan langsung, serta Data INAPROC untuk transaksi e-purchasing/e-katalog. Ditampilkan
+            sebagai fakta kontrak, bukan penilaian kinerja: tidak ada skor gabungan di halaman ini.
           </p>
 
           <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -152,12 +160,11 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
         <div className="mt-8 border border-border bg-muted/10 p-4 font-sans text-[12px] leading-relaxed text-foreground/80">
           <p className="font-bold uppercase tracking-[0.08em] text-muted-foreground text-[10px]">Yang perlu dibaca dari angka ini</p>
           <p className="mt-1.5">
-            {lpseMeta.paketTercocok.toLocaleString("id-ID")} paket RUP tercocok ke LPSE (
-            {lpseMeta.persenTercocok.toFixed(1)}%), dengan{" "}
-            {lpseMeta.denganPemenang.toLocaleString("id-ID")} paket memiliki nama pemenang. Sisa paket
-            tidak punya rekam kontrak di LPSE — terbesar karena <strong>e-purchasing</strong> (
-            {(lpseMeta.metodeBelumTercocok["E-Purchasing"] ?? 0).toLocaleString("id-ID")} paket), yang
-            pengadaannya lewat e-katalog dan tidak menerbitkan nama pemenang di SPSE.
+            {ringkas.withContractCount.toLocaleString("id-ID")} dari{" "}
+            {ringkas.totalCount.toLocaleString("id-ID")} paket ({persenVendor}%) punya nama penyedia —
+            tender dan pengadaan langsung dari LPSE, e-purchasing/e-katalog dari Data INAPROC. Sisa{" "}
+            {(ringkas.totalCount - ringkas.withContractCount).toLocaleString("id-ID")} paket tidak punya
+            rekam publik di kedua sumber.
           </p>
           <p className="mt-1.5">
             NPWP penyedia disamarkan oleh LPSE, sehingga penyedia hanya bisa dibedakan lewat nama —

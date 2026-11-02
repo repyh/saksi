@@ -53,8 +53,8 @@ const WORK_LABELS: Record<RoadWorkCategory, string> = {
 const CONTRACT_OPTIONS: RoadContractFilter[] = ["SEMUA", "ADA", "TANPA"];
 const CONTRACT_LABELS: Record<RoadContractFilter, string> = {
   SEMUA: "Semua kontrak",
-  ADA: "Ada rekam LPSE",
-  TANPA: "Tanpa rekam LPSE",
+  ADA: "Ada rekam penyedia",
+  TANPA: "Tanpa rekam penyedia",
 };
 
 function normalizeDistrictName(value: string) {
@@ -512,7 +512,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                           <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
                             <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Pemenang &amp; kontrak</p>
                             <span className="shrink-0 border border-primary/30 bg-primary/5 px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">
-                              Data resmi (LPSE)
+                              {selectedPackage.kontrak.sumber === "LPSE" ? "Data resmi (LPSE)" : "Data resmi (INAPROC)"}
                             </span>
                           </div>
                           <table className="w-full border-collapse font-sans text-sm">
@@ -548,6 +548,29 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                                   </td>
                                 </tr>
                               ) : null}
+                              {selectedPackage.kontrak.sumberTransaksi ? (
+                                <tr className="border-t border-border/60">
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Sumber</th>
+                                  <td className="py-2 pr-3 text-foreground">
+                                    {selectedPackage.kontrak.sumberTransaksi}
+                                    {selectedPackage.kontrak.transaksi && selectedPackage.kontrak.transaksi > 1 ? (
+                                      <span className="ml-1 text-[11px] text-muted-foreground">· {selectedPackage.kontrak.transaksi} transaksi</span>
+                                    ) : null}
+                                  </td>
+                                </tr>
+                              ) : null}
+                              {selectedPackage.kontrak.penyediaLain?.length ? (
+                                <tr className="border-t border-border/60">
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia lain</th>
+                                  <td className="py-2 pr-3 leading-snug text-foreground">
+                                    {selectedPackage.kontrak.penyediaLain.map((nama) => (
+                                      <Link key={nama} href={`/penyedia/${slugPenyedia(nama)}`} className="block text-primary underline-offset-2 hover:underline">
+                                        {nama}
+                                      </Link>
+                                    ))}
+                                  </td>
+                                </tr>
+                              ) : null}
                             </tbody>
                           </table>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-2">
@@ -556,12 +579,14 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             </Link>
                             {selectedPackage.kontrak.url ? (
                               <a href={selectedPackage.kontrak.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-sans text-[11px] font-semibold text-muted-foreground underline-offset-2 hover:text-primary hover:underline">
-                                Halaman LPSE <FiExternalLink aria-hidden="true" className="size-3" />
+                                {selectedPackage.kontrak.sumber === "LPSE" ? "Halaman LPSE" : "Dashboard INAPROC"} <FiExternalLink aria-hidden="true" className="size-3" />
                               </a>
                             ) : null}
                           </div>
                           <p className="border-t border-border px-3 py-2 font-sans text-[10px] leading-relaxed text-muted-foreground">
-                            Nama penyedia dan nilai kontrak dari LPSE, ditampilkan sebagai fakta kontrak — bukan penilaian kinerja. NPWP disamarkan oleh LPSE.
+                            {selectedPackage.kontrak.sumber === "LPSE"
+                              ? "Nama penyedia dan nilai kontrak dari LPSE, ditampilkan sebagai fakta kontrak — bukan penilaian kinerja. NPWP disamarkan oleh LPSE."
+                              : "Paket ini melalui e-purchasing/e-katalog, yang pencatatannya ada di Data INAPROC (bukan LPSE). Nama penyedia dan nilai transaksi ditampilkan sebagai fakta kontrak — bukan penilaian kinerja."}
                           </p>
                         </div>
                       ) : (

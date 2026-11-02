@@ -15,7 +15,8 @@
     "db:status": "prisma migrate status",
     "lpse:list": "node scripts/lpse.mjs list",
     "lpse:detail": "node scripts/lpse.mjs detail",
-    "lpse:match": "node scripts/lpse.mjs match"
+    "lpse:match": "node scripts/lpse.mjs match",
+    "data:realisasi": "node scripts/realisasi.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

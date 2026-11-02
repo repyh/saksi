@@ -89,3 +89,76 @@ Ketiganya sudah dikerjakan 2 November 2026:
 Hasil verifikasi: `GET /api/packages?kontrak=ADA` → 731 paket, `?kontrak=TANPA` → 826,
 `?q=fakhri` → 12 paket (pencarian nama penyedia), 330 penyedia di `/penyedia`.
 
+---
+
+# Lapisan kedua: Data INAPROC — Realisasi (menutup celah e-purchasing)
+
+## Kenapa LPSE saja tidak cukup
+
+SPSE tidak pernah memuat e-purchasing. Menu publiknya hanya `/lelang`, `/nontender`,
+`/pengumuman`, `/publik/*` (dicek 2 Nov 2026). SIRUP juga tidak menyimpan penyedia: datatable
+publiknya 8 kolom (kode, satker, nama, pagu, metode, sumber dana, kode RUP, bulan) tanpa kolom
+penyedia, dan UI-nya sekarang login-gated.
+
+## Sumber yang dipakai
+
+**`https://data.inaproc.id/realisasi`** — dashboard publik LKPP/INAPROC. Isinya transaksi
+realisasi per paket, termasuk e-purchasing, dan **memuat `Kode RUP` + `Nama Penyedia`**.
+
+Kolom tabel: Nama Instansi · Nama Satuan Kerja · Kode Paket · **Kode RUP** · Tahun Anggaran ·
+Sumber Transaksi (Toko Daring / E-Katalog Versi 6.0 / Non Tender) · Sumber Dana · **Nama Penyedia** ·
+Metode Pengadaan · Jenis Pengadaan · Nama Paket · Status Paket · Tahapan · Total Nilai · Nilai PDN · UMK.
+
+Cara mengakses (dipakai `scripts/realisasi.mjs`):
+
+| | |
+|---|---|
+| Endpoint tabel | `GET https://data.inaproc.id/dashboard-api/realisasi/table` |
+| Endpoint ringkas | `GET .../dashboard-api/realisasi/summary` |
+| Filter | `tahun`, `instansi` (kldi, mis. `D44`), `satker`, `eselon`, `sumber`, `sumberDana`, `metodePengadaan`, `statusPaket` |
+| Paginasi | cursor: ambil `tablePagination.nextCursor`, kirim balik sebagai **`cursor=`** (limit tetap 20) |
+| Header wajib | `x-request-time` = epoch ms, `x-secret` = base64 dari string itu **dibalik** |
+
+Data tersinkron 2 Nov 2026 02.39 WIB. Untuk Kota Tangerang: 2025 = 37.799 paket · 2026 = 13.179
+paket (semua OPD); filter `satker=1.03.2.10.0.00.01.0000` (Dinas PUPR) menyisakan 9.210 + 1.143.
+
+## Hasil
+
+`node scripts/realisasi.mjs --tahun 2025,2026` → `data/realisasi_kota_tangerang.json`:
+**10.131 transaksi · 3.292 RUP** (e-purchasing 7.527 transaksi, pengadaan langsung 2.272).
+
+Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
+
+| | Sebelum | Sesudah |
+|---|---:|---:|
+| Paket punya nama penyedia | 731 (46,9%) | **1.381 (88,7%)** |
+| Paket tanpa rekam | 826 | **176** |
+| Penyedia unik | 330 | **502** |
+
+650 paket terisi dari realisasi: **343 e-purchasing**, 293 pengadaan langsung, 14 dikecualikan.
+Yang masih kosong: 105 e-purchasing, 36 pengadaan langsung, 19 dikecualikan, 16 tender.
+
+23 RUP punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya sebagai
+baris "Penyedia lain". Contoh: pembangunan jalan sisi Saluran Cisadane Barat = Rp4,73 M dari
+**28 transaksi** dengan CV JAYA KONSTRUKSI.
+
+## Perubahan kode
+
+- `scripts/realisasi.mjs` — penarik Data INAPROC (header + cursor pagination), simpan transaksi
+  mentah **dan** agregat per RUP.
+- `src/server/packages/lpse-repository.ts` — kontrak dua sumber: `sumber: "LPSE" | "Data INAPROC"`,
+  `jenis` termasuk `e-purchasing`, plus `transaksi`, `penyediaLain`, `sumberTransaksi`.
+- `src/features/map/map-dashboard.tsx` — badge berubah jadi `DATA RESMI (LPSE)` / `DATA RESMI (INAPROC)`,
+  baris `Sumber` (mis. "E-Katalog Versi 5.0 · 19 transaksi"), dan baris `Penyedia lain`.
+- `src/app/penyedia/page.tsx` — metrik dihitung dari data gabungan, bukan dari LPSE saja.
+
+## Etika & batasan
+
+- `data.inaproc.id` tidak punya `robots.txt` yang melarang; API-nya publik dan dipakai dashboard
+  resminya sendiri. Pengambilan dibatasi ke satu satker Kota Tangerang + jeda 250 ms per halaman.
+- **Kebalikannya**: `katalog.inaproc.id` (`Disallow: /api/`, order di balik login) dan
+  `sikap.inaproc.id` (`Disallow: /`) **tidak** di-scrape. SIKaP hanya boleh jadi tautan rujukan manual.
+- Realisasi = nilai transaksi, bukan nilai kontrak; untuk e-purchasing satu paket bisa terdiri dari
+  puluhan pesanan, sehingga total bisa sedikit di atas pagu bila paket berlanjut antar tahun.
+
+

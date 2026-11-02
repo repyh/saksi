@@ -6,9 +6,10 @@ export type RoadPrecisionType =
 
 export type RoadWorkCategory = "SEMUA" | "PERMUKAAN" | "DRAINASE" | "JEMBATAN";
 
-/** Rekam kontrak dari LPSE (SPSE Kota Tangerang), dicocokkan lewat Kode RUP. */
+/** Rekam kontrak/pemenang: LPSE (tender & non-tender) atau Data INAPROC (realisasi e-purchasing). */
 export interface RoadPackageContract {
-  jenis: "tender" | "nontender";
+  jenis: "tender" | "nontender" | "e-purchasing" | "lainnya";
+  sumber: "LPSE" | "Data INAPROC";
   metode: string | null;
   pemenang: string;
   npwp: string | null;
@@ -16,6 +17,11 @@ export interface RoadPackageContract {
   nilai_kontrak: number | null;
   tahun: number;
   url: string | null;
+  /** Jumlah transaksi/pesanan yang membentuk nilai (khas e-purchasing). */
+  transaksi?: number;
+  /** Penyedia lain bila satu paket punya beberapa transaksi. */
+  penyediaLain?: string[];
+  sumberTransaksi?: string | null;
 }
 
 export type RoadContractFilter = "SEMUA" | "ADA" | "TANPA";
