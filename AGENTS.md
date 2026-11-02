@@ -21,7 +21,11 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
 - Angka kunci (snapshot 31 Okt 2026): **1.557 paket jalan · Rp650,18 M · 80 kelurahan · 483 RW ·
   818 ber-anchor RW · 402 tanpa lokus**.
+- Rekam penyedia (2 Nov 2026): **1.381 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
+  650 sisanya dari **Data INAPROC realisasi** (e-purchasing/e-katalog). **176** paket tanpa rekam
+  publik; **502** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
+- Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104).
 - Lomba: MIA 2026 / Web In Action. **FDS 1 Nov 2026**, penyisihan 11 Nov, final onsite 28 Nov.
 
@@ -43,15 +47,21 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    agregat tidak boleh berbentuk pin yang terbaca sebagai lokasi pekerjaan. Paket tanpa anchor (402)
    hanya tampil di tabel dengan label `Kota Tangerang (umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
-7. **Penyedia disebut nama asli** (data publik LPSE) tetapi **berimbang**: tanpa skor gabungan,
-   selalu dengan penyebut (jumlah paket, kelas jalan, tahun).
-8. **Badge wajib**: `SIMULASI PROTOTIPE` (amber) untuk laporan warga, `DATA RESMI (SIRUP / BINA
-   MARGA)` untuk data asli, dan badge sumber lokasi (`RW 04` / `Kelurahan` / `Kecamatan`). Belum
-   diimplementasikan per 1 Nov — jangan dianggap sudah ada.
-9. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
-10. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
+7. **Penyedia disebut nama asli** (data publik) tetapi **berimbang**: tanpa skor gabungan, selalu
+   dengan penyebut (jumlah paket, kelas jalan, tahun). Sumber kontrak **dua lapis**: LPSE/SPSE untuk
+   tender & pengadaan langsung, **Data INAPROC** (`data.inaproc.id/realisasi`) untuk
+   e-purchasing/e-katalog. Jangan menyebut satu sumber sebagai satu-satunya.
+8. **Jangan scrape sumber yang menolak.** `katalog.inaproc.id` (`Disallow: /api/`, transaksi di balik
+   login) dan `sikap.inaproc.id` (`Disallow: /`) hanya boleh jadi **tautan rujukan**, bukan target
+   pengambilan data. SIKaP = profil/kinerja penyedia, tidak memuat pemetaan ke RUP.
+9. **Badge wajib**: `SIMULASI PROTOTIPE` (amber) untuk laporan warga; `DATA RESMI (LPSE)` atau
+   `DATA RESMI (INAPROC)` sesuai sumber kontrak; `DATA RESMI (SIRUP / BINA MARGA)` untuk data asli
+   lain; plus badge sumber lokasi (`RW 04` / `Kelurahan` / `Kecamatan`). Badge kontrak dan lokasi
+   sudah ada (2 Nov 2026); badge SIRUP/Bina Marga belum.
+10. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
+11. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
     database (auth, simpan laporan) hanya aktif bila env itu ada.
-11. **Format angka Indonesia**: `1.557`, `74,2%`, `Rp650,18 Miliar`.
+12. **Format angka Indonesia**: `1.557`, `74,2%`, `Rp650,18 Miliar`.
 
 ## Konvensi repo
 
@@ -63,6 +73,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   `src/contracts` (tipe lintas lapisan), `data/` (snapshot), `public/data/` (GeoJSON batas).
 - Jangan mengedit `data/saksi_kota_tangerang_2025_2026.json` manual — bangun ulang dari pipeline
   SIRUP + batas ArcGIS (lihat `docs/STATE.md`); dataset adalah artefak bertanggal.
+- Data kontrak/penyedia punya perintah sendiri: `npm run lpse:list` → `lpse:detail` → `lpse:match`
+  (SPSE) dan `npm run data:realisasi` (Data INAPROC). Jalankan berurutan, jangan mengarang angka.
+  Detail endpoint, header, dan batasannya ada di `docs/LPSE-PEMENANG.md`.
 
 ## Perintah verifikasi (wajib hijau sebelum lapor selesai)
 
@@ -83,3 +96,4 @@ pemeriksaan yang menuntut Postgres di jalur build.
 | `docs/PRODUCT.md` | produk, masalah, sasaran, dan batas interpretasi |
 | `docs/DESIGN.md` | sistem visual dan aturan antarmuka |
 | `docs/HANDOFF.md` | status operasional dan keputusan kerja |
+| `docs/LPSE-PEMENANG.md` | pipeline LPSE + Data INAPROC: endpoint, header, angka, batasan etika |
