@@ -21,9 +21,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
 - Angka kunci (snapshot 31 Okt 2026): **1.557 paket jalan · Rp650,18 M · 80 kelurahan · 483 RW ·
   818 ber-anchor RW · 402 tanpa lokus**.
-- Rekam penyedia (2 Nov 2026): **1.381 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
-  650 sisanya dari **Data INAPROC realisasi** (e-purchasing/e-katalog). **176** paket tanpa rekam
-  publik; **502** penyedia unik.
+- Rekam penyedia (2 Nov 2026): **1.417 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
+  686 sisanya dari **Data INAPROC realisasi** (e-purchasing/e-katalog, lima satker D44: PUPR, Dishub,
+  DLH, Kecamatan Pinang, Dispora). **140** paket tanpa rekam publik (Rp98,6 M); **518** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104).
