@@ -42,16 +42,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
             <FiArrowLeft aria-hidden="true" className="size-3.5" /> Semua penyedia
           </Link>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="border border-primary/30 bg-primary/5 px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">
-              Data resmi (LPSE)
-            </span>
-            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              SPSE Kota Tangerang · TA {summary.tahun.join("–") || "2025–2026"}
-            </span>
-          </div>
-
-          <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
             {summary.nama}
           </h1>
 
