@@ -1,5 +1,4 @@
 import "server-only";
-import { auth } from "@/lib/auth";
 import { isPermissionCode, type PermissionCode } from "./catalog";
 import { AuthorizationError } from "./errors";
 import { permissionsForUser } from "./permissions";
@@ -49,6 +48,8 @@ export async function requireRequestPermission(
   permission: string,
   context?: AuthorizationContext,
 ) {
+  if (!process.env.DATABASE_URL) throw new AuthorizationError(401, "Authentication is required.");
+  const { auth } = await import("@/lib/auth");
   const session = await auth.api.getSession({ headers });
   const user = session?.user;
   if (!user) throw new AuthorizationError(401, "Authentication is required.");

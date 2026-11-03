@@ -22,6 +22,9 @@ model User {
   grantsRevoked UserBundleGrant[]          @relation("RevokingUser")
   auditAsActor  AuthorizationAuditEvent[]   @relation("AuthorizationAuditActor")
   auditAsSubject AuthorizationAuditEvent[] @relation("AuthorizationAuditSubject")
+  invitesCreated RegistrationInvite[]       @relation("RegistrationInviteCreator")
+  invitesRedeemed RegistrationInvite[]      @relation("RegistrationInviteRedeemer")
+  invitesRevoked RegistrationInvite[]        @relation("RegistrationInviteRevoker")
 }
 
 model Session {
@@ -146,4 +149,25 @@ model AuthorizationAuditEvent {
   @@index([subjectUserId, createdAt])
   @@index([resourceType, resourceId, createdAt])
   @@index([action, createdAt])
+}
+
+model RegistrationInvite {
+  id                String    @id @default(cuid())
+  tokenHash         String    @unique
+  email             String
+  createdByUserId   String
+  redeemedByUserId String?
+  revokedByUserId  String?
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  redeemedAt       DateTime?
+  revokedAt        DateTime?
+  createdBy        User      @relation("RegistrationInviteCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  redeemedBy       User?     @relation("RegistrationInviteRedeemer", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
+  revokedBy        User?     @relation("RegistrationInviteRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([email, expiresAt])
+  @@index([createdByUserId, createdAt])
+  @@index([redeemedByUserId])
+  @@index([revokedByUserId])
 }

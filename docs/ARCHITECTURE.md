@@ -63,7 +63,7 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
 - `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
 - Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`.
-- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy; planned report and access API files remain scaffolds until those endpoints are implemented. Better Auth's catch-all route continues to delegate directly to Better Auth.
+- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` remains a scaffold. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
 The endpoint returns all matching package rows because the current map and list operate on the same set; the list displays at most 120 rows while the map renders the matching coordinates. This establishes the boundary but is not yet a payload or map-rendering optimization. The next scale step is separate list pagination from a compact map-feature query, ideally bounded by map viewport.
 
@@ -71,15 +71,17 @@ The endpoint returns all matching package rows because the current map and list 
 
 - Supabase is the managed PostgreSQL host. PostGIS is enabled in the `extensions` schema.
 - Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation.
-- The Prisma schema defines Better Auth and authorization tables, but does not yet define road packages, provenance, official measurements, reports, moderation, or ingestion-run records.
+- The Prisma schema defines Better Auth, authorization, and registration-invitation tables, but does not yet define road packages, provenance, official measurements, reports, moderation, or ingestion-run records.
 - Browser code must not connect directly to Postgres or receive database credentials or a Supabase service-role key.
 - Use Prisma for ordinary reads/writes. Put complex spatial operations behind named repository methods and parameterized SQL; do not spread raw GIS SQL across route handlers or UI code.
 
 ### Authorization authority
 
-`src/server/authorization/authority.ts` is the server-only decision entry point. It resolves active grants and dispatches each permission to a domain strategy registered in `registry.ts`; Better Auth supplies identity and sessions, while SAKSI bundle grants determine staff access. Domain policy lives in `strategies/reports.ts`, `analytics.ts`, `access.ts`, and `sources.ts`. The central authority owns authentication, deny-by-default behavior, and consistent denials. Strategies own domain prerequisites and access-specific grant/revoke operations. No account has an implicit role or permissions. Grants and revocations are persisted and audited, while permission definitions and built-in bundle membership remain source controlled. The schema, migration, and seed command are implemented, but the migration has not been applied to Supabase and no staff route currently consumes these guards. See [AUTHORIZATION.md](./AUTHORIZATION.md) for the permission catalog, bundle boundaries, and rollout status.
+`src/server/authorization/authority.ts` is the server-only decision entry point. It resolves active grants and dispatches each permission to a domain strategy registered in `registry.ts`; Better Auth supplies identity and sessions, while SAKSI bundle grants determine staff access. Domain policy lives in `strategies/reports.ts`, `analytics.ts`, `access.ts`, and `sources.ts`. The central authority owns authentication, deny-by-default behavior, and consistent denials. Strategies own domain prerequisites and access-specific grant/revoke operations. No account has an implicit role or permissions. Grants and revocations are persisted and audited, while permission definitions and built-in bundle membership remain source controlled. The invite issue/revoke endpoints consume `access.users.invite`; broader staff routes remain unimplemented. The authorization and invite migrations have not been applied to Supabase. See [AUTHORIZATION.md](./AUTHORIZATION.md) for the permission catalog, bundle boundaries, and rollout status.
 
-Better Auth applies a database-backed IP rate limit to email/password sign-in: at most five requests per minute per client IP. This is shared across web instances through the `rateLimit` table. Apply the `20261104110000_auth_rate_limit` migration before enabling authentication against Supabase. Ensure the hosting proxy supplies a sanitized client IP header; without one, requests share a per-route bucket and can throttle unrelated users together.
+Better Auth applies a database-backed IP rate limit to email/password sign-in and sign-up: at most five requests per minute per client IP. This is shared across web instances through the `rateLimit` table. Apply the `20261104110000_auth_rate_limit` migration before enabling authentication against Supabase. Ensure the hosting proxy supplies a sanitized client IP header; without one, requests share a per-route bucket and can throttle unrelated users together.
+
+`/register` is invite-gated by a Better Auth user-creation hook. Tokens are random, email-bound, hashed at rest, single-use, and consumed in the same transaction as account creation. Permission-checked issuance and revocation are exposed through `AccessApi`. Migration `20261104130000_registration_invites` must be deployed before this works against Supabase. See [SECURITY.md](./SECURITY.md) for the security behavior and rollout gaps.
 
 ### Reports
 

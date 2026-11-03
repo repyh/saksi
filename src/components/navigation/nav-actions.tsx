@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import type { NavActionItem } from "./nav-types";
 
 interface NavActionsProps {
@@ -40,15 +41,44 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
 
 export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavActionsProps) {
   const pathname = usePathname();
+  const { data: session, isPending } = authClient.useSession();
+  const navigationActions = [
+    ...actions,
+    {
+      id: "account-action",
+      label: session ? "Dashboard" : "Masuk",
+      href: session ? "/project" : "/login?returnTo=%2Fproject",
+      variant: "ghost" as const,
+      isPrimary: true,
+    },
+  ];
 
   return (
     <nav
       aria-label="Navigasi Utama"
-      className={cn("-mb-px flex h-full items-stretch gap-4 sm:gap-7", className)}
+      className={cn("-mb-px flex h-full items-stretch gap-2 sm:gap-7", className)}
     >
-      {actions.map((item) => {
+      {navigationActions.map((item) => {
+        if (item.id === "account-action" && isPending) {
+          return <span key={item.id} aria-hidden="true" className="my-3 w-[4.5rem] animate-pulse bg-white/15 sm:w-20" />;
+        }
+
         const normalizedHref = item.href.replace(/\/+$/, "") || "/";
         const isActive = pathname === normalizedHref || (normalizedHref !== "/" && pathname.startsWith(`${normalizedHref}/`));
+
+        if (item.id === "account-action") {
+          return (
+            <Button
+              key={item.id}
+              render={<Link href={item.href} aria-current={isActive ? "page" : undefined} />}
+              nativeButton={false}
+              variant="secondary"
+              className="my-auto h-9 rounded-sm border border-secondary px-3 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-secondary-foreground transition-colors hover:bg-[#f2cf00] focus-visible:ring-white sm:px-4 sm:text-[11px]"
+            >
+              {item.label}
+            </Button>
+          );
+        }
 
         return (
           <Button

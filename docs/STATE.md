@@ -71,7 +71,9 @@ Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota
 - `src/features/reports/components/report-prototype.tsx` — alur lapor; draf disimpan di IndexedDB
   (`saksi-local-reports`); belum ada API submit.
 - `src/lib/prisma.ts` + `src/lib/auth.ts` — **opsional**: klien Prisma dibuat saat dipakai, route
-  `/api/auth/*` menjawab `503` bila `DATABASE_URL` kosong, dan build tidak menuntut database.
+  `/api/auth/*` menjawab `503` bila `DATABASE_URL` kosong, dan build tidak menuntut database. Registrasi
+  `/register` memakai undangan email-bound, token hash, konsumsi atomik di hook Better Auth, dan API
+  penerbitan/pencabutan undangan dengan izin `access.users.invite`.
 - `docs/ARCHITECTURE.md` — batas frontend/backend, kontrak API, rencana worker scraper.
 
 ---
