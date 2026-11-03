@@ -47,3 +47,7 @@ next-env.d.ts
 
 # Local agent skills
 /.agents/
+
+# dump RUP mentah (regenerasi: npm run data:rup / data:rup-detail)
+data/rup_kota_tangerang_2025_2026.json
+data/rup_detail_kota_tangerang.json

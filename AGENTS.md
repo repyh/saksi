@@ -75,8 +75,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   SIRUP + batas ArcGIS (lihat `docs/STATE.md`); dataset adalah artefak bertanggal.
 - Data kontrak/penyedia punya perintah sendiri: `npm run lpse:list` → `lpse:detail` → `lpse:match`
   (SPSE) dan `npm run data:realisasi` (Data INAPROC, ekspor CSV penuh; `--mode table` untuk cadangan
-  per satker). Jalankan berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya
-  ada di `docs/LPSE-PEMENANG.md`.
+  per satker), plus `npm run data:rup` / `data:rup-detail` untuk RUP (pengganti SIRUP). Jalankan
+  berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya ada di
+  `docs/LPSE-PEMENANG.md` dan `docs/RUP-DATA-INAPROC.md`.
 
 ## Perintah verifikasi (wajib hijau sebelum lapor selesai)
 
@@ -99,3 +100,4 @@ pemeriksaan yang menuntut Postgres di jalur build.
 | `docs/HANDOFF.md` | status operasional dan keputusan kerja |
 | `docs/LPSE-PEMENANG.md` | pipeline LPSE + Data INAPROC: endpoint, header, angka, batasan etika |
 | `docs/SISA-176-PAKET.md` | sebab sisa 140 paket tanpa penyedia + hasil penarikan lima satker `D44` |
+| `docs/RUP-DATA-INAPROC.md` | RUP dari `data.inaproc.id` (ekspor CSV + detail) sebagai pengganti SIRUP |
