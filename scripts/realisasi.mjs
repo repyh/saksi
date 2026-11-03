@@ -8,7 +8,8 @@
  * API internal `/dashboard-api/...` mensyaratkan dua header sederhana:
  *   x-request-time : epoch milidetik
  *   x-secret       : base64 dari string waktu itu yang dibalik
- * Paginasi memakai cursor: `tablePagination.nextCursor` → parameter `nextCursor`.
+ * Paginasi memakai cursor: ambil `tablePagination.nextCursor`, kirim balik sebagai query
+ * `cursor=`. Ukuran halaman tetap 20, tidak bisa dinaikkan lewat parameter.
  *
  * Pakai: node scripts/realisasi.mjs [--tahun 2025,2026] [--satker <kode>,<kode>,...]
  *        Hasil digabung dengan berkas sebelumnya, jadi aman dijalankan per satker.
