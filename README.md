@@ -22,7 +22,8 @@ review, not proof of wrongdoing or a guarantee of government action.
   Packages without a record say why (e-purchasing, exempt, not recorded).
 - Two contract sources: **LPSE/SPSE** for tender and direct procurement, **Data INAPROC**
   (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
-  Together they name a vendor for **1,417 of 1,557** road packages (91.0%).
+  The INAPROC layer uses the official CSV export (4 requests/year for the whole municipality),
+  and names a vendor for **1,424 of 1,557** road packages (91.4%).
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
   interactive filters call `GET /api/packages`. The adapter reads the checked-in JSON snapshot.
 - Better Auth and Prisma are wired for server use. They are **optional for the FDS**: when

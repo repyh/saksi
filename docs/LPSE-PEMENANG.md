@@ -109,34 +109,44 @@ Kolom tabel: Nama Instansi · Nama Satuan Kerja · Kode Paket · **Kode RUP** ·
 Sumber Transaksi (Toko Daring / E-Katalog Versi 6.0 / Non Tender) · Sumber Dana · **Nama Penyedia** ·
 Metode Pengadaan · Jenis Pengadaan · Nama Paket · Status Paket · Tahapan · Total Nilai · Nilai PDN · UMK.
 
-Cara mengakses (dipakai `scripts/realisasi.mjs`):
+Cara mengakses (dipakai `scripts/realisasi.mjs`). Ada **dua jalur**, keduanya tanpa login:
 
-| | |
+**Jalur CSV (bawaan)** — 4 request untuk seluruh instansi:
+
+| Langkah | Request |
 |---|---|
-| Endpoint tabel | `GET https://data.inaproc.id/dashboard-api/realisasi/table` |
-| Endpoint ringkas | `GET .../dashboard-api/realisasi/summary` |
-| Filter | `tahun`, `instansi` (kldi, mis. `D44`), `satker`, `eselon`, `sumber`, `sumberDana`, `metodePengadaan`, `statusPaket` |
-| Paginasi | cursor: ambil `tablePagination.nextCursor`, kirim balik sebagai **`cursor=`** (limit tetap 20) |
-| Header wajib | `x-request-time` = epoch ms, `x-secret` = base64 dari string itu **dibalik** |
+| 1. Tanda tangan | `POST /dashboard-api/export/signature` body `{"path":"/dashboard-api/realisasi/export","body":"<json filter>"}` → `{time,nonce,signature,path,headers:{x-auth-*}}` |
+| 2. Buat job | `POST /dashboard-api/realisasi/export` dengan header `x-auth-*` dari langkah 1 → `{job_id, events_url, download_url}` |
+| 3. Tunggu | `GET /dashboard-api/export/<job_id>/events` (`text/event-stream`) → `data: {"download_url": ...}` |
+| 4. Unduh | `GET <download_url>` — URL GCS bertanda tangan, **kirim tanpa header API** |
 
-Data tersinkron 2 Nov 2026 02.39 WIB. Untuk Kota Tangerang: 2025 = 37.799 paket · 2026 = 13.179
-paket (semua OPD); filter `satker=1.03.2.10.0.00.01.0000` (Dinas PUPR) menyisakan 9.210 + 1.143.
+**Jalur tabel (cadangan, `--mode table`)** — 20 baris/halaman, cursor:
+`GET /dashboard-api/realisasi/table`, ambil `tablePagination.nextCursor`, kirim balik sebagai `cursor=`.
+
+Keduanya wajib mengirim anti-bot `x-request-time` (epoch ms) + `x-secret` = base64 dari string itu
+**dibalik**, dan filter wajib `tahun` + `jenis` (`"5"` = pemerintah daerah) + `instansi` (`D44`).
+Catatan: `POST /realisasi/export` tanpa header `x-auth-*` menjawab **401** — bukan karena perlu akun,
+tapi karena tanda tangannya belum ada.
+
+Data tersinkron 2 Nov 2026 02.39 WIB. Untuk Kota Tangerang: **2025 = 37.799 paket · 2026 = 13.252
+paket**, semuanya dalam satu ekspor per tahun.
 
 ## Hasil
 
-`node scripts/realisasi.mjs --tahun 2025,2026` → `data/realisasi_kota_tangerang.json`:
-**13.240 transaksi · 5.074 RUP** (lima satker D44: PUPR, Dishub, DLH, Kecamatan Pinang, Dispora).
+`node scripts/realisasi.mjs --mode csv` → `data/realisasi_kota_tangerang.json`:
+**50.530 transaksi · 20.648 RUP · 12 detik** (seluruh satker `D44`, ekspor 2025 + 2026).
+Jalur tabel butuh ~2.549 request (~40 menit) untuk cakupan yang sama — itu sebabnya CSV jadi bawaan.
 
 Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 
 | | Sebelum | Sesudah |
 |---|---:|---:|
-| Paket punya nama penyedia | 731 (46,9%) | **1.417 (91,0%)** |
-| Paket tanpa rekam | 826 | **140** |
-| Penyedia unik | 330 | **518** |
+| Paket punya nama penyedia | 731 (46,9%) | **1.424 (91,4%)** |
+| Paket tanpa rekam | 826 | **133** |
+| Penyedia unik | 330 | **522** |
 
-686 paket terisi dari realisasi: **377 e-purchasing**, 295 pengadaan langsung, 14 dikecualikan.
-Yang masih kosong: 71 e-purchasing, 34 pengadaan langsung, 19 dikecualikan, 16 tender
+693 paket terisi dari realisasi: **375 e-purchasing**, 304 pengadaan langsung, 14 dikecualikan.
+Yang masih kosong: 70 e-purchasing, 32 pengadaan langsung, 15 dikecualikan, 16 tender
 (rinciannya di `docs/SISA-176-PAKET.md`).
 
 **3 paket jalan** punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya
@@ -145,8 +155,8 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Perubahan kode
 
-- `scripts/realisasi.mjs` — penarik Data INAPROC (header + cursor pagination), simpan transaksi
-  mentah **dan** agregat per RUP.
+- `scripts/realisasi.mjs` — penarik Data INAPROC: ekspor CSV resmi (signature → job → SSE → URL GCS)
+  sebagai jalur bawaan, cursor tabel sebagai cadangan; simpan transaksi mentah **dan** agregat per RUP.
 - `src/server/packages/lpse-repository.ts` — kontrak dua sumber: `sumber: "LPSE" | "Data INAPROC"`,
   `jenis` termasuk `e-purchasing`, plus `transaksi`, `penyediaLain`, `sumberTransaksi`.
 - `src/features/map/map-dashboard.tsx` — badge berubah jadi `DATA RESMI (LPSE)` / `DATA RESMI (INAPROC)`,
@@ -156,7 +166,8 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 ## Etika & batasan
 
 - `data.inaproc.id` tidak punya `robots.txt` yang melarang; API-nya publik dan dipakai dashboard
-  resminya sendiri. Pengambilan dibatasi ke satu satker Kota Tangerang + jeda 250 ms per halaman.
+  resminya sendiri. Penarikan memakai fitur ekspor resmi (4 request per tahun untuk seluruh
+  instansi), bukan merayapi halaman; jalur tabel hanya cadangan dan diberi jeda 250 ms per halaman.
 - **Kebalikannya**: `katalog.inaproc.id` (`Disallow: /api/`, order di balik login) dan
   `sikap.inaproc.id` (`Disallow: /`) **tidak** di-scrape. SIKaP hanya boleh jadi tautan rujukan manual.
 - Realisasi = nilai transaksi, bukan nilai kontrak; untuk e-purchasing satu paket bisa terdiri dari
@@ -164,6 +175,6 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Sisa yang belum tertutup
 
-140 paket (Rp98,6 M) masih tanpa penyedia. Sebabnya per kategori, daftar kode satker, dan langkah
-penarikan semua satker `D44` (beserta estimasi request) ada di **`docs/SISA-176-PAKET.md`**.
+133 paket (Rp97,6 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
+**`docs/SISA-176-PAKET.md`**.
 

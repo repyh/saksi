@@ -21,9 +21,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
 - Angka kunci (snapshot 31 Okt 2026): **1.557 paket jalan · Rp650,18 M · 80 kelurahan · 483 RW ·
   818 ber-anchor RW · 402 tanpa lokus**.
-- Rekam penyedia (2 Nov 2026): **1.417 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
-  686 sisanya dari **Data INAPROC realisasi** (e-purchasing/e-katalog, lima satker D44: PUPR, Dishub,
-  DLH, Kecamatan Pinang, Dispora). **140** paket tanpa rekam publik (Rp98,6 M); **518** penyedia unik.
+- Rekam penyedia (3 Nov 2026): **1.424 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
+  693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **133** paket tanpa
+  rekam publik (Rp97,6 M); **522** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104).
@@ -74,8 +74,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Jangan mengedit `data/saksi_kota_tangerang_2025_2026.json` manual — bangun ulang dari pipeline
   SIRUP + batas ArcGIS (lihat `docs/STATE.md`); dataset adalah artefak bertanggal.
 - Data kontrak/penyedia punya perintah sendiri: `npm run lpse:list` → `lpse:detail` → `lpse:match`
-  (SPSE) dan `npm run data:realisasi` (Data INAPROC). Jalankan berurutan, jangan mengarang angka.
-  Detail endpoint, header, dan batasannya ada di `docs/LPSE-PEMENANG.md`.
+  (SPSE) dan `npm run data:realisasi` (Data INAPROC, ekspor CSV penuh; `--mode table` untuk cadangan
+  per satker). Jalankan berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya
+  ada di `docs/LPSE-PEMENANG.md`.
 
 ## Perintah verifikasi (wajib hijau sebelum lapor selesai)
 
