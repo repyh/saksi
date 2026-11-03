@@ -17,6 +17,11 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  bundleGrants  UserBundleGrant[]          @relation("GrantedUser")
+  grantsIssued  UserBundleGrant[]          @relation("GrantingUser")
+  grantsRevoked UserBundleGrant[]          @relation("RevokingUser")
+  auditAsActor  AuthorizationAuditEvent[]   @relation("AuthorizationAuditActor")
+  auditAsSubject AuthorizationAuditEvent[] @relation("AuthorizationAuditSubject")
 }
 
 model Session {
@@ -61,4 +66,84 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+}
+
+model rateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}
+
+model Permission {
+  code              String                       @id
+  description       String
+  sensitive         Boolean                      @default(false)
+  createdAt         DateTime                     @default(now())
+  bundlePermissions PermissionBundlePermission[]
+}
+
+model PermissionBundle {
+  id          String                       @id @default(cuid())
+  code        String                       @unique
+  name        String
+  description String
+  isSystem    Boolean                      @default(true)
+  isActive    Boolean                      @default(true)
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+  permissions PermissionBundlePermission[]
+  grants      UserBundleGrant[]
+
+  @@index([isActive])
+}
+
+model PermissionBundlePermission {
+  bundleId      String
+  permissionCode String
+  bundle        PermissionBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  permission    Permission      @relation(fields: [permissionCode], references: [code], onDelete: Restrict)
+
+  @@id([bundleId, permissionCode])
+  @@index([permissionCode])
+}
+
+model UserBundleGrant {
+  id                String           @id @default(cuid())
+  userId            String
+  bundleId          String
+  grantedByUserId   String
+  grantedAt         DateTime         @default(now())
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  revokedByUserId   String?
+  reason            String
+  user              User             @relation("GrantedUser", fields: [userId], references: [id], onDelete: Cascade)
+  bundle            PermissionBundle @relation(fields: [bundleId], references: [id], onDelete: Restrict)
+  grantedBy         User             @relation("GrantingUser", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+  revokedBy         User?            @relation("RevokingUser", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([bundleId, revokedAt])
+  @@index([grantedByUserId])
+}
+
+model AuthorizationAuditEvent {
+  id            String    @id @default(cuid())
+  actorUserId   String?
+  subjectUserId String?
+  action        String
+  resourceType  String?
+  resourceId    String?
+  reason        String?
+  requestId     String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  actor         User?     @relation("AuthorizationAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  subject       User?     @relation("AuthorizationAuditSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([subjectUserId, createdAt])
+  @@index([resourceType, resourceId, createdAt])
+  @@index([action, createdAt])
 }

@@ -6,7 +6,7 @@ import { FiExternalLink } from "react-icons/fi";
 
 export function SiteFooter() {
   const pathname = usePathname();
-  if (pathname === "/project" || pathname.startsWith("/project/") || pathname === "/laporan" || pathname.startsWith("/laporan/")) return null;
+  if (pathname === "/login" || pathname === "/project" || pathname.startsWith("/project/") || pathname === "/laporan" || pathname.startsWith("/laporan/")) return null;
 
   return (
     <footer className="border-t-4 border-secondary bg-foreground text-white">
