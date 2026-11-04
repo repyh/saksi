@@ -47,7 +47,7 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
     {
       id: "account-action",
       label: session ? "Dashboard" : "Masuk",
-      href: session ? "/project" : "/login?returnTo=%2Fproject",
+      href: session ? "/dashboard" : "/login?returnTo=%2Fdashboard",
       variant: "ghost" as const,
       isPrimary: true,
     },
@@ -72,8 +72,13 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
               key={item.id}
               render={<Link href={item.href} aria-current={isActive ? "page" : undefined} />}
               nativeButton={false}
-              variant="secondary"
-              className="my-auto h-9 rounded-sm border border-secondary px-3 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-secondary-foreground transition-colors hover:bg-[#f2cf00] focus-visible:ring-white sm:px-4 sm:text-[11px]"
+              variant="ghost"
+              className={cn(
+                "my-auto h-9 rounded-sm border px-3 font-sans text-[10px] font-bold uppercase tracking-[0.12em] transition-colors focus-visible:ring-white sm:px-4 sm:text-[11px]",
+                session
+                  ? "border-secondary bg-secondary text-secondary-foreground hover:bg-[#f2cf00]"
+                  : "border-white/80 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              )}
             >
               {item.label}
             </Button>
