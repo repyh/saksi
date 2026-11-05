@@ -8,16 +8,19 @@ web
 
 ## Stack
 
-Vite + React 19 + TypeScript + Tailwind CSS 4, peta Leaflet + tile OSM. Tanpa backend, tanpa login,
-tanpa database sampai FDS 1 November 2026. Data disajikan sebagai JSON statis dari `web/public/data/`.
+Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4, shadcn/base-ui, peta Leaflet 1.9.4 +
+react-leaflet 5. Peta dasar dari satu variabel `NEXT_PUBLIC_BASEMAP_URL` (default OpenStreetMap;
+atribusi menyesuaikan host) — tidak ada pemilih basemap di produk. Prisma + Better Auth opsional:
+build lolos tanpa `DATABASE_URL`. Bukti foto laporan disimpan di Supabase Storage.
 
 ## Users
 
-- **Warga di 251 desa/kelurahan Kab. Tangerang** yang tinggal di ruas paket jalan 2025–2026. Situasi:
-  jalan di depan rumah berlubang/retak/genangan, mereka ingin tahu apakah ruas itu baru dibangun,
-  dengan uang berapa, dan bagaimana membuat keluhannya punya konsekuensi. Pekerjaan utama: menemukan
-  paket yang membangun ruas itu, lalu mengirim laporan berfoto yang menempel pada nomor paket.
-- **Dinas Bina Marga & Sumber Daya Air** — menerima daftar paket yang masih dalam masa pemeliharaan
+- **Warga di 80 dari 104 kelurahan Kota Tangerang** yang tinggal di wilayah paket jalan 2025–2026.
+  Situasi: jalan di depan rumah berlubang/retak/genangan, mereka ingin tahu apakah ruas itu baru
+  dibangun, dengan uang berapa, dan bagaimana membuat keluhannya punya konsekuensi. Pekerjaan utama:
+  menemukan paket yang membangun wilayah itu, lalu mengirim laporan berfoto yang menempel pada nomor
+  paket.
+- **Dinas teknis pengelola jalan** — menerima daftar paket yang masih dalam masa pemeliharaan
   dan dilaporkan rusak; dasar menagih kontraktor tanpa anggaran baru.
 - **Inspektorat / DPRD** — sampel lapangan yang bisa diuji, bukan laporan berjenjang.
 - **Juri FDS/MIA 2026 (Web In Action)** — menilai dalam hitungan detik pertama: apakah ini produk
@@ -25,77 +28,89 @@ tanpa database sampai FDS 1 November 2026. Data disajikan sebagai JSON statis da
 
 ## Product Purpose
 
-SAKSI menautkan **3.602 paket pekerjaan jalan Kab. Tangerang (Rp848,60 Miliar)** dengan **bukti warga
-berfoto** di ruas yang sama, sehingga laporan warga berubah dari keluhan menjadi bukti yang punya
+SAKSI menautkan **1.557 paket pekerjaan jalan Kota Tangerang (Rp650,18 Miliar)** dengan **bukti warga
+berfoto** di wilayah yang sama, sehingga laporan warga berubah dari keluhan menjadi bukti yang punya
 nomor paket, tanggal, dan penerima yang jelas. Sukses = warga bisa menyebut nomor RUP saat mengadu,
 dan instansi tidak bisa mengatakan laporan itu tidak ada.
 
 ## Positioning
 
 Lapisan penaut, bukan kanal aduan baru: satu laporan warga terikat ke satu `kode_rup`, dengan
-**badge presisi** yang menyatakan bagaimana titik itu diketahui (desa / koridor / kecamatan), dan
-**jendela masa pemeliharaan** yang mengubah laporan menjadi dasar penagihan retensi. Pembanding
-internasional: DPWH Filipina menerbitkan koordinat per kontrak; Indonesia tidak — karena itu presisi
-diturunkan dari teks nama paket + gazetteer dan dinyatakan terbuka, bukan disembunyikan.
+**tingkat anchor lokasi** yang menyatakan seberapa dalam lokasi itu diketahui (RW / kelurahan /
+kecamatan), dan **jendela masa pemeliharaan** yang mengubah laporan menjadi dasar penagihan retensi.
+Tidak ada pin per paket karena tidak ada koordinat pekerjaan di sumber resmi. Pembanding
+internasional: DPWH Filipina menerbitkan koordinat per kontrak; Indonesia tidak — karena itu peta
+memakai poligon wilayah resmi dan batasannya dinyatakan terbuka, bukan disembunyikan.
 
 ## Operating Context
 
-- **Lomba:** MIA 2026 / Web In Action, subtema *Civic Reporting & Accountability*. FDS 1 November
-  2026: repo publik, README, PDF ≤10 halaman, screenshot landing, dan minimal satu halaman fitur hidup.
-- **Dua layar yang dinilai:** `#/` (peta audit jalan) dan `#/lapor` (alur lapor 3 langkah). Keduanya
+- **Lomba:** MIA 2026 / Web In Action, subtema *Civic Reporting & Accountability*. FDS 1 November 2026
+  sudah lewat (repo publik, README, PDF ≤10 halaman, screenshot landing, halaman fitur hidup); jadwal
+  berikutnya penyisihan 11 November 2026 dan final 28 November 2026.
+- **Dua layar yang dinilai:** `/` (peta audit jalan) dan `/laporan` (alur lapor 3 langkah). Keduanya
   di-screenshot ke PDF, jadi layar harus utuh dan padat data tanpa perlu interaksi untuk terlihat benar.
 - **Perangkat:** desktop 1440×900 untuk screenshot, tetapi harus bekerja di ponsel 360 px — warga
   melapor dari jalan, sering satu tangan, sinyal lambat.
-- **Data:** snapshot SIRUP 29 Oktober 2026, dimuat saat runtime dari JSON statis (2,9 MB), difilter di
-  klien. Angka akan bergeser bila SIRUP menambah paket; dokumen baru wajib menyebut tanggal snapshot.
-- **Tanpa akun:** identitas pelapor tidak diminta; laporan disimpan di `localStorage` perangkat.
+- **Data:** snapshot SIRUP 31 Oktober 2026 + enrich detail RUP 3 November 2026. Filter dijalankan di
+  server lewat route `/api/packages` (tahun anggaran, kecamatan, kelurahan, jenis pekerjaan, status
+  rekam kontrak, pencarian teks); default "Hanya paket berlokasi" menampilkan 1.245 dari 1.557 paket.
+  Angka akan bergeser bila SIRUP menambah paket; dokumen baru wajib menyebut tanggal snapshot.
+- **Tanpa akun:** identitas pelapor tidak diminta; draf disimpan di perangkat (IndexedDB), laporan
+  terkirim disimpan di server dengan foto di Supabase Storage, dan akun hanya perlu untuk melihat
+  riwayat laporan sendiri.
 
 ## Capabilities and Constraints
 
-**Bekerja sekarang (FDS):** peta 3.331 titik/garis dengan filter tahun, kecamatan, dan jenis
-pekerjaan; register paket yang bisa diklik; panel detail dengan badge data resmi; alur lapor 3 langkah
-(foto + blur manual + EXIF dibuang, kategorisasi kerusakan, lokasi + 3 kandidat paket dengan
-`MatchScore`); penyimpanan lokal dan kode laporan.
+**Bekerja sekarang:** peta koroplet batas wilayah resmi dengan segmented control kecamatan (13
+poligon) / kelurahan (104) / RW (1.020); filter tahun anggaran, kecamatan, kelurahan (checkbox), jenis
+pekerjaan, status rekam kontrak (ADA/TANPA LPSE), dan pencarian teks; register paket yang bisa diklik;
+panel detail dengan penyedia, nilai kontrak, dan tautan sumber; halaman rekam penyedia; alur lapor
+(foto + blur manual + EXIF dibuang, kategorisasi kerusakan, lokasi + kandidat paket dengan
+`MatchScore`); penyimpanan laporan dan kode laporan.
 
 **Batasan keras (jangan dilanggar tanpa bertanya):**
 
 1. Produk = **jalan** saja. Tidak ada filter 5 sektor di UI.
 2. Tanpa NLP/LLM di ekstraksi lokasi; tanpa computer vision; **tanpa input luas cm²**.
-3. **Jangan memaksa titik.** 271 paket (7,5%) tanpa penanda lokasi tidak dipetakan; tampil di tabel
-   dengan label `Lokasi: Kab. Tangerang (Umum)`.
+3. **Jangan memaksa titik.** Tidak ada pin/jitter per paket: peta hanya koroplet poligon wilayah.
+   312 paket (20,0%) tanpa lokus hanya tampil di tabel dengan label `Lokasi umum · Kota Tangerang`.
 4. Bahasa indikator selalu **"Diduga Tidak Sesuai"** — tidak pernah korupsi, fiktif, atau tuduhan.
-5. Penyedia disebut nama asli tetapi berimbang: tanpa skor gabungan, selalu dengan penyebut.
+5. Penyedia disebut nama asli tetapi berimbang: tanpa skor gabungan, selalu dengan penyebut; 133 paket
+   tanpa rekam publik ditandai apa adanya, bukan ditebak.
 6. Privasi: blur wajah & plat + hapus EXIF **di browser sebelum** data disimpan.
-7. Format angka Indonesia: `3.602`, `92,5%`, `Rp848,60 Miliar`.
-8. Teks badge persis: `DATA RESMI (SIRUP / BINA MARGA)`, `SIMULASI PROTOTIPE`, `Titik Desa`,
-   `Garis Koridor`, `Kecamatan`.
-9. Tanpa backend, tanpa login, tanpa Next.js, tanpa UI kit, tanpa state manager. Dependency peta hanya
-   Leaflet.
+7. Format angka Indonesia: `1.557`, `80,0%`, `Rp650,18 Miliar`.
+8. Label sumber data persis: `Data resmi (LPSE)` dan `Data resmi (INAPROC)`; tidak ada badge yang
+   mengklaim presisi titik.
+9. Stack terkunci: Next.js App Router + React 19 + Tailwind v4 + shadcn/base-ui; peta hanya Leaflet
+   1.9.4 + react-leaflet 5; tanpa state manager, tanpa pemilih basemap.
 
-**Terbuka:** rekam jejak penyedia (FR-07) belum punya data tarikan LPSE per penyedia; koridor belum
-punya geometri mengikuti jalan (hanya dua titik ujung); backend FastAPI + Postgres menyusul setelah 1
-November.
+**Terbuka:** 133 paket (Rp97,6 M) belum punya rekam penyedia publik; tidak ada koordinat pekerjaan
+sehingga peta tetap koroplet; geometri ruas jalan (bukan poligon wilayah) belum ada.
 
 ## Brand Commitments
 
 - Nama **SAKSI** — *Sistem Akuntabilitas & Komparasi Spasial Infrastruktur*. Nada: tenang, presisi,
-  tidak menuduh; bahasa Indonesia dengan istilah teknis Inggris yang lazim (dashboard, layer, koridor).
-- Kejujuran angka adalah identitas merek: setiap titik menyatakan presisinya, setiap klaim membawa
-  penyebut, setiap simulasi membawa badge amber.
+  tidak menuduh; bahasa Indonesia dengan istilah teknis Inggris yang lazim (dashboard, layer, kuantil).
+- Kejujuran angka adalah identitas merek: setiap poligon menyatakan tingkat anchor-nya, setiap klaim
+  membawa penyebut, setiap simulasi membawa badge amber.
 - Tidak ada gamifikasi, tidak ada hype, tidak ada citra drone dramatis.
 
 ## Evidence on Hand
 
-- `data/saksi_tangerang_2025_2026.json` — 5.487 paket fisik, 3.602 di antaranya jalan (Rp848,60 M).
-- `data/tangerang_desa_coords.json` — 274 desa/kelurahan BPS `3603`, 29 kecamatan, koordinat OSM.
-- `data/manifest.json` — sumber, endpoint, tanggal snapshot, peringatan.
+- `data/saksi_kota_tangerang_2025_2026.json` — 1.557 paket jalan Kota Tangerang (Rp650,18 M).
+- `data/rup_kota_tangerang_2025_2026.json` — 21.402 baris RUP D44 TA 2025–2026 (snapshot).
+- `data/rup_detail_kota_tangerang.json` — enrich detail RUP 3 November 2026.
+- `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json` — rekam penyedia
+  (LPSE/SPSE dan ekspor CSV satker D44 di Data INAPROC).
+- Batas wilayah resmi RW/kelurahan/kecamatan — ArcGIS Kota Tangerang (13 / 104 / 1.020 poligon).
 - `docs/` — transkrip bimbingan dosen, memo uji Tangerang, uji NLP lokasi (bukti keputusan).
-- **Tidak ada:** foto kerusakan asli, data penyedia per paket, backend, akun pengguna. Foto contoh
-  tidak boleh dipalsukan sebagai foto nyata; laporan contoh wajib berlabel `SIMULASI PROTOTIPE`.
+- **Tidak ada:** koordinat pekerjaan per paket, foto kerusakan asli, data penyedia untuk 133 paket.
+  Foto contoh tidak boleh dipalsukan sebagai foto nyata; laporan contoh wajib berlabel
+  `SIMULASI PROTOTIPE`.
 
 ## Product Principles
 
-1. **Presisi dinyatakan, bukan diasumsikan.** Setiap titik membawa cara ia diketahui.
+1. **Presisi dinyatakan, bukan diasumsikan.** Setiap poligon membawa tingkat anchor yang dipakai.
 2. **Angka lebih dulu, retorika belakangan.** Tampilkan pagu, tahun, satker, jarak, skor — apa adanya.
 3. **Tidak menuduh.** Kata terkuat adalah "diduga"; yang disajikan adalah selisih yang bisa diperiksa.
 4. **Satu laporan, satu paket.** Bila tidak ada dasar penautan, katakan "Tidak Dapat Ditautkan" dan

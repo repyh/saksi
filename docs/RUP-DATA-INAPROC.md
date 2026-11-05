@@ -74,6 +74,10 @@ SIRUP sebelumnya terpotong, bukan karena RUP-nya baru.
 
 ## Hasil penarikan detail (`npm run data:rup-detail`)
 
+> Catatan: angka **402 paket tanpa anchor** di bawah adalah kondisi **sebelum** enrich. Setelah
+> `npm run data:enrich` dijalankan (3 Nov 2026), paket tanpa lokus menjadi **312** dan 90 paket
+> mendapat anchor kecamatan; lihat `docs/STATE.md` untuk angka final.
+
 `data/rup_detail_kota_tangerang.json` — 1.557 paket, ±14 menit (1 request per paket, jeda 250 ms):
 
 | | Jumlah |

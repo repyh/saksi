@@ -10,11 +10,18 @@ review, not proof of wrongdoing or a guarantee of government action.
 ## Current implementation
 
 - Landing page (`/`) with the audit overview, a sourced budget figure, and an interactive map.
-- Map (`/project`) as a **choropleth of official boundaries**: RW polygons (1,020) at zoom ≥ 12 and
-  kelurahan polygons (104) below that. No per-package pins — a package is tied to an area, never to a
-  work-site coordinate.
-- Filters for budget year, kecamatan, work type, contract record status (LPSE), and a free-text
-  search (area, road, RUP code, or vendor name).
+- Map (`/project`) as a **choropleth of official boundaries**, with a segmented control on the map that
+  switches the polygon level: kecamatan (13), kelurahan (104), or RW (1,020). No per-package pins — a
+  package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
+  package anchored inside them, including RW- and kelurahan-precision packages, and use their own
+  quantile class breaks so 13 polygons do not all land in one colour.
+- Basemap tile source comes from a single `NEXT_PUBLIC_BASEMAP_URL` (default
+  `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`); attribution switches automatically for
+  OpenStreetMap, CARTO, and Esri hosts.
+- Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
+  type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
+  The map shows only packages with a derived location by default; the 312 packages whose only
+  location is "Kota Tangerang" stay hidden until **Hanya paket berlokasi** is unchecked.
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
   package and ranks candidate packages by RW → kelurahan → landmark, without inventing a score.
 - LPSE contract data (`/penyedia`, `/penyedia/[slug]`): winner and contract value joined to RUP by

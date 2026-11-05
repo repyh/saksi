@@ -4,7 +4,7 @@ import MapDashboard from "@/features/map/map-dashboard";
 import { searchRoadPackages } from "@/server/packages/service";
 
 export default async function Home() {
-  const initialPackages = await searchRoadPackages();
+  const initialPackages = await searchRoadPackages({ locatedOnly: true });
 
   return (
     <main className="min-h-screen bg-white text-foreground">

@@ -34,10 +34,14 @@ export async function searchRoadPackages(
     new Set(allPackages.flatMap((item) => (item.kecamatan_resmi ? [item.kecamatan_resmi] : []))),
   ).sort((a, b) => a.localeCompare(b, "id"));
   const query = filters.query?.trim().toLocaleLowerCase("id-ID") ?? "";
+  const villages = filters.villages?.filter(Boolean) ?? [];
+  const villagesTerpilih = villages.length ? new Set(villages) : null;
 
   const items = allPackages.filter((item) => {
     if (filters.year && String(item.tahun) !== filters.year) return false;
     if (filters.district && item.kecamatan_resmi !== filters.district) return false;
+    if (villagesTerpilih && (!item.desa_resmi || !villagesTerpilih.has(item.desa_resmi))) return false;
+    if (filters.locatedOnly && item.presisi_peta === "Kabupaten") return false;
     if (filters.work && filters.work !== "SEMUA" && classifyRoadWork(item.nama) !== filters.work) {
       return false;
     }
@@ -46,6 +50,17 @@ export async function searchRoadPackages(
     if (query && !matchesQuery(item, query)) return false;
     return true;
   });
+
+  const villagesByDistrict: Record<string, string[]> = {};
+  for (const item of allPackages) {
+    if (!item.kecamatan_resmi || !item.desa_resmi) continue;
+    const daftar = villagesByDistrict[item.kecamatan_resmi] ?? [];
+    if (!daftar.includes(item.desa_resmi)) daftar.push(item.desa_resmi);
+    villagesByDistrict[item.kecamatan_resmi] = daftar;
+  }
+  for (const daftar of Object.values(villagesByDistrict)) {
+    daftar.sort((a, b) => a.localeCompare(b, "id"));
+  }
 
   const withContractCount = allPackages.filter((item) => item.kontrak).length;
   const vendorCount = new Set(
@@ -61,6 +76,7 @@ export async function searchRoadPackages(
   return {
     items,
     districts,
+    villagesByDistrict,
     totalCount: allPackages.length,
     filteredCount: items.length,
     withContractCount,

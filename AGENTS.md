@@ -27,7 +27,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   rekam publik (Rp97,6 M); **522** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
-- Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104).
+- Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
+  `public/data/kec.geojson` (13, dari ArcGIS kota, `npm run data:kecamatan`).
 - Lomba: MIA 2026 / Web In Action. **FDS 1 Nov 2026**, penyisihan 11 Nov, final onsite 28 Nov.
 
 ## Aturan keras (jangan dilanggar tanpa bertanya)
@@ -35,7 +36,13 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 1. **Fokus jalan & anchor RW.** Produk = jalan; filter yang boleh ada: tahun, kecamatan/kelurahan,
    jenis pekerjaan (permukaan/drainase/jembatan). Lokasi paket **selalu** diturunkan ke **RW** (nomor
    RW di nama paket) atau kelurahan — bukan nama ruas: uji 31 Okt hanya 7% paket menyebut ruas yang
-   bisa dicocokkan, sementara 54,8% menyebut RW.
+   bisa dicocokkan, sementara 54,8% menyebut RW. **Default peta hanya menampilkan paket berlokus**
+   (kecamatan/kelurahan/RW); 312 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
+   dimatikan. Filter wilayah bertingkat: **kecamatan** (pilih satu) → **kelurahan** (checkbox, semua
+   terpilih saat kecamatan dipilih; **nol kelurahan bukan berarti semua** — tampilkan peringatan merah,
+   tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat lewat **segmented control**
+   **Kecamatan / Kelurahan / RW** di atas peta (bukan mengikuti zoom); angka kecamatan menjumlahkan
+   seluruh paket di dalamnya, termasuk presisi RW/kelurahan, dengan kelas kuantil.
 2. **Batas frontend/backend SAKSI.** Route Handlers menjadi BFF; browser tidak mengambil snapshot
    paket langsung. Snapshot dibaca repository server-only dari `data/`. Supabase domain tables dan
    scraper workers adalah tahap terpisah; jangan mengarang skema atau pipeline sebelum provenance,

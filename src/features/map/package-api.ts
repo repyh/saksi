@@ -8,6 +8,8 @@ export async function fetchRoadPackages(
   const params = new URLSearchParams();
   if (filters.year) params.set("year", filters.year);
   if (filters.district) params.set("district", filters.district);
+  for (const desa of filters.villages ?? []) params.append("desa", desa);
+  if (filters.locatedOnly) params.set("lokasi", "1");
   if (filters.work) params.set("work", filters.work);
   if (filters.contract && filters.contract !== "SEMUA") params.set("kontrak", filters.contract);
   if (filters.query) params.set("q", filters.query);

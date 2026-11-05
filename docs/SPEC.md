@@ -1,15 +1,19 @@
 # SPESIFIKASI TEKNIS & FUNGSIONAL (SPEC) — Codename: **SAKSI**
 *Sistem Akuntabilitas & Komparasi Spasial Infrastruktur*
 
-**Disusun:** 29 Oktober 2026 (v3 — fokus **jalan**, Kab. Tangerang)
+**Disusun:** 29 Oktober 2026 (v4 — fokus **jalan**, Kota Tangerang; snapshot 31 Oktober 2026,
+enrich detail kontrak 3 November 2026)
 **Target dokumen lomba:** FDS (1 November 2026) & Proposal Penyisihan (11 November 2026)
 **Subtema:** *Civic Reporting & Accountability*
-**Studi kasus:** Jalan di Kabupaten Tangerang (`idKldi=D50`, BPS `3603`) + IRI Bina Marga (nasional)
-**Replikasi:** Kabupaten Bandung (`idKldi=D107`, BPS `3204`) — dataset 5 sektor, arsip pipeline
+**Studi kasus:** Jalan di Kota Tangerang (`idKldi=D44`, BPS `3671`), TA 2025–2026
+**Replikasi:** Kabupaten Bandung (`idKldi=D107`, BPS `3204`) — arsip pipeline, bukan produk
 
 **Ruang lingkup:** jalan, jembatan, drainase/saluran, trotoar, TPT/turap. Sektor lain (pendidikan,
-permukiman/air, PJU, fasilitas publik) **tidak** ditampilkan di produk; hanya tersimpan di dataset
-dan disebut satu paragraf sebagai kapabilitas pipeline.
+permukiman/air, PJU, fasilitas publik) **tidak** ditampilkan di produk dan tidak masuk snapshot yang
+dibaca aplikasi; hanya tersimpan di arsip pipeline sebagai kapabilitas.
+
+**Verifikasi build (5 November 2026):** `tsc` 0 error, `eslint` 0 temuan, `next build` hijau tanpa
+`DATABASE_URL`.
 
 ---
 
@@ -17,60 +21,79 @@ dan disebut satu paragraf sebagai kapabilitas pipeline.
 
 | Kode | Sumber | Cakupan & volume | Atribut kunci | Berkas |
 |---|---|---|---|---|
-| **D1** | **SIRUP Inaproc** (`idKldi=D50`, TA 2025 & 2026) | 51.322 baris RUP → **3.602 paket jalan**, pagu **Rp848,60 M** | `kode_rup`, `tahun`, `satker`, `nama`, `pagu`, `metode`, `sumber`, `bulan`, `sektor` | `data/saksi_tangerang_2025_2026.json` (2,9 MB, 5 sektor; filter jalan di klien) |
-| **D2** | **Gazetteer desa/kelurahan BPS `3603`** + koordinat OSM | **29 kecamatan**, **274 desa/kelurahan** (245 presisi desa, 29 sentroid kecamatan) | `id_desa`, `desa`, `id_kec`, `kecamatan`, `lat`, `lon`, `presisi` | `data/tangerang_desa_coords.json` |
-| **D3** | **GIS Ditjen Bina Marga** (`IRI_1_2026`) | 477.032 titik IRI (47.703 km jalan **nasional**) | `ruas`, `iri`, `status_kemantapan`, geometri | `data/jalan.json`, `data/provinsi.json` |
-| **D4** | **LPSE / SPSE** halaman paket | Pagu, HPS, lokasi (teks), **pemenang** | `hps`, `nilai_kontrak`, `pemenang`, `id` | `data/vendor_jakarta.json` + tarikan per instansi |
-| **D5** | **Laporan warga & verifikasi komunitas** | Foto ber-geotag, jenis & penyebab kerusakan, ukuran kasar, konfirmasi warga | `id_laporan`, `lat`, `lon`, `foto_blur`, `jenis_kerusakan`, `penyebab`, `ukuran_kasar`, `kode_rup_terkait`, `status_dua_kunci` | `localStorage` + skenario simulasi berlabel |
+| **D1** | **SIRUP Inaproc** — RUP perangkat daerah (`idKldi=D44`, TA 2025 & 2026) | 28.699 baris RUP → **1.557 paket sektor jalan** (939 TA2025, 618 TA2026), pagu **Rp650,18 M** | `kode_rup`, `tahun`, `satker`, `nama`, `pagu`, `metode`, `sumber`, `bulan`, `sektor` | `data/rup_kota_tangerang_2025_2026.json` (arsip) → `data/saksi_kota_tangerang_2025_2026.json` (snapshot produk, 665,7 KB) |
+| **D2** | **Batas administrasi Kota Tangerang** (ArcGIS Pemkot) + kode wilayah BPS `3671` | **13 kecamatan · 104 kelurahan · 1.020 RW**; 80 kelurahan dan 483 RW terisi paket | `wadmkc`, `wadmkd`, `rw`, geometri | `public/data/kec.geojson`, `kel.geojson`, `rw.geojson` |
+| **D3** | **LPSE / SPSE Kota Tangerang** (`spse.inaproc.id/tangerangkota`) | 4.869 baris pengumuman → **943 paket RUP tercocokkan**, 731 dengan pemenang | `id_lpse`, `hps`, `nilai_kontrak`, `pemenang`, `npwp`, `status` | `data/lpse_kota_tangerang_2025_2026.json` |
+| **D4** | **Data INAPROC realisasi** (`data.inaproc.id/realisasi`) | **693 paket** dengan transaksi realisasi — menutup celah e-purchasing yang tidak muncul di LPSE | `penyedia`, `nilai_transaksi`, `sumber_transaksi` | `data/realisasi_kota_tangerang.json` (17,8 MB) |
+| **D5** | **Laporan warga & moderasi** | Foto kerusakan (webp tersanitasi, EXIF dibuang), jenis & penyebab kerusakan, ukuran kasar, wilayah RW, tautan paket opsional | `publicCode`, `damageType`, `observedCauses[]`, `coarseSize`, `areaId`, `locationSource`, `packageLink`, `status` | PostgreSQL/PostGIS (`Report`, `ReportMedia`, `ReportPackageLink`, `ReportStatusEvent`) + Supabase Storage |
 
 **Yang tidak dimiliki data Indonesia:** koordinat paket. Record SIRUP hanya memuat `lokasi` teks
-(`"Banten, Tangerang (Kab.)"`), halaman LPSE hanya `Lokasi Pekerjaan` teks. Titik di SAKSI diturunkan
-dari teks nama paket + gazetteer desa — bukan koordinat resmi. (Bandingkan: DPWH Filipina menerbitkan
-`latitude`/`longitude` per kontrak.)
+(`"Banten, Tangerang (Kota)"`), halaman LPSE hanya `Lokasi Pekerjaan` teks. Karena itu SAKSI **tidak**
+menaruh pin, titik, atau jitter per paket: peta mewarnai batas wilayah, dan panel paket menyebut
+presisi lokusnya (`RW`, `Kelurahan`, `Kecamatan`, atau tanpa lokus). (Bandingkan: DPWH Filipina
+menerbitkan `latitude`/`longitude` per kontrak.)
+
+### 1.1 Batas frontend/backend
+
+- Snapshot dibaca **server-only** dari `data/` oleh repository di `src/server/packages/`; browser tidak
+  pernah mengambil berkas snapshot langsung.
+- Route Handler `GET /api/packages` adalah BFF: menerima `year`, `district`, `desa` (berulang),
+  `lokasi=1`, `work`, `kontrak`, `q`; mengembalikan `items`, `districts`, `villagesByDistrict`,
+  `totalCount`, `filteredCount`, `withContractCount`, `vendorCount`.
+- Prisma + Better Auth **opsional**: build dan halaman publik berjalan tanpa `DATABASE_URL`; jalur
+  laporan (`POST /api/reports`), undangan, dan dashboard memerlukan database.
+- Bukti foto disanitasi di klien (diburing wajah/plat, EXIF dibuang, dikonversi webp) sebelum diunggah
+  ke Supabase Storage.
 
 ---
 
 ## 2. Pipeline (deterministik, tanpa NLP di lapisan lokasi)
 
 ### 2.1 Pembersihan nama
-1. Hapus kode rekening di depan (`1598.25.397.` — 5,0% baris Tangerang).
-2. Decode entity HTML (`&#x27;`, `&amp;` — 0,9%).
+1. Hapus kode rekening di depan (`1598.25.397.`).
+2. Decode entity HTML (`&#x27;`, `&amp;`).
 3. Buka pembungkus `Belanja Modal Jalan Desa - …`.
-4. Normalisasi singkatan: `Ds./Desa/Kel.` sebagai penanda desa, `Kp.`, `Jl.`, `Gg.`, `tj` → `tanjung`.
+4. Normalisasi singkatan: `Ds./Desa/Kel.` sebagai penanda kelurahan, `Kp.`, `Jl.`, `Gg.`, `tj` → `tanjung`.
 5. Samakan spasi: `Situgadung` ≡ `Situ Gadang`.
 
-### 2.2 Penyaringan paket jalan
-1. **Inklusi**: awalan kata kerja fisik (`pembangunan`, `peningkatan`, `rehabilitasi`, `perbaikan`,
+### 2.2 Penyaringan & kelas pekerjaan
+1. **Sektor**: snapshot hanya memuat `sektor = "Jalan, Jembatan & Drainase"`. Penyaringan sektor
+   dilakukan saat membangun snapshot, bukan di klien.
+2. **Inklusi**: awalan kata kerja fisik (`pembangunan`, `peningkatan`, `rehabilitasi`, `perbaikan`,
    `pemeliharaan`, `renovasi`, `penggantian`, `penataan`, `normalisasi`, `penyediaan`, `lanjutan`,
    `pemasangan`, `pengadaan`, `pembuatan`, `pengerukan`, `pengaspalan`); tidak didahului `Belanja …`.
-2. **Eksklusi**: alat, kantor, listrik, kendaraan, ATK, konsumsi, pakaian, sewa, tagihan, honor, jasa
+3. **Eksklusi**: alat, kantor, listrik, kendaraan, ATK, konsumsi, pakaian, sewa, tagihan, honor, jasa
    konsultansi, pengawasan, perencanaan, survei, DED, aplikasi, obat/bahan kimia.
-3. **Kelas jalan** (urutan penting — PJU diuji lebih dulu supaya `APJ`/`lampu jalan` tidak jatuh ke
-   jalan): `jembatan`, `gorong-gorong`, `box culvert` → **jembatan**; `drainase`, `saluran`, `u-ditch`,
-   `siring`, `turap`, `talud`, `TPT`, `bronjong` → **drainase/penahan**; `paving`, `beton`,
-   `betonisasi`, `hotmix`, `aspal`, `rabat` → **permukaan jalan**; `trotoar` → **trotoar**.
-4. Hasil pada Kab. Tangerang: **3.602 paket · Rp848,60 M** (paving/beton 1.186 · drainase/saluran 946
-   · hotmix/aspal 560 · turap/talud/TPT 103 · jembatan 78).
+4. **Kelas pekerjaan** (dipakai filter `Jenis`; urutan penting — drainase diuji lebih dulu supaya
+   `turap`/`TPT`/`gorong-gorong` tidak jatuh ke permukaan): `drainase`, `saluran`, `u-ditch`/`uditch`,
+   `spal`, `turap`, `talud`, `tpt`, `bronjong`, `gorong`, `culvert` → **drainase**; `jembatan` →
+   **jembatan**; sisanya (paving, beton, hotmix, aspal, rabat, **trotoar**) → **permukaan**.
+5. Hasil snapshot 31 Oktober 2026: **1.557 paket · Rp650,18 M** (drainase 1.238 · permukaan 269 ·
+   jembatan 50).
 
-### 2.3 Pemetaan berjenjang (4 tingkat, tanpa memaksa titik)
+### 2.3 Pemetaan lokus wilayah (bukan titik)
 
 ```mermaid
 flowchart LR
-  TXT["Nama paket (setelah dibersihkan)"] --> MARK{"Penanda Ds./Desa/Kel. + nama gazetteer?"}
-  MARK -->|ya| T1["Titik desa + offset hash ±250 m<br/>3.000 paket (83,3%)"]
-  MARK -->|tidak| KOR{"Penanda koridor ' - ' / 'menuju'<br/>dengan 2 desa berbeda?"}
-  KOR -->|ya| T2["Garis koridor antar dua desa<br/>102 paket (2,8%)"]
-  KOR -->|tidak| KEC{"Nama kecamatan disebut?"}
-  KEC -->|ya| T3["Sentroid kecamatan<br/>229 paket (6,4%)"]
-  KEC -->|tidak| T4["Tanpa lokus — tabel saja<br/>271 paket (7,5%)"]
+  TXT["Nama paket (setelah dibersihkan)"] --> RW{"Nomor RW eksplisit / unit_id RW terpetakan?"}
+  RW -->|ya| T1["Wilayah RW<br/>818 paket (52,5%)"]
+  RW -->|tidak| KEL{"Nama kelurahan dikenali?"}
+  KEL -->|ya| T2["Wilayah kelurahan<br/>337 paket (21,6%)"]
+  KEL -->|tidak| KEC{"Kecamatan disebut?"}
+  KEC -->|ya| T3["Wilayah kecamatan<br/>90 paket (5,8%)"]
+  KEC -->|tidak| T4["Tanpa lokus — register saja<br/>312 paket (20,0%)"]
 ```
 
 Aturan yang menjaga presisi:
-- Nama desa yang **sama dengan nama kecamatan** hanya diterima lewat penanda `Ds./Desa/Kel.`
-- Koridor hanya sah bila penandanya `" - "` ber-spasi atau `menuju/arah/s-d` — bukan sembarang tanda
-  hubung (`"Tangerang- Banten"` bukan koridor).
-- Kecamatan dipakai hanya bila tidak ada desa.
-- **Paket tanpa penanda tempat tidak dipetakan.** Hasil: 3.331 dari 3.602 (**92,5%**).
+- **Tidak ada pin, titik, atau jitter per paket.** Peta hanya mewarnai poligon batas resmi.
+- RW hanya diterima bila nomornya eksplisit atau `unit_id` RW terpetakan; paket berpresisi kelurahan
+  **tidak** dipecah ke RW.
+- Nama kelurahan yang sama dengan nama kecamatan hanya diterima lewat penanda `Kel./Desa/Ds.`.
+- Kecamatan dipakai hanya bila tidak ada RW/kelurahan.
+- **Paket tanpa penanda tempat tidak dipetakan.** Hasil: 1.245 dari 1.557 (**80,0%**) punya lokus
+  turunan; 312 paket (20,0%) tetap ada di register dengan label wilayah umum.
+- Jangkauan: 80 dari 104 kelurahan, 483 dari 1.020 RW, seluruh 13 kecamatan.
+- Angka kecamatan = agregasi **semua** paket di dalamnya, termasuk yang presisi RW/kelurahan.
 
 ### 2.4 Keputusan yang sudah diuji (jangan diulang)
 
@@ -78,37 +101,41 @@ Aturan yang menjaga presisi:
 |---|---|
 | **Tanpa NLP/LLM di ekstraksi lokasi** | Diuji 29 Okt pada 982 paket sisa Kab. Bandung: fuzzy 0/100, LLM+gazetteer 0/38 baris, LLM+Nominatim 4/23 token (2–3 realistis, 1 salah). Regex menemukan nama tempat di 12/40 baris, LLM 15/40 (tambahan berupa `RT. 001`, `Kabupaten Bandung`). Plafon ~+1,5 poin, risiko titik palsu. |
 | **Tanpa computer vision pengukuran kerusakan** | Pengukuran luas menambah metrik tanpa menambah urgensi laporan; CV tidak mencakup semua jenis kerusakan. Diganti kategorisasi oleh pelapor (lihat 2.5). |
-| **Tanpa titik paksa untuk paket tanpa lokus** | Lebih baik kehilangan 7,5% cakupan daripada menaruh marker salah — bertentangan dengan postur "diduga, bukan tuduhan". |
+| **Tanpa titik paksa untuk paket tanpa lokus** | 312 paket (20,0%) lebih baik tetap di register daripada diberi wilayah salah — bertentangan dengan postur "diduga, bukan tuduhan". |
+| **Tanpa pin per paket** | Data resmi tidak memuat koordinat pekerjaan; pin akan menampilkan presisi yang tidak ada. Peta memakai koroplet batas. |
+| **Tanpa pemilih basemap** | Satu variabel `NEXT_PUBLIC_BASEMAP_URL` (default OSM) dan atribusi otomatis per host; menghindari ToS tile berlapis. |
 
 ### 2.5 Model data laporan warga (D5)
 
 | Field | Tipe | Nilai |
 |---|---|---|
-| `jenis_kerusakan` | enum, wajib | `lubang`, `retak`, `amblas`, `genangan`, `drainase_mampet`, `jembatan_rusak`, `lainnya` |
-| `penyebab` | enum multi, opsional | `dilalui_kendaraan_berat`, `drainase_tidak_ada`, `genangan_berulang`, `kepadatan_lalu_lintas`, `bahan_tidak_sesuai`, `tidak_tahu` |
-| `ukuran_kasar` | enum, opsional | `setelapak`, `sebesar_ban`, `lebih_1_m2` — **tanpa** klaim cm² |
-| `foto_blur` | gambar | wajah & plat diburamkan, EXIF dibersihkan |
-| `waktu_lapor`, `lat`, `lon` | otomatis | tidak bisa diedit setelah kirim |
-| `kode_rup_terkait` | hasil `MatchScore` | boleh kosong → status **"Tidak Dapat Ditautkan"** |
+| `damageType` | enum, wajib | `POTHOLE`, `CRACK`, `SUBSIDENCE`, `STANDING_WATER`, `BLOCKED_DRAINAGE`, `DAMAGED_BRIDGE`, `OTHER` |
+| `observedCauses[]` | enum array, opsional | `HEAVY_VEHICLE`, `NO_DRAINAGE`, `RECURRING_FLOODING`, `HEAVY_TRAFFIC`, `UNSUITABLE_MATERIAL`, `UNKNOWN` |
+| `coarseSize` | enum, opsional | `PALM`, `TIRE`, `OVER_1M2` — **tanpa** klaim cm² |
+| `areaId` + `locationSource` | relasi, wajib untuk laporan bertaut | Wilayah RW (`MANUAL_AREA`, `DEVICE_RESOLVED_AREA`) atau hanya rujukan paket (`PACKAGE_REFERENCE_ONLY`) |
+| `locationHint` | teks ≤180, opsional | Patokan nama jalan/kampung/RT-RW; dipakai membandingkan nama lokasi paket, tidak diunggah |
+| `status` | enum | `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_MORE_INFO`, `PUBLISHED`, `REJECTED`, `WITHDRAWN`, `ARCHIVED` |
+| `ReportMedia` | 1:1 | webp tersanitasi, `objectPath` di Supabase Storage, ukuran & dimensi tercatat |
+| `ReportPackageLink` | 1:0..1 | `rupSnapshot` + `packageNameSnapshot`; `selectionSource` = `PACKAGE_PAGE` atau `CANDIDATE_LIST`; boleh kosong |
 
 ---
 
-## 3. Algoritma Pencocokan (`MatchScore`)
+## 3. Penautan Laporan ke Paket
 
-Warga melapor pada $(lat_w, lon_w)$ dengan `jenis_kerusakan`:
+Warga memilih wilayah RW (manual atau dari GPS yang diuji *point-in-polygon*), bukan menaruh titik
+kerusakan di peta:
 
-1. **Desa terdekat** (Haversine sisi klien ke 274 titik desa) → $D^*$, $K^*$.
-2. **Kandidat**: paket berkelas jalan **dan** (jarak $\le 2{,}0$ km **atau** $p.\text{desa\_resmi} = D^*$).
-3. **Skor (0–100):**
-
-$$\text{MatchScore}(p) = 50\max\left(0, 1-\frac{d(w,p)}{2000}\right) + 25\,\mathbb{I}(\text{desa sama}) + 15\,\mathbb{I}(\text{dalam jendela pasca-pelaksanaan}) + 10\,\text{kemiripan}(c_w, p.\text{lokasi\_mikro})$$
-
-4. **Batas kejujuran**: bila tidak ada kandidat di desa yang sama, tampilkan **"Tidak Dapat
-   Ditautkan"**. Laporan tetap tersimpan, tetapi tidak menandai paket mana pun — mencegah satu laporan
-   menandai belasan paket di desa besar (median 10 paket/desa, maksimum 261 di Pasar Kemis).
-5. **Status "Diduga Tidak Sesuai"**: paket berjalan/baru selesai ($\le 12$ bulan) **atau** ruas
-   berstatus "Baik/Mantap" pada IRI, **dan** ada $\ge 1$ laporan berfoto yang dikonfirmasi $\ge 2$
-   warga sekitar.
+1. **Kandidat**: paket di kecamatan wilayah laporan, diambil lewat `GET /api/packages?district=…`.
+2. **Urutan tampilan** (bukan skor yang dipublikasikan): RW sama → kelurahan sama → nama lokasi
+   memuat patokan warga (frasa ≥4 karakter) → sisanya. Kandidat di luar RW tetap ditampilkan dengan
+   peringatan eksplisit bila tidak ada paket yang menyebut RW tersebut.
+3. **Pemilihan manual**: warga memilih satu paket atau mengirim laporan **tanpa** tautan paket.
+   Tidak ada klaim kecocokan otomatis; tautan menyimpan snapshot RUP dan nama paket.
+4. **Konsistensi wilayah**: paket rujukan dilepas otomatis bila wilayahnya berbeda dari lokasi
+   laporan (mis. GPS berada di RW lain).
+5. **Moderasi**: laporan masuk sebagai `SUBMITTED` → `UNDER_REVIEW`. Moderator memutuskan
+   `PUBLISHED`, `NEEDS_MORE_INFO`, `REJECTED`, `WITHDRAWN`, atau `ARCHIVED` lewat antrean dashboard;
+   hanya laporan `PUBLISHED` yang tampil sebagai bukti warga.
 
 ---
 
@@ -116,40 +143,53 @@ $$\text{MatchScore}(p) = 50\max\left(0, 1-\frac{d(w,p)}{2000}\right) + 25\,\math
 
 | Kode | Modul | Deskripsi | Nilai rubrik |
 |---|---|---|---|
-| **FR-01** | **Peta audit jalan** | 3.331 titik/garis paket jalan Kab. Tangerang; filter tahun (2025/2026), kecamatan/desa, jenis pekerjaan; badge presisi per titik; layer IRI nasional; klik → tabel paket. | Fungsionalitas 25%, Desain 20%, Tema 15% |
-| **FR-02** | **Pencari mikro "Jalan mana yang dibangun di dekat saya?"** | Ketik desa/kampung/nama jalan → kartu desa: total pagu jalan, daftar paket 2025–2026, bulan pelaksanaan, tombol "Laporkan Kerusakan". | Konten 20% |
-| **FR-03** | **Form lapor** | 3 langkah: (1) foto + blur wajah/plat + pembersihan EXIF; (2) **kategorisasi jenis kerusakan & penyebab** oleh pelapor + ukuran kasar; (3) lokasi GPS/desa → rekomendasi paket dengan skor kecocokan yang ditampilkan apa adanya. Tanpa CV, tanpa klaim cm². | Fungsionalitas 25%, Orisinalitas 20% |
-| **FR-04** | **Kartu sandingan (triangulasi)** | Kiri: data resmi (kode RUP, pagu, jadwal, status masa pemeliharaan, IRI bila berimpit ruas nasional). Kanan: bukti warga (foto, jenis/penyebab, ukuran kasar, waktu, konfirmasi). | Orisinalitas 20% |
-| **FR-05** | **Verifikasi komunitas dua kunci** | Laporan atau klaim "sudah diperbaiki" menjadi `Terverifikasi Komunitas` setelah ≥2 warga sekitar mengonfirmasi. | Civic Reporting |
-| **FR-06** | **Rapor kecamatan & jenis kerusakan** | Peringkat **29 kecamatan**: pagu jalan, jumlah paket, laporan per jenis kerusakan, penyebab dominan, dan paket dalam masa pemeliharaan yang perlu ditagih. | Decision Support, Konten 20% |
-| **FR-07** | **Rekam jejak penyedia (berimbang)** | Per penyedia dari LPSE: jumlah paket, pagu, daftar paket dengan laporan kerusakan **dalam masa pemeliharaan**, beserta kelas jalan dan tahun sebagai penyebut. Tanpa skor gabungan. | Orisinalitas, Akuntabilitas |
+| **FR-01** | **Peta audit jalan** | Koroplet batas resmi Kota Tangerang pada tiga tingkat — kecamatan (13), kelurahan (104), RW (1.020) — dipilih lewat *segmented control* di peta, bukan dari tingkat perbesaran. Filter tahun, kecamatan, kelurahan (checkbox), jenis pekerjaan, status kontrak, pencarian; panel detail paket; tanpa pin/titik per paket. | Fungsionalitas 25%, Desain 20%, Tema 15% |
+| **FR-02** | **Pencarian paket "Jalan mana yang dibangun di dekat saya?"** | Pencarian desa/ruas/RUP di hero dan di peta → daftar paket (nama, pagu, wilayah, bulan), klik → panel detail. Default "Hanya paket berlokasi" aktif (1.245 dari 1.557). | Konten 20% |
+| **FR-03** | **Form lapor 4 langkah** | (1) foto + blur wajah/plat + pembersihan EXIF; (2) kategorisasi jenis kerusakan, penyebab, ukuran kasar; (3) lokasi kelurahan/RW (manual atau GPS *point-in-polygon*) + pilih paket rujukan opsional; (4) sukses dengan kode laporan. Tanpa CV, tanpa klaim cm². | Fungsionalitas 25%, Orisinalitas 20% |
+| **FR-04** | **Sandingan data resmi vs kontrak** | Panel paket: pagu RUP, jadwal/bulan, sumber dana, metode; bila ada rekam LPSE/INAPROC — HPS, nilai kontrak, pemenang, selisih pagu, dan sumber transaksi. Badge sumber melekat pada angka. | Orisinalitas 20% |
+| **FR-05** | **Moderasi laporan & bukti warga** | Laporan warga (`SUBMITTED`) masuk antrean tinjauan dashboard; moderator melihat foto tersanitasi, jenis/penyebab/ukuran, wilayah, dan paket tertaut, lalu menetapkan `PUBLISHED`/`NEEDS_MORE_INFO`/`REJECTED`/`WITHDRAWN`/`ARCHIVED`. | Civic Reporting |
+| **FR-06** | **Agregasi kecamatan** | Tiga belas poligon kecamatan diwarnai dengan kelas **kuantil** jumlah paket; tooltip menyebut jumlah paket, total pagu, dan (pada tampilan jenis) kelas pekerjaan. Klik wilayah → filter daftar paket. | Decision Support, Konten 20% |
+| **FR-07** | **Rekam jejak penyedia (berimbang)** | 522 penyedia unik dari LPSE/SPSE + Data INAPROC: 1.424 dari 1.557 paket (91,4%) punya rekam kontrak; 133 paket (Rp97,6 M, 15,0% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
 
 ---
 
 ## 5. Layar & Aturan UI
 
 ### Daftar layar
-1. **`/` — Beranda & peta audit jalan.** Metrik: **3.602 paket jalan · Rp848,60 M · 251 desa ·
-   92,5% bertitik · 102 koridor ruas**. Peta Kab. Tangerang + panel detail paket.
-2. **`/jelajah` — Eksplorasi desa & paket.** Pencarian desa/kampung/jalan, filter tahun & jenis
-   pekerjaan, badge presisi (`Titik Desa`, `Garis Koridor`, `Kecamatan`), unduh CSV/JSON.
-3. **`/lapor` — Lapor & tautkan paket.** 3 langkah seperti FR-03.
-4. **`/kasus/:id` — Detail kasus & verifikasi dua kunci.** Sandingan resmi vs warga, indikator masa
-   pemeliharaan, lini masa, tombol konfirmasi.
-5. **`/rapor` + `/metode` — Rapor wilayah & metodologi.** Agregasi 29 kecamatan, pipeline terbuka,
-   rumus `MatchScore`, batasan data & etika.
+1. **`/` — Beranda & peta audit jalan.** Metrik: **1.557 paket jalan · Rp650,18 M · 80 kelurahan ·
+   1.245 (80,0%) berlokus**. Hero + pencarian, diikuti peta dan panel detail paket.
+2. **`/project` dan `/project/kota-tangerang/…` — Peta pekerjaan.** Peta koroplet tiga
+   tingkat dengan *segmented control* Kecamatan / Kelurahan / RW; filter tahun, kecamatan, kelurahan,
+   jenis, kontrak, pencarian; register paket di samping peta. Segmen URL menyimpan wilayah
+   (`<kecamatan>/<kelurahan>/rw-<n>`) dan paket terpilih (`rup-<kode>/<slug>`) agar bisa dibagikan.
+3. **`/laporan` dan `/laporan/paket/:rup` — Lapor & tautkan paket.** 4 langkah seperti FR-03; membuka
+   dari paket mengisi paket rujukan lebih dulu.
+4. **`/penyedia` dan `/penyedia/:slug` — Rekam jejak penyedia.** Daftar 522 penyedia dengan
+   pengurutan nilai/paket/nama/tahun; halaman penyedia memuat paket yang tercatat.
+5. **`/dashboard` — Akun, laporan saya, antrean tinjauan.** Perlu login; memuat profil, riwayat
+   laporan, moderasi (sesuai izin), dan undangan.
+6. **`/login`, `/register`, `/offline`** — Autentikasi Better Auth dan fallback PWA.
 
 ### Cakupan FDS (1 November 2026)
 Screenshot wajib: **landing page + minimal satu halaman fitur**. Yang dibangun lebih dulu:
-**Layar 1 (peta audit jalan)** dan **Layar 3 (alur lapor)** — peta untuk kekuatan tema, alur lapor
-untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
+**peta audit jalan (`/` + `/project`)** dan **alur lapor (`/laporan`)** — peta untuk kekuatan tema,
+alur lapor untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
 
 ### Aturan tampilan
-- Format angka Indonesia: `3.602`, `92,5%`, `Rp848,60 Miliar`.
-- Badge **`SIMULASI PROTOTIPE`** (amber) untuk laporan warga; **`DATA RESMI (SIRUP / BINA MARGA)`**
-  (hijau/biru) untuk data asli; badge presisi wajib melekat pada marker.
+- Format angka Indonesia: `1.557`, `80,0%`, `Rp650,18 Miliar`.
+- Badge sumber: **`Data resmi (LPSE)`** / **`Data resmi (INAPROC)`** melekat pada angka kontrak yang
+  ditampilkan; tidak ada badge pada data yang tidak punya sumber.
+- Presisi lokus ditulis sebagai label (`RW`, `Kelurahan`, `Kecamatan`, atau
+  `Lokasi: Kota Tangerang (Umum)`) di panel/daftar — bukan sebagai marker.
 - Nama penyedia **ditampilkan asli** di modul rekam jejak (data publik LPSE), tanpa skor gabungan,
-  selalu dengan penyebut; frasa tetap "paket dengan laporan kerusakan dalam masa pemeliharaan".
-- Paket tanpa lokus tampil di tabel dengan label `Lokasi: Kab. Tangerang (Umum)` — tidak dipetakan.
-- **Tidak ada filter sektor** di UI: produk adalah jalan. Kelas jalan (permukaan/drainase/jembatan)
-  yang menjadi filter, bukan 5 sektor.
+  selalu dengan penyebut jumlah paket dan tahun.
+- Paket tanpa lokus tampil di register dengan label `Lokasi: Kota Tangerang (Umum)` — tidak
+  diwarnai sebagai wilayah dan tidak dipetakan.
+- Pilih satu kecamatan lebih dulu; kelurahan berupa checkbox dengan **default semua**. Bila semua
+  kelurahan dilepas, tampil peringatan merah dan tidak ada request API — bukan daftar kosong.
+- **Tidak ada filter sektor** di UI: produk adalah jalan. Jenis pekerjaan (permukaan/drainase/
+  jembatan) yang menjadi filter, bukan 5 sektor.
+- Peta dasar tunggal dari `NEXT_PUBLIC_BASEMAP_URL` (default OSM) dengan atribusi otomatis per host;
+  tidak ada pemilih basemap.
+- Kecamatan memakai kelas **kuantil**; kelurahan/RW memakai kelas 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
+  Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk presisi RW/kelurahan.
