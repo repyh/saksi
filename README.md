@@ -10,8 +10,8 @@ review, not proof of wrongdoing or a guarantee of government action.
 ## Current implementation
 
 - Landing page (`/`) with the audit overview, a sourced budget figure, and an interactive map.
-- Map (`/project`) as a **choropleth of official boundaries**: kecamatan polygons (13, zoom < 11),
-  kelurahan polygons (104, zoom 11), and RW polygons (1,020, zoom ≥ 12). No per-package pins — a
+- Map (`/project`) as a **choropleth of official boundaries**, with a segmented control on the map that
+  switches the polygon level: kecamatan (13), kelurahan (104), or RW (1,020). No per-package pins — a
   package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
   package anchored inside them, including RW- and kelurahan-precision packages, and use their own
   quantile class breaks so 13 polygons do not all land in one colour.

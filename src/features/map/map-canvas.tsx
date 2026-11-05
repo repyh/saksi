@@ -319,21 +319,19 @@ function MapSizeRefresh() {
   return null;
 }
 
-function MapZoomPrecision({ onChange }: { onChange: (precision: BoundaryPrecision) => void }) {
+const LEVEL_ZOOM: Record<BoundaryPrecision, number> = { Kecamatan: 10, Kelurahan: 11, RW: 13 };
+const LEVEL_LABELS: Record<BoundaryPrecision, string> = { Kecamatan: "Kecamatan", Kelurahan: "Kelurahan", RW: "RW" };
+
+function PrecisionZoom({ precision }: { precision: BoundaryPrecision }) {
   const map = useMap();
   useEffect(() => {
-    const syncPrecision = () => {
-      const zoom = map.getZoom();
-      onChange(zoom >= RW_ZOOM ? "RW" : zoom >= KEC_ZOOM ? "Kelurahan" : "Kecamatan");
-    };
-    syncPrecision();
-    map.on("zoomend", syncPrecision);
-    return () => { map.off("zoomend", syncPrecision); };
-  }, [map, onChange]);
+    const target = LEVEL_ZOOM[precision];
+    if (map.getZoom() !== target) map.setZoom(target);
+  }, [map, precision]);
   return null;
 }
 
-function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectRegion, view, bands, classes }: MapCanvasProps & { view: AreaView; bands: { rw: ReturnType<typeof budgetBands>; kel: ReturnType<typeof budgetBands>; kec: ReturnType<typeof budgetBands> }; classes: { rw: ClassBand[]; kel: ClassBand[]; kec: ClassBand[] } }) {
+function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectRegion, view, bands, classes, precision }: MapCanvasProps & { view: AreaView; bands: { rw: ReturnType<typeof budgetBands>; kel: ReturnType<typeof budgetBands>; kec: ReturnType<typeof budgetBands> }; classes: { rw: ClassBand[]; kel: ClassBand[]; kec: ClassBand[] }; precision: BoundaryPrecision }) {
   const map = useMap();
   const [rwBoundary, setRwBoundary] = useState<BoundaryCollection | null>(null);
   const [kelBoundary, setKelBoundary] = useState<BoundaryCollection | null>(null);
@@ -355,6 +353,7 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
   const viewRef = useRef(view);
   const bandsRef = useRef(bands);
   const classesRef = useRef(classes);
+  const precisionRef = useRef(precision);
 
   const areaStats = useMemo(() => statsByArea(packages), [packages]);
 
@@ -468,8 +467,7 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
     updateAreaLayer(kelLayer.current, "Kelurahan", statsRef.current.kel, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.kel, classesRef.current.kel);
     updateAreaLayer(kecLayer.current, "Kecamatan", statsRef.current.kec, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.kec, classesRef.current.kec);
     const syncLayer = () => {
-      const zoom = map.getZoom();
-      const precision: BoundaryPrecision = zoom >= RW_ZOOM ? "RW" : zoom >= KEC_ZOOM ? "Kelurahan" : "Kecamatan";
+      const precision = precisionRef.current;
       const activeLayer = precision === "RW" ? rwLayer.current : precision === "Kelurahan" ? kelLayer.current : kecLayer.current;
       for (const layer of [rwLayer.current, kelLayer.current, kecLayer.current]) {
         if (layer && map.hasLayer(layer) && layer !== activeLayer) map.removeLayer(layer);
@@ -532,6 +530,11 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
       workIconLayer.current = null;
     };
   }, [kecBoundary, kelBoundary, map, rwBoundary]);
+
+  useEffect(() => {
+    precisionRef.current = precision;
+    syncLayerRef.current?.();
+  }, [precision]);
 
   useEffect(() => {
     updateAreaLayer(rwLayer.current, "RW", areaStats.rw, selectedPackage, selectedRegion, view, bands.rw, classes.rw);
@@ -619,10 +622,6 @@ export default function MapCanvas(props: MapCanvasProps) {
     [kecClasses],
   );
   const activeClasses = precision === "Kecamatan" ? kecClasses : [...CLASSES];
-  const handlePrecisionChange = useMemo(
-    () => (next: BoundaryPrecision) => setPrecision(next),
-    [],
-  );
   const wilayahLabel = precision === "RW" ? "RW" : precision === "Kelurahan" ? "kelurahan" : "kecamatan";
   const legendItems = props.viewMode === "work"
     ? ROAD_WORK_TYPES.map((category) => ({ fill: "transparent", label: ROAD_WORK_LABELS[category], icon: WORK_ICONS[category] }))
@@ -651,8 +650,24 @@ export default function MapCanvas(props: MapCanvasProps) {
         url={BASEMAP_URL}
       />
       <MapSizeRefresh />
-      <MapZoomPrecision onChange={handlePrecisionChange} />
-      <BoundaryLayers {...props} view={view} bands={bands} classes={classes} />
+      <PrecisionZoom precision={precision} />
+      <BoundaryLayers {...props} view={view} bands={bands} classes={classes} precision={precision} />
+      <div className="saksi-map-overlay absolute top-3 left-14 z-[1000] flex overflow-hidden border border-border bg-white/95 shadow-sm">
+        {(Object.keys(LEVEL_LABELS) as BoundaryPrecision[]).map((tingkat) => (
+          <button
+            key={tingkat}
+            type="button"
+            onClick={() => setPrecision(tingkat)}
+            aria-pressed={precision === tingkat}
+            title={`Tampilkan poligon ${LEVEL_LABELS[tingkat].toLowerCase()}`}
+            className={`px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
+              precision === tingkat ? "bg-primary text-white" : "text-foreground/70 hover:bg-muted"
+            }`}
+          >
+            {LEVEL_LABELS[tingkat]}
+          </button>
+        ))}
+      </div>
       <div className="saksi-map-overlay pointer-events-none absolute top-3 right-3 z-[1000] max-w-[min(23rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
         <p>
           {props.selectedPackage && !hasSpecificRegion
@@ -687,8 +702,8 @@ export default function MapCanvas(props: MapCanvasProps) {
         </ul>
         <div className="mt-2 max-w-52 space-y-1 border-t border-border pt-2 text-[10px] leading-4 text-muted-foreground">
           <p>{props.viewMode === "budget" ? "Warna menunjukkan total pagu; arahkan kursor untuk jumlah paket." : props.viewMode === "work" ? "Ikon menandai jenis paket yang tercatat; warna wilayah tetap netral." : "Warna menunjukkan jumlah paket pada tiap wilayah."}</p>
-          <p>Perbesar untuk melihat RW. Paket yang hanya diketahui hingga kelurahan tidak dibagi ke RW.</p>
-          <p>Jauhkan peta untuk melihat batas kecamatan; angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi RW dan kelurahan.</p>
+          <p>Tingkat poligon diatur lewat pemilih Kecamatan / Kelurahan / RW di atas peta. Paket yang hanya diketahui hingga kelurahan tidak dibagi ke RW.</p>
+          <p>Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi RW dan kelurahan.</p>
         </div>
       </div>
     </MapContainer>
