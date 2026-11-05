@@ -22,7 +22,8 @@
     "data:realisasi": "node scripts/realisasi.mjs",
     "data:rup": "node scripts/rup.mjs",
     "data:rup-detail": "node scripts/rup.mjs --detail",
-    "data:enrich": "node scripts/enrich-rup.mjs"
+    "data:enrich": "node scripts/enrich-rup.mjs",
+    "data:kecamatan": "node scripts/kecamatan.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

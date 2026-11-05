@@ -99,7 +99,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<"SEMUA" | "2025" | "2026">(initialRouteState?.selectedYear ?? "SEMUA");
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
-  const [selectedVillages, setSelectedVillages] = useState<string[]>([]);
+  const [selectedVillages, setSelectedVillages] = useState<string[] | null>(null);
   const [openVillages, setOpenVillages] = useState(false);
   const villagesRef = useRef<HTMLDivElement | null>(null);
   const [locatedOnly, setLocatedOnly] = useState(true);
@@ -148,7 +148,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     const params = new URLSearchParams();
     if (selectedYear !== "SEMUA") params.set("year", selectedYear);
     if (selectedDistrict !== "SEMUA") params.set("district", selectedDistrict);
-    for (const desa of selectedVillages) params.append("desa", desa);
+    for (const desa of selectedVillages ?? []) params.append("desa", desa);
     if (locatedOnly) params.set("lokasi", "1");
     if (selectedWork !== "SEMUA") params.set("work", selectedWork);
     if (selectedContract !== "SEMUA") params.set("kontrak", selectedContract);
@@ -158,6 +158,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
   useEffect(() => {
+    if (selectedVillages !== null && selectedVillages.length === 0) return;
     if (lastRequestedQuery.current === queryString) return;
     lastRequestedQuery.current = queryString;
 
@@ -170,7 +171,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
         {
           year: selectedYear === "SEMUA" ? undefined : selectedYear,
           district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
-          villages: selectedVillages.length ? selectedVillages : undefined,
+          villages: selectedVillages ?? undefined,
           locatedOnly,
           work: selectedWork,
           contract: selectedContract,
@@ -213,17 +214,18 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     () => (selectedDistrict === "SEMUA" ? [] : villagesByDistrict[selectedDistrict] ?? []),
     [selectedDistrict, villagesByDistrict],
   );
-  const activeVillages = selectedVillages.length ? selectedVillages : villageOptions;
+  const activeVillages = selectedVillages ?? villageOptions;
+  const kelurahanKosong = selectedVillages !== null && selectedVillages.length === 0;
   const toggleVillage = (desa: string) => {
     const aktif = new Set(activeVillages);
     if (aktif.has(desa)) aktif.delete(desa);
     else aktif.add(desa);
     const berikut = villageOptions.filter((opsi) => aktif.has(opsi));
-    setSelectedVillages(berikut.length === villageOptions.length ? [] : berikut);
+    setSelectedVillages(berikut.length === villageOptions.length ? null : berikut);
   };
-  const filteredPackages = packageData?.items ?? [];
+  const filteredPackages = kelurahanKosong ? [] : packageData?.items ?? [];
   const totalCount = packageData?.totalCount ?? 0;
-  const filteredCount = packageData?.filteredCount ?? 0;
+  const filteredCount = kelurahanKosong ? 0 : packageData?.filteredCount ?? 0;
 
   const writeReportPath = (path: string) => {
     if (!addressRouting) return;
@@ -243,7 +245,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     writeReportPath(routeForPackage(pkg));
   };
 
-  const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" } | null, pkg: RoadPackageItem | null) => {
+  const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" | "Kecamatan" } | null, pkg: RoadPackageItem | null) => {
     if (!region) {
       setSelectedDistrict("SEMUA");
       setSelectedRegion(null);
@@ -340,7 +342,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                   const district = val ?? "SEMUA";
                   const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
                   setSelectedDistrict(district);
-                  setSelectedVillages([]);
+                  setSelectedVillages(null);
                   setOpenVillages(false);
                   setSelectedRegion(address);
                   updateSelectedPackage(null);
@@ -366,19 +368,23 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                   className={`flex h-7 w-full min-w-0 items-center justify-between gap-1 rounded-xs px-1 text-left text-xs font-semibold transition-colors ${
                     selectedDistrict === "SEMUA"
                       ? "cursor-not-allowed text-muted-foreground/60"
-                      : "text-foreground hover:bg-muted"
+                      : kelurahanKosong
+                        ? "bg-destructive/10 text-destructive underline decoration-destructive/40 decoration-wavy underline-offset-2 hover:bg-destructive/15"
+                        : "text-foreground hover:bg-muted"
                   }`}
                 >
                   <span className="truncate">
                     {selectedDistrict === "SEMUA"
                       ? "Pilih kecamatan"
-                      : selectedVillages.length
-                        ? `${selectedVillages.length} dari ${villageOptions.length}`
-                        : "Semua kelurahan"}
+                      : kelurahanKosong
+                        ? "Centang minimal 1"
+                        : selectedVillages === null
+                          ? "Semua kelurahan"
+                          : `${selectedVillages.length} dari ${villageOptions.length}`}
                   </span>
                   <FiChevronDown className="size-3 shrink-0 opacity-60" aria-hidden="true" />
                 </button>
-                {openVillages && selectedDistrict !== "SEMUA" && (
+                {(openVillages || kelurahanKosong) && selectedDistrict !== "SEMUA" && (
                   <div className="absolute top-full left-0 z-50 mt-1 w-60 border border-border bg-white shadow-md">
                     <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
                       <span className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
@@ -386,15 +392,20 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                       </span>
                       <button
                         type="button"
-                        onClick={() => setSelectedVillages([])}
+                        onClick={() => setSelectedVillages(null)}
                         className="font-sans text-[11px] font-bold text-primary hover:underline"
                       >
                         Pilih semua
                       </button>
                     </div>
+                    {kelurahanKosong && (
+                      <p role="alert" className="border-b border-destructive/30 bg-destructive/5 px-2 py-1.5 font-sans text-[11px] font-semibold leading-snug text-destructive">
+                        Centang minimal satu kelurahan untuk menampilkan paket.
+                      </p>
+                    )}
                     <div className="max-h-56 overflow-auto py-1">
                       {villageOptions.map((desa) => {
-                        const terpilih = selectedVillages.length === 0 || selectedVillages.includes(desa);
+                        const terpilih = selectedVillages === null || selectedVillages.includes(desa);
                         return (
                           <label key={desa} className="flex cursor-pointer items-center gap-2 px-2 py-1 text-xs hover:bg-muted">
                             <input
@@ -508,7 +519,13 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                   ))}
                   {loadError && <div role="alert" className="p-6 text-sm text-destructive">{loadError}</div>}
                   {isLoading && !packageData && <div role="status" className="p-6 text-sm text-muted-foreground">Memuat daftar paket…</div>}
-                  {!isLoading && !loadError && filteredPackages.length === 0 && <div className="p-6 text-sm text-muted-foreground">Tidak ada paket yang cocok dengan filter saat ini.</div>}
+                  {!isLoading && !loadError && filteredPackages.length === 0 && (
+                    <div className="p-6 text-sm text-muted-foreground">
+                      {kelurahanKosong
+                        ? "Belum ada kelurahan dipilih. Centang minimal satu kelurahan pada filter Kelurahan."
+                        : "Tidak ada paket yang cocok dengan filter saat ini."}
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </aside>

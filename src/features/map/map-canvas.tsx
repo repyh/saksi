@@ -17,11 +17,13 @@ import { classifyRoadWork, ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadW
 import { addressSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahFull } from "./road-types";
 
+type BoundaryPrecision = "RW" | "Kelurahan" | "Kecamatan";
+
 type ClickedRegion = {
   district: string | null;
   village: string | null;
   rw: string | null;
-  precision: "RW" | "Kelurahan";
+  precision: BoundaryPrecision;
 };
 
 interface MapCanvasProps {
@@ -52,6 +54,7 @@ const WORK_ICONS: Record<SpecificRoadWorkCategory, IconType> = {
 };
 
 const RW_ZOOM = 12;
+const KEC_ZOOM = 11;
 const CLASSES = [
   { min: 0, max: 0, fill: "#F1F5F9", stroke: "#94A3B8", label: "0 paket" },
   { min: 1, max: 1, fill: "#FFF4B8", stroke: "#E6C84D", label: "1 paket" },
@@ -72,8 +75,38 @@ function escapeHtml(value: unknown) {
   })[character] ?? character);
 }
 
-function classFor(count: number) {
-  return CLASSES.find((item) => count >= item.min && count <= item.max) ?? CLASSES[0];
+function classFor(count: number, classes: typeof CLASSES | ClassBand[] = CLASSES) {
+  return classes.find((item) => count >= item.min && count <= item.max) ?? classes[0];
+}
+
+type ClassBand = { min: number; max: number; fill: string; stroke: string; label: string };
+
+// Skala jumlah paket untuk kecamatan memakai kuantil: 13 poligon dengan 90–200 paket
+// tidak masuk akal dipecah dengan kelas 0/1/2–3/… seperti level RW.
+function quantileCountBands(counts: Map<string, AreaStats>): ClassBand[] {
+  const values = [...counts.values()].map((aggregate) => aggregate.count).filter((nilai) => nilai > 0).sort((a, b) => a - b);
+  if (values.length < 4) return [...CLASSES];
+  const quantile = (fraction: number) => values[Math.min(values.length - 1, Math.max(0, Math.round((values.length - 1) * fraction)))];
+  const edges = [...new Set([quantile(0.2), quantile(0.4), quantile(0.6), quantile(0.8)])];
+  const fills = ["#FFF4B8", "#FFE680", "#FFD633", "#F5B800", "#D98F00"];
+  const strokes = ["#E6C84D", "#D6B52D", "#C99B00", "#AD7C00", "#805500"];
+  const bands: ClassBand[] = edges.map((max, index) => ({
+    min: index === 0 ? 1 : edges[index - 1] + 1,
+    max,
+    fill: fills[Math.min(index, fills.length - 2)],
+    stroke: strokes[Math.min(index, strokes.length - 2)],
+    label: index === 0 ? `1–${max} paket` : `${edges[index - 1] + 1}–${max} paket`,
+  }));
+  bands.unshift({ min: 0, max: 0, fill: "#F1F5F9", stroke: "#94A3B8", label: "0 paket" });
+  const tertinggi = edges[edges.length - 1];
+  bands.push({
+    min: tertinggi + 1,
+    max: Number.MAX_SAFE_INTEGER,
+    fill: fills[fills.length - 1],
+    stroke: strokes[strokes.length - 1],
+    label: `> ${tertinggi} paket`,
+  });
+  return bands;
 }
 
 function budgetBands(counts: Map<string, AreaStats>) {
@@ -97,27 +130,21 @@ function budgetBands(counts: Map<string, AreaStats>) {
 function statsByArea(packages: RoadPackageItem[]) {
   const rw = new Map<string, AreaStats>();
   const kel = new Map<string, AreaStats>();
+  const kec = new Map<string, AreaStats>();
+  const tambah = (map: Map<string, AreaStats>, key: string, item: RoadPackageItem) => {
+    const aggregate = map.get(key) ?? { count: 0, budget: 0, packages: [], workCounts: emptyWorkCounts() };
+    aggregate.count += 1;
+    aggregate.budget += item.pagu;
+    aggregate.packages.push(item);
+    aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
+    map.set(key, aggregate);
+  };
   for (const item of packages) {
-    if (item.presisi_peta === "RW" && item.unit_id) {
-      const key = normalize(item.unit_id);
-      const aggregate = rw.get(key) ?? { count: 0, budget: 0, packages: [], workCounts: emptyWorkCounts() };
-      aggregate.count += 1;
-      aggregate.budget += item.pagu;
-      aggregate.packages.push(item);
-      aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
-      rw.set(key, aggregate);
-    }
-    if (item.desa_resmi) {
-      const key = normalize(item.desa_resmi);
-      const aggregate = kel.get(key) ?? { count: 0, budget: 0, packages: [], workCounts: emptyWorkCounts() };
-      aggregate.count += 1;
-      aggregate.budget += item.pagu;
-      aggregate.packages.push(item);
-      aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
-      kel.set(key, aggregate);
-    }
+    if (item.presisi_peta === "RW" && item.unit_id) tambah(rw, normalize(item.unit_id), item);
+    if (item.desa_resmi) tambah(kel, normalize(item.desa_resmi), item);
+    if (item.kecamatan_resmi) tambah(kec, normalize(item.kecamatan_resmi), item);
   }
-  return { rw, kel };
+  return { rw, kel, kec };
 }
 
 function emptyWorkCounts(): WorkCounts {
@@ -163,8 +190,9 @@ function budgetClassFor(budget: number, bands: ReturnType<typeof budgetBands>) {
   return bands.find((band) => budget <= band.max) ?? bands[bands.length - 1];
 }
 
-function areaKey(feature: BoundaryFeature, precision: "RW" | "Kelurahan") {
+function areaKey(feature: BoundaryFeature, precision: BoundaryPrecision) {
   const properties = feature.properties ?? {};
+  if (precision === "Kecamatan") return normalize(properties.wadmkc);
   return precision === "RW"
     ? normalize(`${properties.wadmkd}|${properties.rw}`)
     : normalize(properties.wadmkd);
@@ -172,11 +200,12 @@ function areaKey(feature: BoundaryFeature, precision: "RW" | "Kelurahan") {
 
 function styleFor(
   feature: BoundaryFeature,
-  precision: "RW" | "Kelurahan",
+  precision: BoundaryPrecision,
   counts: Map<string, AreaStats>,
   highlight: "exact" | "scope" | null,
   view: AreaView,
   bands: ReturnType<typeof budgetBands>,
+  classes: ClassBand[],
 ) {
   const key = areaKey(feature, precision);
   const aggregate = counts.get(key);
@@ -185,7 +214,7 @@ function styleFor(
     ? { fill: aggregate ? "#E8EDF3" : "#F1F5F9", stroke: aggregate ? "#AAB6C4" : "#94A3B8" }
     : view === "budget" && aggregate
       ? budgetClassFor(aggregate.budget, bands)
-      : classFor(count);
+      : classFor(count, classes);
   const selected = highlight === "exact";
   const inSelectedScope = highlight === "scope";
   const bucketStroke = "stroke" in bucket ? bucket.stroke : bucket.fill;
@@ -202,20 +231,23 @@ function styleFor(
 
 function featureHighlight(
   feature: BoundaryFeature,
-  precision: "RW" | "Kelurahan",
+  precision: BoundaryPrecision,
   selected: RoadPackageItem | null,
   selectedRegion: ReportAddress | null,
 ): "exact" | "scope" | null {
   const properties = feature.properties ?? {};
   const villageSlug = addressSlug(String(properties.wadmkd ?? ""));
+  const districtKey = normalize(properties.wadmkc);
   if (selectedRegion?.rwSlug) {
     const featureRw = `rw-${addressSlug(String(properties.rw ?? "").replace(/^rw-?/i, ""))}`;
     if (precision === "RW" && villageSlug === selectedRegion.villageSlug && featureRw === selectedRegion.rwSlug) return "exact";
     if (precision === "Kelurahan" && villageSlug === selectedRegion.villageSlug) return "scope";
+    if (precision === "Kecamatan") return "scope";
   }
   if (selectedRegion?.villageSlug) {
     if (precision === "Kelurahan" && villageSlug === selectedRegion.villageSlug) return "exact";
     if (precision === "RW" && !selectedRegion.rwSlug && villageSlug === selectedRegion.villageSlug) return "scope";
+    if (precision === "Kecamatan") return "scope";
   }
   if (!selected) return null;
   const key = areaKey(feature, precision);
@@ -223,27 +255,35 @@ function featureHighlight(
   if (selected.presisi_peta === "RW" && selected.unit_id) {
     if (precision === "RW" && key === normalize(selected.unit_id)) return "exact";
     if (precision === "Kelurahan" && selected.desa_resmi && key === normalize(selected.desa_resmi)) return "scope";
+    if (precision === "Kecamatan" && selected.kecamatan_resmi && key === normalize(selected.kecamatan_resmi)) return "scope";
     return null;
   }
   if (selected.presisi_peta === "Kelurahan" && precision === "Kelurahan" && selected.desa_resmi) {
     return key === normalize(selected.desa_resmi) ? "exact" : null;
+  }
+  if (selected.presisi_peta === "Kelurahan" && precision === "Kecamatan" && selected.kecamatan_resmi) {
+    return districtKey === normalize(selected.kecamatan_resmi) ? "scope" : null;
+  }
+  if (selected.presisi_peta === "Kecamatan" && precision === "Kecamatan" && selected.kecamatan_resmi) {
+    return districtKey === normalize(selected.kecamatan_resmi) ? "exact" : null;
   }
   return null;
 }
 
 function updateAreaLayer(
   layer: L.GeoJSON | null,
-  precision: "RW" | "Kelurahan",
+  precision: BoundaryPrecision,
   counts: Map<string, AreaStats>,
   selectedPackage: RoadPackageItem | null,
   selectedRegion: ReportAddress | null,
   view: AreaView,
   bands: ReturnType<typeof budgetBands>,
+  classes: ClassBand[],
 ) {
   if (!layer) return;
   layer.setStyle((feature) =>
     feature
-      ? styleFor(feature as BoundaryFeature, precision, counts, featureHighlight(feature as BoundaryFeature, precision, selectedPackage, selectedRegion), view, bands)
+      ? styleFor(feature as BoundaryFeature, precision, counts, featureHighlight(feature as BoundaryFeature, precision, selectedPackage, selectedRegion), view, bands, classes)
       : {},
   );
   if (!selectedPackage) return;
@@ -265,10 +305,13 @@ function MapSizeRefresh() {
   return null;
 }
 
-function MapZoomPrecision({ onChange }: { onChange: (isRw: boolean) => void }) {
+function MapZoomPrecision({ onChange }: { onChange: (precision: BoundaryPrecision) => void }) {
   const map = useMap();
   useEffect(() => {
-    const syncPrecision = () => onChange(map.getZoom() >= RW_ZOOM);
+    const syncPrecision = () => {
+      const zoom = map.getZoom();
+      onChange(zoom >= RW_ZOOM ? "RW" : zoom >= KEC_ZOOM ? "Kelurahan" : "Kecamatan");
+    };
     syncPrecision();
     map.on("zoomend", syncPrecision);
     return () => { map.off("zoomend", syncPrecision); };
@@ -276,24 +319,28 @@ function MapZoomPrecision({ onChange }: { onChange: (isRw: boolean) => void }) {
   return null;
 }
 
-function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectRegion, view, bands }: MapCanvasProps & { view: AreaView; bands: { rw: ReturnType<typeof budgetBands>; kel: ReturnType<typeof budgetBands> } }) {
+function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectRegion, view, bands, classes }: MapCanvasProps & { view: AreaView; bands: { rw: ReturnType<typeof budgetBands>; kel: ReturnType<typeof budgetBands>; kec: ReturnType<typeof budgetBands> }; classes: { rw: ClassBand[]; kel: ClassBand[]; kec: ClassBand[] } }) {
   const map = useMap();
   const [rwBoundary, setRwBoundary] = useState<BoundaryCollection | null>(null);
   const [kelBoundary, setKelBoundary] = useState<BoundaryCollection | null>(null);
+  const [kecBoundary, setKecBoundary] = useState<BoundaryCollection | null>(null);
   const [loadError, setLoadError] = useState(false);
   const rwLayer = useRef<L.GeoJSON | null>(null);
   const kelLayer = useRef<L.GeoJSON | null>(null);
+  const kecLayer = useRef<L.GeoJSON | null>(null);
   const workIconLayer = useRef<L.LayerGroup | null>(null);
   const syncLayerRef = useRef<(() => void) | null>(null);
   const onSelectRegionRef = useRef(onSelectRegion);
-  const statsRef = useRef<{ rw: Map<string, AreaStats>; kel: Map<string, AreaStats> }>({
+  const statsRef = useRef<{ rw: Map<string, AreaStats>; kel: Map<string, AreaStats>; kec: Map<string, AreaStats> }>({
     rw: new Map(),
     kel: new Map(),
+    kec: new Map(),
   });
   const selectedRef = useRef(selectedPackage);
   const selectedRegionRef = useRef(selectedRegion);
   const viewRef = useRef(view);
   const bandsRef = useRef(bands);
+  const classesRef = useRef(classes);
 
   const areaStats = useMemo(() => statsByArea(packages), [packages]);
 
@@ -304,7 +351,8 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
     statsRef.current = areaStats;
     viewRef.current = view;
     bandsRef.current = bands;
-  }, [areaStats, bands, onSelectRegion, selectedPackage, selectedRegion, view]);
+    classesRef.current = classes;
+  }, [areaStats, bands, classes, onSelectRegion, selectedPackage, selectedRegion, view]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -317,10 +365,15 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
         if (!response.ok) throw new Error("Batas kelurahan tidak tersedia.");
         return response.json() as Promise<BoundaryCollection>;
       }),
+      fetch("/data/kec.geojson", { signal: controller.signal }).then((response) => {
+        if (!response.ok) throw new Error("Batas kecamatan tidak tersedia.");
+        return response.json() as Promise<BoundaryCollection>;
+      }),
     ])
-      .then(([rw, kel]) => {
+      .then(([rw, kel, kec]) => {
         setRwBoundary(rw);
         setKelBoundary(kel);
+        setKecBoundary(kec);
       })
       .catch(() => {
         if (!controller.signal.aborted) setLoadError(true);
@@ -329,19 +382,27 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
   }, []);
 
   useEffect(() => {
-    if (!rwBoundary || !kelBoundary) return;
+    if (!rwBoundary || !kelBoundary || !kecBoundary) return;
 
-    const makeLayer = (data: BoundaryCollection, precision: "RW" | "Kelurahan") =>
+    const statsFor = (precision: BoundaryPrecision) =>
+      precision === "RW" ? statsRef.current.rw : precision === "Kelurahan" ? statsRef.current.kel : statsRef.current.kec;
+    const bandsFor = (precision: BoundaryPrecision) =>
+      precision === "RW" ? bandsRef.current.rw : precision === "Kelurahan" ? bandsRef.current.kel : bandsRef.current.kec;
+    const classesFor = (precision: BoundaryPrecision) =>
+      precision === "RW" ? classesRef.current.rw : precision === "Kelurahan" ? classesRef.current.kel : classesRef.current.kec;
+
+    const makeLayer = (data: BoundaryCollection, precision: BoundaryPrecision) =>
       L.geoJSON(data, {
         style: (feature) =>
           feature
               ? styleFor(
                 feature as BoundaryFeature,
                 precision,
-                precision === "RW" ? statsRef.current.rw : statsRef.current.kel,
+                statsFor(precision),
                 featureHighlight(feature as BoundaryFeature, precision, selectedRef.current, selectedRegionRef.current),
                 viewRef.current,
-                bandsRef.current[precision === "RW" ? "rw" : "kel"],
+                bandsFor(precision),
+                classesFor(precision),
               )
             : {},
         onEachFeature: (rawFeature, layer) => {
@@ -349,11 +410,13 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
           layer.bindTooltip(
             () => {
               const key = areaKey(feature, precision);
-              const aggregate = (precision === "RW" ? statsRef.current.rw : statsRef.current.kel).get(key);
+              const aggregate = statsFor(precision).get(key);
               const properties = feature.properties ?? {};
               const title = precision === "RW"
                 ? `RW ${escapeHtml(properties.rw)} · ${escapeHtml(properties.wadmkd)}`
-                : escapeHtml(properties.wadmkd);
+                : precision === "Kecamatan"
+                  ? `Kec. ${escapeHtml(properties.wadmkc)}`
+                  : escapeHtml(properties.wadmkd);
               const district = escapeHtml(properties.wadmkc);
               const detail = aggregate && viewRef.current === "budget"
                 ? `<strong>${formatRupiahFull(aggregate.budget)}</strong><br>${aggregate.count.toLocaleString("id-ID")} paket`
@@ -362,18 +425,19 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
                   : aggregate
                     ? `${aggregate.count.toLocaleString("id-ID")} paket · ${formatRupiahFull(aggregate.budget)}`
                     : "Tidak ada paket terhubung";
-              return `<div style="line-height:1.45"><strong>${title}</strong><br><span>Kec. ${district}</span><br>${detail}<br><span style="opacity:.7">Batas wilayah, bukan titik pekerjaan</span></div>`;
+              const barisKecamatan = precision === "Kecamatan" ? "" : `<span>Kec. ${district}</span><br>`;
+              return `<div style="line-height:1.45"><strong>${title}</strong><br>${barisKecamatan}${detail}<br><span style="opacity:.7">Batas wilayah, bukan titik pekerjaan</span></div>`;
             },
             { sticky: true, direction: "top", opacity: 0.96 },
           );
           layer.on("click", (event: L.LeafletMouseEvent) => {
             L.DomEvent.stopPropagation(event.originalEvent);
             const key = areaKey(feature, precision);
-            const aggregate = (precision === "RW" ? statsRef.current.rw : statsRef.current.kel).get(key);
+            const aggregate = statsFor(precision).get(key);
             const properties = feature.properties ?? {};
             const region: ClickedRegion = {
               district: typeof properties.wadmkc === "string" ? properties.wadmkc : null,
-              village: typeof properties.wadmkd === "string" ? properties.wadmkd : null,
+              village: precision === "Kecamatan" ? null : typeof properties.wadmkd === "string" ? properties.wadmkd : null,
               rw: precision === "RW" && typeof properties.rw === "string" ? properties.rw : null,
               precision,
             };
@@ -384,13 +448,16 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
 
     rwLayer.current = makeLayer(rwBoundary, "RW");
     kelLayer.current = makeLayer(kelBoundary, "Kelurahan");
+    kecLayer.current = makeLayer(kecBoundary, "Kecamatan");
     workIconLayer.current = L.layerGroup();
-    updateAreaLayer(rwLayer.current, "RW", statsRef.current.rw, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.rw);
-    updateAreaLayer(kelLayer.current, "Kelurahan", statsRef.current.kel, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.kel);
+    updateAreaLayer(rwLayer.current, "RW", statsRef.current.rw, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.rw, classesRef.current.rw);
+    updateAreaLayer(kelLayer.current, "Kelurahan", statsRef.current.kel, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.kel, classesRef.current.kel);
+    updateAreaLayer(kecLayer.current, "Kecamatan", statsRef.current.kec, selectedRef.current, selectedRegionRef.current, viewRef.current, bandsRef.current.kec, classesRef.current.kec);
     const syncLayer = () => {
-      const isRw = map.getZoom() >= RW_ZOOM;
-      const activeLayer = isRw ? rwLayer.current : kelLayer.current;
-      for (const layer of [rwLayer.current, kelLayer.current]) {
+      const zoom = map.getZoom();
+      const precision: BoundaryPrecision = zoom >= RW_ZOOM ? "RW" : zoom >= KEC_ZOOM ? "Kelurahan" : "Kecamatan";
+      const activeLayer = precision === "RW" ? rwLayer.current : precision === "Kelurahan" ? kelLayer.current : kecLayer.current;
+      for (const layer of [rwLayer.current, kelLayer.current, kecLayer.current]) {
         if (layer && map.hasLayer(layer) && layer !== activeLayer) map.removeLayer(layer);
       }
       if (activeLayer && !map.hasLayer(activeLayer)) activeLayer.addTo(map);
@@ -403,8 +470,7 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
         return;
       }
 
-      const precision = isRw ? "RW" : "Kelurahan";
-      const aggregates = isRw ? statsRef.current.rw : statsRef.current.kel;
+      const aggregates = statsFor(precision);
       activeLayer.eachLayer((featureLayer) => {
         const feature = (featureLayer as L.Layer & { feature?: BoundaryFeature }).feature;
         if (!feature || !("getBounds" in featureLayer)) return;
@@ -444,31 +510,46 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
       syncLayerRef.current = null;
       if (rwLayer.current) map.removeLayer(rwLayer.current);
       if (kelLayer.current) map.removeLayer(kelLayer.current);
+      if (kecLayer.current) map.removeLayer(kecLayer.current);
       if (workIconLayer.current) map.removeLayer(workIconLayer.current);
       rwLayer.current = null;
       kelLayer.current = null;
+      kecLayer.current = null;
       workIconLayer.current = null;
     };
-  }, [kelBoundary, map, rwBoundary]);
+  }, [kecBoundary, kelBoundary, map, rwBoundary]);
 
   useEffect(() => {
-    updateAreaLayer(rwLayer.current, "RW", areaStats.rw, selectedPackage, selectedRegion, view, bands.rw);
-    updateAreaLayer(kelLayer.current, "Kelurahan", areaStats.kel, selectedPackage, selectedRegion, view, bands.kel);
+    updateAreaLayer(rwLayer.current, "RW", areaStats.rw, selectedPackage, selectedRegion, view, bands.rw, classes.rw);
+    updateAreaLayer(kelLayer.current, "Kelurahan", areaStats.kel, selectedPackage, selectedRegion, view, bands.kel, classes.kel);
+    updateAreaLayer(kecLayer.current, "Kecamatan", areaStats.kec, selectedPackage, selectedRegion, view, bands.kec, classes.kec);
     syncLayerRef.current?.();
-  }, [areaStats, bands, selectedPackage, selectedRegion, view]);
+  }, [areaStats, bands, classes, selectedPackage, selectedRegion, view]);
 
   useEffect(() => {
     if (
       !selectedPackage ||
       selectedRegion?.villageSlug ||
-      (selectedPackage.presisi_peta !== "RW" && selectedPackage.presisi_peta !== "Kelurahan")
+      (selectedPackage.presisi_peta !== "RW" &&
+        selectedPackage.presisi_peta !== "Kelurahan" &&
+        selectedPackage.presisi_peta !== "Kecamatan")
     ) return;
     if (selectedPackage.presisi_peta === "RW" && !selectedPackage.unit_id) return;
     if (selectedPackage.presisi_peta === "Kelurahan" && !selectedPackage.desa_resmi) return;
-    const layer = selectedPackage.presisi_peta === "RW" ? rwLayer.current : kelLayer.current;
+    if (selectedPackage.presisi_peta === "Kecamatan" && !selectedPackage.kecamatan_resmi) return;
+    const precision: BoundaryPrecision =
+      selectedPackage.presisi_peta === "RW"
+        ? "RW"
+        : selectedPackage.presisi_peta === "Kelurahan"
+          ? "Kelurahan"
+          : "Kecamatan";
+    const layer = precision === "RW" ? rwLayer.current : precision === "Kelurahan" ? kelLayer.current : kecLayer.current;
     if (!layer) return;
-    const precision = selectedPackage.presisi_peta === "RW" ? "RW" : "Kelurahan";
-    const key = precision === "RW" ? normalize(selectedPackage.unit_id ?? "") : normalize(selectedPackage.desa_resmi);
+    const key = precision === "RW"
+      ? normalize(selectedPackage.unit_id ?? "")
+      : precision === "Kelurahan"
+        ? normalize(selectedPackage.desa_resmi)
+        : normalize(selectedPackage.kecamatan_resmi);
     if (!key) return;
     const matchingLayer = layer.getLayers().find((featureLayer) => {
       const feature = (featureLayer as L.Layer & { feature?: BoundaryFeature }).feature;
@@ -476,7 +557,7 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
     });
     if (matchingLayer && "getBounds" in matchingLayer) {
       const bounds = (matchingLayer as L.Polygon).getBounds();
-      const maxZoom = selectedPackage.presisi_peta === "RW" ? 15 : RW_ZOOM - 0.5;
+      const maxZoom = precision === "RW" ? 15 : precision === "Kelurahan" ? RW_ZOOM - 0.5 : KEC_ZOOM;
       if (bounds.isValid()) map.flyToBounds(bounds, { padding: [28, 28], maxZoom, duration: 0.7 });
     }
   }, [kelBoundary, map, rwBoundary, selectedPackage, selectedRegion]);
@@ -510,21 +591,35 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
 }
 
 export default function MapCanvas(props: MapCanvasProps) {
-  const [rwZoomed, setRwZoomed] = useState(false);
+  const [precision, setPrecision] = useState<BoundaryPrecision>("Kelurahan");
   const view: AreaView = props.viewMode;
   const areaStats = useMemo(() => statsByArea(props.packages), [props.packages]);
-  const bands = useMemo(() => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel) }), [areaStats]);
-  const activeBands = rwZoomed ? bands.rw : bands.kel;
-  const handlePrecisionChange = useMemo(() => (isRw: boolean) => setRwZoomed(isRw), []);
+  const bands = useMemo(
+    () => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel), kec: budgetBands(areaStats.kec) }),
+    [areaStats],
+  );
+  const activeBands = precision === "RW" ? bands.rw : precision === "Kelurahan" ? bands.kel : bands.kec;
+  const kecClasses = useMemo(() => quantileCountBands(areaStats.kec), [areaStats.kec]);
+  const classes = useMemo(
+    () => ({ rw: [...CLASSES] as ClassBand[], kel: [...CLASSES] as ClassBand[], kec: kecClasses }),
+    [kecClasses],
+  );
+  const activeClasses = precision === "Kecamatan" ? kecClasses : [...CLASSES];
+  const handlePrecisionChange = useMemo(
+    () => (next: BoundaryPrecision) => setPrecision(next),
+    [],
+  );
+  const wilayahLabel = precision === "RW" ? "RW" : precision === "Kelurahan" ? "kelurahan" : "kecamatan";
   const legendItems = props.viewMode === "work"
     ? ROAD_WORK_TYPES.map((category) => ({ fill: "transparent", label: ROAD_WORK_LABELS[category], icon: WORK_ICONS[category] }))
     : props.viewMode === "budget"
       ? [{ fill: "#F1F5F9", label: "Tanpa paket" }, ...activeBands]
-      : CLASSES;
+      : activeClasses;
   const hasSpecificRegion = Boolean(
     props.selectedPackage &&
       ((props.selectedPackage.presisi_peta === "RW" && props.selectedPackage.unit_id) ||
-        (props.selectedPackage.presisi_peta === "Kelurahan" && props.selectedPackage.desa_resmi)),
+        (props.selectedPackage.presisi_peta === "Kelurahan" && props.selectedPackage.desa_resmi) ||
+        (props.selectedPackage.presisi_peta === "Kecamatan" && props.selectedPackage.kecamatan_resmi)),
   );
 
   return (
@@ -543,11 +638,11 @@ export default function MapCanvas(props: MapCanvasProps) {
       />
       <MapSizeRefresh />
       <MapZoomPrecision onChange={handlePrecisionChange} />
-      <BoundaryLayers {...props} view={view} bands={bands} />
+      <BoundaryLayers {...props} view={view} bands={bands} classes={classes} />
       <div className="saksi-map-overlay pointer-events-none absolute top-3 right-3 z-[1000] max-w-[min(23rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
         <p>
           {props.selectedPackage && !hasSpecificRegion
-            ? `RUP ${props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah RW/kelurahan; peta tidak menandai area tertentu.`
+            ? `RUP ${props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah kecamatan/kelurahan/RW; peta tidak menandai area tertentu.`
             : props.viewMode === "budget"
               ? "Warna menunjukkan total pagu paket per wilayah; arahkan kursor untuk melihat jumlah paket."
               : props.viewMode === "work"
@@ -556,7 +651,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         </p>
       </div>
       <div className="saksi-map-overlay pointer-events-none absolute right-3 bottom-3 z-[1000] border border-border bg-white/95 p-3 text-xs text-foreground shadow-sm">
-        <p className="mb-2 font-bold">{props.viewMode === "budget" ? "Nilai anggaran per wilayah" : props.viewMode === "work" ? "Jenis pekerjaan" : "Paket per wilayah"}</p>
+        <p className="mb-2 font-bold">{props.viewMode === "budget" ? `Nilai anggaran per ${wilayahLabel}` : props.viewMode === "work" ? "Jenis pekerjaan" : `Paket per ${wilayahLabel}`}</p>
         <ul className="space-y-1.5">
           {legendItems.map((item) => {
             const Icon = "icon" in item ? item.icon : undefined;
@@ -579,6 +674,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         <div className="mt-2 max-w-52 space-y-1 border-t border-border pt-2 text-[10px] leading-4 text-muted-foreground">
           <p>{props.viewMode === "budget" ? "Warna menunjukkan total pagu; arahkan kursor untuk jumlah paket." : props.viewMode === "work" ? "Ikon menandai jenis paket yang tercatat; warna wilayah tetap netral." : "Warna menunjukkan jumlah paket pada tiap wilayah."}</p>
           <p>Perbesar untuk melihat RW. Paket yang hanya diketahui hingga kelurahan tidak dibagi ke RW.</p>
+          <p>Jauhkan peta untuk melihat batas kecamatan; angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi RW dan kelurahan.</p>
         </div>
       </div>
     </MapContainer>

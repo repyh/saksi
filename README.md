@@ -10,9 +10,11 @@ review, not proof of wrongdoing or a guarantee of government action.
 ## Current implementation
 
 - Landing page (`/`) with the audit overview, a sourced budget figure, and an interactive map.
-- Map (`/project`) as a **choropleth of official boundaries**: RW polygons (1,020) at zoom ≥ 12 and
-  kelurahan polygons (104) below that. No per-package pins — a package is tied to an area, never to a
-  work-site coordinate.
+- Map (`/project`) as a **choropleth of official boundaries**: kecamatan polygons (13, zoom < 11),
+  kelurahan polygons (104, zoom 11), and RW polygons (1,020, zoom ≥ 12). No per-package pins — a
+  package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
+  package anchored inside them, including RW- and kelurahan-precision packages, and use their own
+  quantile class breaks so 13 polygons do not all land in one colour.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
   The map shows only packages with a derived location by default; the 312 packages whose only
