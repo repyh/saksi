@@ -57,7 +57,7 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 - `/project` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
 - Kelurahan selection is **tri-state**: `null` = all kelurahan of the chosen kecamatan, an array = explicit subset, and an **empty array is invalid** — the picker stays open with a red warning, the list shows the empty message, and no request is sent. Never treat "none selected" as "all".
 - `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching packages are passed to the map.
-- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom. Switching level also sets a comfortable zoom (10 / 11 / 13) without moving the centre.
+- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom, and switching level does not change the current zoom either.
 - Kecamatan choropleth counts aggregate every package inside the kecamatan, including RW- and kelurahan-precision packages, and use quantile class breaks so 13 polygons do not collapse into one colour. Kelurahan/RW layers use the fixed classes 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
 - Basemap comes from one environment variable, `NEXT_PUBLIC_BASEMAP_URL` (default `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`). Attribution switches automatically for OpenStreetMap, CARTO, and Esri hosts, so changing the tile source does not silently break attribution.
 - `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state.
@@ -90,7 +90,7 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
 4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
 5. **Header metrics and provenance badges:** some counters are still constants and the `DATA RESMI (…)` / `SIMULASI PROTOTIPE` badges are not yet applied everywhere.
-6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 5 November 2026. `AGENTS.md` still states the zoom-based polygon rule; update it the next time that file is touched with approval.
+6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 5 November 2026.
 
 ## Working rules
 

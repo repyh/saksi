@@ -319,17 +319,7 @@ function MapSizeRefresh() {
   return null;
 }
 
-const LEVEL_ZOOM: Record<BoundaryPrecision, number> = { Kecamatan: 10, Kelurahan: 11, RW: 13 };
 const LEVEL_LABELS: Record<BoundaryPrecision, string> = { Kecamatan: "Kecamatan", Kelurahan: "Kelurahan", RW: "RW" };
-
-function PrecisionZoom({ precision }: { precision: BoundaryPrecision }) {
-  const map = useMap();
-  useEffect(() => {
-    const target = LEVEL_ZOOM[precision];
-    if (map.getZoom() !== target) map.setZoom(target);
-  }, [map, precision]);
-  return null;
-}
 
 function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectRegion, view, bands, classes, precision }: MapCanvasProps & { view: AreaView; bands: { rw: ReturnType<typeof budgetBands>; kel: ReturnType<typeof budgetBands>; kec: ReturnType<typeof budgetBands> }; classes: { rw: ClassBand[]; kel: ClassBand[]; kec: ClassBand[] }; precision: BoundaryPrecision }) {
   const map = useMap();
@@ -650,7 +640,6 @@ export default function MapCanvas(props: MapCanvasProps) {
         url={BASEMAP_URL}
       />
       <MapSizeRefresh />
-      <PrecisionZoom precision={precision} />
       <BoundaryLayers {...props} view={view} bands={bands} classes={classes} precision={precision} />
       <div className="saksi-map-overlay absolute top-3 left-14 z-[1000] flex overflow-hidden border border-border bg-white/95 shadow-sm">
         {(Object.keys(LEVEL_LABELS) as BoundaryPrecision[]).map((tingkat) => (
