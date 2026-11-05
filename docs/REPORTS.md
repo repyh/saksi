@@ -1,0 +1,168 @@
+# Road damage reports
+
+**Status (4 November 2026):** Prisma models, the report submission API, the authenticated account report-history API, and the `/laporan` submit interaction are implemented. The report migration is deployed to the configured Supabase project, and the private `report-evidence` Storage bucket has been created with WebP-only and 5 MiB object limits. A successful end-to-end submission from the UI still needs confirmation.
+
+This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
+
+## Current form and behavior
+
+The current form collects:
+
+- One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. It stays in browser memory for preview only.
+- One required damage category: pothole, crack, subsidence, standing water, blocked drainage, damaged bridge, or other.
+- Optional observed causes (multiple choices), coarse size, and a description of up to 500 characters.
+- An optional RW/kelurahan area, optionally determined from device location. Exact GPS coordinates are used to find the RW and then discarded.
+- An optional location landmark of up to 180 characters.
+- An optional RUP package reference. The current package candidate ranking is a UI aid, not proof of a contractual link.
+
+Photo sanitation removes embedded metadata; face and plate redaction remains a manual reporter check. The form keeps its fields and sanitized preview in page memory until the user chooses **Kirim laporan**. The final step now appears only after the API returns a receipt. The IndexedDB draft helper remains unwired.
+
+## Implemented schema and migration
+
+`prisma/schema.prisma` now includes `AdministrativeArea`, `RoadPackage`, `Report`, `ReportMedia`, `ReportPackageLink`, and `ReportStatusEvent`, plus the enums described below. The migration is `prisma/migrations/20261104150000_report_domain/migration.sql`. It creates an SRID 4326 PostGIS `MultiPolygon` column and GIST index, foreign keys, uniqueness constraints, and an append-only trigger for status events. Media metadata checks restrict records to sanitized WebP, dimensions up to 1024 px, and a maximum of 5 MiB.
+
+The API writes a package row on demand from the checked-in, server-only package snapshot when a RUP is selected. Area names are validated against the checked-in RW GeoJSON; until the area catalog is imported, the report stores validated area snapshots with a null area foreign key. The API, repository, photo sanitizer, and UI are implemented. On 4 November 2026, migrations `20261104130000_registration_invites` and `20261104150000_report_domain` were deployed to the configured Supabase project, and the report tables were verified as present. The private `report-evidence` bucket was also created and verified. These checks confirm setup, not a full report submission transaction from the browser.
+
+## Logical model
+
+Reports are created in the database only after an explicit submission. An unfinished draft stays on the device. Reports remain account-optional.
+
+```mermaid
+erDiagram
+  USER o|--o{ REPORT : optionally_submits
+  ADMINISTRATIVE_AREA o|--o{ REPORT : locates
+  REPORT ||--o{ REPORT_MEDIA : includes
+  REPORT ||--o| REPORT_PACKAGE_LINK : references
+  ROAD_PACKAGE o|--o{ REPORT_PACKAGE_LINK : referenced_by
+  REPORT ||--o{ REPORT_STATUS_EVENT : records
+  USER o|--o{ REPORT_STATUS_EVENT : reviews
+```
+
+### `Report`
+
+The submitted report and its current workflow state.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Internal identifier; never expose as the public lookup code. |
+| `publicCode` | random opaque string, unique | Unguessable receipt/reference; do not use a sequential database ID. |
+| `reporterUserId` | nullable FK to `User` | Optional account association. Set null if the account is deleted; reporting must not require an account. |
+| `status` | enum | `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_MORE_INFO`, `PUBLISHED`, `REJECTED`, `WITHDRAWN`, `ARCHIVED`. No server-side `DRAFT` state in v1. |
+| `damageType` | controlled code | One primary category selected by the reporter. Validate against a server-side allowlist. |
+| `observedCauses` | array of controlled codes | Zero or more reporter observations, not verified causes. |
+| `coarseSize` | nullable controlled code | `PALM`, `TIRE`, `OVER_1M2`; no inferred measurements. |
+| `description` | nullable text, max 500 chars | User-provided context. Treat as untrusted and potentially identifying. |
+| `areaId` | nullable FK to `AdministrativeArea` | Selected RW/kelurahan, if available. Null when only a package is referenced or location is unknown. |
+| `areaNameSnapshot` | nullable string | Preserve the displayed area label at submission time. |
+| `districtNameSnapshot` | nullable string | Preserve the displayed kecamatan. |
+| `rwCodeSnapshot` | nullable string | Preserve RW code where applicable. |
+| `areaDatasetVersion` | nullable string | Boundary dataset/version used to resolve the area. |
+| `locationSource` | enum | `MANUAL_AREA`, `DEVICE_RESOLVED_AREA`, `PACKAGE_REFERENCE_ONLY`, `UNKNOWN`. Never means exact GPS was saved. |
+| `locationHint` | nullable string, max 180 chars | Optional road/landmark text. Keep private until moderation; do not publish raw by default. |
+| `submittedAt` | timestamp | Submission time, separate from local draft timestamps. |
+| `createdAt`, `updatedAt` | timestamps | Database-managed. |
+
+Device coordinates are not part of this model. If a future product version supports a precise map pin, it needs a separate, explicit consent decision and a distinct sensitive-location permission.
+
+### `ReportMedia`
+
+Stores metadata and a private object-storage reference, never image bytes in Postgres.
+
+| Field | Proposed type | Notes |
+|---|---|---|
+| `id` | UUID | Internal media reference. |
+| `reportId` | unique FK to `Report` | One media record per report in v1. Report deletion is restricted while media metadata exists. |
+| `objectPath` | string, unique | Random object name in a private Supabase Storage bucket. Never derive it from the user filename or expose a public URL. |
+| `mediaType` | string | Server-detected normalized type; v1 accepts sanitized WebP only. |
+| `byteSize`, `width`, `height` | integer | Server-measured values, not client claims. |
+| `sanitizerVersion` | string | Identifies the server sanitation pipeline. |
+| `createdAt`, `retainedUntil`, `deletedAt` | timestamps | Retention period must be decided before upload is enabled. |
+
+V1 accepts at most one photo per report. Keep media in a separate table so a future increase does not change the report record. Store only the server-sanitized asset; discard the original. A client-sanitized image is still untrusted input and must be rechecked and re-encoded on the server.
+
+### `ReportPackageLink`
+
+An optional, user-selected reference to one package in v1. Use a separate relation so later linking multiple related packages does not require changing `Report`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Internal relation identifier. |
+| `reportId` | unique FK to `Report` | Enforces a maximum of one selected package for v1. |
+| `roadPackageId` | FK to `RoadPackage` | Stable internal package identifier. |
+| `rupSnapshot`, `packageNameSnapshot` | strings | Preserve what the reporter saw when selecting the package. |
+| `selectionSource` | enum | `PACKAGE_PAGE` or `CANDIDATE_LIST`; records how the user selected it, not match certainty. |
+| `createdAt` | timestamp | Link creation time. |
+
+The link means “used as a reference by the reporter.” It must not be presented as proof that the package caused, repaired, or is responsible for the reported condition.
+
+### `ReportStatusEvent`
+
+An append-only moderation history for staff actions and system transitions.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Event identifier. |
+| `reportId` | FK to `Report` | Report whose status changed. |
+| `actorUserId` | nullable FK to `User` | Null for an automated transition; staff actions require a signed-in account and permission. |
+| `fromStatus`, `toStatus` | enum | Record every transition; never overwrite history. |
+| `reason` | nullable text | Internal moderation note, never copied into public output automatically. |
+| `createdAt` | timestamp | Event time. |
+
+Community confirmations, contact details, and repair-outcome evidence are deliberately out of v1. They require separate privacy, abuse, and verification decisions rather than extra fields on `Report`.
+
+## Catalog prerequisites and limitations
+
+The models now exist, but their tables are empty and the application does not query them. Package search still reads a checked-in JSON snapshot, and RW boundaries come from static GeoJSON. Before reports can use these foreign keys:
+
+1. Create source-aware `RoadPackage` and `AdministrativeArea` catalogs in Supabase Postgres.
+2. Store administrative boundary geometry as PostGIS geometry with an explicit SRID and dataset provenance.
+3. Give packages and areas stable internal IDs; retain source identifiers and retrieval/version metadata.
+4. Use Prisma for ordinary fields and named, parameterized SQL/repository methods for PostGIS operations. Do not spread spatial SQL through route handlers.
+
+## Submission and upload boundary
+
+The implemented server-side flow is:
+
+```text
+POST /api/reports
+  -> route adapter parses bounded multipart input
+  -> ReportsApi validates the report and rate limits anonymous submissions
+  -> UploadController dispatches fixed purpose `report.photo`
+  -> server checks byte signature, limits, decodes and re-encodes
+  -> ReportPhotoHandler writes only sanitized WebP to private storage
+  -> report repository persists report, media metadata, package link, and status event
+  -> response returns an opaque receipt code
+```
+
+The browser must not choose a class/function to execute, write to Postgres, or receive a Supabase service-role key. The server derives the purpose handler from a fixed registry. Do not pass a raw Next.js `Request` into domain handlers. Multipart data is streamed through bounded parsing, with one image up to 10 MiB. The server checks decoded format/pixel limits, re-encodes to WebP at no more than 1024 px and 5 MiB, then writes to the configured private bucket. The request does not include exact coordinates.
+
+`GET /api/reports/mine` requires a valid Better Auth session and queries only rows whose `reporterUserId` equals that session's user ID. It returns the reporter's opaque receipt code, workflow status, damage category, submission time, coarse area snapshot, and optional RUP/package-name snapshot. It never returns media paths, image data, exact coordinates, location hints, report descriptions, or internal moderation notes. Responses use `Cache-Control: private, no-store`. Anonymous submissions remain unlinked and do not appear in an account's history.
+
+`Idempotency-Key` is required and must be a UUID v4. The database stores its SHA-256 hash, a canonical payload hash including the image bytes, and a five-minute processing lease. A matching retry returns the original receipt; a key reused with different content receives 409. Completed keys are retained for 24 hours. If storage succeeds but the report transaction fails, the server removes the staged object; failed cleanup leaves its private object path on the idempotency row for a later retry to clean up. There is not yet a scheduled orphan-cleanup job.
+
+`POST /api/reports` supports credentialed CORS only for exact origins in `CORS_ALLOWED_ORIGINS` (with `BETTER_AUTH_URL` as a fallback). `OPTIONS` handles preflight. Origins not on the allowlist are rejected. CORS is not authentication or CSRF protection; keep the allowlist narrow and hosting proxy IP headers sanitized. The API rate-limits all submissions to three per hour per hashed client IP using the existing database-backed `rateLimit` table. The authenticated user association is derived from the session; anonymous submission remains supported.
+
+The Supabase service-role key is server-only. Create/verify the dedicated private bucket with `bun run storage:reports:ensure`; this sets a 5 MiB object limit and allows only WebP. Keep the bucket private and do not add public/client read policies. Environment variables are listed in `.env.example`.
+
+Anonymous submissions need rate limits that do not require a real-world identity. Do not make raw IP addresses part of the report record. Use a short-lived, appropriately keyed abuse-control signal and document its retention separately.
+
+## Status and publication semantics
+
+- `SUBMITTED` means received by the system, not verified.
+- `UNDER_REVIEW` and `NEEDS_MORE_INFO` describe review workflow only.
+- `PUBLISHED` means a moderator approved the display of the report. It does not establish the claim as fact or guarantee government action.
+- `REJECTED`, `WITHDRAWN`, and `ARCHIVED` are not public by default.
+- “Resolved” should not be a report status until there is separate, sourced evidence of repair; track that as a future outcome record.
+
+Staff review, sensitive media access, publishing, and export must be separate permissions routed through `src/server/authorization/authority.ts`. Public report queries should expose only approved fields and coarse locations. Never publish storage object paths or private moderation notes.
+
+## Decisions still required before deployment or submission
+
+1. Whether published photos are public, blurred, or available only to staff.
+2. Retention duration for media and report text, plus account deletion and withdrawal behavior.
+3. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
+4. Which fields are public after moderation, especially the free-text landmark and description.
+5. Exact permission codes and staff bundles for review, media viewing, publication, and export.
+6. Anonymous submission quotas and the short-lived signal used to enforce them.
+
+Until these decisions are made, do not enable public photo access or publication. The application is configured to accept private submissions and authenticated reporter history; moderation, retention cleanup, public queries, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.

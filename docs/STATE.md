@@ -1,6 +1,6 @@
 # STATE — Kondisi Terkini Proyek SAKSI
 
-**Tanggal Pembaruan:** 1 November 2026
+**Tanggal Pembaruan:** 4 November 2026
 **Target Terdekat:** First Draft Submission (FDS) — **1 November 2026**
 **Kompetisi:** Web In Action (WIA) — MIA 2026 (KSM Multimedia UPN Veteran Jakarta)
 **Tema / Subtema:** *Designing Digital Futures – Powering Public Transparency* / **Civic Reporting & Accountability**
@@ -32,8 +32,8 @@ hanya **7%** paket menyebut nama ruas yang bisa dicocokkan, sementara **54,8%** 
 3. **Dua Layar Hidup** — sudah ada:
    - **Landing + peta audit (`/`, `/project`):** koroplet RW/kelurahan, filter tahun/kecamatan/jenis/
      tampilan, panel register paket.
-   - **Alur lapor (`/laporan`, `/laporan/paket/[rup]`):** 4 langkah, kategorisasi kerusakan oleh
-     pelapor, draf lokal di IndexedDB, tanpa unggah foto.
+   - **Alur lapor (`/laporan`, `/laporan/paket/[rup]`):** 4 langkah; submit memanggil API dengan
+     idempotency key, CORS allowlist, dan private Storage. Perlu deploy migration dan setup bucket.
 
 ---
 
@@ -68,8 +68,10 @@ Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota
   Nilai anggaran / Jenis pekerjaan), koroplet dua tingkat zoom (RW ≥ 12, kelurahan di bawahnya).
 - `src/app/api/packages/route.ts` → `src/server/packages/service.ts` → `snapshot-repository.ts`
   (server-only + type guard runtime).
-- `src/features/reports/components/report-prototype.tsx` — alur lapor; draf disimpan di IndexedDB
-  (`saksi-local-reports`); belum ada API submit.
+- `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
+  menyimpan metadata di Postgres dan foto WebP yang disanitasi ke bucket privat Supabase. Migration
+  report dan bucket `report-evidence` sudah diterapkan pada 4 November 2026; submit end-to-end dari UI
+  masih perlu dikonfirmasi.
 - `src/lib/prisma.ts` + `src/lib/auth.ts` — **opsional**: klien Prisma dibuat saat dipakai, route
   `/api/auth/*` menjawab `503` bila `DATABASE_URL` kosong, dan build tidak menuntut database. Registrasi
   `/register` memakai undangan email-bound, token hash, konsumsi atomik di hook Better Auth, dan API
@@ -86,9 +88,9 @@ Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota
 | **Peta & register** | Koroplet RW/kelurahan + register | Jalan: koroplet 2 tingkat, filter, register | Paginasi/limit API; mode "Jenis pekerjaan" masih ikon pin di centroid → ganti bentuk agregat |
 | **Metrik header** | Angka diturunkan dari data | Konstanta `DEFAULT_KOTA_TANGERANG_METRICS` (benar per 31 Okt) | Turunkan dari data + asersi saat build |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | Belum ada | Tambahkan di header peta dan halaman laporan |
-| **Supabase/PostGIS domain** | Model paket, laporan, geometri | PostGIS aktif; Prisma baru memodelkan auth | Definisikan model provenance + geometri |
+| **Supabase/PostGIS domain** | Katalog paket, wilayah, dan laporan | Migration auth, undangan, dan report sudah diterapkan; tabel report tersedia. Katalog paket/wilayah belum diimpor | Impor katalog bersumber sebelum mengganti repository snapshot |
 | **Scraper pemerintah/sosial** | Worker terjadwal terpisah | Belum ada | Tentukan akses, validasi, idempotensi, log |
-| **Lapor warga** | Draf lokal + submit bermoderasi | Draf IndexedDB; tanpa submit | Tetapkan privasi, moderasi, abuse control, retensi |
+| **Lapor jalan** | Submit bermoderasi dan opsional akun | API, idempotensi, CORS, model Prisma, dan bucket privat `report-evidence` sudah dikonfigurasi; submit end-to-end UI belum dikonfirmasi | Konfirmasi submit, lalu implementasi moderasi dan retensi di `docs/REPORTS.md` |
 | **Dokumentasi** | Selaras dengan kode | README & STATE diperbarui 1 Nov | `AGENTS.md` masih versi Kabupaten — selaraskan |
 
 ---

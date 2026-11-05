@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchRoadPackages } from "@/features/map/package-api";
+import { localFileIntakeController } from "@/features/uploads/lib/local-file-intake.controller";
+import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib/report-photo.handler";
+import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
+import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
 import { FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
 
 const STEPS = ["Foto", "Kerusakan", "Lokasi & paket", "Sukses"] as const;
@@ -19,8 +23,29 @@ const DAMAGE_TYPES = [
 ] as const;
 const CAUSE_OPTIONS = ["Dilalui kendaraan berat", "Tidak ada drainase", "Genangan berulang", "Lalu lintas padat", "Bahan tidak sesuai", "Tidak tahu"] as const;
 const SIZE_OPTIONS = ["Setelapak tangan", "Sebesar ban", "Lebih dari 1 m²"] as const;
+const DAMAGE_CODES: Record<(typeof DAMAGE_TYPES)[number]["label"], ReportDamageType> = {
+  Lubang: "POTHOLE",
+  Retak: "CRACK",
+  Amblas: "SUBSIDENCE",
+  Genangan: "STANDING_WATER",
+  "Drainase mampet": "BLOCKED_DRAINAGE",
+  "Jembatan rusak": "DAMAGED_BRIDGE",
+  Lainnya: "OTHER",
+};
+const CAUSE_CODES: Record<(typeof CAUSE_OPTIONS)[number], ReportObservedCause> = {
+  "Dilalui kendaraan berat": "HEAVY_VEHICLE",
+  "Tidak ada drainase": "NO_DRAINAGE",
+  "Genangan berulang": "RECURRING_FLOODING",
+  "Lalu lintas padat": "HEAVY_TRAFFIC",
+  "Bahan tidak sesuai": "UNSUITABLE_MATERIAL",
+  "Tidak tahu": "UNKNOWN",
+};
+const SIZE_CODES: Record<(typeof SIZE_OPTIONS)[number], ReportCoarseSize> = {
+  "Setelapak tangan": "PALM",
+  "Sebesar ban": "TIRE",
+  "Lebih dari 1 m²": "OVER_1M2",
+};
 
-type LocalPhoto = { file: File; previewUrl: string };
 type AreaGeometry = {
   type: "Polygon" | "MultiPolygon";
   coordinates: number[][][] | number[][][][];
@@ -87,8 +112,9 @@ function formatBudget(value: number) {
 
 export default function ReportPrototype({ initialPackage = null }: { initialPackage?: RoadPackageItem | null }) {
   const [step, setStep] = useState(0);
-  const [photo, setPhoto] = useState<LocalPhoto | null>(null);
+  const [photo, setPhoto] = useState<LocalReportPhoto | null>(null);
   const [photoError, setPhotoError] = useState("");
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [damageType, setDamageType] = useState<string>("");
   const [observedCauses, setObservedCauses] = useState<string[]>([]);
   const [coarseSize, setCoarseSize] = useState<string>("");
@@ -103,8 +129,15 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
   const [candidateError, setCandidateError] = useState<{ areaId: string; message: string } | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialPackage);
+  const [packageSelectionSource, setPackageSelectionSource] = useState<"PACKAGE_PAGE" | "CANDIDATE_LIST" | null>(initialPackage ? "PACKAGE_PAGE" : null);
+  const [locationSource, setLocationSource] = useState<"MANUAL_AREA" | "DEVICE_RESOLVED_AREA">("MANUAL_AREA");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [receiptCode, setReceiptCode] = useState("");
+  const idempotencyKey = useRef<string | null>(null);
+  const invalidateSubmissionKey = () => { idempotencyKey.current = null; };
   const selectedArea = areas.find((area) => area.id === areaId) ?? null;
-  const canAdvance = step === 0 ? photo !== null : step === 1 ? damageType.length > 0 : step === 2 ? selectedArea !== null || selectedPackage !== null : false;
+  const canAdvance = step === 0 ? photo !== null && !isProcessingPhoto : step === 1 ? damageType.length > 0 : step === 2 ? (selectedArea !== null || selectedPackage !== null) && !isSubmitting : false;
   const currentCandidateError = selectedArea && candidateError?.areaId === selectedArea.id ? candidateError.message : "";
   const candidatesLoading = Boolean(selectedArea && !currentCandidateError && candidateAreaId !== selectedArea.id);
   const rankedCandidates = selectedArea && candidateAreaId === selectedArea.id
@@ -178,18 +211,20 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
     };
   }, [photo?.previewUrl]);
 
-  function choosePhoto(file?: File) {
+  async function choosePhoto(file?: File) {
     setPhotoError("");
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setPhotoError("Pilih file gambar seperti JPG, PNG, atau WebP.");
-      return;
+
+    setIsProcessingPhoto(true);
+    try {
+      const cleanPhoto = await localFileIntakeController.dispatch(file, reportPhotoPolicy, handleReportPhoto);
+      setPhoto(cleanPhoto);
+      invalidateSubmissionKey();
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "Foto tidak dapat diproses di perangkat ini.");
+    } finally {
+      setIsProcessingPhoto(false);
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setPhotoError("Ukuran foto maksimal 10 MB.");
-      return;
-    }
-    setPhoto({ file, previewUrl: URL.createObjectURL(file) });
   }
 
   function useMyLocation() {
@@ -210,8 +245,11 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
           setLocationMessage(`Lokasi berada di ${match.village}, RW ${match.rw}, Kecamatan ${match.district}.`);
         }
         setAreaId(match.id);
+        setLocationSource("DEVICE_RESOLVED_AREA");
+        invalidateSubmissionKey();
       } else {
         setAreaId("");
+        invalidateSubmissionKey();
         setSelectedPackage(null);
         setLocationMessage("Lokasi berada di luar batas RW pada data peta. Pilih desa/RW secara manual.");
       }
@@ -222,6 +260,50 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
         : "Lokasi belum dapat dibaca. Coba lagi atau pilih desa/RW secara manual.");
       setLocating(false);
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  }
+
+  async function submitReport() {
+    if (!photo || !damageType || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError("");
+    const key = idempotencyKey.current ?? crypto.randomUUID();
+    idempotencyKey.current = key;
+
+    const body = new FormData();
+    body.set("photo", photo.file, "report-photo.webp");
+    body.set("damageType", DAMAGE_CODES[damageType as keyof typeof DAMAGE_CODES]);
+    observedCauses.forEach((cause) => body.append("observedCauses", CAUSE_CODES[cause as keyof typeof CAUSE_CODES]));
+    if (coarseSize) body.set("coarseSize", SIZE_CODES[coarseSize as keyof typeof SIZE_CODES]);
+    if (description.trim()) body.set("description", description.trim());
+    if (selectedArea) {
+      body.set("areaKey", selectedArea.id);
+      body.set("locationSource", locationSource);
+    }
+    if (landmark.trim()) body.set("locationHint", landmark.trim());
+    if (selectedPackage) {
+      body.set("packageRup", selectedPackage.kode_rup);
+      body.set("packageSelectionSource", packageSelectionSource ?? "CANDIDATE_LIST");
+    }
+
+    try {
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Idempotency-Key": key },
+        body,
+        credentials: "same-origin",
+      });
+      const result = await response.json() as {
+        data: { code: string; status: "SUBMITTED" } | null;
+        error: { message: string; code: string } | null;
+      };
+      if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Laporan belum dapat dikirim. Coba lagi.");
+      setReceiptCode(result.data.code);
+      setStep(3);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Laporan belum dapat dikirim. Coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -269,13 +351,13 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                   <FiArrowLeft aria-hidden="true" />
                   Kembali
                 </button>
-                {step === 3 && <span id="back-locked-tip" role="tooltip" className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 w-64 bg-foreground px-3 py-2 text-xs leading-5 text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Laporan sudah disiapkan. Mockup ini belum disubmit.</span>}
+                {step === 3 && <span id="back-locked-tip" role="tooltip" className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 w-64 bg-foreground px-3 py-2 text-xs leading-5 text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Laporan sudah dikirim.</span>}
               </span>
               <div className="flex items-center justify-end gap-2 sm:gap-4">
                 <span className="whitespace-nowrap text-xs text-muted-foreground">Langkah {step + 1} dari {STEPS.length}</span>
                 {step < STEPS.length - 1 ? (
-                  <button type="button" onClick={() => setStep((current) => Math.min(STEPS.length - 1, current + 1))} aria-describedby="advance-requirement" disabled={!canAdvance} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:gap-3 sm:px-5">
-                    Lanjut <FiArrowRight aria-hidden="true" />
+                  <button type="button" onClick={() => step === 2 ? void submitReport() : setStep((current) => Math.min(2, current + 1))} aria-describedby="advance-requirement" disabled={!canAdvance} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:gap-3 sm:px-5">
+                    {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
                   </button>
                 ) : (
                   <Link href="/project" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
@@ -284,9 +366,11 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                 )}
               </div>
               <span id="advance-requirement" className="sr-only">
-                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Lanjut ke konfirmasi." : "Pilih desa/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
+                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Kirim laporan untuk menyelesaikan pengiriman." : "Pilih desa/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
               </span>
             </div>
+
+            {submitError && step === 2 && <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-sm leading-5 text-foreground">{submitError}</p>}
 
             <section aria-labelledby="step-heading" className="pt-7 sm:pt-8">
               {step === 0 && (
@@ -300,10 +384,12 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                       <Image src={photo.previewUrl} alt="Pratinjau foto kerusakan yang dipilih" width={360} height={144} unoptimized className="h-36 w-full bg-muted object-cover sm:h-32" />
                       <div className="flex min-w-0 items-center justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{photo.file.name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{(photo.file.size / (1024 * 1024)).toFixed(1)} MB · hanya dipratinjau di halaman ini</p>
+                          <p className="truncate text-sm font-semibold text-foreground">Foto siap ditinjau</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {(photo.file.size / (1024 * 1024)).toFixed(1)} MB · {photo.width} × {photo.height} px
+                          </p>
                         </div>
-                        <button type="button" onClick={() => setPhoto(null)} aria-label="Hapus foto pilihan" className="flex size-11 shrink-0 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+                        <button type="button" onClick={() => { setPhoto(null); invalidateSubmissionKey(); }} aria-label="Hapus foto pilihan" className="flex size-11 shrink-0 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
                           <FiX aria-hidden="true" />
                         </button>
                       </div>
@@ -314,7 +400,9 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                         <FiCamera className="size-5" aria-hidden="true" />
                       </span>
                       <span className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</span>
-                      <span className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">Pratinjau foto muncul di sini. File tidak diunggah atau disimpan dalam simulasi ini.</span>
+                      <span className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
+                        {isProcessingPhoto ? "Memproses dan menghapus metadata di perangkat…" : "Foto dinormalisasi di perangkat. File tidak diunggah atau disimpan dalam simulasi ini."}
+                      </span>
                       <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors group-hover:bg-[#004682]">
                         <FiImage aria-hidden="true" />
                         Pilih foto
@@ -324,8 +412,13 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         capture="environment"
+                        disabled={isProcessingPhoto}
                         className="sr-only"
-                        onChange={(event) => choosePhoto(event.currentTarget.files?.[0])}
+                        onChange={(event) => {
+                          const input = event.currentTarget;
+                          void choosePhoto(input.files?.[0]);
+                          input.value = "";
+                        }}
                         aria-describedby="photo-help photo-error"
                       />
                     </label>
@@ -346,7 +439,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     <div className="grid gap-2 sm:grid-cols-2">
                       {DAMAGE_TYPES.map((type) => (
                         <label key={type.label} className={`flex min-h-[76px] cursor-pointer items-start gap-3 border px-3 py-3 transition-colors focus-within:outline-2 focus-within:outline-primary ${damageType === type.label ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted/45"}`}>
-                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => setDamageType(type.label)} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
+                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => { setDamageType(type.label); invalidateSubmissionKey(); }} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
                           <span className="min-w-0">
                             <span className="block text-sm font-bold leading-5">{type.label}</span>
                             <span className={`mt-0.5 block text-xs leading-4 ${damageType === type.label ? "text-white/80" : "text-muted-foreground"}`}>{type.detail}</span>
@@ -365,7 +458,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                             <input
                               type="checkbox"
                               checked={checked}
-                              onChange={() => setObservedCauses((current) => checked ? current.filter((item) => item !== cause) : [...current, cause])}
+                              onChange={() => { setObservedCauses((current) => checked ? current.filter((item) => item !== cause) : [...current, cause]); invalidateSubmissionKey(); }}
                               className="size-3.5 accent-[#0058A3]"
                             />
                             {cause}
@@ -379,14 +472,14 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     <div className="mt-2.5 flex flex-wrap gap-2">
                       {SIZE_OPTIONS.map((size) => (
                         <label key={size} className={`inline-flex min-h-10 cursor-pointer items-center gap-2 border px-3 text-xs font-medium transition-colors focus-within:outline-2 focus-within:outline-primary ${coarseSize === size ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted/45"}`}>
-                          <input type="radio" name="coarse-size" value={size} checked={coarseSize === size} onChange={() => setCoarseSize(size)} className="size-3.5 accent-[#0058A3]" />
+                          <input type="radio" name="coarse-size" value={size} checked={coarseSize === size} onChange={() => { setCoarseSize(size); invalidateSubmissionKey(); }} className="size-3.5 accent-[#0058A3]" />
                           {size}
                         </label>
                       ))}
                     </div>
                   </fieldset>
                   <label htmlFor="report-description" className="mt-6 block text-sm font-semibold text-foreground">Keterangan tambahan <span className="font-normal text-muted-foreground">(opsional)</span></label>
-                  <textarea id="report-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={4} maxLength={500} placeholder="Contoh: kerusakan berada di dekat persimpangan…" className="mt-2 w-full resize-y border border-input bg-white px-3 py-2.5 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
+                  <textarea id="report-description" value={description} onChange={(event) => { setDescription(event.target.value); invalidateSubmissionKey(); }} rows={4} maxLength={500} placeholder="Contoh: kerusakan berada di dekat persimpangan…" className="mt-2 w-full resize-y border border-input bg-white px-3 py-2.5 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
                   <p className="mt-1 text-right text-xs tabular-nums text-muted-foreground">{description.length}/500</p>
                 </>
               )}
@@ -402,7 +495,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                         <span className="block font-bold">Paket rujukan dari peta · RUP {selectedPackage.kode_rup}</span>
                         <span className="mt-0.5 block">{selectedPackage.nama}</span>
                       </p>
-                      <button type="button" onClick={() => setSelectedPackage(null)} className="min-h-8 shrink-0 px-2 text-xs font-semibold text-primary transition-colors hover:bg-white/70 focus-visible:outline-2 focus-visible:outline-primary">Hapus tautan</button>
+                      <button type="button" onClick={() => { setSelectedPackage(null); setPackageSelectionSource(null); invalidateSubmissionKey(); }} className="min-h-8 shrink-0 px-2 text-xs font-semibold text-primary transition-colors hover:bg-white/70 focus-visible:outline-2 focus-visible:outline-primary">Hapus tautan</button>
                     </div>
                   )}
 
@@ -412,8 +505,11 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                       <select id="report-area" value={areaId} onChange={(event) => {
                         const nextArea = areas.find((area) => area.id === event.target.value) ?? null;
                         setAreaId(event.target.value);
+                        setLocationSource("MANUAL_AREA");
+                        invalidateSubmissionKey();
                         if (selectedPackage && nextArea && !packageMatchesArea(selectedPackage, nextArea)) {
                           setSelectedPackage(null);
+                          setPackageSelectionSource(null);
                           setLocationMessage("Paket rujukan dilepas karena wilayahnya berbeda dari lokasi laporan.");
                         } else {
                           setLocationMessage("");
@@ -429,7 +525,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     </button>
                   </div>
                   <label htmlFor="report-landmark" className="mt-4 block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Patokan lokasi (opsional) — nama jalan, kampung, RT/RW</label>
-                  <input id="report-landmark" value={landmark} onChange={(event) => setLandmark(event.target.value)} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
+                  <input id="report-landmark" value={landmark} onChange={(event) => { setLandmark(event.target.value); invalidateSubmissionKey(); }} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
                   <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; tidak diunggah.</p>
 
                   {locationMessage && <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{locationMessage}</p>}
@@ -472,7 +568,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                                     <span className="mt-1 block text-xs leading-5 text-muted-foreground">{formatBudget(item.pagu)} · {item.bulan} · {item.presisi_peta}</span>
                                     <span className="mt-1 block font-mono text-[10px] text-muted-foreground">RUP {item.kode_rup}</span>
                                   </span>
-                                  <button type="button" onClick={() => setSelectedPackage(active ? null : item)} aria-pressed={active} className={`min-h-9 shrink-0 px-2.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${active ? "bg-primary text-white hover:bg-[#004682]" : "text-primary hover:bg-primary/10"}`}>
+                                  <button type="button" onClick={() => { setSelectedPackage(active ? null : item); setPackageSelectionSource(active ? null : "CANDIDATE_LIST"); invalidateSubmissionKey(); }} aria-pressed={active} className={`min-h-9 shrink-0 px-2.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${active ? "bg-primary text-white hover:bg-[#004682]" : "text-primary hover:bg-primary/10"}`}>
                                     {active ? "Dipilih" : "Pilih"}
                                   </button>
                                 </div>
@@ -494,14 +590,12 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     <FiCheckCircle aria-hidden="true" className="size-8" />
                   </span>
                   <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">04 · Sukses</p>
-                  <h2 id="step-heading" className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground sm:text-3xl">Laporan berhasil disiapkan</h2>
+                  <h2 id="step-heading" className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground sm:text-3xl">Laporan berhasil dikirim</h2>
                   <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-                    {selectedArea
-                      ? "Wilayah dan rincian kerusakan yang dipilih sudah tercantum dalam ringkasan. Anda masih dapat memeriksanya sebelum keluar."
-                      : `RUP ${selectedPackage?.kode_rup} menjadi rujukan, tetapi lokasi kerusakan belum dipilih. Tidak ada RW tertentu yang ditandai.`}
+                    Laporan sudah diterima untuk ditinjau. Rujukan paket, bila dipilih, hanya mencatat pilihan Anda dan bukan bukti bahwa paket menyebabkan kerusakan.
                   </p>
-                  <p className="mt-6 border-l-4 border-secondary bg-white px-4 py-3 text-left text-sm font-semibold leading-5 text-foreground">
-                    masih mockup &amp; belum disubmit
+                  <p className="mt-6 bg-white px-4 py-3 text-sm leading-5 text-foreground">
+                    Nomor tanda terima <span className="font-mono font-bold">{receiptCode}</span>
                   </p>
                 </div>
               )}
@@ -522,8 +616,9 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
               <SummaryRow label="Patokan" value={landmark || "Tidak diisi"} />
               <SummaryRow label="Paket" value={selectedPackage ? `RUP ${selectedPackage.kode_rup}` : "Belum ditautkan"} />
             </dl>
-            <div className="mt-4 bg-muted/50 p-3">
-              <p className="text-sm font-semibold leading-5 text-foreground">masih mockup &amp; belum disubmit</p>
+            <div className="mt-4 bg-muted/50 p-3" role="status">
+              <p className="text-sm font-semibold leading-5 text-foreground">{step === 3 ? "Laporan diterima" : "Belum dikirim"}</p>
+              {step === 3 && <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{receiptCode}</p>}
             </div>
           </aside>
         </div>

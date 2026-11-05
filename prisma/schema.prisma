@@ -7,6 +7,71 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_MORE_INFO
+  PUBLISHED
+  REJECTED
+  WITHDRAWN
+  ARCHIVED
+}
+
+enum ReportDamageType {
+  POTHOLE
+  CRACK
+  SUBSIDENCE
+  STANDING_WATER
+  BLOCKED_DRAINAGE
+  DAMAGED_BRIDGE
+  OTHER
+}
+
+enum ReportObservedCause {
+  HEAVY_VEHICLE
+  NO_DRAINAGE
+  RECURRING_FLOODING
+  HEAVY_TRAFFIC
+  UNSUITABLE_MATERIAL
+  UNKNOWN
+}
+
+enum ReportCoarseSize {
+  PALM
+  TIRE
+  OVER_1M2
+}
+
+enum ReportLocationSource {
+  MANUAL_AREA
+  DEVICE_RESOLVED_AREA
+  PACKAGE_REFERENCE_ONLY
+  UNKNOWN
+}
+
+enum ReportPackageSelectionSource {
+  PACKAGE_PAGE
+  CANDIDATE_LIST
+}
+
+enum ReportIdempotencyStatus {
+  PROCESSING
+  COMPLETED
+}
+
+enum AdministrativeAreaLevel {
+  RW
+  KELURAHAN
+  KECAMATAN
+}
+
+enum RoadLocationPrecision {
+  RW
+  KELURAHAN
+  KECAMATAN
+  KABUPATEN
+}
+
 model User {
   id            String    @id
   name          String
@@ -25,6 +90,8 @@ model User {
   invitesCreated RegistrationInvite[]       @relation("RegistrationInviteCreator")
   invitesRedeemed RegistrationInvite[]      @relation("RegistrationInviteRedeemer")
   invitesRevoked RegistrationInvite[]        @relation("RegistrationInviteRevoker")
+  reportsSubmitted Report[]                 @relation("ReportSubmitter")
+  reportStatusEvents ReportStatusEvent[]    @relation("ReportStatusActor")
 }
 
 model Session {
@@ -170,4 +237,155 @@ model RegistrationInvite {
   @@index([createdByUserId, createdAt])
   @@index([redeemedByUserId])
   @@index([revokedByUserId])
+}
+
+model AdministrativeArea {
+  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stableKey          String                   @unique @map("stable_key") @db.VarChar(180)
+  level              AdministrativeAreaLevel
+  districtName       String                   @map("district_name") @db.VarChar(160)
+  villageName        String?                  @map("village_name") @db.VarChar(160)
+  rwCode             String?                  @map("rw_code") @db.VarChar(32)
+  geometry           Unsupported("geometry(MultiPolygon, 4326)")
+  sourceName         String                   @map("source_name") @db.VarChar(120)
+  sourceFeatureId    String?                  @map("source_feature_id") @db.VarChar(120)
+  datasetVersion     String                   @map("dataset_version") @db.VarChar(120)
+  sourceRetrievedAt  DateTime                 @map("source_retrieved_at") @db.Timestamptz(6)
+  isActive           Boolean                  @default(true) @map("is_active")
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reports            Report[]
+
+  @@index([level, isActive])
+  @@index([districtName, villageName, rwCode])
+  @@map("administrative_areas")
+}
+
+model RoadPackage {
+  id                 String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rup                String                    @unique @db.VarChar(32)
+  year               Int
+  name               String                    @db.Text
+  agencyName         String                    @map("agency_name") @db.Text
+  budget             Decimal                   @db.Decimal(20, 0)
+  method             String                    @db.Text
+  sourceName         String                    @map("source_name") @db.VarChar(120)
+  sourceUrl          String?                   @map("source_url") @db.Text
+  sourceRetrievedAt  DateTime                  @map("source_retrieved_at") @db.Timestamptz(6)
+  datasetVersion     String                    @map("dataset_version") @db.VarChar(120)
+  datasetChecksum    String?                   @map("dataset_checksum") @db.VarChar(128)
+  locationPrecision  RoadLocationPrecision    @map("location_precision")
+  officialDistrict   String?                   @map("official_district") @db.VarChar(160)
+  officialVillage    String?                   @map("official_village") @db.VarChar(160)
+  rwCode             String?                   @map("rw_code") @db.VarChar(32)
+  microLocation      String?                   @map("micro_location") @db.Text
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reportLinks        ReportPackageLink[]
+
+  @@index([year])
+  @@index([officialDistrict, officialVillage, rwCode])
+  @@map("road_packages")
+}
+
+model Report {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publicCode            String                  @unique @map("public_code") @db.VarChar(64)
+  reporterUserId        String?                 @map("reporter_user_id")
+  status                ReportStatus            @default(SUBMITTED)
+  damageType            ReportDamageType         @map("damage_type")
+  observedCauses        ReportObservedCause[]   @default([]) @map("observed_causes")
+  coarseSize            ReportCoarseSize?       @map("coarse_size")
+  description           String?                 @db.VarChar(500)
+  areaId                String?                 @map("area_id") @db.Uuid
+  areaNameSnapshot      String?                 @map("area_name_snapshot") @db.VarChar(160)
+  districtNameSnapshot  String?                 @map("district_name_snapshot") @db.VarChar(160)
+  rwCodeSnapshot        String?                 @map("rw_code_snapshot") @db.VarChar(32)
+  areaDatasetVersion    String?                 @map("area_dataset_version") @db.VarChar(120)
+  locationSource        ReportLocationSource    @default(UNKNOWN) @map("location_source")
+  locationHint          String?                 @map("location_hint") @db.VarChar(180)
+  submittedAt           DateTime                @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reporter              User?                   @relation("ReportSubmitter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  area                  AdministrativeArea?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  media                 ReportMedia?
+  packageLink           ReportPackageLink?
+  statusEvents          ReportStatusEvent[]
+  idempotencyKey        ReportIdempotencyKey?
+
+  @@index([status, submittedAt])
+  @@index([areaId, submittedAt])
+  @@index([reporterUserId, submittedAt])
+  @@map("reports")
+}
+
+model ReportMedia {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId          String    @unique @map("report_id") @db.Uuid
+  objectPath        String    @unique @map("object_path") @db.VarChar(512)
+  mediaType         String    @default("image/webp") @map("media_type") @db.VarChar(80)
+  byteSize          Int       @map("byte_size")
+  width             Int
+  height            Int
+  sanitizerVersion  String    @map("sanitizer_version") @db.VarChar(80)
+  retainedUntil     DateTime? @map("retained_until") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  report            Report    @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  @@index([retainedUntil])
+  @@map("report_media")
+}
+
+model ReportPackageLink {
+  id                  String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId            String                     @unique @map("report_id") @db.Uuid
+  roadPackageId       String                     @map("road_package_id") @db.Uuid
+  rupSnapshot         String                     @map("rup_snapshot") @db.VarChar(32)
+  packageNameSnapshot String                     @map("package_name_snapshot") @db.Text
+  selectionSource     ReportPackageSelectionSource @map("selection_source")
+  createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  report              Report                     @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  roadPackage         RoadPackage                @relation(fields: [roadPackageId], references: [id], onDelete: Restrict)
+
+  @@index([roadPackageId])
+  @@map("report_package_links")
+}
+
+model ReportStatusEvent {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId     String        @map("report_id") @db.Uuid
+  actorUserId  String?       @map("actor_user_id")
+  fromStatus   ReportStatus? @map("from_status")
+  toStatus     ReportStatus  @map("to_status")
+  reason       String?       @db.VarChar(1000)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  report       Report        @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  actor        User?         @relation("ReportStatusActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([reportId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("report_status_events")
+}
+
+model ReportIdempotencyKey {
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  keyHash          String                  @unique @map("key_hash") @db.VarChar(64)
+  requestHash      String                  @map("request_hash") @db.VarChar(64)
+  attemptId        String                  @map("attempt_id") @db.Uuid
+  status           ReportIdempotencyStatus @default(PROCESSING)
+  stagedObjectPath String?                 @map("staged_object_path") @db.VarChar(512)
+  reportId         String?                 @unique @map("report_id") @db.Uuid
+  responseCode     String?                 @map("response_code") @db.VarChar(64)
+  leaseExpiresAt   DateTime                @map("lease_expires_at") @db.Timestamptz(6)
+  expiresAt        DateTime                @map("expires_at") @db.Timestamptz(6)
+  completedAt      DateTime?               @map("completed_at") @db.Timestamptz(6)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  report           Report?                 @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([status, leaseExpiresAt])
+  @@index([expiresAt])
+  @@map("report_idempotency_keys")
 }

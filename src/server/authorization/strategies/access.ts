@@ -8,6 +8,7 @@ import type { AuthorizationStrategy } from "../types";
 
 const accessPermissions = [
   "access.users.read",
+  "access.users.edit",
   "access.users.invite",
   "access.users.disable",
   "access.bundles.assign",

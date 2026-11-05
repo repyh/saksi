@@ -11,6 +11,7 @@ export const PERMISSION_CATALOG = [
   { code: "analytics.read", description: "View aggregate analytics", sensitive: false },
   { code: "analytics.export", description: "Export aggregate analytics", sensitive: true },
   { code: "access.users.read", description: "View staff accounts and access state", sensitive: true },
+  { code: "access.users.edit", description: "Update staff account profile details", sensitive: true },
   { code: "access.users.invite", description: "Invite staff accounts", sensitive: true },
   { code: "access.users.disable", description: "Disable staff accounts and revoke sessions", sensitive: true },
   { code: "access.bundles.assign", description: "Grant or revoke approved permission bundles", sensitive: true },
@@ -52,17 +53,8 @@ export const PERMISSION_BUNDLES = [
   {
     code: "admin",
     name: "Admin",
-    description: "Manage staff access, audit history, and approved data operations.",
-    permissions: [
-      "access.users.read",
-      "access.users.invite",
-      "access.users.disable",
-      "access.bundles.assign",
-      "access.audit.read",
-      "sources.read",
-      "sources.review_import",
-      "sources.publish_snapshot",
-    ],
+    description: "Full access to every permission in the SAKSI catalog.",
+    permissions: PERMISSION_CATALOG.map(({ code }) => code),
   },
 ] as const satisfies ReadonlyArray<{
   code: string;

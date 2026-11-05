@@ -13,9 +13,11 @@ export abstract class ApiController {
   protected async respond<T>(
     operation: () => Promise<T>,
     unexpectedError: UnexpectedError,
+    successStatus = 200,
+    mapUnexpectedError?: (error: unknown) => ApiError | undefined,
   ): Promise<Response> {
     try {
-      return apiSuccess(await operation());
+      return apiSuccess(await operation(), successStatus);
     } catch (error) {
       if (error instanceof AuthorizationError) {
         return apiFailure(
@@ -28,6 +30,9 @@ export abstract class ApiController {
       if (error instanceof ApiError) {
         return apiFailure(error.code, error.message, error.status);
       }
+
+      const mappedError = mapUnexpectedError?.(error);
+      if (mappedError) return apiFailure(mappedError.code, mappedError.message, mappedError.status);
 
       return apiFailure(unexpectedError.code, unexpectedError.message, 500);
     }

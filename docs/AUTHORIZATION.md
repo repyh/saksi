@@ -1,6 +1,6 @@
 # SAKSI Authorization Design
 
-**Status:** Authorization foundation implemented. No report or administration routes currently call the guards, so business workflows remain unprotected/unavailable until those routes are added. The migration and seed have not been applied to Supabase.
+**Status:** Authorization foundation and catalog are implemented, with the migration deployed and catalog seeded to the configured Supabase project on 4 November 2026. Account listing, display-name edits, and invite creation are permission guarded. Account disable/delete controls remain non-functional mockups; report moderation and data-operations workflows are not available yet.
 **Scope:** Staff access to moderation, analytics, data operations, and account administration.
 
 This document defines a permission catalog for SAKSI. Every authenticated account is a `User`; there is no default `user` role. Users receive no staff access unless an administrator grants one or more permission bundles. Public map browsing and the planned anonymous report-submission path do not require an account.
@@ -10,7 +10,7 @@ This document defines a permission catalog for SAKSI. Every authenticated accoun
 1. **Authentication and authorization are separate.** Better Auth establishes who is signed in. SAKSI's server-side authorization layer decides what that account may do.
 2. **Deny by default.** A user with no active grants has no staff permissions.
 3. **Permissions name actions.** Avoid broad flags such as `isAdmin`, `isModerator`, or `canManageReports`.
-4. **Bundles are additive.** A person may receive both Moderator and Admin bundles. Admin access does not automatically grant access to sensitive report evidence.
+4. **Bundles are additive.** A person may receive one or more bundles. The Admin bundle intentionally includes every permission in the catalog, including moderation and sensitive evidence permissions; Analyst and Moderator remain narrower bundles.
 5. **Sensitive access is explicit.** Reading original photos, exact locations, or exporting records requires separate permissions.
 6. **Every grant and sensitive action is auditable.** Permission checks and UI visibility do not replace audit records for changes or consequential actions.
 7. **Public reporting stays account-optional.** Do not collect a real-world identity as a condition of submitting a report. If an authenticated user chooses to associate an account, that relation is optional.
@@ -46,6 +46,7 @@ The permission catalog is the complete set of actions that the application may g
 | Permission code | Allows | Boundary |
 |---|---|---|
 | `access.users.read` | View staff account list and access state | Do not expose authentication secrets or session tokens |
+| `access.users.edit` | Update staff display name and non-sensitive profile details | Email changes require address verification |
 | `access.users.invite` | Create or invite staff accounts | Invitation does not imply a permission bundle |
 | `access.users.disable` | Disable staff access and revoke active sessions | Record actor, subject, reason, and time |
 | `access.bundles.assign` | Grant or revoke approved bundles for another account | Grants follow the explicit source-controlled delegation policy; no self-grant |
@@ -59,7 +60,7 @@ The permission catalog is the complete set of actions that the application may g
 | `sources.review_import` | Review a completed import and its validation summary | Does not edit official source records directly |
 | `sources.publish_snapshot` | Publish an approved normalized snapshot | Requires a recorded review and source provenance |
 
-The current project has no report-submission API, persistent report records, or scraper operations console. These permissions describe future server-side actions; they do not make those features available by themselves.
+Report submission and private evidence storage have an API and persistent records. Moderation queue, status changes, assignments, audit review UI, and scraper operations workflows still need their own server-side handlers and permission checks before those catalog entries enable them.
 
 ## 3. Permission bundles
 
@@ -69,9 +70,9 @@ Bundles are reusable collections of permission codes. Bundle names are convenien
 |---|---|---|
 | `analyst` | `reports.read_queue`, `reports.read_deidentified`, `analytics.read` | Analyze report patterns without access to original evidence or exact location |
 | `moderator` | `reports.read_queue`, `reports.read_deidentified`, `reports.read_sensitive_evidence`, `reports.read_precise_location`, `reports.assign`, `reports.change_status`, `reports.add_internal_note`, `reports.redact` | Review and moderate reports |
-| `admin` | `access.users.read`, `access.users.invite`, `access.users.disable`, `access.bundles.assign`, `access.audit.read`, `sources.read`, `sources.review_import`, `sources.publish_snapshot` | Manage staff access and approved data operations |
+| `admin` | Every permission code in `PERMISSION_CATALOG`, including all Moderator permissions and sensitive evidence/export permissions | Full system access |
 
-The `admin` bundle deliberately does not include report-evidence permissions. An account that needs both access administration and report review receives both `admin` and `moderator`. `reports.export` and `analytics.export` are excluded from the starter bundles and must be granted only after their use and safeguards are defined.
+The `admin` bundle derives its permission list from `PERMISSION_CATALOG`, so it receives newly added permissions when the authorization catalog is reseeded. This is an intentional superuser grant. Use Analyst or Moderator for narrower access. `reports.export` and `analytics.export` are available to Admin because the bundle is full access; they remain excluded from the narrower starter bundles.
 
 There is no `user` bundle. A user with no rows in `UserBundleGrant` has no staff privileges. Anonymous visitors are not represented in the auth tables.
 
@@ -172,7 +173,7 @@ src/server/authorization/
 
 Strategies may add resource-level checks and return obligations such as a de-identified projection as those workflows are built. Routes must not call strategy modules directly. Features without protected operations should not get placeholder strategies until there is a real policy to enforce.
 
-The current strategies require de-identified report access alongside report actions and sensitive reads; analytics export also requires analytics read. Access bundle assignment is governed by `BUNDLE_ASSIGNMENT_POLICY`, currently allowing the Admin bundle to assign the built-in Analyst, Moderator, and Admin bundles. This delegation is separate from data permissions: an Admin can grant Moderator access without personally receiving the Moderator evidence permissions. No direct self-grant is allowed.
+The current strategies require de-identified report access alongside report actions and sensitive reads; analytics export also requires analytics read. Access bundle assignment is governed by `BUNDLE_ASSIGNMENT_POLICY`, currently allowing the Admin bundle to assign the built-in Analyst, Moderator, and Admin bundles. Admin already has all catalog permissions; bundle assignment remains audited and a user cannot grant a bundle to themselves. No direct self-grant is allowed.
 
 ## 6. Authorization checks
 
@@ -185,7 +186,7 @@ The current strategies require de-identified report access alongside report acti
 7. **Audit grants, revocations, exports, redactions, and status changes.** Write the audit event in the same transaction as the consequential mutation where possible.
 8. **Keep permission caches short-lived or invalidatable.** Revocation must take effect promptly, including for existing sessions.
 9. **Protect the last administrator path.** The current revoke operation prevents removing a user's last active grant that includes `access.bundles.assign`. A global administrator-count check, account disabling controls, and out-of-band recovery process remain future work.
-10. **Do not permit self-escalation.** A user cannot grant bundles or permissions to themselves or edit system bundle definitions. Delegation is a separate authority from the permissions being delegated: `access.bundles.assign` can assign only the built-in bundles explicitly listed in `BUNDLE_ASSIGNMENT_POLICY` in the source catalog. This lets an access administrator assign a Moderator bundle without gaining the moderator's evidence permissions.
+10. **Do not permit self-escalation.** A user cannot grant bundles or permissions to themselves or edit system bundle definitions. Delegation is a separate authority from the permissions being delegated: `access.bundles.assign` can assign only the built-in bundles explicitly listed in `BUNDLE_ASSIGNMENT_POLICY` in the source catalog. Admin has the full catalog by design; narrower accounts still cannot self-grant or edit system bundles.
 
 ## 7. Better Auth boundary
 
@@ -208,7 +209,7 @@ Implemented foundation:
 
 Still required before staff features are usable:
 
-1. Review and apply the migration in the intended database, then seed the catalog. This has not been run against Supabase.
+1. Verify or run `bun run db:seed:authorization` against the intended database so the permission and bundle catalog is populated.
 2. Add guarded administration endpoints for account lookup and bundle grant/revoke, and add staff route handlers using `requireRequestPermission()`.
 3. Add audit events in the same transaction as any sensitive report operation. Currently only bundle grants/revocations and bootstrap are audited.
 4. Add tests for permission resolution, grant boundaries, expiry, revocation, and authorization failures before exposing the workflows.

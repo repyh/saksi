@@ -1,12 +1,154 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiArrowUpRight, FiBriefcase, FiEdit2, FiFileText, FiLogOut, FiMap, FiX } from "react-icons/fi";
+import { FiArrowUpRight, FiBriefcase, FiEdit2, FiFileText, FiLogOut, FiMap, FiRefreshCw, FiX } from "react-icons/fi";
 import type { DashboardAccount } from "@/contracts/account/dashboard.contract";
+import type { ApiResult } from "@/contracts/shared/api.contract";
+import { myReportsResponseSchema, type MyReportSummary, type MyReportsResponse } from "@/contracts/reports/report-history.contract";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { AccountManagement } from "@/features/dashboard/components/account-management";
+
+const damageTypeLabels: Record<MyReportSummary["damageType"], string> = {
+  POTHOLE: "Lubang",
+  CRACK: "Retak",
+  SUBSIDENCE: "Amblas",
+  STANDING_WATER: "Genangan",
+  BLOCKED_DRAINAGE: "Drainase mampet",
+  DAMAGED_BRIDGE: "Jembatan rusak",
+  OTHER: "Lainnya",
+};
+
+const reportStatusLabels: Record<MyReportSummary["status"], string> = {
+  SUBMITTED: "Menunggu peninjauan",
+  UNDER_REVIEW: "Sedang ditinjau",
+  NEEDS_MORE_INFO: "Perlu informasi tambahan",
+  PUBLISHED: "Disetujui untuk ditampilkan",
+  REJECTED: "Tidak disetujui",
+  WITHDRAWN: "Ditarik",
+  ARCHIVED: "Diarsipkan",
+};
+
+function formatReportDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "long",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(value));
+}
+
+function MyReports({ active }: { active: boolean }) {
+  const [reports, setReports] = useState<MyReportsResponse["reports"]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadedRefreshKey, setLoadedRefreshKey] = useState<number | null>(null);
+  const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const isLoading = active && loadedRefreshKey !== refreshKey && !error;
+
+  useEffect(() => {
+    if (!active || loadedRefreshKey === refreshKey) return;
+
+    const controller = new AbortController();
+
+    void fetch("/api/reports/mine", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    }).then(async (response) => {
+      const result = await response.json() as ApiResult<unknown>;
+      if (!response.ok || result.error) {
+        throw new Error(result.error?.message ?? "Riwayat laporan belum dapat dimuat.");
+      }
+      const parsed = myReportsResponseSchema.safeParse(result.data);
+      if (!parsed.success) throw new Error("Format riwayat laporan tidak dikenali.");
+      setReports(parsed.data.reports);
+      setHasLoaded(true);
+      setLoadedRefreshKey(refreshKey);
+    }).catch((cause: unknown) => {
+      if (cause instanceof DOMException && cause.name === "AbortError") return;
+      setError(cause instanceof Error ? cause.message : "Riwayat laporan belum dapat dimuat.");
+    });
+
+    return () => controller.abort();
+  }, [active, loadedRefreshKey, refreshKey]);
+
+  return (
+    <>
+      <div className="mt-2 flex min-h-[400px] flex-col px-0 py-2">
+        {isLoading && !hasLoaded ? (
+          <div role="status" className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Memuat laporan…</div>
+        ) : error ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 text-center">
+            <span className="flex size-14 items-center justify-center bg-muted text-primary"><FiFileText aria-hidden="true" className="size-6" /></span>
+            <h3 className="mt-5 font-heading text-lg font-bold">Riwayat laporan belum dapat dimuat</h3>
+            <p role="alert" className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{error}</p>
+            <button
+              type="button"
+              onClick={() => { setError(""); setRefreshKey((value) => value + 1); }}
+              className="mt-5 inline-flex min-h-10 cursor-pointer items-center gap-2 border border-border px-4 text-sm font-bold transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <FiRefreshCw aria-hidden="true" className="size-4" /> Coba lagi
+            </button>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 text-center">
+            <span className="flex size-14 items-center justify-center bg-muted text-primary"><FiFileText aria-hidden="true" className="size-6" /></span>
+            <h3 className="mt-5 font-heading text-lg font-bold">Belum ada laporan dari akun ini</h3>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+              Laporan yang dikirim saat masuk akan tercatat di sini. Laporan anonim tidak terhubung ke akun.
+            </p>
+            <Link
+              href="/laporan"
+              className="mt-6 inline-flex min-h-11 items-center gap-3 bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Buat laporan <FiArrowUpRight aria-hidden="true" className="size-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="flex-1">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">{reports.length} laporan</p>
+              <button
+                type="button"
+                onClick={() => { setError(""); setRefreshKey((value) => value + 1); }}
+                disabled={isLoading}
+                className="inline-flex min-h-9 cursor-pointer items-center gap-2 px-3 text-xs font-bold text-primary transition-colors hover:bg-muted disabled:cursor-wait disabled:opacity-60"
+              >
+                <FiRefreshCw aria-hidden="true" className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                Perbarui
+              </button>
+            </div>
+            <ul className="grid gap-3">
+              {reports.map((report) => {
+                const area = [report.areaName, report.districtName].filter(Boolean).join(" · ");
+                return (
+                  <li key={report.publicCode} className="border border-primary/25 bg-muted/35 px-4 py-4 sm:px-5">
+                    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                      <div className="min-w-0">
+                        <p className="font-heading text-sm font-bold leading-5">{damageTypeLabels[report.damageType]}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{formatReportDate(report.submittedAt)}</p>
+                      </div>
+                      <span className="inline-flex min-h-7 items-center bg-primary/8 px-2.5 text-[11px] font-bold text-primary">{reportStatusLabels[report.status]}</span>
+                    </div>
+                    {(area || report.package) && (
+                      <div className="mt-3 grid gap-2 border-t border-border/70 pt-3 text-sm sm:grid-cols-2">
+                        {area && <p className="min-w-0 leading-5 text-muted-foreground">{area}</p>}
+                        {report.package && <p className="min-w-0 leading-5 text-muted-foreground"><span className="font-semibold text-foreground">RUP {report.package.rup}</span><span className="block truncate text-xs">{report.package.name}</span></p>}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 const workspaces = [
   {
@@ -31,6 +173,9 @@ const workspaces = [
 
 export function DashboardTabs({ account }: { account: DashboardAccount }) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("workspace");
+  const hasAccountManagementAccess = account.dashboardPermissions.manageAccounts;
+  const hasReportModerationAccess = account.dashboardPermissions.moderateReports;
   const [name, setName] = useState(account.name);
   const [email, setEmail] = useState(account.email);
   const [editingField, setEditingField] = useState<"name" | "email" | null>(null);
@@ -124,7 +269,7 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
   }
 
   return (
-    <Tabs defaultValue="workspace" orientation="horizontal" className="min-w-0">
+    <Tabs value={activeTab} onValueChange={(value) => value && setActiveTab(value)} orientation="horizontal" className="min-w-0">
       <TabsList aria-label="Bagian dashboard" className="flex h-auto w-full justify-start gap-2 overflow-x-auto border-b border-border bg-transparent p-0">
           <TabsTrigger value="workspace" className="h-12 shrink-0 rounded-none border-b-[3px] border-transparent bg-transparent px-4 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[active]:border-secondary data-[active]:bg-transparent data-[active]:text-primary">
             Telusuri
@@ -135,12 +280,22 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
           <TabsTrigger value="account" className="h-12 shrink-0 rounded-none border-b-[3px] border-transparent bg-transparent px-4 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[active]:border-secondary data-[active]:bg-transparent data-[active]:text-primary">
             Akun Saya
           </TabsTrigger>
+          {hasReportModerationAccess && (
+            <TabsTrigger value="report-moderation" className="h-12 shrink-0 cursor-pointer rounded-none border-b-[3px] border-transparent bg-orange-50 px-4 text-xs text-orange-800 transition-colors hover:bg-orange-100 hover:text-orange-900 data-[active]:border-orange-600 data-[active]:bg-orange-50 data-[active]:text-orange-900">
+              Review Laporan
+            </TabsTrigger>
+          )}
+          {hasAccountManagementAccess && (
+            <TabsTrigger value="account-management" className="h-12 shrink-0 cursor-pointer rounded-none border-b-[3px] border-transparent bg-red-50 px-4 text-xs text-red-800 transition-colors hover:bg-red-100 hover:text-red-900 data-[active]:border-red-700 data-[active]:bg-red-50 data-[active]:text-red-900">
+              Manajemen akun
+            </TabsTrigger>
+          )}
       </TabsList>
 
       <div className="mt-6 grid min-h-[440px] min-w-0 gap-6 lg:grid-cols-[minmax(270px,0.72fr)_minmax(0,1.8fr)] lg:gap-8">
         <div className="min-w-0 self-start">
           <aside aria-label="Informasi akun" className="flex min-h-[220px] h-fit flex-col bg-primary p-5 text-white sm:min-h-[250px] sm:p-7">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-secondary">Akun aktif</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-secondary">Akun Anda</p>
             <h2 className="mt-6 font-heading text-2xl leading-tight font-bold tracking-[-0.025em] sm:mt-8 sm:text-[27px]">
               {account.name}
             </h2>
@@ -185,22 +340,7 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
 
         <TabsContent value="reports" className="m-0">
           <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Laporan Saya</h2>
-          <div className="mt-4 flex min-h-[400px] flex-col items-center justify-center border-t border-border px-4 py-12 text-center">
-            <span className="flex size-14 items-center justify-center bg-muted text-primary">
-              <FiFileText aria-hidden="true" className="size-6" />
-            </span>
-            <h3 className="mt-5 font-heading text-lg font-bold">Riwayat laporan belum tersedia</h3>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-              Formulir laporan masih berupa prototipe dan belum menyimpan kiriman ke akun atau server.
-            </p>
-            <Link
-              href="/laporan"
-              className="mt-6 inline-flex min-h-11 items-center gap-3 bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              Buat laporan
-              <FiArrowUpRight aria-hidden="true" className="size-4" />
-            </Link>
-          </div>
+          <MyReports active={activeTab === "reports"} />
         </TabsContent>
 
         <TabsContent value="account" className="m-0">
@@ -329,6 +469,23 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
             )}
           </div>
         </TabsContent>
+
+        {hasAccountManagementAccess && (
+          <TabsContent value="account-management" className="m-0">
+            <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Manajemen akun</h2>
+            <AccountManagement canInvite={account.dashboardPermissions.inviteAccounts} canEdit={account.dashboardPermissions.editAccounts} />
+          </TabsContent>
+        )}
+
+        {hasReportModerationAccess && (
+          <TabsContent value="report-moderation" className="m-0">
+            <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Review Laporan</h2>
+            <div className="mt-4 bg-orange-50 px-5 py-4 text-orange-950">
+              <p className="text-sm font-bold">Akses moderator terdeteksi</p>
+              <p className="mt-1 text-sm leading-6 text-orange-900/80">Antrian peninjauan laporan belum tersedia.</p>
+            </div>
+          </TabsContent>
+        )}
       </section>
       </div>
     </Tabs>

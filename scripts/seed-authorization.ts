@@ -73,7 +73,7 @@ async function seedAuthorization() {
         },
       });
     }
-  });
+  }, { timeout: 30_000 });
 }
 
 try {

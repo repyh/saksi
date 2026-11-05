@@ -11,7 +11,7 @@ SAKSI uses one repository with two deployment boundaries:
 
 The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because Leaflet requires browser interaction.
 
-This decision supersedes the older FDS instruction to load the JSON directly from the browser. The existing snapshot remains the current source; no package or report tables have been invented as part of this boundary refactor.
+This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines package, administrative-area, and report persistence models; the database migrations are deployed, but package/area catalogs are not populated and package search does not yet query those tables.
 
 ## System context
 
@@ -29,7 +29,7 @@ flowchart LR
   Ingest --> Postgres
 ```
 
-The dotted Supabase path is planned. The current package search does not query Supabase. Prisma and Better Auth are present, and PostGIS is enabled, but the Prisma schema currently contains only Better Auth's models.
+The dotted Supabase package-search path is planned. The current package search does not query Supabase. Prisma and Better Auth are present, and PostGIS is enabled. Authentication, authorization, registration-invitation, and report migrations have been deployed to the configured Supabase project; package and administrative-area catalogs are not yet populated.
 
 ## Boundaries and ownership
 
@@ -71,21 +71,21 @@ The endpoint returns all matching package rows because the current map and list 
 
 - Supabase is the managed PostgreSQL host. PostGIS is enabled in the `extensions` schema.
 - Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation.
-- The Prisma schema defines Better Auth, authorization, and registration-invitation tables, but does not yet define road packages, provenance, official measurements, reports, moderation, or ingestion-run records.
+- The Prisma schema defines Better Auth, authorization, registration-invitation, road-package, administrative-area, and report tables. The migrations are deployed; provenance fields exist on package/area models, while ingestion-run records and official measurement series remain undefined.
 - Browser code must not connect directly to Postgres or receive database credentials or a Supabase service-role key.
 - Use Prisma for ordinary reads/writes. Put complex spatial operations behind named repository methods and parameterized SQL; do not spread raw GIS SQL across route handlers or UI code.
 
 ### Authorization authority
 
-`src/server/authorization/authority.ts` is the server-only decision entry point. It resolves active grants and dispatches each permission to a domain strategy registered in `registry.ts`; Better Auth supplies identity and sessions, while SAKSI bundle grants determine staff access. Domain policy lives in `strategies/reports.ts`, `analytics.ts`, `access.ts`, and `sources.ts`. The central authority owns authentication, deny-by-default behavior, and consistent denials. Strategies own domain prerequisites and access-specific grant/revoke operations. No account has an implicit role or permissions. Grants and revocations are persisted and audited, while permission definitions and built-in bundle membership remain source controlled. The invite issue/revoke endpoints consume `access.users.invite`; broader staff routes remain unimplemented. The authorization and invite migrations have not been applied to Supabase. See [AUTHORIZATION.md](./AUTHORIZATION.md) for the permission catalog, bundle boundaries, and rollout status.
+`src/server/authorization/authority.ts` is the server-only decision entry point. It resolves active grants and dispatches each permission to a domain strategy registered in `registry.ts`; Better Auth supplies identity and sessions, while SAKSI bundle grants determine staff access. Domain policy lives in `strategies/reports.ts`, `analytics.ts`, `access.ts`, and `sources.ts`. The central authority owns authentication, deny-by-default behavior, and consistent denials. Strategies own domain prerequisites and access-specific grant/revoke operations. No account has an implicit role or permissions. Grants and revocations are persisted and audited, while permission definitions and built-in bundle membership remain source controlled. The invite issue/revoke endpoints consume `access.users.invite`; broader staff routes remain unimplemented. Migrations are deployed, but authorization catalog seeding should be verified. See [AUTHORIZATION.md](./AUTHORIZATION.md) for the permission catalog, bundle boundaries, and rollout status.
 
-Better Auth applies a database-backed IP rate limit to email/password sign-in and sign-up: at most five requests per minute per client IP. This is shared across web instances through the `rateLimit` table. Apply the `20261104110000_auth_rate_limit` migration before enabling authentication against Supabase. Ensure the hosting proxy supplies a sanitized client IP header; without one, requests share a per-route bucket and can throttle unrelated users together.
+Better Auth applies a database-backed IP rate limit to email/password sign-in and sign-up: at most five requests per minute per client IP. This is shared across web instances through the deployed `rateLimit` table. Ensure the hosting proxy supplies a sanitized client IP header; without one, requests share a per-route bucket and can throttle unrelated users together.
 
-`/register` is invite-gated by a Better Auth user-creation hook. Tokens are random, email-bound, hashed at rest, single-use, and consumed in the same transaction as account creation. Permission-checked issuance and revocation are exposed through `AccessApi`. Migration `20261104130000_registration_invites` must be deployed before this works against Supabase. See [SECURITY.md](./SECURITY.md) for the security behavior and rollout gaps.
+`/register` is invite-gated by a Better Auth user-creation hook. Tokens are random, email-bound, hashed at rest, single-use, and consumed in the same transaction as account creation. Permission-checked issuance and revocation are exposed through `AccessApi`. Migration `20261104130000_registration_invites` is deployed. See [SECURITY.md](./SECURITY.md) for the security behavior and rollout gaps.
 
 ### Reports
 
-The report draft contract and IndexedDB store are browser-side foundations. They deliberately omit photo bytes. A report submission API, persistent report model, moderation states, and retention policy are not implemented yet. Keep image metadata removal and manual privacy redaction on-device before any future submission.
+The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries for the dashboard; it omits private media references, exact coordinates, location hints, descriptions, and moderation notes. The migration and bucket are configured in Supabase; an end-to-end submission from the browser remains unconfirmed. Moderation, retention cleanup, and public report queries are not implemented. Faces and plates require a manual reporter check. See [REPORTS.md](./REPORTS.md) for setup and remaining decisions.
 
 ### Scrapers
 
@@ -127,9 +127,9 @@ The contract types are shared across the UI and route. Query parameters are vali
 ## Proposed evolution
 
 1. **Now — snapshot-backed BFF:** Keep the existing dataset unchanged; all package access goes through the server repository and API contract.
-2. **Supabase domain model:** Define source provenance, normalized road packages and location precision first; then migrate the repository from the snapshot adapter to Prisma/PostGIS. Keep the contract stable where possible.
+2. **Supabase domain model:** Review and deploy the checked-in PostGIS/report-domain migration to the intended Supabase project, import source-aware package and boundary catalogs, then migrate the repository from the snapshot adapter to Prisma/PostGIS. Keep the contract stable where possible.
 3. **Independent ingestion:** Add the two scheduled workers and an ingestion boundary with restricted credentials, idempotency, validation, and run history.
-4. **Reports:** Finalize privacy, moderation, abuse controls, and retention before adding report persistence.
+4. **Reports:** Apply the report migration, create the private bucket, then complete privacy, moderation, abuse-control, and retention decisions in [REPORTS.md](./REPORTS.md) before enabling public report access or publication.
 5. **Scale map queries:** Separate paginated register results from minimal map features and query spatial features by viewport.
 
 Each stage should be independently deployable and should not require UI components to know which repository implementation supplies the data.

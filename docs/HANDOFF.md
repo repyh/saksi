@@ -1,10 +1,10 @@
 # SAKSI — Developer Handoff
 
-**Updated:** 1 November 2026
+**Updated:** 4 November 2026
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `master`
+**Branch:** `feat/lpse-pemenang`
 **Baseline commit:** `0acb378` (`Add map search and reporting flow`)
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow.
@@ -22,8 +22,8 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
 | `/project` | Peta Pekerjaan | Full-viewport map and package list with year, district, work-type, and map-view filters; compact search sits beside the filtered/total package count. Selecting a package opens the right detail panel. |
 | `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, map view, and search. Package routes include the RUP and a readable name slug. |
-| `/laporan/` | Laporkan Jalan | Four-step **mockup**: photo, damage, location/package, success. It does not submit or persist a report. The success state says “masih mockup & belum disubmit”. |
-| `/laporan/paket/[rup]` | Report with a package reference | Opens the report mockup with the matching package preselected as a reference. |
+| `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
+| `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
 | `/api/packages` | Package search API | Validates filter/search parameters and returns an `ApiResult` response. |
 
 There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
@@ -38,7 +38,7 @@ Browser filters ─> GET /api/packages ─────┘
 
 - `src/app/**` owns routes, server-rendered page entry points, and HTTP route handlers.
 - `src/features/map/**` owns map UI, filter/search state, URL selection state, and rendering. Leaflet stays client-side.
-- `src/features/reports/**` owns the local, non-submitting report mockup.
+- `src/features/reports/**` owns report form state and browser-side photo preview sanitation. The submit endpoint persists accepted reports after the user explicitly submits.
 - `src/app/api/packages/route.ts` validates HTTP query input; it should not contain SQL or scraping logic.
 - `src/server/packages/**` owns package search and the repository implementation. The current `snapshot-repository.ts` is server-only and reads the checked-in Kota Tangerang JSON.
 - `src/contracts/**` owns DTOs shared between client and server.
@@ -53,7 +53,9 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 - `/project` filter query parameters are `tahun`, `jenis`, `tampilan`, and `q`. The API uses `year`, `district`, `work`, and `q`; the dashboard translates between them.
 - `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching package features are passed to the map.
 - `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and map legends. Selecting a region updates the district filter; clicking a non-region clears that selection. A package with broad location precision should show an explanatory note instead of a fabricated specific-region highlight.
-- `src/features/reports/components/report-prototype.tsx` holds report data in component state only. Photo preview uses a local object URL and is not uploaded or persisted. The success step is a confirmation of the mock flow, not a submission receipt.
+- `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state. The browser sanitizes the preview, and the server re-sanitizes before private storage.
+- `src/app/api/reports/route.ts` enforces the configured CORS origin allowlist and delegates to `ReportsApi`. The server streams bounded multipart data, validates the photo and area/RUP, enforces an idempotency key and database-backed rate limit, stores sanitized WebP in private Supabase Storage, and writes report metadata in one transaction.
+- `GET /api/reports/mine` is session-authenticated and returns only the current account's report summaries. It omits image references, exact coordinates, location hints, descriptions, and moderation notes; the dashboard's **Laporan Saya** tab consumes this endpoint.
 - The report’s candidate package list is currently matched against the selected RW/village using the loaded geographic data and package fields. Do not describe it as an authoritative contract-to-road match.
 
 ## Current stack and local commands
@@ -70,12 +72,12 @@ bun run lint
 bun run build
 ```
 
-Database commands are available (`bun run db:generate`, `bun run db:migrate`, `bun run db:deploy`, `bun run db:status`), but package/report domain tables are not currently implemented. Do not run migrations against production as part of ordinary UI work.
+Database commands are available (`bun run db:generate`, `bun run db:migrate`, `bun run db:deploy`, `bun run db:status`). Authentication, authorization, invite, and report migrations were deployed to the configured Supabase project on 4 November 2026; report tables were verified. Road-package and administrative-area catalogs remain unpopulated, so package search still uses the checked-in snapshot. Do not run migrations against production as part of ordinary UI work.
 
 ## Known gaps and next implementation decisions
 
-1. **Report persistence:** The report route is still a UI mockup. Before submission is implemented, decide privacy processing, consent, abuse controls, moderation/status states, retention, and what data is public. Do not imply that a report has been sent.
-2. **Spatial/package domain model:** Define source provenance, location precision, and PostGIS geometry semantics before replacing the snapshot adapter with Prisma queries. Keep package DTOs stable where possible.
+1. **Report persistence:** Prisma models, deployed migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` Storage bucket, and authenticated account history are implemented. End-to-end UI submission remains to be confirmed. Moderation, retention cleanup, and public queries remain unimplemented; see `docs/REPORTS.md`.
+2. **Spatial/package domain model:** Review and deploy the model/migration, import source-provenanced package and area catalogs, and define repository queries before replacing the snapshot adapter. Keep package DTOs stable where possible.
 3. **Scrapers:** Government website and official/public social-source collectors need separate adapters and schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Determine an allowed X access method before building that collector. Social posts are not official records.
 4. **Map scale:** The current API and map pass all filtered package rows; the list only displays the first 120. Introduce separate paginated list and viewport-bounded map-feature queries when scale requires it.
 5. **Documentation consistency:** `docs/STATE.md`, `README.md`, and some sections in `docs/SPEC.md` still contain older Kabupaten Tangerang, FDS, route, and implementation-status language. Treat the code and this handoff as the latest implementation status; reconcile those documents when their respective scope is next edited.

@@ -8,4 +8,10 @@ export type DashboardAccount = {
     description: string;
     expiresAtLabel: string | null;
   }>;
+  dashboardPermissions: {
+    manageAccounts: boolean;
+    moderateReports: boolean;
+    inviteAccounts: boolean;
+    editAccounts: boolean;
+  };
 };

@@ -7,4 +7,8 @@ export const createRegistrationInviteSchema = z.object({
   reason: z.string().trim().min(8).max(500),
 });
 
+export const updateAccountProfileSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+
 export type CreateRegistrationInviteInput = z.infer<typeof createRegistrationInviteSchema>;

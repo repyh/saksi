@@ -33,6 +33,7 @@ export class AccountApi {
                 code: true,
                 name: true,
                 description: true,
+                permissions: { select: { permissionCode: true } },
               },
             },
           },
@@ -46,10 +47,15 @@ export class AccountApi {
       bundle: Omit<DashboardAccount["accessBundles"][number], "expiresAtLabel">;
       expiresAt: Date | null;
     }>();
+    const activePermissions = new Set<string>();
     for (const grant of user.bundleGrants) {
+      for (const { permissionCode } of grant.bundle.permissions) activePermissions.add(permissionCode);
       const current = uniqueBundles.get(grant.bundle.code);
       if (!current) {
-        uniqueBundles.set(grant.bundle.code, { bundle: grant.bundle, expiresAt: grant.expiresAt });
+        uniqueBundles.set(grant.bundle.code, {
+          bundle: { code: grant.bundle.code, name: grant.bundle.name, description: grant.bundle.description },
+          expiresAt: grant.expiresAt,
+        });
       } else if (current.expiresAt && (!grant.expiresAt || grant.expiresAt > current.expiresAt)) {
         current.expiresAt = grant.expiresAt;
       }
@@ -63,6 +69,13 @@ export class AccountApi {
         ...bundle,
         expiresAtLabel: expiresAt ? formatDate(expiresAt) : null,
       })),
+      dashboardPermissions: {
+        manageAccounts: activePermissions.has("access.users.read"),
+        moderateReports: ["reports.read_queue", "reports.change_status", "reports.assign"]
+          .some((permission) => activePermissions.has(permission)),
+        inviteAccounts: activePermissions.has("access.users.invite"),
+        editAccounts: activePermissions.has("access.users.edit"),
+      },
     };
   }
 }

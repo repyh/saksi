@@ -1,7 +1,7 @@
 # SAKSI Security
 
 **Last reviewed:** 4 November 2026
-**Status:** Security foundations exist in code, but authentication migrations have not been confirmed on Supabase and protected business APIs are not yet wired to the authorization authority. Do not treat the current prototype as production-ready.
+**Status:** Security foundations exist in code. Database migrations, including authentication rate limits, registration invites, and report persistence, are deployed to the configured Supabase project. Protected business APIs are not yet broadly wired to the authorization authority, and the report workflow has not had a confirmed end-to-end UI submission. Do not treat the current prototype as production-ready.
 
 This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission codes and bundle semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -12,11 +12,11 @@ This document distinguishes controls that are implemented in the repository from
 | Server/client boundary | Implemented | Prisma and auth modules are server-only; the browser uses application APIs. |
 | Email/password sign-in | Implemented in code | Better Auth with Prisma/Postgres; unavailable without `DATABASE_URL`. |
 | Email/password sign-up | Invite-gated in code | A Better Auth user-creation hook rejects account creation without a valid matching invite. |
-| Login and registration rate limit | Configured in code; database deployment unconfirmed | Five requests per minute per client IP for sign-in and sign-up, stored in Postgres. |
+| Login and registration rate limit | Implemented and migration deployed | Five requests per minute per client IP for sign-in and sign-up, stored in Postgres. |
 | Permission authority | Implemented as a foundation | Invite issue/revoke uses the `access.users.invite` permission; broader staff APIs remain unimplemented. |
-| Report submission | Not implemented | The report prototype keeps drafts in the browser; there is no server submission endpoint. |
-| Registration invitations | Implemented in code; migration not deployed | `/register`, invite storage, permission-checked issue/revoke APIs, and atomic redemption are implemented. |
-| Supabase migrations | Not confirmed deployed | Recent Prisma status/deploy attempts failed while resolving the shared pooler tenant/user. |
+| Report submission | Configured; end-to-end UI submission not confirmed | Multipart API, idempotency, CORS, DB persistence, image sanitation, and private Storage integration are implemented. |
+| Registration invitations | Implemented; migration deployed | `/register`, invite storage, permission-checked issue/revoke APIs, and atomic redemption are implemented. |
+| Supabase migrations | Deployed and verified on 4 November 2026 | Report, registration-invite, authorization, and authentication-rate-limit tables were verified in the configured project. |
 
 ## 1. Trust boundaries
 
@@ -54,7 +54,7 @@ Email verification and password-reset email delivery are not configured. Do not 
 
 Better Auth is configured to limit `/sign-in/email` to **five requests per minute per client IP**. It is explicitly enabled in development and production and uses the Postgres `rateLimit` table so counters can be shared by multiple app instances. A throttled request returns HTTP `429`; the login UI presents a retry message.
 
-The Prisma model and migration exist in the repository, but the migration has **not been confirmed on Supabase**. Prisma deployment/status attempts have returned a shared-pooler `tenant/user not found` error, so the presence of the table and live enforcement must be verified after correcting the Supabase connection string and successfully applying migrations.
+The `20261104110000_auth_rate_limit` migration is deployed to the configured Supabase project, and the shared `rateLimit` table is available. The project previously returned a shared-pooler `tenant/user not found` error; the configured connection was corrected and migration deployment subsequently succeeded. Live throttling still depends on the production proxy supplying a trustworthy client IP.
 
 IP-based throttling depends on the hosting proxy supplying a trustworthy client IP. Configure the deployment to overwrite or sanitize forwarded-IP headers. If Better Auth cannot resolve a client IP, it falls back to a shared per-route bucket, which can throttle unrelated users together. Do not trust arbitrary client-supplied forwarding headers.
 
@@ -86,13 +86,17 @@ Audit event writes exist for bundle changes, but the database does not enforce a
 - Package query values are validated at the HTTP boundary, and unexpected failures return a generic public error rather than internal exception details.
 - Shared API helpers standardize success and failure envelopes. `request-context.ts` currently defines a scaffold only; request IDs are not yet consistently passed into logs or audit records.
 - Better Auth's catch-all route is intentionally delegated directly to Better Auth so its authentication responses and cookies are not altered by the generic API wrapper.
-- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. Reports API remains a scaffold; no report-submit or general staff-administration endpoint is implemented.
+- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. `ReportsApi` accepts a bounded multipart submit operation with an idempotency key; report review and general staff-administration endpoints remain unimplemented.
 
 ## 6. Reports and personal data
 
-The current report flow is a client-side prototype. Draft state is stored in IndexedDB; there is no report submission API or server-side report persistence. The report flow is designed to remain account-optional, and exact reporter identity is not a prerequisite. This prototype state must not be described as secure server storage or as a submitted report.
+The report form keeps unsent state in page memory; the IndexedDB helper remains unwired. The report migration and private `report-evidence` bucket are configured in Supabase. A browser-to-storage-to-database submission has not yet been confirmed. Submission is account-optional, and exact reporter identity is not a prerequisite. See [REPORTS.md](./REPORTS.md) for the schema and submission boundary.
 
-The intended privacy rules are to remove photo EXIF and blur faces/vehicle plates on-device before any future upload. Since no upload endpoint exists, these are product requirements for a future submission flow, not a server-side control already enforced by this application.
+Photo selection runs through a local sanitizer for preview, then the user may submit the sanitized image. The Node API independently streams and bounds the multipart request, validates the decoded image format and pixel count, and re-encodes it to WebP at a maximum dimension of 1024 px and 5 MiB before upload to the private Supabase bucket. This removes embedded metadata but does not blur faces or plates; the interface asks reporters to check those manually. The service-role key is accessed only from server-only code. The browser never receives a Storage URL or database credential.
+
+`POST /api/reports` requires a UUID v4 `Idempotency-Key`. The server hashes the key and a canonical payload fingerprint (including the photo bytes); exact retries return the original receipt, while changed content under the same key receives 409. Processing claims have five-minute leases and completed keys expire after 24 hours. The report, media metadata, package link, initial status event, and completed idempotency record are written in one database transaction. If that transaction fails after Storage upload, the server attempts object deletion; cleanup failure is kept on the idempotency row for a later retry. A periodic orphan cleanup job is still needed for objects whose key is never retried.
+
+CORS allows only exact origins listed in `CORS_ALLOWED_ORIGINS`, falling back to `BETTER_AUTH_URL`; wildcard origins are not used with credentials. The route rejects browser requests from other origins and answers preflight for POST. This is not a substitute for authentication or rate limiting. Submissions are limited to three per hour by an HMAC of the client IP in the existing database-backed rate-limit table. The hosting proxy must overwrite/sanitize forwarded-IP headers; without a trustworthy client IP, unrelated users may share a limit bucket. Ensure the report bucket remains private and has no public or client-readable Storage policies. Bucket setup is available through `bun run storage:reports:ensure`.
 
 ## 7. Approved registration invitation design
 
@@ -142,13 +146,13 @@ The redeem operation uses Better Auth's database transaction and a conditional u
 
 Before enabling staff operations or invite registration in production:
 
-1. Correct the Supabase connection configuration, apply pending migrations, and verify migration status. Until then, database-backed auth and rate limiting are not confirmed operational.
-2. Apply the registration-invite migration and provision the first administrator out of band with the bootstrap command above. Confirm the admin bundle matches the authorization catalog before issuing invitations.
+1. Keep Supabase migration status under routine deployment checks; the migrations are currently deployed to the configured project.
+2. Verify authorization catalog seeding and provision the first administrator out of band with the bootstrap command above. Confirm the admin bundle matches the authorization catalog before issuing invitations.
 3. Configure email verification and password-reset delivery, or explicitly decide and document an alternative account recovery process.
 4. Wire every protected route to the central authorization authority; add resource-level and field-level checks.
 5. Add rate limits to public endpoints based on their abuse and cost profile; configure trusted client-IP handling at the hosting proxy.
 6. Define audit-log access, retention, backups, and operational review. Ensure credentials and bearer tokens never enter logs.
-7. Implement report submission only after privacy, moderation, retention, and abuse controls are defined. Keep report submission account-optional.
+7. Implement report submission only after the open privacy, moderation, retention, and abuse-control decisions in [REPORTS.md](./REPORTS.md) are resolved. Keep report submission account-optional.
 
 ## References
 
