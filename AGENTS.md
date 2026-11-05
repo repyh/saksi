@@ -35,7 +35,10 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 1. **Fokus jalan & anchor RW.** Produk = jalan; filter yang boleh ada: tahun, kecamatan/kelurahan,
    jenis pekerjaan (permukaan/drainase/jembatan). Lokasi paket **selalu** diturunkan ke **RW** (nomor
    RW di nama paket) atau kelurahan — bukan nama ruas: uji 31 Okt hanya 7% paket menyebut ruas yang
-   bisa dicocokkan, sementara 54,8% menyebut RW.
+   bisa dicocokkan, sementara 54,8% menyebut RW. **Default peta hanya menampilkan paket berlokus**
+   (kecamatan/kelurahan/RW); 312 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
+   dimatikan. Filter wilayah bertingkat: **kecamatan** (pilih satu) → **kelurahan** (checkbox, semua
+   terpilih saat kecamatan dipilih).
 2. **Batas frontend/backend SAKSI.** Route Handlers menjadi BFF; browser tidak mengambil snapshot
    paket langsung. Snapshot dibaca repository server-only dari `data/`. Supabase domain tables dan
    scraper workers adalah tahap terpisah; jangan mengarang skema atau pipeline sebelum provenance,

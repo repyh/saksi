@@ -30,10 +30,14 @@ export default function LaporanPage(props: LaporanPageProps) {
 
 async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const [{ segments = [] }, query] = await Promise.all([params, searchParams]);
-  const initialData = await searchRoadPackages();
+  const initialData = await searchRoadPackages({ locatedOnly: true });
   const selection = parseReportSegments(segments);
   const selectedPackage = selection.rupCode
-    ? initialData.items.find((item) => item.kode_rup === selection.rupCode) ?? null
+    ? initialData.items.find((item) => item.kode_rup === selection.rupCode) ??
+      (await searchRoadPackages({ query: selection.rupCode })).items.find(
+        (item) => item.kode_rup === selection.rupCode,
+      ) ??
+      null
     : null;
   if (selection.rupCode && !selectedPackage) notFound();
 

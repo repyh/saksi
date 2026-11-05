@@ -17,6 +17,12 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   const district = url.searchParams.get("district")?.trim() || undefined;
   const work = url.searchParams.get("work")?.trim() || undefined;
   const contract = url.searchParams.get("kontrak")?.trim() || undefined;
+  const desa = url.searchParams
+    .getAll("desa")
+    .flatMap((nilai) => nilai.split(","))
+    .map((nilai) => nilai.trim())
+    .filter(Boolean);
+  const lokasi = url.searchParams.get("lokasi")?.trim() || undefined;
   const query = url.searchParams.get("q")?.trim() || undefined;
 
   if (year && year !== "2025" && year !== "2026") {
@@ -24,6 +30,12 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   }
   if (district && district.length > 100) {
     throw new ApiError(400, "INVALID_QUERY", "Nama kecamatan terlalu panjang.");
+  }
+  if (desa.length > 60) {
+    throw new ApiError(400, "INVALID_QUERY", "Terlalu banyak kelurahan dipilih.");
+  }
+  if (lokasi && lokasi !== "0" && lokasi !== "1") {
+    throw new ApiError(400, "INVALID_QUERY", "Filter lokasi harus 0 atau 1.");
   }
   if (work && !WORK_CATEGORIES.has(work as RoadWorkCategory)) {
     throw new ApiError(400, "INVALID_QUERY", "Jenis pekerjaan tidak dikenal.");
@@ -38,6 +50,8 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   return {
     year: year as RoadPackageSearchFilters["year"],
     district,
+    villages: desa.length ? desa : undefined,
+    locatedOnly: lokasi === "1",
     work: work as RoadWorkCategory | undefined,
     contract: contract as RoadPackageSearchFilters["contract"],
     query,

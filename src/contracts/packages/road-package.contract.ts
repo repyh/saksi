@@ -71,6 +71,10 @@ export interface RoadMapUnit {
 export interface RoadPackageSearchFilters {
   year?: "2025" | "2026";
   district?: string;
+  /** Kelurahan terpilih; hanya dikirim bila bukan "semua kelurahan di kecamatan itu". */
+  villages?: string[];
+  /** true = sembunyikan paket tanpa anchor wilayah (presisi Kabupaten). */
+  locatedOnly?: boolean;
   work?: RoadWorkCategory;
   contract?: RoadContractFilter;
   query?: string;
@@ -79,6 +83,8 @@ export interface RoadPackageSearchFilters {
 export interface RoadPackageSearchData {
   items: RoadPackageItem[];
   districts: string[];
+  /** Kelurahan per kecamatan, untuk pemilih checkbox di UI. */
+  villagesByDistrict: Record<string, string[]>;
   totalCount: number;
   filteredCount: number;
   withContractCount: number;

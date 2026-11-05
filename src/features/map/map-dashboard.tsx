@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { FiArrowLeft, FiArrowRight, FiExternalLink, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiChevronDown, FiExternalLink, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,6 +99,26 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<"SEMUA" | "2025" | "2026">(initialRouteState?.selectedYear ?? "SEMUA");
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
+  const [selectedVillages, setSelectedVillages] = useState<string[]>([]);
+  const [openVillages, setOpenVillages] = useState(false);
+  const villagesRef = useRef<HTMLDivElement | null>(null);
+  const [locatedOnly, setLocatedOnly] = useState(true);
+
+  useEffect(() => {
+    if (!openVillages) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (!villagesRef.current?.contains(event.target as Node)) setOpenVillages(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpenVillages(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openVillages]);
   const [selectedWork, setSelectedWork] = useState<RoadWorkCategory>(initialRouteState?.selectedWork ?? "SEMUA");
   const [selectedContract, setSelectedContract] = useState<RoadContractFilter>("SEMUA");
   const [searchQuery, setSearchQuery] = useState<string>(initialRouteState?.searchQuery ?? "");
@@ -128,11 +148,13 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     const params = new URLSearchParams();
     if (selectedYear !== "SEMUA") params.set("year", selectedYear);
     if (selectedDistrict !== "SEMUA") params.set("district", selectedDistrict);
+    for (const desa of selectedVillages) params.append("desa", desa);
+    if (locatedOnly) params.set("lokasi", "1");
     if (selectedWork !== "SEMUA") params.set("work", selectedWork);
     if (selectedContract !== "SEMUA") params.set("kontrak", selectedContract);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
     return params.toString();
-  }, [selectedYear, selectedDistrict, selectedWork, selectedContract, searchQuery]);
+  }, [selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, searchQuery]);
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
   useEffect(() => {
@@ -148,6 +170,8 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
         {
           year: selectedYear === "SEMUA" ? undefined : selectedYear,
           district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
+          villages: selectedVillages.length ? selectedVillages : undefined,
+          locatedOnly,
           work: selectedWork,
           contract: selectedContract,
           query: searchQuery.trim() || undefined,
@@ -181,9 +205,22 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [addressRouting, queryString, searchQuery, selectedContract, selectedDistrict, selectedWork, selectedYear]);
+  }, [addressRouting, queryString, searchQuery, selectedContract, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedYear]);
 
   const districts = useMemo(() => packageData?.districts ?? [], [packageData]);
+  const villagesByDistrict = useMemo(() => packageData?.villagesByDistrict ?? {}, [packageData]);
+  const villageOptions = useMemo(
+    () => (selectedDistrict === "SEMUA" ? [] : villagesByDistrict[selectedDistrict] ?? []),
+    [selectedDistrict, villagesByDistrict],
+  );
+  const activeVillages = selectedVillages.length ? selectedVillages : villageOptions;
+  const toggleVillage = (desa: string) => {
+    const aktif = new Set(activeVillages);
+    if (aktif.has(desa)) aktif.delete(desa);
+    else aktif.add(desa);
+    const berikut = villageOptions.filter((opsi) => aktif.has(opsi));
+    setSelectedVillages(berikut.length === villageOptions.length ? [] : berikut);
+  };
   const filteredPackages = packageData?.items ?? [];
   const totalCount = packageData?.totalCount ?? 0;
   const filteredCount = packageData?.filteredCount ?? 0;
@@ -283,7 +320,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
       <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
           <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[120px_200px_190px_170px_160px] xl:gap-2">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2">
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
                 <Select value={selectedYear} onValueChange={(val) => setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026")}>
@@ -303,6 +340,8 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                   const district = val ?? "SEMUA";
                   const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
                   setSelectedDistrict(district);
+                  setSelectedVillages([]);
+                  setOpenVillages(false);
                   setSelectedRegion(address);
                   updateSelectedPackage(null);
                   writeReportPath(address ? routeForAddress(address) : "/project");
@@ -315,6 +354,67 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                     {districts.map((kec) => <SelectItem key={kec} value={kec}>{kec}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div ref={villagesRef} className="relative flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
+                <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Kelurahan</span>
+                <button
+                  type="button"
+                  disabled={selectedDistrict === "SEMUA"}
+                  onClick={() => setOpenVillages((buka) => !buka)}
+                  aria-expanded={openVillages}
+                  aria-label="Pilih kelurahan"
+                  className={`flex h-7 w-full min-w-0 items-center justify-between gap-1 rounded-xs px-1 text-left text-xs font-semibold transition-colors ${
+                    selectedDistrict === "SEMUA"
+                      ? "cursor-not-allowed text-muted-foreground/60"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="truncate">
+                    {selectedDistrict === "SEMUA"
+                      ? "Pilih kecamatan"
+                      : selectedVillages.length
+                        ? `${selectedVillages.length} dari ${villageOptions.length}`
+                        : "Semua kelurahan"}
+                  </span>
+                  <FiChevronDown className="size-3 shrink-0 opacity-60" aria-hidden="true" />
+                </button>
+                {openVillages && selectedDistrict !== "SEMUA" && (
+                  <div className="absolute top-full left-0 z-50 mt-1 w-60 border border-border bg-white shadow-md">
+                    <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
+                      <span className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                        {villageOptions.length} kelurahan
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVillages([])}
+                        className="font-sans text-[11px] font-bold text-primary hover:underline"
+                      >
+                        Pilih semua
+                      </button>
+                    </div>
+                    <div className="max-h-56 overflow-auto py-1">
+                      {villageOptions.map((desa) => {
+                        const terpilih = selectedVillages.length === 0 || selectedVillages.includes(desa);
+                        return (
+                          <label key={desa} className="flex cursor-pointer items-center gap-2 px-2 py-1 text-xs hover:bg-muted">
+                            <input
+                              type="checkbox"
+                              checked={terpilih}
+                              onChange={() => toggleVillage(desa)}
+                              className="size-3.5 accent-primary"
+                            />
+                            <span className="truncate">{desa}</span>
+                          </label>
+                        );
+                      })}
+                      {villageOptions.length === 0 && (
+                        <p className="px-2 py-2 text-xs text-muted-foreground">
+                          Belum ada kelurahan berlokasi di kecamatan ini.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Jenis</span>
@@ -354,6 +454,15 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
             </div>
 
             <div aria-live="polite" className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 border-t border-border pt-1.5 font-sans text-[11px] text-muted-foreground sm:border-t-0 sm:pt-0">
+              <label className="flex shrink-0 cursor-pointer items-center gap-1.5" title="Sembunyikan paket yang hanya punya lokasi umum (presisi kabupaten)">
+                <input
+                  type="checkbox"
+                  checked={locatedOnly}
+                  onChange={(event) => setLocatedOnly(event.target.checked)}
+                  className="size-3.5 accent-primary"
+                />
+                <span className="font-sans text-[11px]">Hanya paket berlokasi</span>
+              </label>
               {!showIntro && <label className="relative min-w-[150px] flex-1 sm:w-[260px] sm:flex-none">
                 <span className="sr-only">Cari paket berdasarkan desa, jalan, kecamatan, atau nomor RUP</span>
                 <FiSearch aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
