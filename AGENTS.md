@@ -19,8 +19,9 @@ dan `docs/ARCHITECTURE.md` (batas frontend/backend) sebelum menyentuh kode.
 jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
-- Angka kunci (snapshot 31 Okt 2026): **1.557 paket jalan · Rp650,18 M · 80 kelurahan · 483 RW ·
-  818 ber-anchor RW · 402 tanpa lokus**.
+- Angka kunci (snapshot 31 Okt 2026, diperkaya detail RUP 3 Nov 2026): **1.557 paket jalan · Rp650,18 M
+  · 818 anchor RW · 337 kelurahan · 90 kecamatan · 312 tanpa lokus**.
+- Jangkauan wilayah: **80 kelurahan dari 104 · 483 RW dari 1.020**.
 - Rekam penyedia (3 Nov 2026): **1.424 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
   693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **133** paket tanpa
   rekam publik (Rp97,6 M); **522** penyedia unik.
