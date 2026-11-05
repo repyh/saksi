@@ -1,29 +1,34 @@
 # SAKSI — Developer Handoff
 
-**Updated:** 4 November 2026
+**Updated:** 5 November 2026
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `feat/lpse-pemenang`
-**Baseline commit:** `0acb378` (`Add map search and reporting flow`)
+**Branch:** `feat/map-improvement` (active)
+**`master`:** `8842dc9` (state before the map-work branch)
 
-This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow.
+This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
 ## Product and data scope
 
-SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The current active snapshot is **Kota Tangerang, 2025–2026**, stored in `data/saksi_kota_tangerang_2025_2026.json`. Do not carry forward old Kabupaten Tangerang totals or assume that a package has an official coordinate. The map geometry is inferred from package text and the available geographic reference data; show its precision honestly.
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.557 road/junction/drainage packages, Rp650,18 billion**. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
 
-Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act. Keep packages without a sufficiently specific location in the package list; do not invent map points for them.
+Location anchor, after enriching from RUP details: **818 RW (52.5%)**, **337 kelurahan (21.6%)**, **90 kecamatan (5.8%)**, **312 without any locus (20.0%)** — so 1.245 packages (80.0%) carry a derived location. Coverage touches 80 of 104 kelurahan, 483 of 1,020 RW, in 13 kecamatan.
+
+Vendor records: **1.424 of 1.557 packages (91.4%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 15.0% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
+
+Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
 ## Current routes and behavior
 
 | Route | Purpose | Current behavior |
 |---|---|---|
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
-| `/project` | Peta Pekerjaan | Full-viewport map and package list with year, district, work-type, and map-view filters; compact search sits beside the filtered/total package count. Selecting a package opens the right detail panel. |
-| `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, map view, and search. Package routes include the RUP and a readable name slug. |
+| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (1.245 of 1.557). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
+| `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
 | `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
+| `/penyedia`, `/penyedia/[slug]` | Supplier register | Suppliers with at least one road package, joined to RUP; every figure carries its denominator, never a composite score. |
 | `/api/packages` | Package search API | Validates filter/search parameters and returns an `ApiResult` response. |
 
 There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
@@ -32,61 +37,66 @@ There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be 
 
 ```text
 Next.js server page ─┐
-                     ├─> package service ─> repository interface ─> checked-in snapshot
+                     ├─> package service ─> repository interface ─> checked-in snapshot + LPSE/realisasi snapshots
 Browser filters ─> GET /api/packages ─────┘
 ```
 
 - `src/app/**` owns routes, server-rendered page entry points, and HTTP route handlers.
 - `src/features/map/**` owns map UI, filter/search state, URL selection state, and rendering. Leaflet stays client-side.
-- `src/features/reports/**` owns report form state and browser-side photo preview sanitation. The submit endpoint persists accepted reports after the user explicitly submits.
-- `src/app/api/packages/route.ts` validates HTTP query input; it should not contain SQL or scraping logic.
-- `src/server/packages/**` owns package search and the repository implementation. The current `snapshot-repository.ts` is server-only and reads the checked-in Kota Tangerang JSON.
+- `src/features/reports/**` owns report form state and browser-side photo preview sanitation.
+- `src/server/api/packages/**` validates HTTP query input (`query-schema.ts`); it holds no SQL or scraping logic.
+- `src/server/packages/**` owns package search, the snapshot repository, and the LPSE contract index (`lpse-repository.ts`).
 - `src/contracts/**` owns DTOs shared between client and server.
-- `prisma/**` and `src/lib/**` hold database/auth foundations. The current snapshot package search does not query Supabase.
-- Scraper workers are planned as separately deployed scheduled processes; they are not implemented yet.
+- `prisma/**` and `src/lib/**` hold database/auth foundations. Package search still reads the snapshot, not Supabase.
 
 Keep the dependency direction: UI → API/contract → server use case → repository → data source. Never import server code, Prisma, database URLs, or Supabase service credentials into browser components.
 
 ## Important implementation details
 
 - `src/features/map/report-routes.ts` defines address slugs, package paths, filter query parameters, and parsing. Update parsing and generation together when changing route shape.
-- `/project` filter query parameters are `tahun`, `jenis`, `tampilan`, and `q`. The API uses `year`, `district`, `work`, and `q`; the dashboard translates between them.
-- `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching package features are passed to the map.
-- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and map legends. Selecting a region updates the district filter; clicking a non-region clears that selection. A package with broad location precision should show an explanatory note instead of a fabricated specific-region highlight.
-- `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state. The browser sanitizes the preview, and the server re-sanitizes before private storage.
-- `src/app/api/reports/route.ts` enforces the configured CORS origin allowlist and delegates to `ReportsApi`. The server streams bounded multipart data, validates the photo and area/RUP, enforces an idempotency key and database-backed rate limit, stores sanitized WebP in private Supabase Storage, and writes report metadata in one transaction.
-- `GET /api/reports/mine` is session-authenticated and returns only the current account's report summaries. It omits image references, exact coordinates, location hints, descriptions, and moderation notes; the dashboard's **Laporan Saya** tab consumes this endpoint.
-- The report’s candidate package list is currently matched against the selected RW/village using the loaded geographic data and package fields. Do not describe it as an authoritative contract-to-road match.
+- `/project` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
+- Kelurahan selection is **tri-state**: `null` = all kelurahan of the chosen kecamatan, an array = explicit subset, and an **empty array is invalid** — the picker stays open with a red warning, the list shows the empty message, and no request is sent. Never treat "none selected" as "all".
+- `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching packages are passed to the map.
+- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom. Switching level also sets a comfortable zoom (10 / 11 / 13) without moving the centre.
+- Kecamatan choropleth counts aggregate every package inside the kecamatan, including RW- and kelurahan-precision packages, and use quantile class breaks so 13 polygons do not collapse into one colour. Kelurahan/RW layers use the fixed classes 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
+- Basemap comes from one environment variable, `NEXT_PUBLIC_BASEMAP_URL` (default `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`). Attribution switches automatically for OpenStreetMap, CARTO, and Esri hosts, so changing the tile source does not silently break attribution.
+- `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state.
+- `src/app/api/reports/route.ts` enforces the CORS origin allowlist and delegates to `ReportsApi` (bounded multipart, validation, idempotency key, rate limit, sanitised WebP to private Storage, single-transaction metadata).
+- `GET /api/reports/mine` is session-authenticated and returns only the current account's report summaries.
+- The report's candidate package list is matched against the selected RW/village using loaded geographic data and package fields. Do not describe it as an authoritative contract-to-road match.
 
 ## Current stack and local commands
 
-- Next.js 16.4.3, React 19, TypeScript, Tailwind CSS v4, Bun 1.4.2
-- Leaflet / React Leaflet with OpenStreetMap tiles and attribution
-- Supabase Postgres + PostGIS and Prisma foundations; Better Auth
-- Node.js 24 is required by the package engine range (`>=24 <25`).
+- Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4
+- Leaflet 1.9.4 / React Leaflet 5, tile source via `NEXT_PUBLIC_BASEMAP_URL`
+- Supabase Postgres + PostGIS and Prisma foundations; Better Auth (optional — build works without `DATABASE_URL`)
+- Node 24 per the package engine range (`>=24 <25`); the current dev machine runs v26.8.1
+- `package-lock.json` is **not tracked** in git yet
 
-```powershell
-bun install
-bun run dev
-bun run lint
-bun run build
+```bash
+npm install
+npm run dev
+npm run lint
+npm run build
+npm run data:kecamatan   # regenerate public/data/kec.geojson from ArcGIS
 ```
 
-Database commands are available (`bun run db:generate`, `bun run db:migrate`, `bun run db:deploy`, `bun run db:status`). Authentication, authorization, invite, and report migrations were deployed to the configured Supabase project on 4 November 2026; report tables were verified. Road-package and administrative-area catalogs remain unpopulated, so package search still uses the checked-in snapshot. Do not run migrations against production as part of ordinary UI work.
+Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`). Auth, invite, and report migrations were deployed on 4 November 2026. Road-package and administrative-area catalogs remain unpopulated, so package search still uses the checked-in snapshot. Do not run migrations against production as part of ordinary UI work.
 
 ## Known gaps and next implementation decisions
 
-1. **Report persistence:** Prisma models, deployed migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` Storage bucket, and authenticated account history are implemented. End-to-end UI submission remains to be confirmed. Moderation, retention cleanup, and public queries remain unimplemented; see `docs/REPORTS.md`.
-2. **Spatial/package domain model:** Review and deploy the model/migration, import source-provenanced package and area catalogs, and define repository queries before replacing the snapshot adapter. Keep package DTOs stable where possible.
-3. **Scrapers:** Government website and official/public social-source collectors need separate adapters and schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Determine an allowed X access method before building that collector. Social posts are not official records.
-4. **Map scale:** The current API and map pass all filtered package rows; the list only displays the first 120. Introduce separate paginated list and viewport-bounded map-feature queries when scale requires it.
-5. **Documentation consistency:** `docs/STATE.md`, `README.md`, and some sections in `docs/SPEC.md` still contain older Kabupaten Tangerang, FDS, route, and implementation-status language. Treat the code and this handoff as the latest implementation status; reconcile those documents when their respective scope is next edited.
+1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, and authenticated history are implemented. End-to-end UI submission still needs confirmation; moderation, retention cleanup, and public queries are unimplemented (`docs/REPORTS.md`).
+2. **Spatial/package domain model:** review and deploy the model, import source-provenanced package and area catalogs, then replace the snapshot adapter with repository queries. Keep package DTOs stable.
+3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
+4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
+5. **Header metrics and provenance badges:** some counters are still constants and the `DATA RESMI (…)` / `SIMULASI PROTOTIPE` badges are not yet applied everywhere.
+6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 5 November 2026. `AGENTS.md` still states the zoom-based polygon rule; update it the next time that file is touched with approval.
 
 ## Working rules
 
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
-- Keep user-facing interface text in Indonesian; repository documentation currently uses Indonesian or English by document.
-- Format numbers for Indonesian readers (`1.557`, `92,5%`, `Rp…`). Attach source, date, coverage, and methodology to public claims.
+- Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
+- Format numbers for Indonesian readers (`1.557`, `91,4%`, `Rp650,18 Miliar`). Attach source, date, coverage, and methodology to public claims.
 - Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
-- Never present an inferred map location as an official package coordinate.
+- Never present an inferred map location as an official package coordinate, and never place per-package pins.
 - Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.

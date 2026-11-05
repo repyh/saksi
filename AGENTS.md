@@ -40,8 +40,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    (kecamatan/kelurahan/RW); 312 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
    dimatikan. Filter wilayah bertingkat: **kecamatan** (pilih satu) → **kelurahan** (checkbox, semua
    terpilih saat kecamatan dipilih; **nol kelurahan bukan berarti semua** — tampilkan peringatan merah,
-   tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat: kecamatan (< zoom 11), kelurahan
-   (11), RW (≥ 12); angka kecamatan menjumlahkan seluruh paket di dalamnya, termasuk presisi RW/kelurahan.
+   tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat lewat **segmented control**
+   **Kecamatan / Kelurahan / RW** di atas peta (bukan mengikuti zoom); angka kecamatan menjumlahkan
+   seluruh paket di dalamnya, termasuk presisi RW/kelurahan, dengan kelas kuantil.
 2. **Batas frontend/backend SAKSI.** Route Handlers menjadi BFF; browser tidak mengambil snapshot
    paket langsung. Snapshot dibaca repository server-only dari `data/`. Supabase domain tables dan
    scraper workers adalah tahap terpisah; jangan mengarang skema atau pipeline sebelum provenance,

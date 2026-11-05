@@ -14,8 +14,8 @@ Setiap elemen visual maupun teks yang masuk ke antarmuka **wajib** lulus uji fun
 2. **Dilarang Menambah Konten Hanya untuk Estetika atau Mengisi Ruang Kosong:**
    - Jika ruang kosong terlihat lega, biarkan menjadi *whitespace* struktural. Jangan menaruh subjudul berulang, ikon dekoratif tanpa fungsi, atau paragraf basa-basi hanya agar kartu terlihat penuh.
 3. **Dilarang Over-Exposition (*"No-Shit-Sherlock"* Copy):**
-   - Jangan menulis kalimat yang menjelaskan kembali angka yang sudah terpampang jelas di sebelahnya (misal: menulis *"Terdapat 3.602 paket jalan TA 2025–2026"* di paragraf padahal kartu di sebelahnya sudah bertuliskan `3.602 Paket · 2025–2026`).
-   - Jangan memberi judul/deskripsi redundan pada komponen yang fungsinya sudah jelas secara visual (misal: menulis *"Peta OpenStreetMap — Geser dan zoom untuk menjelajahi"* di atas peta interaktif).
+   - Jangan menulis kalimat yang menjelaskan kembali angka yang sudah terpampang jelas di sebelahnya (misal: menulis *"Terdapat 1.557 paket jalan TA 2025–2026"* di paragraf padahal kartu di sebelahnya sudah bertuliskan `1.557 Paket · 2025–2026`).
+   - Jangan memberi judul/deskripsi redundan pada komponen yang fungsinya sudah jelas secara visual (misal: menulis *"Peta OpenStreetMap — geser dan perbesar untuk menjelajahi"* di atas peta interaktif).
    - Jangan menduplikasi tombol navigasi yang sudah ada di Navbar pada posisi yang berdekatan tanpa konteks spesifik paket.
 
 ---
@@ -27,12 +27,12 @@ Sistem warna menggunakan *architectural color-blocking* **Putih (`#FFFFFF`), Kun
 | Warna | Hex Code | Peran Semantik | Penggunaan di Antarmuka |
 |---|---|---|---|
 | **Crisp White** | `#FFFFFF` | **Primary Surface / Canvas** | Latar belakang halaman (`body`), header navigasi minimalis, dan permukaan kartu utama. |
-| **Nordic Cobalt Blue** | `#0058A3` | **Primary Structural Block** | Blok kartu utama (*Total Pagu Jalan*), indikator tab aktif, teks brand `SAKSI`, dan segmen utama bar presisi (`Titik Desa`). |
-| **Signal Yellow** | `#FFDA1A` | **Secondary Architectural Block** | Blok kartu sekunder (*Sebaran Wilayah*), teks aksen kontras di atas blok biru, dan segmen `Garis Koridor`. |
+| **Nordic Cobalt Blue** | `#0058A3` | **Primary Structural Block** | Blok kartu utama (*Total Pagu Jalan*), indikator tab aktif, teks brand `SAKSI`, dan segmen aktif pemilih tingkat wilayah (`Kecamatan`/`Kelurahan`/`RW`). |
+| **Signal Yellow** | `#FFDA1A` | **Secondary Architectural Block** | Blok kartu sekunder (*Sebaran Wilayah*), teks aksen kontras di atas blok biru, dan penanda paket rujukan di alur lapor. |
 | **Deep Navy Ink** | `#0A192F` | **Foreground / Body Text** | Teks utama dan angka di atas latar putih maupun kuning. |
 | **Muted Slate** | `#475569` | **Secondary Metadata** | Teks keterangan sekunder dan label pendukung. |
 | **Structural Border** | `#CBD5E1` | **Divider / Hairline** | Garis batas tipis antar seksi dan pembatas vertikal. |
-| **Crimson Alert** | `#D9381E` | **Destructive / Status Kritis** | Khusus untuk indikator *"Diduga Tidak Sesuai"*. |
+| **Crimson Alert** | `#D9381E` | **Destructive / Status Kritis** | Peringatan filter (kelurahan kosong) dan status laporan yang ditolak. |
 
 ### Pemetaan Variabel CSS (`src/app/globals.css`)
 ```css
@@ -64,15 +64,15 @@ Sistem warna menggunakan *architectural color-blocking* **Putih (`#FFFFFF`), Kun
 
 ## 3. Tipografi Resmi: Raleway & Open Sans (Google Fonts)
 
-Diambil dari `next/font/google` di [layout.tsx](file:///c:/Users/LENOVO/Documents/web/lomba-mia/src/app/layout.tsx):
-- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp848,60 Miliar`, `251`, `92,5%`).
+Diambil dari `next/font/google` di `src/app/layout.tsx`:
+- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp650,18 Miliar`, `1.557`, `80,0%`).
 - **Open Sans (`--font-sans`):** Digunakan untuk teks body, tabel data, navigasi, dan metadata teknis.
 
 ---
 
 ## 4. Komponen Antarmuka (shadcn-First & `react-icons`)
 
-- **shadcn/ui:** Gunakan komponen dari `src/components/ui/` (`Button`, `Card`, `Badge`).
+- **shadcn/ui:** Gunakan komponen dari `src/components/ui/` (`Button`, `Card`, `Badge`, `Input`, `Select`, `Tabs`, `ScrollArea`, `Separator`).
 - **Ikon (`react-icons`):** Hanya gunakan `react-icons` (utamanya `react-icons/fi`) dan **hanya jika ikon tersebut memiliki fungsi semantik/interaktif**, bukan pemanis sudut kartu. Dilarang menggunakan `lucide-react` atau emoji.
 - **Tanpa Chip-Slop:** Jangan membungkus subjudul atau teks metadata dengan kotak/pill berwarna (`bg-* px-* py-* rounded-*`). Gunakan hierarki tipografi dan garis vertikal tipis (`w-px`).
 
@@ -87,8 +87,8 @@ Diambil dari `next/font/google` di [layout.tsx](file:///c:/Users/LENOVO/Document
 > 3. **Dilarang memakai Emoji sebagai ikon fitur:** `✨`, `🚀`, `🎯`, `⚡`, `🔥`, `💡`.
 > 4. **Dilarang memakai font acak di luar Raleway & Open Sans.**
 > 5. **Dilarang membuat kartu rounded dengan border-kiri berwarna tebal** (*AI dashboard tile*).
-> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`3.602`, `Rp848,60 Miliar`, `92,5%`, `251`).
-> 7. **Dilarang menulis over-exposition / filler copy:** Jangan mengulang angka yang sudah tampil di kartu sebelahnya atau menjelaskan cara kerja dasar peta ("Pan and zoom to explore").
+> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`1.557`, `Rp650,18 Miliar`, `80,0%`, `80` kelurahan).
+> 7. **Dilarang menulis over-exposition / filler copy:** Jangan mengulang angka yang sudah tampil di kartu sebelahnya atau menjelaskan cara kerja dasar peta ("geser dan perbesar untuk menjelajahi").
 >
 > ### 2. Soft Tells (P1 — Hindari Pola Template)
 > - **Jangan membungkus subjudul/metadata dalam chip/pill dekoratif.**
