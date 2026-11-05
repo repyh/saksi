@@ -316,23 +316,15 @@ writeFileSync(
       per_rup: [...perRup.values()].sort((a, b) => b.nilai - a.nilai),
       item: semuaBaris.map((r) => ({
         kode_rup: r.kode_rup,
-        kode_paket: r.kode_paket,
         tahun: r.tahun_anggaran,
         metode: r.metode_pengadaan,
-        jenis: r.jenis_pengadaan,
         sumber_transaksi: r.sumber_transaksi,
-        sumber_dana: r.sumber_dana,
         satker: r.nama_satuan_kerja,
         paket: r.nama_paket,
-        status: r.status_paket,
-        tahapan: r.tahapan_pengadaan,
         penyedia: r.nama_penyedia === "-" ? null : r.nama_penyedia,
         nilai: r.total_nilai,
-        pagu: r.nilai_pagu,
       })),
     },
-    null,
-    1,
   ),
 );
 
