@@ -33,9 +33,16 @@ const namaSatker = (teks) => judul(String(teks ?? "").split(" - ")[0].trim());
 
 async function main() {
   const rup = (await baca("data/rup_kota_tangerang_2025_2026.json")).item ?? [];
-  const detail = new Map(
-    ((await baca("data/rup_detail_kota_tangerang.json")).item ?? []).map((d) => [String(d.kode_rup), d]),
-  );
+  // Detail RUP opsional: tanpa berkas ini `bulan` dan anchor kecamatan tidak terisi.
+  // Jalankan `npm run data:rup-detail` (atau `data:rup-detail-tambal`) lebih dulu bila perlu.
+  let detail = new Map();
+  try {
+    detail = new Map(
+      ((await baca("data/rup_detail_kota_tangerang.json")).item ?? []).map((d) => [String(d.kode_rup), d]),
+    );
+  } catch {
+    console.warn("peringatan: data/rup_detail_kota_tangerang.json tidak ada — `bulan` akan kosong");
+  }
   const kel = await baca("public/data/kel.geojson");
   const rw = await baca("public/data/rw.geojson");
 
