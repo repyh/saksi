@@ -512,7 +512,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                         </p>
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, RW ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? "Lokasi umum · Kota Tangerang"} · {pkg.bulan}</p>
+                        <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, RW ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? "Lokasi umum · Kota Tangerang"} · {pkg.bulan ?? "jadwal belum tersedia"}</p>
                         <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat <FiArrowRight aria-hidden="true" /></Button>
                       </div>
                     </article>
@@ -624,11 +624,11 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                           </tr>
                           <tr>
                             <th scope="row" className="w-28 py-2 pr-3 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Jadwal</th>
-                            <td className="py-2 font-medium text-foreground">{selectedPackage.bulan}</td>
+                            <td className="py-2 font-medium text-foreground">{selectedPackage.bulan ?? "Belum tersedia"}</td>
                           </tr>
                           <tr>
                             <th scope="row" className="w-28 py-2 pr-3 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Metode & dana</th>
-                            <td className="py-2 font-medium leading-snug text-foreground">{selectedPackage.metode} ({selectedPackage.sumber.replace(/,+$/, "")})</td>
+                            <td className="py-2 font-medium leading-snug text-foreground">{selectedPackage.metode ?? "Tidak dicantumkan"}{selectedPackage.sumber ? ` (${selectedPackage.sumber.replace(/,+$/, "")})` : ""}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -705,7 +705,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             </Link>
                             {selectedPackage.kontrak.url ? (
                               <a href={selectedPackage.kontrak.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-sans text-[11px] font-semibold text-muted-foreground underline-offset-2 hover:text-primary hover:underline">
-                                {selectedPackage.kontrak.sumber === "LPSE" ? "Halaman LPSE" : "Dashboard INAPROC"} <FiExternalLink aria-hidden="true" className="size-3" />
+                                {selectedPackage.kontrak.sumber === "LPSE" ? "Halaman LPSE" : "Detail paket di Data INAPROC"} <FiExternalLink aria-hidden="true" className="size-3" />
                               </a>
                             ) : null}
                           </div>
@@ -719,9 +719,9 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                         <div className="mt-4 border border-dashed border-border bg-muted/10 p-3">
                           <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Tanpa rekam kontrak di LPSE</p>
                           <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
-                            {selectedPackage.metode.toLocaleLowerCase("id-ID").includes("e-purchasing")
+                            {(selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("e-purchasing")
                               ? "Paket ini melalui e-purchasing (e-katalog), yang tidak menerbitkan nama pemenang di LPSE."
-                              : selectedPackage.metode.toLocaleLowerCase("id-ID").includes("dikecualikan")
+                              : (selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("dikecualikan")
                                 ? "Paket dikecualikan dari prosedur pengadaan LPSE."
                                 : "Belum ada pencatatan tender atau pengadaan langsung yang cocok di LPSE untuk paket ini."}
                           </p>

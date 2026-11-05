@@ -565,7 +565,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                                 <div className="flex items-start gap-3">
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-sm font-semibold leading-5 text-foreground">{item.nama}</span>
-                                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">{formatBudget(item.pagu)} · {item.bulan} · {item.presisi_peta}</span>
+                                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">{formatBudget(item.pagu)} · {item.bulan ?? "jadwal belum tersedia"} · {item.presisi_peta}</span>
                                     <span className="mt-1 block font-mono text-[10px] text-muted-foreground">RUP {item.kode_rup}</span>
                                   </span>
                                   <button type="button" onClick={() => { setSelectedPackage(active ? null : item); setPackageSelectionSource(active ? null : "CANDIDATE_LIST"); invalidateSubmissionKey(); }} aria-pressed={active} className={`min-h-9 shrink-0 px-2.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${active ? "bg-primary text-white hover:bg-[#004682]" : "text-primary hover:bg-primary/10"}`}>

@@ -100,7 +100,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
                       <Link href={`/laporan/paket/${item.kode_rup}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
-                      <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">{item.metode}</span>
+                      <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">{item.metode ?? "metode tidak dicantumkan"}</span>
                     </td>
                     <td className="px-3 py-2.5 text-[12px] leading-snug text-muted-foreground">
                       {item.desa_resmi ? `${item.desa_resmi}${item.presisi_peta === "RW" && item.rw ? `, RW ${item.rw}` : ""}` : "Lokasi umum"}

@@ -9,7 +9,10 @@ import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 
 export { slugPenyedia };
 
-const SUMBER_REALISASI = "https://data.inaproc.id/realisasi";
+/** Halaman detail paket di Data INAPROC — membuka RUP yang sama, bukan halaman daftar. */
+function urlRupInaproc(kodeRup: string) {
+  return `https://data.inaproc.id/rup?kode=${encodeURIComponent(kodeRup)}`;
+}
 
 interface LpseRow {
   kode_rup: string;
@@ -91,9 +94,14 @@ interface AgregatRealisasi {
   sumberTransaksi: string | null;
 }
 
+/** Swakelola & instansi bukan penyedia jasa — jangan pernah tampil sebagai "pemenang". */
+const BUKAN_PENYEDIA = /^\s*(dinas|pegawai|opd|pemerintah|badan|kantor|uptd|kecamatan|kelurahan|unsur)\b/i;
+
 const realisasiPerRup = new Map<string, AgregatRealisasi>();
 for (const baris of real.item) {
   if (!baris.kode_rup || !baris.penyedia) continue;
+  if (String(baris.metode ?? "").toLowerCase() === "swakelola") continue;
+  if (BUKAN_PENYEDIA.test(String(baris.penyedia))) continue;
   const rup = String(baris.kode_rup);
   const agg = realisasiPerRup.get(rup) ?? {
     penyedia: new Map<string, number>(),
@@ -125,7 +133,7 @@ for (const [rup, agg] of realisasiPerRup) {
     hps: null,
     nilai_kontrak: agg.total ? Math.round(agg.total) : null,
     tahun: agg.tahun,
-    url: SUMBER_REALISASI,
+    url: urlRupInaproc(rup),
     transaksi: agg.transaksi,
     penyediaLain: urut.slice(1).map(([nama]) => nama),
     sumberTransaksi: agg.sumberTransaksi,

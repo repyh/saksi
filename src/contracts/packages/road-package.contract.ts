@@ -41,9 +41,11 @@ export interface RoadPackageItem {
   satker: string;
   nama: string;
   pagu: number;
-  metode: string;
-  sumber: string;
-  bulan: string;
+  /** `null` bila ekspor RUP tidak mencantumkan metode (mis. baris "-"). */
+  metode: string | null;
+  sumber: string | null;
+  /** `null` bila detail RUP belum ditarik untuk paket ini. */
+  bulan: string | null;
   sektor: string;
   lokasi_mikro: string | null;
   desa_resmi: string | null;
