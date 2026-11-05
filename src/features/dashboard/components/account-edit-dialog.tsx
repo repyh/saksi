@@ -68,8 +68,16 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
   useEffect(() => {
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     return () => {
       if (dialog?.open) dialog.close();
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
     };
   }, []);
 
@@ -217,7 +225,7 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
               <TabsTrigger value="access" className="px-4">Hak akses</TabsTrigger>
             </TabsList>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-3 sm:px-7 sm:pb-6 sm:pt-3">
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-5 pb-5 pt-3 sm:px-7 sm:pb-6 sm:pt-3">
             <TabsContent value="profile" className="m-0">
               <form onSubmit={(event) => void saveProfile(event)} className="grid gap-6">
                 <div className="grid gap-5 sm:grid-cols-2">
