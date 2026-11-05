@@ -134,7 +134,13 @@ async function main() {
       pagu: Math.round(Number(r.total_nilai ?? 0)),
       metode: r.metode && r.metode !== "-" ? String(r.metode) : null,
       sumber: r.sumber_dana ? String(r.sumber_dana) : null,
-      bulan: rincian?.jadwal_pemilihan_mulai ?? null,
+      // Jadwal hanya dipakai bila tahunnya cocok dengan tahun RUP; kalau tidak, biarkan kosong
+      // daripada menampilkan "Januari 2023" pada paket TA 2025.
+      bulan:
+        rincian?.jadwal_pemilihan_mulai &&
+        String(rincian.jadwal_pemilihan_mulai).slice(-4) === String(r.tahun)
+          ? rincian.jadwal_pemilihan_mulai
+          : null,
       sektor: "Jalan, Jembatan & Drainase",
       desa_resmi: kelurahan?.nama ?? null,
       rw: nomorRw,
@@ -147,7 +153,8 @@ async function main() {
     });
   }
 
-  paket.sort((a, b) => a.tahun - b.tahun || a.kode_rup.localeCompare(b.kode_rup));
+  // Tahun terbaru dulu, lalu pagu terbesar: paket yang paling lengkap datanya tampil lebih dulu.
+  paket.sort((a, b) => b.tahun - a.tahun || b.pagu - a.pagu || a.kode_rup.localeCompare(b.kode_rup));
   await writeFile(
     path.join(AKAR, "data", "saksi_kota_tangerang_2025_2026.json"),
     JSON.stringify({ snapshot: "5 Nov 2026", sumber: "data.inaproc.id/rup", paket }),
