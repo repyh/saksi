@@ -19,12 +19,12 @@ dan `docs/ARCHITECTURE.md` (batas frontend/backend) sebelum menyentuh kode.
 jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
-- Angka kunci (snapshot 31 Okt 2026, diperkaya detail RUP 3 Nov 2026): **1.557 paket jalan · Rp650,18 M
-  · 818 anchor RW · 337 kelurahan · 90 kecamatan · 312 tanpa lokus**.
-- Jangkauan wilayah: **80 kelurahan dari 104 · 483 RW dari 1.020**.
-- Rekam penyedia (3 Nov 2026): **1.424 dari 1.557 paket** punya nama penyedia — 731 dari LPSE/SPSE,
-  693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **133** paket tanpa
-  rekam publik (Rp97,6 M); **522** penyedia unik.
+- Angka kunci (snapshot 31 Okt 2026, diperkaya detail RUP 3 Nov 2026): **1.634 paket jalan · Rp683,34 M
+  · 821 anchor RW · 375 kelurahan · 90 kecamatan · 312 tanpa lokus**.
+- Jangkauan wilayah: **85 kelurahan dari 104 · 490 RW dari 1.020**.
+- Rekam penyedia (3 Nov 2026): **1.424 dari 1.634 paket** punya nama penyedia — 731 dari LPSE/SPSE,
+  693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **210** paket tanpa
+  rekam publik (Rp130,72 M); **522** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
@@ -37,7 +37,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    jenis pekerjaan (permukaan/drainase/jembatan). Lokasi paket **selalu** diturunkan ke **RW** (nomor
    RW di nama paket) atau kelurahan — bukan nama ruas: uji 31 Okt hanya 7% paket menyebut ruas yang
    bisa dicocokkan, sementara 54,8% menyebut RW. **Default peta hanya menampilkan paket berlokus**
-   (kecamatan/kelurahan/RW); 312 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
+   (kecamatan/kelurahan/RW); 348 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
    dimatikan. Filter wilayah bertingkat: **kecamatan** (pilih satu) → **kelurahan** (checkbox, semua
    terpilih saat kecamatan dipilih; **nol kelurahan bukan berarti semua** — tampilkan peringatan merah,
    tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat lewat **segmented control**
@@ -69,7 +69,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 10. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
 11. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
     database (auth, simpan laporan) hanya aktif bila env itu ada.
-12. **Format angka Indonesia**: `1.557`, `74,2%`, `Rp650,18 Miliar`.
+12. **Format angka Indonesia**: `1.634`, `74,2%`, `Rp683,34 Miliar`.
 
 ## Konvensi repo
 
@@ -79,13 +79,20 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   Tangerang pakai **kelurahan/RW**, bukan "desa".
 - Struktur: `src/app` (rute), `src/features/<domain>` (UI + logika klien), `src/server` (server-only),
   `src/contracts` (tipe lintas lapisan), `data/` (snapshot), `public/data/` (GeoJSON batas).
-- Jangan mengedit `data/saksi_kota_tangerang_2025_2026.json` manual — bangun ulang dari pipeline
-  SIRUP + batas ArcGIS (lihat `docs/STATE.md`); dataset adalah artefak bertanggal.
+- Jangan mengedit `data/saksi_kota_tangerang_2025_2026.json` manual — bangun ulang dengan
+  `npm run data:snapshot` (`scripts/build-snapshot.mjs`) dari **ekspor RUP `data.inaproc.id`**
+  (sumber utama sejak 5 Nov 2026) + batas ArcGIS + detail RUP. Dataset adalah artefak bertanggal.
 - Data kontrak/penyedia punya perintah sendiri: `npm run lpse:list` → `lpse:detail` → `lpse:match`
   (SPSE) dan `npm run data:realisasi` (Data INAPROC, ekspor CSV penuh; `--mode table` untuk cadangan
-  per satker), plus `npm run data:rup` / `data:rup-detail` untuk RUP (pengganti SIRUP). Jalankan
+  per satker), plus `npm run data:rup` / `data:rup-detail` / `data:rup-detail-tambal` untuk RUP dan
+  `npm run data:snapshot` untuk merakit snapshot. Jalankan
   berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya ada di
   `docs/LPSE-PEMENANG.md` dan `docs/RUP-DATA-INAPROC.md`.
+- **Tautan bukti penyedia:** paket dengan rekam LPSE memakai URL SPSE aslinya; paket lain memakai
+  `https://data.inaproc.id/rup?kode=<kode_rup>` (halaman Detail Paket). Varian `/realisasi?kode=`
+  diuji dan selalu kosong — jangan dipakai.
+- **Swakelola & instansi bukan pemenang.** Baris realisasi ber-metode Swakelola atau bernama Dinas/OPD/
+  Pegawai Dinas tidak boleh tampil sebagai penyedia.
 
 ## Perintah verifikasi (wajib hijau sebelum lapor selesai)
 

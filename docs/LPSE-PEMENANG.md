@@ -27,12 +27,12 @@ format penuh.
 
 | | |
 |---|---:|
-| Paket RUP (snapshot 31 Okt) | **1.557** |
+| Paket RUP (snapshot 5 Nov 2026) | **1.634** |
 | Baris LPSE ditarik (2025+2026) | 4.869 (tender 192 · non-tender 4.677) |
 | Detail diambil (nama cocok RUP) | 949 |
 | **Paket RUP tercocok** | **943 (60,6%)** — semuanya lewat **Kode RUP**, bukan tebakan nama |
 | Paket dengan pemenang | **731** |
-| Pagu paket tercocok | Rp182,48 M dari Rp650,18 M |
+| Pagu paket tercocok | Rp182,48 M dari Rp683,34 M |
 | Nilai kontrak total | **Rp138,81 M** |
 | Rasio median kontrak/pagu | **0,99** (tidak ada outlier >1,2 atau <0,3) |
 
@@ -141,8 +141,8 @@ Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 
 | | Sebelum | Sesudah |
 |---|---:|---:|
-| Paket punya nama penyedia | 731 (46,9%) | **1.424 (91,4%)** |
-| Paket tanpa rekam | 826 | **133** |
+| Paket punya nama penyedia | 731 (46,9%) | **1.424 (87,1%)** |
+| Paket tanpa rekam | 826 | **210** |
 | Penyedia unik | 330 | **522** |
 
 693 paket terisi dari realisasi: **375 e-purchasing**, 304 pengadaan langsung, 14 dikecualikan.
@@ -175,6 +175,6 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Sisa yang belum tertutup
 
-133 paket (Rp97,6 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
+210 paket (Rp130,72 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
 **`docs/SISA-176-PAKET.md`**.
 

@@ -11,11 +11,11 @@ This is the operational handoff for continuing work in this repository. The shor
 
 ## Product and data scope
 
-SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.557 road/junction/drainage packages, Rp650,18 billion**. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.634 road/junction/drainage packages, Rp683,34 billion**. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
 
-Location anchor, after enriching from RUP details: **818 RW (52.5%)**, **337 kelurahan (21.6%)**, **90 kecamatan (5.8%)**, **312 without any locus (20.0%)** — so 1.245 packages (80.0%) carry a derived location. Coverage touches 80 of 104 kelurahan, 483 of 1,020 RW, in 13 kecamatan.
+Location anchor, after enriching from RUP details: **821 RW (50.2%)**, **375 kelurahan (22.9%)**, **90 kecamatan (5.5%)**, **312 without any locus (21.3%)** — so 1.286 packages (78.7%) carry a derived location. Coverage touches 85 of 104 kelurahan, 490 of 1,020 RW, in 13 kecamatan.
 
-Vendor records: **1.424 of 1.557 packages (91.4%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 15.0% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
+Vendor records: **1.424 of 1.634 packages (87.1%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -24,7 +24,7 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | Route | Purpose | Current behavior |
 |---|---|---|
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
-| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (1.245 of 1.557). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
+| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (1.286 of 1.634). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
 | `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
 | `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
@@ -96,7 +96,7 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
 - Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
-- Format numbers for Indonesian readers (`1.557`, `91,4%`, `Rp650,18 Miliar`). Attach source, date, coverage, and methodology to public claims.
+- Format numbers for Indonesian readers (`1.634`, `87,1%`, `Rp683,34 Miliar`). Attach source, date, coverage, and methodology to public claims.
 - Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
 - Never present an inferred map location as an official package coordinate, and never place per-package pins.
 - Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.

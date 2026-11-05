@@ -17,13 +17,13 @@ Kabupaten Tangerang (D50) dan Bandung hanya tersisa sebagai arsip pipeline, buka
 
 Angka snapshot **31 Oktober 2026**, diperkaya detail RUP **3 November 2026**:
 
-- **1.557 paket jalan/jembatan/drainase**, pagu **Rp650,18 Miliar** (TA2025 939 · TA2026 618).
-- Jenis pekerjaan: **drainase 1.238 · permukaan 269 · jembatan 50**.
-- Anchor lokasi: **RW 818 (52,5%)**, **kelurahan 337 (21,6%)**, **kecamatan 90 (5,8%)**,
-  **tanpa lokus 312 (20,0%)** → **1.245 paket (80,0%) punya lokus turunan**.
-- Jangkauan: **80 dari 104 kelurahan**, **483 dari 1.020 RW**, **13 kecamatan**.
-- Penyedia: **1.424 dari 1.557 paket (91,4%)** punya nama penyedia — **731 dari LPSE/SPSE**,
-  **693 dari Data INAPROC realisasi**; **133 paket** (Rp97,6 M; 15,0% pagu) tanpa rekam publik;
+- **1.634 paket jalan/jembatan/drainase**, pagu **Rp683,34 Miliar** (TA2025 981 · TA2026 653).
+- Jenis pekerjaan: **drainase 1.303 · permukaan 287 · jembatan 44**.
+- Anchor lokasi: **RW 821 (50,2%)**, **kelurahan 375 (22,9%)**, **kecamatan 90 (5,5%)**,
+  **tanpa lokus 348 (21,3%)** → **1.286 paket (78,7%) punya lokus turunan**.
+- Jangkauan: **85 dari 104 kelurahan**, **490 dari 1.020 RW**, **13 kecamatan**.
+- Penyedia: **1.424 dari 1.634 paket (87,1%)** punya nama penyedia — **731 dari LPSE/SPSE**,
+  **693 dari Data INAPROC realisasi**; **210 paket** (Rp130,72 M; 19,1% pagu) tanpa rekam publik;
   **522 penyedia unik**; rasio kontrak/pagu median **0,99**.
 - **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
 
@@ -63,7 +63,7 @@ nomor RW dan **20,6%** kelurahan.
 
 ### 2.2 Dataset Tersedia (`data/` dan `public/data/`)
 
-- `data/saksi_kota_tangerang_2025_2026.json` — 1.557 paket jalan + anchor (`rw`, `unit_id`,
+- `data/saksi_kota_tangerang_2025_2026.json` — 1.634 paket jalan + anchor (`rw`, `unit_id`,
   `presisi_peta`, `bulan`, `kecamatan_resmi`, `desa_resmi`); dibaca server-only.
 - `data/lpse_kota_tangerang_2025_2026.json` — 731 paket dengan pemenang dari SPSE.
 - `data/realisasi_kota_tangerang.json` — 51.051 baris realisasi (37.799 TA2025 + 13.252 TA2026)
@@ -72,7 +72,7 @@ nomor RW dan **20,6%** kelurahan.
   dibuat ulang lewat `npm run data:kecamatan`).
 - Arsip pipeline lama (Kabupaten/Bandung) hanya untuk referensi, tidak dipakai UI.
 
-Sumber: SIRUP Inaproc (`dataruppenyediakldi?idKldi=D44`, 21.402 baris 2025+2026), detail RUP
+Sumber utama: **ekspor RUP `data.inaproc.id`** (28.699 baris D44 2025+2026, ditarik `scripts/rup.mjs`), detail RUP
 `data.inaproc.id`, SPSE `spse.inaproc.id/tangerangkota`, Data INAPROC realisasi (ekspor CSV), dan
 ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota.py`) dan
 `scripts/` di repo ini (`lpse.mjs`, `realisasi.mjs`, `rup.mjs`, `enrich-rup.mjs`, `kecamatan.mjs`).
@@ -80,13 +80,20 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 ### 2.3 Implementasi dan Batas Frontend/Backend
 
 - `src/app/page.tsx` — Server Component yang meminta data awal ke use case paket (default hanya
-  paket berlokasi: 1.245).
+  paket berlokasi: 1.286).
 - `src/features/map/map-dashboard.tsx` — filter tahun, kecamatan → kelurahan (checkbox), jenis
   pekerjaan, kontrak, pencarian, mode tampilan (Jumlah paket / Nilai anggaran / Jenis pekerjaan),
   register paket, panel pemenang & kontrak.
 - `src/features/map/map-canvas.tsx` — koroplet tiga tingkat dengan segmented control
   **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom), legenda mengikuti tingkat, agregasi
   kecamatan memakai kelas kuantil.
+- Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
+  (e-purchasing/swakelola-celah) membuka **`https://data.inaproc.id/rup?kode=<kode_rup>`** — halaman
+  Detail Paket Data INAPROC, bukan halaman daftar. Varian `?kode=` pada `/realisasi` sudah diuji dan
+  selalu menjawab "tidak memiliki Data Detail", jadi tidak dipakai.
+- Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi (Dinas, OPD,
+  Pegawai Dinas) **tidak** dihitung sebagai pemenang — 43 paket swakelola tampil sebagai tanpa rekam
+  kontrak, bukan dengan penyedia palsu.
 - `src/app/api/packages/route.ts` → `src/server/api/packages/*` → `src/server/packages/service.ts` →
   `snapshot-repository.ts` + `lpse-repository.ts` (server-only + type guard runtime).
 - `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 693 dari realisasi).
@@ -141,7 +148,7 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 3. **Tingkat poligon dipilih manual**, bukan mengikuti zoom.
 4. **Filter wilayah bertingkat:** kecamatan dulu, lalu kelurahan (checkbox). Nol kelurahan bukan
    berarti "semua" — tampilkan peringatan merah dan jangan kirim permintaan.
-5. **Default hanya paket berlokasi** (1.245 dari 1.557); 312 paket presisi kabupaten muncul hanya bila
+5. **Default hanya paket berlokasi** (1.286 dari 1.634); 348 paket presisi kabupaten muncul hanya bila
    "Hanya paket berlokasi" dimatikan.
 6. **Penyedia disajikan berimbang** — selalu dengan penyebut (jumlah paket/kelas/tahun), tanpa skor
    gabungan; istilah tetap "paket dengan laporan kerusakan dalam masa pemeliharaan".
