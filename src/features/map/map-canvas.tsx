@@ -63,6 +63,18 @@ const CLASSES = [
 
 const normalize = (value: unknown) => String(value ?? "").toLocaleLowerCase("id-ID").replace(/[^a-z0-9]/g, "");
 
+/** Pilihan peta dasar. CARTO Positron butuh API key; tanpa key tile-nya berwatermark. */
+type BasemapKey = "osm" | "positron" | "satelit";
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+const BASEMAPS: Record<BasemapKey, { label: string; hint: string }> = {
+  osm: { label: "OSM", hint: "OpenStreetMap standar" },
+  positron: {
+    label: "Positron",
+    hint: CARTO_KEY ? "CARTO Positron" : "CARTO Positron — butuh API key CARTO (tanpa key tile berwatermark)",
+  },
+  satelit: { label: "Satelit", hint: "Esri World Imagery + overlay jaringan jalan" },
+};
+
 function escapeHtml(value: unknown) {
   return String(value ?? "").replace(/[&<>\"]/g, (character) => ({
     "&": "&amp;",
@@ -192,11 +204,11 @@ function styleFor(
 
   return {
     color: selected ? "#0A192F" : inSelectedScope ? "#0058A3" : bucketStroke,
-    weight: selected ? 4 : inSelectedScope ? 2.5 : count === 0 ? 0.5 : 0.8,
-    opacity: selected || inSelectedScope ? 1 : 0.8,
+    weight: selected ? 4 : inSelectedScope ? 2.5 : count === 0 ? 0.6 : 0.8,
+    opacity: selected || inSelectedScope ? 1 : count === 0 ? 1 : 0.8,
     dashArray: inSelectedScope ? "5 3" : undefined,
     fillColor: bucket.fill,
-    fillOpacity: count === 0 ? 0.18 : 0.72,
+    fillOpacity: count === 0 ? 0 : 0.72,
   } satisfies L.PathOptions;
 }
 
@@ -511,6 +523,21 @@ function BoundaryLayers({ packages, selectedPackage, selectedRegion, onSelectReg
 
 export default function MapCanvas(props: MapCanvasProps) {
   const [rwZoomed, setRwZoomed] = useState(false);
+  const [basemap, setBasemap] = useState<BasemapKey>(() => {
+    if (typeof window === "undefined") return "osm";
+    const tersimpan = window.localStorage.getItem("saksi-basemap");
+    return tersimpan && tersimpan in BASEMAPS ? (tersimpan as BasemapKey) : "osm";
+  });
+
+  const pilihBasemap = (kunci: BasemapKey) => {
+    setBasemap(kunci);
+    try {
+      window.localStorage.setItem("saksi-basemap", kunci);
+    } catch {
+      /* localStorage bisa diblokir di mode privat */
+    }
+  };
+
   const view: AreaView = props.viewMode;
   const areaStats = useMemo(() => statsByArea(props.packages), [props.packages]);
   const bands = useMemo(() => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel) }), [areaStats]);
@@ -535,15 +562,66 @@ export default function MapCanvas(props: MapCanvasProps) {
       maxZoom={18}
       scrollWheelZoom
       preferCanvas
-      className={`relative z-0 isolate w-full bg-muted/30 ${props.mapHeightClassName ?? "h-[580px]"}`}
+      className={`relative z-0 isolate w-full ${basemap === "satelit" ? "bg-[#0b1220]" : "bg-muted/30"} ${props.mapHeightClassName ?? "h-[580px]"}`}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      {basemap === "osm" && (
+        <TileLayer
+          key="osm"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
+      )}
+      {basemap === "positron" && (
+        <TileLayer
+          key="positron"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url={`https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png${CARTO_KEY ? `?api_key=${CARTO_KEY}` : ""}`}
+          subdomains="abcd"
+          maxZoom={20}
+          detectRetina
+        />
+      )}
+      {basemap === "satelit" && (
+        <>
+          <TileLayer
+            key="esri-imagery"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
+          <TileLayer
+            key="esri-transport"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
+        </>
+      )}
       <MapSizeRefresh />
       <MapZoomPrecision onChange={handlePrecisionChange} />
       <BoundaryLayers {...props} view={view} bands={bands} />
+      <div className="saksi-map-overlay absolute top-3 left-14 z-[1000] flex overflow-hidden border border-border bg-white/95 shadow-sm">
+        {(Object.keys(BASEMAPS) as BasemapKey[]).map((kunci) => (
+          <button
+            key={kunci}
+            type="button"
+            onClick={() => pilihBasemap(kunci)}
+            aria-pressed={basemap === kunci}
+            title={BASEMAPS[kunci].hint}
+            className={`px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
+              basemap === kunci ? "bg-primary text-white" : "text-foreground/70 hover:bg-muted"
+            }`}
+          >
+            {BASEMAPS[kunci].label}
+          </button>
+        ))}
+      </div>
+      {basemap === "positron" && !CARTO_KEY && (
+        <div className="saksi-map-overlay absolute top-14 left-14 z-[1000] max-w-[16rem] border border-border bg-white/95 px-2 py-1 text-[10px] leading-snug text-muted-foreground shadow-sm">
+          Positron butuh API key CARTO — tanpa key, tile tampil berwatermark.
+        </div>
+      )}
       <div className="saksi-map-overlay pointer-events-none absolute top-3 right-3 z-[1000] max-w-[min(23rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
         <p>
           {props.selectedPackage && !hasSpecificRegion

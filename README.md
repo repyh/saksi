@@ -13,6 +13,9 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Map (`/project`) as a **choropleth of official boundaries**: RW polygons (1,020) at zoom ≥ 12 and
   kelurahan polygons (104) below that. No per-package pins — a package is tied to an area, never to a
   work-site coordinate.
+- Basemap switcher (top-left of the map, persisted in `localStorage`): **OSM**, **CARTO Positron**
+  (needs `NEXT_PUBLIC_CARTO_API_KEY`; without it CARTO serves a watermarked tile and the UI says so),
+  and **Esri satellite + road overlay**.
 - Filters for budget year, kecamatan, work type, contract record status (LPSE), and a free-text
   search (area, road, RUP code, or vendor name).
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
