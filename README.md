@@ -15,6 +15,9 @@ review, not proof of wrongdoing or a guarantee of government action.
   package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
   package anchored inside them, including RW- and kelurahan-precision packages, and use their own
   quantile class breaks so 13 polygons do not all land in one colour.
+- Basemap tile source comes from a single `NEXT_PUBLIC_BASEMAP_URL` (default
+  `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`); attribution switches automatically for
+  OpenStreetMap, CARTO, and Esri hosts.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
   The map shows only packages with a derived location by default; the 312 packages whose only

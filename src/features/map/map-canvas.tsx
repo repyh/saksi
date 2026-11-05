@@ -66,6 +66,20 @@ const CLASSES = [
 
 const normalize = (value: unknown) => String(value ?? "").toLocaleLowerCase("id-ID").replace(/[^a-z0-9]/g, "");
 
+/** Satu variabel untuk peta dasar; default OpenStreetMap. */
+const BASEMAP_URL =
+  process.env.NEXT_PUBLIC_BASEMAP_URL?.trim() || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+function attributionBasemap(url: string) {
+  if (url.includes("cartocdn.com")) {
+    return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  }
+  if (url.includes("arcgisonline.com")) {
+    return '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  }
+  return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+}
+
 function escapeHtml(value: unknown) {
   return String(value ?? "").replace(/[&<>\"]/g, (character) => ({
     "&": "&amp;",
@@ -633,8 +647,8 @@ export default function MapCanvas(props: MapCanvasProps) {
       className={`relative z-0 isolate w-full bg-muted/30 ${props.mapHeightClassName ?? "h-[580px]"}`}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={attributionBasemap(BASEMAP_URL)}
+        url={BASEMAP_URL}
       />
       <MapSizeRefresh />
       <MapZoomPrecision onChange={handlePrecisionChange} />
