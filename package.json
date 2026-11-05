@@ -18,7 +18,8 @@
     "lpse:match": "node scripts/lpse.mjs match",
     "data:realisasi": "node scripts/realisasi.mjs",
     "data:rup": "node scripts/rup.mjs",
-    "data:rup-detail": "node scripts/rup.mjs --detail"
+    "data:rup-detail": "node scripts/rup.mjs --detail",
+    "data:enrich": "node scripts/enrich-rup.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

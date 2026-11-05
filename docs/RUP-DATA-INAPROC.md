@@ -97,3 +97,26 @@ contoh `56733954`: nama menyiratkan "Tangerang", detail menyebut **Kecamatan Neg
 Konsekuensi: kalau detail dipakai untuk lokasi, ia **memperbaiki** sebagian tebakan dan
 **menambah** anchor baru, tetapi jangan dipakai untuk menimpa `RW` yang sudah ada — `detail_lokasi`
 tidak pernah menyebut RW.
+
+## Perkayaan snapshot (`npm run data:enrich`)
+
+`scripts/enrich-rup.mjs` membaca snapshot + detail lalu (1) mengisi `bulan` dari
+`jadwal_pemilihan_mulai`, dan (2) memberi anchor kecamatan pada paket `Kabupaten` yang detailnya
+menyebut **tepat satu** kecamatan. Tidak menimpa anchor RW/kelurahan, tidak mengubah jumlah paket.
+
+Hasil pada snapshot produk (3 Nov 2026):
+
+| | Sebelum | Sesudah |
+|---|---:|---:|
+| `bulan` terisi | 1.557 (campur Inggris/Indonesia) | **1.557, bahasa Indonesia konsisten** |
+| Presisi RW | 818 | 818 |
+| Presisi Kelurahan | 337 | 337 |
+| Presisi **Kecamatan** | 0 | **90** |
+| Tanpa lokus (`Kabupaten`) | 402 | **312** |
+
+Sebaran 90 anchor baru: Periuk 16 · Pinang 14 · Tangerang 12 · Karawaci 11 · Cibodas 9 · Benda 8 ·
+Cipondoh 7 · Neglasari 5 · Batuceper 4 · Ciledug 3 · Jatiuwung 1.
+
+Catatan UI: presisi `Kecamatan` **tidak** menyorot poligon di peta (repo ini hanya memuat
+`rw.geojson` dan `kel.geojson`); paket tampil dengan breadcrumb `Kec. X` dan tetap muncul di daftar
+serta filter wilayah. Peta hanya menyorot untuk presisi RW/kelurahan.
