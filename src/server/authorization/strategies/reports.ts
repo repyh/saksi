@@ -13,9 +13,7 @@ const reportPermissions = [
   "reports.export",
 ] as const satisfies readonly PermissionCode[];
 
-const reportReadRequired: readonly PermissionCode[] = [
-  "reports.read_deidentified",
-];
+const reportReadRequired: readonly PermissionCode[] = ["reports.read_deidentified"];
 
 export const reportsAuthorizationStrategy: AuthorizationStrategy = {
   domain: "reports",

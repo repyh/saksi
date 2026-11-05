@@ -6,7 +6,7 @@ import { strategyForPermission } from "./registry";
 import type { AuthorizationContext, AuthorizationDecision } from "./types";
 
 export { AuthorizationError } from "./errors";
-export { grantPermissionBundle, revokePermissionBundle } from "./strategies/access";
+export { grantIndividualPermissions, grantPermissionPreset, revokePermissionGrant } from "./strategies/access";
 
 /** The single policy decision entry point used by routes, actions, and server use cases. */
 export async function authorizePermission(
@@ -63,7 +63,7 @@ export function authorizationResponse(error: unknown): Response | null {
     {
       data: null,
       error: {
-        code: error.status === 401 ? "AUTHENTICATION_REQUIRED" : "PERMISSION_DENIED",
+        code: error.code,
         message: error.message,
       },
     },

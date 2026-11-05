@@ -73,25 +73,25 @@ enum RoadLocationPrecision {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  bundleGrants  UserBundleGrant[]          @relation("GrantedUser")
-  grantsIssued  UserBundleGrant[]          @relation("GrantingUser")
-  grantsRevoked UserBundleGrant[]          @relation("RevokingUser")
-  auditAsActor  AuthorizationAuditEvent[]   @relation("AuthorizationAuditActor")
-  auditAsSubject AuthorizationAuditEvent[] @relation("AuthorizationAuditSubject")
-  invitesCreated RegistrationInvite[]       @relation("RegistrationInviteCreator")
-  invitesRedeemed RegistrationInvite[]      @relation("RegistrationInviteRedeemer")
-  invitesRevoked RegistrationInvite[]        @relation("RegistrationInviteRevoker")
-  reportsSubmitted Report[]                 @relation("ReportSubmitter")
-  reportStatusEvents ReportStatusEvent[]    @relation("ReportStatusActor")
+  id                      String                    @id
+  name                    String
+  email                   String                    @unique
+  emailVerified           Boolean                   @default(false)
+  image                   String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  sessions                Session[]
+  accounts                Account[]
+  permissionGrants        UserPermissionGrant[]     @relation("PermissionGrantUser")
+  permissionGrantsIssued  UserPermissionGrant[]     @relation("PermissionGrantor")
+  permissionGrantsRevoked UserPermissionGrant[]     @relation("PermissionRevoker")
+  auditAsActor            AuthorizationAuditEvent[] @relation("AuthorizationAuditActor")
+  auditAsSubject          AuthorizationAuditEvent[] @relation("AuthorizationAuditSubject")
+  invitesCreated          RegistrationInvite[]      @relation("RegistrationInviteCreator")
+  invitesRedeemed         RegistrationInvite[]      @relation("RegistrationInviteRedeemer")
+  invitesRevoked          RegistrationInvite[]      @relation("RegistrationInviteRevoker")
+  reportsSubmitted        Report[]                  @relation("ReportSubmitter")
+  reportStatusEvents      ReportStatusEvent[]       @relation("ReportStatusActor")
 }
 
 model Session {
@@ -146,60 +146,37 @@ model rateLimit {
 }
 
 model Permission {
-  code              String                       @id
-  description       String
-  sensitive         Boolean                      @default(false)
-  createdAt         DateTime                     @default(now())
-  bundlePermissions PermissionBundlePermission[]
-}
-
-model PermissionBundle {
-  id          String                       @id @default(cuid())
-  code        String                       @unique
-  name        String
+  code        String                @id
   description String
-  isSystem    Boolean                      @default(true)
-  isActive    Boolean                      @default(true)
-  createdAt   DateTime                     @default(now())
-  updatedAt   DateTime                     @updatedAt
-  permissions PermissionBundlePermission[]
-  grants      UserBundleGrant[]
-
-  @@index([isActive])
+  sensitive   Boolean               @default(false)
+  createdAt   DateTime              @default(now())
+  grants      UserPermissionGrant[]
 }
 
-model PermissionBundlePermission {
-  bundleId      String
-  permissionCode String
-  bundle        PermissionBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  permission    Permission      @relation(fields: [permissionCode], references: [code], onDelete: Restrict)
-
-  @@id([bundleId, permissionCode])
-  @@index([permissionCode])
-}
-
-model UserBundleGrant {
-  id                String           @id @default(cuid())
-  userId            String
-  bundleId          String
-  grantedByUserId   String
-  grantedAt         DateTime         @default(now())
-  expiresAt         DateTime?
-  revokedAt         DateTime?
-  revokedByUserId   String?
-  reason            String
-  user              User             @relation("GrantedUser", fields: [userId], references: [id], onDelete: Cascade)
-  bundle            PermissionBundle @relation(fields: [bundleId], references: [id], onDelete: Restrict)
-  grantedBy         User             @relation("GrantingUser", fields: [grantedByUserId], references: [id], onDelete: Restrict)
-  revokedBy         User?            @relation("RevokingUser", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+model UserPermissionGrant {
+  id              String     @id @default(cuid())
+  userId          String
+  permissionCode  String
+  grantedByUserId String
+  grantedAt       DateTime   @default(now())
+  grantBatchId    String?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  revokedByUserId String?
+  reason          String
+  user            User       @relation("PermissionGrantUser", fields: [userId], references: [id], onDelete: Cascade)
+  permission      Permission @relation(fields: [permissionCode], references: [code], onDelete: Restrict)
+  grantedBy       User       @relation("PermissionGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+  revokedBy       User?      @relation("PermissionRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
 
   @@index([userId, revokedAt, expiresAt])
-  @@index([bundleId, revokedAt])
+  @@index([permissionCode, revokedAt])
   @@index([grantedByUserId])
+  @@index([grantBatchId])
 }
 
 model AuthorizationAuditEvent {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   actorUserId   String?
   subjectUserId String?
   action        String
@@ -208,9 +185,9 @@ model AuthorizationAuditEvent {
   reason        String?
   requestId     String?
   metadata      Json?
-  createdAt     DateTime  @default(now())
-  actor         User?     @relation("AuthorizationAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  subject       User?     @relation("AuthorizationAuditSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  actor         User?    @relation("AuthorizationAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  subject       User?    @relation("AuthorizationAuditSubject", fields: [subjectUserId], references: [id], onDelete: SetNull)
 
   @@index([actorUserId, createdAt])
   @@index([subjectUserId, createdAt])
@@ -219,19 +196,21 @@ model AuthorizationAuditEvent {
 }
 
 model RegistrationInvite {
-  id                String    @id @default(cuid())
-  tokenHash         String    @unique
-  email             String
-  createdByUserId   String
-  redeemedByUserId String?
-  revokedByUserId  String?
-  createdAt        DateTime  @default(now())
-  expiresAt        DateTime
-  redeemedAt       DateTime?
-  revokedAt        DateTime?
-  createdBy        User      @relation("RegistrationInviteCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  redeemedBy       User?     @relation("RegistrationInviteRedeemer", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
-  revokedBy        User?     @relation("RegistrationInviteRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  id                    String    @id @default(cuid())
+  tokenHash             String    @unique
+  email                 String
+  createdByUserId       String
+  redeemedByUserId      String?
+  revokedByUserId       String?
+  permissionCodes       String[]  @default([])
+  permissionGrantReason String?
+  createdAt             DateTime  @default(now())
+  expiresAt             DateTime
+  redeemedAt            DateTime?
+  revokedAt             DateTime?
+  createdBy             User      @relation("RegistrationInviteCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  redeemedBy            User?     @relation("RegistrationInviteRedeemer", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
+  revokedBy             User?     @relation("RegistrationInviteRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
 
   @@index([email, expiresAt])
   @@index([createdByUserId, createdAt])
@@ -240,21 +219,21 @@ model RegistrationInvite {
 }
 
 model AdministrativeArea {
-  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  stableKey          String                   @unique @map("stable_key") @db.VarChar(180)
-  level              AdministrativeAreaLevel
-  districtName       String                   @map("district_name") @db.VarChar(160)
-  villageName        String?                  @map("village_name") @db.VarChar(160)
-  rwCode             String?                  @map("rw_code") @db.VarChar(32)
-  geometry           Unsupported("geometry(MultiPolygon, 4326)")
-  sourceName         String                   @map("source_name") @db.VarChar(120)
-  sourceFeatureId    String?                  @map("source_feature_id") @db.VarChar(120)
-  datasetVersion     String                   @map("dataset_version") @db.VarChar(120)
-  sourceRetrievedAt  DateTime                 @map("source_retrieved_at") @db.Timestamptz(6)
-  isActive           Boolean                  @default(true) @map("is_active")
-  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reports            Report[]
+  id                String                                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stableKey         String                                      @unique @map("stable_key") @db.VarChar(180)
+  level             AdministrativeAreaLevel
+  districtName      String                                      @map("district_name") @db.VarChar(160)
+  villageName       String?                                     @map("village_name") @db.VarChar(160)
+  rwCode            String?                                     @map("rw_code") @db.VarChar(32)
+  geometry          Unsupported("geometry(MultiPolygon, 4326)")
+  sourceName        String                                      @map("source_name") @db.VarChar(120)
+  sourceFeatureId   String?                                     @map("source_feature_id") @db.VarChar(120)
+  datasetVersion    String                                      @map("dataset_version") @db.VarChar(120)
+  sourceRetrievedAt DateTime                                    @map("source_retrieved_at") @db.Timestamptz(6)
+  isActive          Boolean                                     @default(true) @map("is_active")
+  createdAt         DateTime                                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                                    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reports           Report[]
 
   @@index([level, isActive])
   @@index([districtName, villageName, rwCode])
@@ -262,26 +241,26 @@ model AdministrativeArea {
 }
 
 model RoadPackage {
-  id                 String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  rup                String                    @unique @db.VarChar(32)
-  year               Int
-  name               String                    @db.Text
-  agencyName         String                    @map("agency_name") @db.Text
-  budget             Decimal                   @db.Decimal(20, 0)
-  method             String                    @db.Text
-  sourceName         String                    @map("source_name") @db.VarChar(120)
-  sourceUrl          String?                   @map("source_url") @db.Text
-  sourceRetrievedAt  DateTime                  @map("source_retrieved_at") @db.Timestamptz(6)
-  datasetVersion     String                    @map("dataset_version") @db.VarChar(120)
-  datasetChecksum    String?                   @map("dataset_checksum") @db.VarChar(128)
-  locationPrecision  RoadLocationPrecision    @map("location_precision")
-  officialDistrict   String?                   @map("official_district") @db.VarChar(160)
-  officialVillage    String?                   @map("official_village") @db.VarChar(160)
-  rwCode             String?                   @map("rw_code") @db.VarChar(32)
-  microLocation      String?                   @map("micro_location") @db.Text
-  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reportLinks        ReportPackageLink[]
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rup               String                @unique @db.VarChar(32)
+  year              Int
+  name              String                @db.Text
+  agencyName        String                @map("agency_name") @db.Text
+  budget            Decimal               @db.Decimal(20, 0)
+  method            String                @db.Text
+  sourceName        String                @map("source_name") @db.VarChar(120)
+  sourceUrl         String?               @map("source_url") @db.Text
+  sourceRetrievedAt DateTime              @map("source_retrieved_at") @db.Timestamptz(6)
+  datasetVersion    String                @map("dataset_version") @db.VarChar(120)
+  datasetChecksum   String?               @map("dataset_checksum") @db.VarChar(128)
+  locationPrecision RoadLocationPrecision @map("location_precision")
+  officialDistrict  String?               @map("official_district") @db.VarChar(160)
+  officialVillage   String?               @map("official_village") @db.VarChar(160)
+  rwCode            String?               @map("rw_code") @db.VarChar(32)
+  microLocation     String?               @map("micro_location") @db.Text
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reportLinks       ReportPackageLink[]
 
   @@index([year])
   @@index([officialDistrict, officialVillage, rwCode])
@@ -289,30 +268,30 @@ model RoadPackage {
 }
 
 model Report {
-  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  publicCode            String                  @unique @map("public_code") @db.VarChar(64)
-  reporterUserId        String?                 @map("reporter_user_id")
-  status                ReportStatus            @default(SUBMITTED)
-  damageType            ReportDamageType         @map("damage_type")
-  observedCauses        ReportObservedCause[]   @default([]) @map("observed_causes")
-  coarseSize            ReportCoarseSize?       @map("coarse_size")
-  description           String?                 @db.VarChar(500)
-  areaId                String?                 @map("area_id") @db.Uuid
-  areaNameSnapshot      String?                 @map("area_name_snapshot") @db.VarChar(160)
-  districtNameSnapshot  String?                 @map("district_name_snapshot") @db.VarChar(160)
-  rwCodeSnapshot        String?                 @map("rw_code_snapshot") @db.VarChar(32)
-  areaDatasetVersion    String?                 @map("area_dataset_version") @db.VarChar(120)
-  locationSource        ReportLocationSource    @default(UNKNOWN) @map("location_source")
-  locationHint          String?                 @map("location_hint") @db.VarChar(180)
-  submittedAt           DateTime                @default(now()) @map("submitted_at") @db.Timestamptz(6)
-  createdAt             DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reporter              User?                   @relation("ReportSubmitter", fields: [reporterUserId], references: [id], onDelete: SetNull)
-  area                  AdministrativeArea?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
-  media                 ReportMedia?
-  packageLink           ReportPackageLink?
-  statusEvents          ReportStatusEvent[]
-  idempotencyKey        ReportIdempotencyKey?
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publicCode           String                @unique @map("public_code") @db.VarChar(64)
+  reporterUserId       String?               @map("reporter_user_id")
+  status               ReportStatus          @default(SUBMITTED)
+  damageType           ReportDamageType      @map("damage_type")
+  observedCauses       ReportObservedCause[] @default([]) @map("observed_causes")
+  coarseSize           ReportCoarseSize?     @map("coarse_size")
+  description          String?               @db.VarChar(500)
+  areaId               String?               @map("area_id") @db.Uuid
+  areaNameSnapshot     String?               @map("area_name_snapshot") @db.VarChar(160)
+  districtNameSnapshot String?               @map("district_name_snapshot") @db.VarChar(160)
+  rwCodeSnapshot       String?               @map("rw_code_snapshot") @db.VarChar(32)
+  areaDatasetVersion   String?               @map("area_dataset_version") @db.VarChar(120)
+  locationSource       ReportLocationSource  @default(UNKNOWN) @map("location_source")
+  locationHint         String?               @map("location_hint") @db.VarChar(180)
+  submittedAt          DateTime              @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reporter             User?                 @relation("ReportSubmitter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  area                 AdministrativeArea?   @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  media                ReportMedia?
+  packageLink          ReportPackageLink?
+  statusEvents         ReportStatusEvent[]
+  idempotencyKey       ReportIdempotencyKey?
 
   @@index([status, submittedAt])
   @@index([areaId, submittedAt])
@@ -321,48 +300,48 @@ model Report {
 }
 
 model ReportMedia {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reportId          String    @unique @map("report_id") @db.Uuid
-  objectPath        String    @unique @map("object_path") @db.VarChar(512)
-  mediaType         String    @default("image/webp") @map("media_type") @db.VarChar(80)
-  byteSize          Int       @map("byte_size")
-  width             Int
-  height            Int
-  sanitizerVersion  String    @map("sanitizer_version") @db.VarChar(80)
-  retainedUntil     DateTime? @map("retained_until") @db.Timestamptz(6)
-  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  report            Report    @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId         String    @unique @map("report_id") @db.Uuid
+  objectPath       String    @unique @map("object_path") @db.VarChar(512)
+  mediaType        String    @default("image/webp") @map("media_type") @db.VarChar(80)
+  byteSize         Int       @map("byte_size")
+  width            Int
+  height           Int
+  sanitizerVersion String    @map("sanitizer_version") @db.VarChar(80)
+  retainedUntil    DateTime? @map("retained_until") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  report           Report    @relation(fields: [reportId], references: [id], onDelete: Restrict)
 
   @@index([retainedUntil])
   @@map("report_media")
 }
 
 model ReportPackageLink {
-  id                  String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reportId            String                     @unique @map("report_id") @db.Uuid
-  roadPackageId       String                     @map("road_package_id") @db.Uuid
-  rupSnapshot         String                     @map("rup_snapshot") @db.VarChar(32)
-  packageNameSnapshot String                     @map("package_name_snapshot") @db.Text
+  id                  String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId            String                       @unique @map("report_id") @db.Uuid
+  roadPackageId       String                       @map("road_package_id") @db.Uuid
+  rupSnapshot         String                       @map("rup_snapshot") @db.VarChar(32)
+  packageNameSnapshot String                       @map("package_name_snapshot") @db.Text
   selectionSource     ReportPackageSelectionSource @map("selection_source")
-  createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
-  report              Report                     @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  roadPackage         RoadPackage                @relation(fields: [roadPackageId], references: [id], onDelete: Restrict)
+  createdAt           DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  report              Report                       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  roadPackage         RoadPackage                  @relation(fields: [roadPackageId], references: [id], onDelete: Restrict)
 
   @@index([roadPackageId])
   @@map("report_package_links")
 }
 
 model ReportStatusEvent {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reportId     String        @map("report_id") @db.Uuid
-  actorUserId  String?       @map("actor_user_id")
-  fromStatus   ReportStatus? @map("from_status")
-  toStatus     ReportStatus  @map("to_status")
-  reason       String?       @db.VarChar(1000)
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  report       Report        @relation(fields: [reportId], references: [id], onDelete: Restrict)
-  actor        User?         @relation("ReportStatusActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId    String        @map("report_id") @db.Uuid
+  actorUserId String?       @map("actor_user_id")
+  fromStatus  ReportStatus? @map("from_status")
+  toStatus    ReportStatus  @map("to_status")
+  reason      String?       @db.VarChar(1000)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  report      Report        @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  actor       User?         @relation("ReportStatusActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([reportId, createdAt])
   @@index([actorUserId, createdAt])

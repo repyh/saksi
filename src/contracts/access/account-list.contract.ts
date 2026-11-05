@@ -2,11 +2,12 @@ import { z } from "zod";
 
 export const accountListItemSchema = z.object({
   id: z.string(),
+  isCurrentUser: z.boolean(),
   name: z.string(),
   email: z.email(),
   emailVerified: z.boolean(),
   createdAt: z.string().datetime(),
-  accessBundles: z.array(z.object({ code: z.string(), name: z.string() })),
+  permissionCodes: z.array(z.string()),
 });
 
 export const accountListResponseSchema = z.object({

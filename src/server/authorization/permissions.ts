@@ -16,23 +16,14 @@ export async function permissionsForUser(
   excludedGrantId?: string,
   now = new Date(),
 ): Promise<Set<PermissionCode>> {
-  const grants = await db.userBundleGrant.findMany({
-    where: {
-      userId,
-      ...activeGrantWhere(now),
-      ...(excludedGrantId ? { id: { not: excludedGrantId } } : {}),
-      bundle: { isActive: true },
-    },
-    select: {
-      bundle: { select: { permissions: { select: { permissionCode: true } } } },
-    },
+  const grants = await db.userPermissionGrant.findMany({
+    where: { userId, ...activeGrantWhere(now), ...(excludedGrantId ? { id: { not: excludedGrantId } } : {}) },
+    select: { permissionCode: true },
   });
 
   const permissions = new Set<PermissionCode>();
   for (const grant of grants) {
-    for (const item of grant.bundle.permissions) {
-      if (isPermissionCode(item.permissionCode)) permissions.add(item.permissionCode);
-    }
+    if (isPermissionCode(grant.permissionCode)) permissions.add(grant.permissionCode);
   }
   return permissions;
 }

@@ -11,10 +11,12 @@ export const PERMISSION_CATALOG = [
   { code: "analytics.read", description: "View aggregate analytics", sensitive: false },
   { code: "analytics.export", description: "Export aggregate analytics", sensitive: true },
   { code: "access.users.read", description: "View staff accounts and access state", sensitive: true },
+  { code: "access.permissions.read_own", description: "View your own active permission details in the dashboard", sensitive: false },
   { code: "access.users.edit", description: "Update staff account profile details", sensitive: true },
   { code: "access.users.invite", description: "Invite staff accounts", sensitive: true },
   { code: "access.users.disable", description: "Disable staff accounts and revoke sessions", sensitive: true },
-  { code: "access.bundles.assign", description: "Grant or revoke approved permission bundles", sensitive: true },
+  { code: "access.presets.apply", description: "Apply approved permission presets to individual grants", sensitive: true },
+  { code: "access.permissions.assign", description: "Grant or revoke approved individual permissions", sensitive: true },
   { code: "access.audit.read", description: "Read authorization and moderation audit events", sensitive: true },
   { code: "sources.read", description: "View source and ingestion metadata", sensitive: false },
   { code: "sources.review_import", description: "Review an imported source batch", sensitive: true },
@@ -23,12 +25,19 @@ export const PERMISSION_CATALOG = [
 
 export type PermissionCode = (typeof PERMISSION_CATALOG)[number]["code"];
 
-/** Explicit delegation policy: grant authority is separate from the permissions being delegated. */
-export const BUNDLE_ASSIGNMENT_POLICY = {
-  "access.bundles.assign": ["analyst", "moderator", "admin"],
+/** Permission presets are conveniences for assigning their expanded permission bits. */
+export const PRESET_ASSIGNMENT_POLICY = {
+  "access.presets.apply": ["analyst", "moderator", "admin"],
 } as const satisfies Partial<Record<PermissionCode, readonly string[]>>;
 
-export const PERMISSION_BUNDLES = [
+/** Individual grants cannot delegate the authorities used to assign presets or permissions. */
+export const PERMISSION_ASSIGNMENT_POLICY = {
+  "access.permissions.assign": PERMISSION_CATALOG
+    .map(({ code }) => code)
+    .filter((code) => code !== "access.presets.apply" && code !== "access.permissions.assign"),
+} as const satisfies Partial<Record<PermissionCode, readonly PermissionCode[]>>;
+
+export const PERMISSION_PRESETS = [
   {
     code: "analyst",
     name: "Analyst",
@@ -62,6 +71,16 @@ export const PERMISSION_BUNDLES = [
   description: string;
   permissions: readonly PermissionCode[];
 }>;
+
+export type PermissionPresetCode = (typeof PERMISSION_PRESETS)[number]["code"];
+
+export function permissionCodesForPreset(code: PermissionPresetCode): readonly PermissionCode[] {
+  return PERMISSION_PRESETS.find((preset) => preset.code === code)?.permissions ?? [];
+}
+
+export function isPermissionPresetCode(value: string): value is PermissionPresetCode {
+  return PERMISSION_PRESETS.some((preset) => preset.code === value);
+}
 
 export function isPermissionCode(value: string): value is PermissionCode {
   return PERMISSION_CATALOG.some((permission) => permission.code === value);

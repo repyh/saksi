@@ -1,9 +1,9 @@
 # SAKSI Security
 
-**Last reviewed:** 4 November 2026
-**Status:** Security foundations exist in code. Database migrations, including authentication rate limits, registration invites, and report persistence, are deployed to the configured Supabase project. Protected business APIs are not yet broadly wired to the authorization authority, and the report workflow has not had a confirmed end-to-end UI submission. Do not treat the current prototype as production-ready.
+**Last reviewed:** 5 November 2026
+**Status:** Security foundations exist in code. The permission-bit normalization migration is prepared in the working tree but has not been deployed. Existing Supabase state may still contain package-backed grants until that migration is applied. Protected business APIs are not yet broadly wired to the authorization authority, and the report workflow has not had a confirmed end-to-end UI submission. Do not treat the current prototype as production-ready.
 
-This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission codes and bundle semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission-bit and preset semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Security status at a glance
 
@@ -16,7 +16,7 @@ This document distinguishes controls that are implemented in the repository from
 | Permission authority | Implemented as a foundation | Invite issue/revoke uses the `access.users.invite` permission; broader staff APIs remain unimplemented. |
 | Report submission | Configured; end-to-end UI submission not confirmed | Multipart API, idempotency, CORS, DB persistence, image sanitation, and private Storage integration are implemented. |
 | Registration invitations | Implemented; migration deployed | `/register`, invite storage, permission-checked issue/revoke APIs, and atomic redemption are implemented. |
-| Supabase migrations | Deployed and verified on 4 November 2026 | Report, registration-invite, authorization, and authentication-rate-limit tables were verified in the configured project. |
+| Supabase migrations | Base schema deployed; permission normalization pending | Report, registration-invite, authorization, and auth-rate-limit foundations were verified on 4 November 2026. The new flattening migrations still need deployment. |
 
 ## 1. Trust boundaries
 
@@ -42,11 +42,11 @@ The `/api/packages` endpoint is intentionally public. It validates filter inputs
 
 `/register` uses Better Auth's email/password sign-up flow, but a server-side `databaseHooks.user.create.before` hook rejects every account creation unless the request is the email sign-up endpoint and carries a valid invite token. The gate applies to direct API calls as well as the UI.
 
-The hook hashes the presented token and atomically updates a matching invite only when the email matches, it has not expired, and it is neither redeemed nor revoked. Better Auth runs that hook within the user-creation transaction; account, credential, and invite updates commit or roll back together. The conditional update prevents concurrent reuse. New accounts do not auto sign in and receive no permission bundle. Passwords require 12–128 characters.
+The hook hashes the presented token and atomically updates a matching invite only when the email matches, it has not expired, and it is neither redeemed nor revoked. Better Auth uses a transaction-enabled Prisma adapter and a server-generated user ID; account, credential, invite redemption, and any explicitly selected permission grants commit or roll back together. A selected preset is expanded into permission codes before the invite is stored. The database applies one permission grant row per code when the new user row is created. Invites without an access selection create an account with no staff permissions. Passwords require 12–128 characters.
 
 Invite tokens use 256 bits of cryptographic randomness. Only a SHA-256 hash is stored. The email-bound link places the raw token in the URL fragment, which is not sent in HTTP requests or referrer headers. The registration page reads it once and removes the fragment from the address bar. It sends the token in a request header; the token is never placed in audit metadata.
 
-`POST /api/access/invites` and `DELETE /api/access/invites/:inviteId` issue and revoke invites through `AccessApi`. Both require `access.users.invite`; issuance is audited without the raw token, limited to three active invitations per email, and returns the link only in the creation response. Invites expire in 1–30 days (7 by default). The app does not send invitation email. Administrative issuance has no endpoint-specific rate limit yet.
+`POST /api/access/invites` and `DELETE /api/access/invites/:inviteId` issue and revoke invites through `AccessApi`. Both require `access.users.invite`; issuance is audited without the raw token, limited to three active invitations per email, and returns the link only in the creation response. Applying a source-controlled preset additionally requires `access.presets.apply`; assigning individual permission bits requires `access.permissions.assign` and the source-controlled assignment policy. Presets are expanded to permission codes before persistence, and the two access modes are mutually exclusive. Invites expire in 1–30 days (7 by default). The app does not send invitation email. Administrative issuance has no endpoint-specific rate limit yet.
 
 Email verification and password-reset email delivery are not configured. Do not present registration as verified or recoverable until those workflows and their email delivery are implemented.
 
@@ -62,23 +62,23 @@ The sign-in and sign-up limits do not cover every API route. Public package sear
 
 ## 4. Authorization authority
 
-SAKSI has users, not implicit roles. The central server-side authority in `src/server/authorization/authority.ts` resolves active bundle grants and dispatches checks to domain strategies. Unknown permission codes and unauthenticated requests are denied. Active grants exclude revoked and expired entries.
+SAKSI has users, not implicit roles. The central server-side authority in `src/server/authorization/authority.ts` resolves active per-permission grant rows and dispatches checks to domain strategies. Unknown permission codes and unauthenticated requests are denied. Active grants exclude revoked and expired entries.
 
 The current access strategy:
 
-- prevents a user from granting a bundle to themselves;
-- checks the actor's delegation authority and the approved bundle-assignment policy;
+- prevents a user from granting permission bits to themselves;
+- expands approved presets to individual grants and checks the relevant delegation authority;
 - requires a reason for grants and revocations;
 - writes the grant/revocation and its audit event in the same serializable transaction; and
-- prevents revoking the last grant that carries bundle-assignment authority for that subject.
+- prevents revoking the last remaining grant for a delegation authority.
 
-Permission definitions and built-in bundle membership are source-controlled. A new account receives **no bundle automatically**. See [AUTHORIZATION.md](./AUTHORIZATION.md) for the catalog and bundle contents.
+Permission definitions, source-controlled presets, and direct permission assignment policy are source-controlled. User authorization is persisted only as individual permission-grant rows. A new account receives **no access automatically** unless the authorized inviter explicitly selected a preset or individual permission bits. See [AUTHORIZATION.md](./AUTHORIZATION.md) for catalog and policy boundaries.
 
 ### Important enforcement gap
 
 The authority and permission strategies exist. Invite issue/revoke operations now call the central authority, but report and other staff APIs remain unimplemented. A hidden button or a client-side check is not authorization. Every protected server operation must call the central authority and apply field/resource checks before loading or returning sensitive data.
 
-Audit event writes exist for bundle changes, but the database does not enforce an append-only policy. Audit retention, access controls, operational review, and alerting remain to be defined.
+Audit event writes exist for permission changes, but the database does not enforce an append-only policy. Audit retention, access controls, operational review, and alerting remain to be defined.
 
 ## 5. API and error handling
 
@@ -100,7 +100,7 @@ CORS allows only exact origins listed in `CORS_ALLOWED_ORIGINS`, falling back to
 
 ## 7. Approved registration invitation design
 
-The approved direction is **semi-invite-only**: account creation requires an individual invitation generated on demand. The application code and Prisma migration `20261104130000_registration_invites` are implemented; the migration still needs deployment to Supabase.
+The approved direction is **semi-invite-only**: account creation requires an individual invitation generated on demand. The application code and Prisma migration `20261104130000_registration_invites` were deployed with the earlier authentication and authorization foundation. The new permission-bit flattening migrations are still pending deployment.
 
 ### Token lifecycle
 
@@ -111,9 +111,9 @@ The approved direction is **semi-invite-only**: account creation requires an ind
 5. On registration submission, validate the token, email, expiry, and status on the server. The Better Auth create-user hook marks the invitation redeemed in the same transaction as account creation, so parallel submissions cannot reuse it.
 6. Reject expired, revoked, already redeemed, mismatched-email, and unknown invitations with a generic response. Better Auth rate-limits registration attempts.
 
-Use a short-lived, single-use invite bound to an email by default. A link token is a bearer credential; use HTTPS, prevent referrer leakage, avoid third-party tracking on the registration route, and clear the token from browser history after it is exchanged. An invite grants no permissions unless the inviter is separately authorized to delegate a specific bundle and that grant is explicitly recorded and audited.
+Use a short-lived, single-use invite bound to an email by default. A link token is a bearer credential; use HTTPS, prevent referrer leakage, avoid third-party tracking on the registration route, and clear the token from browser history after it is exchanged. An invite grants no permissions unless the inviter is separately authorized to apply a preset or delegate individual bits. A preset is expanded before persistence; the invite stores only the permission-code snapshot.
 
-The first administrator/inviter must be provisioned through a controlled, out-of-band bootstrap process. Do not create a public endpoint that lets an unauthenticated visitor mint invitations or grant bundles.
+The first administrator/inviter must be provisioned through a controlled, out-of-band bootstrap process. Do not create a public endpoint that lets an unauthenticated visitor mint invitations or grant permissions.
 
 ### Local administrator bootstrap
 
@@ -124,7 +124,7 @@ bun run db:seed:authorization
 bun run db:bootstrap-admin admin@example.org
 ```
 
-Run it only from a trusted interactive environment with the intended Supabase database configured. The bootstrap command refuses an existing email, verifies the generated Better Auth password hash before writing, creates the user and credential, grants the source-controlled `admin` bundle, and records a `bundle.bootstrapped` audit event in one serializable transaction. It prints a randomly generated temporary password once. Capture it through a trusted local channel, then replace it after sign-in; do not run this command in CI or a shell whose output is retained by a shared log collector. The new account starts with `emailVerified: false`; verify the mailbox before using it beyond local testing. Never put the password in source control, a ticket, or an audit record.
+Run it only from a trusted interactive environment with the intended Supabase database configured. The bootstrap command refuses an existing email, verifies the generated Better Auth password hash before writing, creates the user and credential, expands the source-controlled Admin preset into individual permission rows, and records a `permission.preset_bootstrapped` audit event in one serializable transaction. It prints a randomly generated temporary password once. Capture it through a trusted local channel, then replace it after sign-in; do not run this command in CI or a shell whose output is retained by a shared log collector. The new account starts with `emailVerified: false`; verify the mailbox before using it beyond local testing. Never put the password in source control, a ticket, or an audit record.
 
 ### Invitation persistence shape
 
@@ -146,8 +146,8 @@ The redeem operation uses Better Auth's database transaction and a conditional u
 
 Before enabling staff operations or invite registration in production:
 
-1. Keep Supabase migration status under routine deployment checks; the migrations are currently deployed to the configured project.
-2. Verify authorization catalog seeding and provision the first administrator out of band with the bootstrap command above. Confirm the admin bundle matches the authorization catalog before issuing invitations.
+1. Keep Supabase migration status under routine deployment checks; earlier auth/report migrations were deployed, but the permission-bit flattening migrations are still pending.
+2. Deploy the permission-bit flattening migration, seed the authorization catalog, and provision the first administrator out of band with the bootstrap command above. Confirm the Admin preset expands to the current catalog before issuing invitations.
 3. Configure email verification and password-reset delivery, or explicitly decide and document an alternative account recovery process.
 4. Wire every protected route to the central authorization authority; add resource-level and field-level checks.
 5. Add rate limits to public endpoints based on their abuse and cost profile; configure trusted client-IP handling at the hosting proxy.

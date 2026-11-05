@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (4 November 2026):** Prisma models, the report submission API, the authenticated account report-history API, and the `/laporan` submit interaction are implemented. The report migration is deployed to the configured Supabase project, and the private `report-evidence` Storage bucket has been created with WebP-only and 5 MiB object limits. A successful end-to-end submission from the UI still needs confirmation.
+**Status (5 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured; an end-to-end submission from the UI still needs confirmation.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -138,6 +138,8 @@ The browser must not choose a class/function to execute, write to Postgres, or r
 
 `GET /api/reports/mine` requires a valid Better Auth session and queries only rows whose `reporterUserId` equals that session's user ID. It returns the reporter's opaque receipt code, workflow status, damage category, submission time, coarse area snapshot, and optional RUP/package-name snapshot. It never returns media paths, image data, exact coordinates, location hints, report descriptions, or internal moderation notes. Responses use `Cache-Control: private, no-store`. Anonymous submissions remain unlinked and do not appear in an account's history.
 
+`GET /api/reports/review` requires `reports.read_queue` through the central authorization authority. It supports active/all/single-status filters and keyset pagination. It returns only report status, damage category, submitted time, coarse area name, and optional package reference. It does not return reporter identity, description, observed causes, landmark hint, media path, or photo. The Dashboard review tab is read-only; status transitions, assignment, internal notes, and evidence access remain unimplemented and must use their distinct permission checks when added.
+
 `Idempotency-Key` is required and must be a UUID v4. The database stores its SHA-256 hash, a canonical payload hash including the image bytes, and a five-minute processing lease. A matching retry returns the original receipt; a key reused with different content receives 409. Completed keys are retained for 24 hours. If storage succeeds but the report transaction fails, the server removes the staged object; failed cleanup leaves its private object path on the idempotency row for a later retry to clean up. There is not yet a scheduled orphan-cleanup job.
 
 `POST /api/reports` supports credentialed CORS only for exact origins in `CORS_ALLOWED_ORIGINS` (with `BETTER_AUTH_URL` as a fallback). `OPTIONS` handles preflight. Origins not on the allowlist are rejected. CORS is not authentication or CSRF protection; keep the allowlist narrow and hosting proxy IP headers sanitized. The API rate-limits all submissions to three per hour per hashed client IP using the existing database-backed `rateLimit` table. The authenticated user association is derived from the session; anonymous submission remains supported.
@@ -162,7 +164,7 @@ Staff review, sensitive media access, publishing, and export must be separate pe
 2. Retention duration for media and report text, plus account deletion and withdrawal behavior.
 3. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
 4. Which fields are public after moderation, especially the free-text landmark and description.
-5. Exact permission codes and staff bundles for review, media viewing, publication, and export.
+5. Exact permission bits and source-controlled presets for review, media viewing, publication, and export.
 6. Anonymous submission quotas and the short-lived signal used to enforce them.
 
-Until these decisions are made, do not enable public photo access or publication. The application is configured to accept private submissions and authenticated reporter history; moderation, retention cleanup, public queries, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.
+Until these decisions are made, do not enable public photo access or publication. The application accepts private submissions, authenticated reporter history, and a staff-only read-only summary queue. Moderation actions, evidence review, retention cleanup, public queries, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.

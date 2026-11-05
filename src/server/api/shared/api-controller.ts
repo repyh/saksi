@@ -21,7 +21,7 @@ export abstract class ApiController {
     } catch (error) {
       if (error instanceof AuthorizationError) {
         return apiFailure(
-          error.status === 401 ? "AUTHENTICATION_REQUIRED" : "PERMISSION_DENIED",
+          error.code,
           error.message,
           error.status,
         );

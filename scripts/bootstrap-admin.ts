@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/lib/prisma";
-import { PERMISSION_BUNDLES } from "../src/server/authorization/catalog";
+import { PERMISSION_CATALOG, PERMISSION_PRESETS } from "../src/server/authorization/catalog";
 
 const emailInput = process.argv[2]?.trim().toLowerCase();
 const emailResult = z.email().max(254).safeParse(emailInput);
@@ -24,23 +24,17 @@ if (!emailResult.success) {
     if (!passwordVerified) throw new Error("The new credential hash did not verify.");
     const now = new Date();
     const userId = randomUUID();
-    const adminBundle = PERMISSION_BUNDLES.find((bundle) => bundle.code === "admin");
-    if (!adminBundle) throw new Error("The source-controlled admin permission bundle is missing.");
+    const adminPreset = PERMISSION_PRESETS.find((preset) => preset.code === "admin");
+    if (!adminPreset) throw new Error("The source-controlled admin permission preset is missing.");
 
     const permissionCount = await prisma.$transaction(async (tx) => {
       const concurrentExisting = await tx.user.findUnique({ where: { email }, select: { id: true } });
       if (concurrentExisting) throw new Error("That email already has an account. No changes were made.");
 
-      const bundle = await tx.permissionBundle.findUniqueOrThrow({ where: { code: "admin" } });
-      const storedPermissions = await tx.permissionBundlePermission.findMany({
-        where: { bundleId: bundle.id },
-        select: { permissionCode: true },
-      });
-      const expectedPermissions = new Set(adminBundle.permissions);
-      const storedPermissionCodes = new Set(storedPermissions.map(({ permissionCode }) => permissionCode));
-      if (!bundle.isActive || storedPermissionCodes.size !== expectedPermissions.size
-        || [...expectedPermissions].some((code) => !storedPermissionCodes.has(code))) {
-        throw new Error("The admin bundle is not synchronized with the authorization catalog. Run db:seed:authorization first.");
+      const seededPermissions = await tx.permission.findMany({ select: { code: true } });
+      const seededCodes = new Set(seededPermissions.map(({ code }) => code));
+      if (PERMISSION_CATALOG.some(({ code }) => !seededCodes.has(code))) {
+        throw new Error("The permission catalog is not synchronized. Run db:seed:authorization first.");
       }
 
       const user = await tx.user.create({
@@ -66,27 +60,28 @@ if (!emailResult.success) {
         },
       });
 
-      await tx.userBundleGrant.create({
-        data: {
+      const grantBatchId = randomUUID();
+      await tx.userPermissionGrant.createMany({
+        data: adminPreset.permissions.map((permissionCode) => ({
           userId: user.id,
-          bundleId: bundle.id,
+          permissionCode,
           grantedByUserId: user.id,
           reason: "Initial administrator bootstrap",
-        },
+          grantBatchId,
+        })),
       });
       await tx.authorizationAuditEvent.create({
         data: {
           actorUserId: user.id,
           subjectUserId: user.id,
-          action: "bundle.bootstrapped",
-          resourceType: "permission_bundle",
-          resourceId: bundle.id,
+          action: "permission.preset_bootstrapped",
+          resourceType: "permission_set",
           reason: "Initial administrator bootstrap",
-          metadata: { bundleCode: bundle.code },
+          metadata: { presetCode: "admin", permissionCodes: adminPreset.permissions, grantBatchId },
         },
       });
 
-      return adminBundle.permissions.length;
+      return adminPreset.permissions.length;
     }, { isolationLevel: "Serializable" });
 
     process.stdout.write(`Admin account created for ${email}.\n`);

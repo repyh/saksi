@@ -10,6 +10,7 @@ import { myReportsResponseSchema, type MyReportSummary, type MyReportsResponse }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import { AccountManagement } from "@/features/dashboard/components/account-management";
+import { ReportReviewQueue } from "@/features/dashboard/components/report-review-queue";
 
 const damageTypeLabels: Record<MyReportSummary["damageType"], string> = {
   POTHOLE: "Lubang",
@@ -452,38 +453,36 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
               </button>
             </div>
           </form>
-          <div className="mt-7">
-            <h3 className="font-heading text-base font-bold">Akses aktif</h3>
-            {account.accessBundles.length > 0 ? (
-              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                {account.accessBundles.map((bundle) => (
-                  <li key={bundle.code} className="bg-muted/55 px-4 py-3.5">
-                    <p className="text-sm font-bold leading-5">{bundle.name}</p>
-                    <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{bundle.description}</p>
-                    {bundle.expiresAtLabel && <p className="mt-2 text-[11px] font-semibold text-primary">Berlaku hingga {bundle.expiresAtLabel}</p>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">Belum ada paket akses aktif.</p>
-            )}
-          </div>
+          {account.dashboardPermissions.viewOwnPermissions && (
+            <div className="mt-7">
+              <h3 className="font-heading text-base font-bold">Akses aktif</h3>
+              {account.permissions && account.permissions.length > 0 ? (
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {account.permissions.map((permission) => (
+                    <li key={permission.code} className="bg-muted/55 px-4 py-3">
+                      <p className="text-xs font-bold leading-5">{permission.code}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{permission.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">Belum ada izin akses aktif.</p>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         {hasAccountManagementAccess && (
           <TabsContent value="account-management" className="m-0">
             <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Manajemen akun</h2>
-            <AccountManagement canInvite={account.dashboardPermissions.inviteAccounts} canEdit={account.dashboardPermissions.editAccounts} />
+            <AccountManagement canInvite={account.dashboardPermissions.inviteAccounts} canEdit={account.dashboardPermissions.editAccounts} canApplyPresets={account.dashboardPermissions.applyPresets} canAssignPermissions={account.dashboardPermissions.assignPermissions} />
           </TabsContent>
         )}
 
         {hasReportModerationAccess && (
           <TabsContent value="report-moderation" className="m-0">
             <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Review Laporan</h2>
-            <div className="mt-4 bg-orange-50 px-5 py-4 text-orange-950">
-              <p className="text-sm font-bold">Akses moderator terdeteksi</p>
-              <p className="mt-1 text-sm leading-6 text-orange-900/80">Antrian peninjauan laporan belum tersedia.</p>
-            </div>
+            <ReportReviewQueue active={activeTab === "report-moderation"} />
           </TabsContent>
         )}
       </section>

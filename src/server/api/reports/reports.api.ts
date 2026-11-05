@@ -14,8 +14,12 @@ import { removePrivateReportImage, assertPrivateReportBucketReady } from "@/serv
 import { uploadController } from "@/server/uploads/upload.controller";
 import { snapshotRoadPackageRepository } from "@/server/packages/snapshot-repository";
 import type { MyReportsResponse } from "@/contracts/reports/report-history.contract";
+import { reportReviewQueueQuerySchema, type ReportReviewQueueResponse } from "@/contracts/reports/report-review-queue.contract";
+import { requireRequestPermission } from "@/server/authorization/authority";
+import type { Prisma } from "@/generated/prisma/client";
 
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sha256(value: string | Buffer) {
   return createHash("sha256").update(value).digest("hex");
@@ -30,6 +34,94 @@ function isReportDatabaseUnavailable(error: unknown) {
 }
 
 export class ReportsApi extends ApiController {
+  listReviewQueue(request: Request): Promise<Response> {
+    return this.withPrivateNoStore(this.respond(async (): Promise<ReportReviewQueueResponse> => {
+      await requireRequestPermission(request.headers, "reports.read_queue");
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "REPORTS_UNAVAILABLE", "Antrean laporan belum tersedia.");
+      }
+
+      const url = new URL(request.url);
+      const parsedQuery = reportReviewQueueQuerySchema.safeParse({
+        status: url.searchParams.get("status") ?? undefined,
+        cursor: url.searchParams.get("cursor") ?? undefined,
+      });
+      if (!parsedQuery.success) {
+        throw new ApiError(400, "INVALID_REVIEW_QUERY", "Filter antrean laporan tidak valid.");
+      }
+
+      const { status, cursor } = parsedQuery.data;
+      const statusWhere: Prisma.ReportWhereInput = status === "active"
+        ? { status: { in: ["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO"] } }
+        : status === "all"
+          ? {}
+          : { status };
+      const cursorId = cursor ? Buffer.from(cursor, "base64url").toString("utf8") : null;
+      if (cursor && (!cursorId || !UUID_PATTERN.test(cursorId))) {
+        throw new ApiError(400, "INVALID_REVIEW_CURSOR", "Posisi antrean tidak valid. Muat ulang antrean.");
+      }
+      const cursorReport = cursorId
+        ? await prisma.report.findUnique({
+          where: { id: cursorId },
+          select: { id: true, submittedAt: true },
+        })
+        : null;
+      if (cursor && !cursorReport) {
+        throw new ApiError(400, "INVALID_REVIEW_CURSOR", "Posisi antrean sudah tidak tersedia. Muat ulang antrean.");
+      }
+
+      const cursorWhere: Prisma.ReportWhereInput = cursorReport
+        ? {
+          OR: [
+            { submittedAt: { lt: cursorReport.submittedAt } },
+            { submittedAt: cursorReport.submittedAt, id: { lt: cursorReport.id } },
+          ],
+        }
+        : {};
+      const where: Prisma.ReportWhereInput = { ...statusWhere, ...cursorWhere };
+      const [rows, total] = await Promise.all([
+        prisma.report.findMany({
+          where,
+          orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+          take: 31,
+          select: {
+            id: true,
+            status: true,
+            damageType: true,
+            submittedAt: true,
+            areaNameSnapshot: true,
+            districtNameSnapshot: true,
+            packageLink: { select: { rupSnapshot: true, packageNameSnapshot: true } },
+          },
+        }),
+        prisma.report.count({ where: statusWhere }),
+      ]);
+      const hasMore = rows.length > 30;
+      const page = hasMore ? rows.slice(0, 30) : rows;
+      const last = page.at(-1);
+
+      return {
+        reports: page.map((report) => ({
+          status: report.status,
+          damageType: report.damageType,
+          submittedAt: report.submittedAt.toISOString(),
+          areaName: report.areaNameSnapshot,
+          districtName: report.districtNameSnapshot,
+          package: report.packageLink
+            ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
+            : null,
+        })),
+        total,
+        nextCursor: hasMore && last ? Buffer.from(last.id).toString("base64url") : null,
+      };
+    }, {
+      code: "REPORT_REVIEW_QUEUE_UNAVAILABLE",
+      message: "Antrean laporan belum dapat dimuat. Coba lagi nanti.",
+    }, 200, (error) => isReportDatabaseUnavailable(error)
+      ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan antrean laporan belum siap.")
+      : undefined));
+  }
+
   listMine(request: Request): Promise<Response> {
     return this.withPrivateNoStore(this.respond(async (): Promise<MyReportsResponse> => {
       const session = await auth.api.getSession({ headers: request.headers });

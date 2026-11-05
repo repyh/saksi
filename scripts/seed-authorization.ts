@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "../src/lib/prisma";
-import { PERMISSION_BUNDLES, PERMISSION_CATALOG } from "../src/server/authorization/catalog";
+import { PERMISSION_CATALOG, PERMISSION_PRESETS } from "../src/server/authorization/catalog";
 
 async function seedAuthorization() {
   await prisma.$transaction(async (tx) => {
@@ -11,31 +12,6 @@ async function seedAuthorization() {
       });
     }
 
-    for (const definition of PERMISSION_BUNDLES) {
-      const bundle = await tx.permissionBundle.upsert({
-        where: { code: definition.code },
-        create: {
-          code: definition.code,
-          name: definition.name,
-          description: definition.description,
-        },
-        update: {
-          name: definition.name,
-          description: definition.description,
-          isSystem: true,
-          isActive: true,
-        },
-      });
-
-      await tx.permissionBundlePermission.deleteMany({ where: { bundleId: bundle.id } });
-      await tx.permissionBundlePermission.createMany({
-        data: definition.permissions.map((permissionCode) => ({
-          bundleId: bundle.id,
-          permissionCode,
-        })),
-      });
-    }
-
     const bootstrapEmail = process.env.AUTHZ_BOOTSTRAP_ADMIN_EMAIL?.trim().toLocaleLowerCase("en-US");
     if (!bootstrapEmail) return;
 
@@ -43,33 +19,37 @@ async function seedAuthorization() {
     if (!admin || !admin.emailVerified) {
       throw new Error("Bootstrap account must exist and have a verified email before seeding admin access.");
     }
-    const adminBundle = await tx.permissionBundle.findUniqueOrThrow({ where: { code: "admin" } });
-    const existingGrant = await tx.userBundleGrant.findFirst({
+    const adminPreset = PERMISSION_PRESETS.find(({ code }) => code === "admin");
+    if (!adminPreset) throw new Error("The source-controlled admin permission preset is missing.");
+    const existingGrants = await tx.userPermissionGrant.findMany({
       where: {
         userId: admin.id,
-        bundleId: adminBundle.id,
         revokedAt: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
-      select: { id: true },
+      select: { permissionCode: true },
     });
-    if (!existingGrant) {
-      await tx.userBundleGrant.create({
-        data: {
+    const activeCodes = new Set(existingGrants.map(({ permissionCode }) => permissionCode));
+    const missingPermissionCodes = adminPreset.permissions.filter((code) => !activeCodes.has(code));
+    if (missingPermissionCodes.length > 0) {
+      const grantBatchId = randomUUID();
+      await tx.userPermissionGrant.createMany({
+        data: missingPermissionCodes.map((permissionCode) => ({
           userId: admin.id,
-          bundleId: adminBundle.id,
+          permissionCode,
           grantedByUserId: admin.id,
           reason: "Initial administrator bootstrap",
-        },
+          grantBatchId,
+        })),
       });
       await tx.authorizationAuditEvent.create({
         data: {
+          actorUserId: admin.id,
           subjectUserId: admin.id,
-          action: "bundle.bootstrapped",
-          resourceType: "permission_bundle",
-          resourceId: adminBundle.id,
+          action: "permission.preset_bootstrapped",
+          resourceType: "permission_set",
           reason: "Initial administrator bootstrap",
-          metadata: { bundleCode: "admin" },
+          metadata: { presetCode: "admin", permissionCodes: missingPermissionCodes, grantBatchId },
         },
       });
     }

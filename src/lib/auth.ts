@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { getCurrentAdapter } from "@better-auth/core/context";
@@ -8,7 +9,25 @@ import { hashRegistrationToken } from "@/server/registration/token";
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
+    transaction: true,
   }),
+  // Register the invite fields used by the transactional adapter in the signup hook.
+  plugins: [{
+    id: "registration-invites",
+    schema: {
+      registrationInvite: {
+        disableMigration: true,
+        fields: {
+          tokenHash: { type: "string", returned: false },
+          email: { type: "string", returned: false },
+          expiresAt: { type: "date", returned: false },
+          redeemedAt: { type: "date", required: false, returned: false },
+          revokedAt: { type: "date", required: false, returned: false },
+          redeemedByUserId: { type: "string", required: false, returned: false },
+        },
+      },
+    },
+  }],
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
@@ -27,6 +46,7 @@ export const auth = betterAuth({
 
           const adapter = await getCurrentAdapter(endpoint.context.adapter);
           const now = new Date();
+          const userId = randomUUID();
           const redeemed = await adapter.updateMany({
             model: "registrationInvite",
             where: [
@@ -38,11 +58,11 @@ export const auth = betterAuth({
             ],
             update: {
               redeemedAt: now,
-              redeemedByUserId: user.id,
+              redeemedByUserId: userId,
             },
           });
 
-          return redeemed === 1 ? undefined : false;
+          return redeemed === 1 ? { data: { id: userId } } : false;
         },
       },
     },

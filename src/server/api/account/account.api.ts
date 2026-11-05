@@ -1,6 +1,7 @@
 import "server-only";
 import type { DashboardAccount } from "@/contracts/account/dashboard.contract";
 import { prisma } from "@/lib/prisma";
+import { PERMISSION_CATALOG } from "@/server/authorization/catalog";
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("id-ID", {
@@ -19,62 +20,39 @@ export class AccountApi {
         name: true,
         email: true,
         createdAt: true,
-        bundleGrants: {
+        permissionGrants: {
           where: {
             revokedAt: null,
             OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-            bundle: { isActive: true },
           },
-          orderBy: { grantedAt: "desc" },
-          select: {
-            expiresAt: true,
-            bundle: {
-              select: {
-                code: true,
-                name: true,
-                description: true,
-                permissions: { select: { permissionCode: true } },
-              },
-            },
-          },
+          select: { permissionCode: true },
         },
       },
     });
 
     if (!user) return null;
 
-    const uniqueBundles = new Map<string, {
-      bundle: Omit<DashboardAccount["accessBundles"][number], "expiresAtLabel">;
-      expiresAt: Date | null;
-    }>();
-    const activePermissions = new Set<string>();
-    for (const grant of user.bundleGrants) {
-      for (const { permissionCode } of grant.bundle.permissions) activePermissions.add(permissionCode);
-      const current = uniqueBundles.get(grant.bundle.code);
-      if (!current) {
-        uniqueBundles.set(grant.bundle.code, {
-          bundle: { code: grant.bundle.code, name: grant.bundle.name, description: grant.bundle.description },
-          expiresAt: grant.expiresAt,
-        });
-      } else if (current.expiresAt && (!grant.expiresAt || grant.expiresAt > current.expiresAt)) {
-        current.expiresAt = grant.expiresAt;
-      }
-    }
+    const activePermissions = new Set(user.permissionGrants.map(({ permissionCode }) => permissionCode));
+    const canViewOwnPermissions = activePermissions.has("access.permissions.read_own");
+    const permissions = canViewOwnPermissions
+      ? PERMISSION_CATALOG
+          .filter(({ code }) => activePermissions.has(code))
+          .map(({ code, description }) => ({ code, description }))
+      : null;
 
     return {
       name: user.name,
       email: user.email,
       createdAtLabel: formatDate(user.createdAt),
-      accessBundles: [...uniqueBundles.values()].map(({ bundle, expiresAt }) => ({
-        ...bundle,
-        expiresAtLabel: expiresAt ? formatDate(expiresAt) : null,
-      })),
+      permissions,
       dashboardPermissions: {
+        viewOwnPermissions: canViewOwnPermissions,
         manageAccounts: activePermissions.has("access.users.read"),
-        moderateReports: ["reports.read_queue", "reports.change_status", "reports.assign"]
-          .some((permission) => activePermissions.has(permission)),
+        moderateReports: activePermissions.has("reports.read_queue"),
         inviteAccounts: activePermissions.has("access.users.invite"),
         editAccounts: activePermissions.has("access.users.edit"),
+        applyPresets: activePermissions.has("access.presets.apply"),
+        assignPermissions: activePermissions.has("access.permissions.assign"),
       },
     };
   }

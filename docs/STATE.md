@@ -90,7 +90,7 @@ Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | Belum ada | Tambahkan di header peta dan halaman laporan |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, dan laporan | Migration auth, undangan, dan report sudah diterapkan; tabel report tersedia. Katalog paket/wilayah belum diimpor | Impor katalog bersumber sebelum mengganti repository snapshot |
 | **Scraper pemerintah/sosial** | Worker terjadwal terpisah | Belum ada | Tentukan akses, validasi, idempotensi, log |
-| **Lapor jalan** | Submit bermoderasi dan opsional akun | API, idempotensi, CORS, model Prisma, dan bucket privat `report-evidence` sudah dikonfigurasi; submit end-to-end UI belum dikonfirmasi | Konfirmasi submit, lalu implementasi moderasi dan retensi di `docs/REPORTS.md` |
+| **Lapor jalan** | Submit bermoderasi dan opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, riwayat akun, dan antrean review ringkas berizin `reports.read_queue` tersedia; submit end-to-end UI belum dikonfirmasi | Konfirmasi submit; implementasikan akses bukti, transisi status, dan retensi di `docs/REPORTS.md` |
 | **Dokumentasi** | Selaras dengan kode | README & STATE diperbarui 1 Nov | `AGENTS.md` masih versi Kabupaten — selaraskan |
 
 ---

@@ -2,16 +2,17 @@ export type DashboardAccount = {
   name: string;
   email: string;
   createdAtLabel: string;
-  accessBundles: Array<{
+  permissions: Array<{
     code: string;
-    name: string;
     description: string;
-    expiresAtLabel: string | null;
-  }>;
+  }> | null;
   dashboardPermissions: {
+    viewOwnPermissions: boolean;
     manageAccounts: boolean;
     moderateReports: boolean;
     inviteAccounts: boolean;
     editAccounts: boolean;
+    applyPresets: boolean;
+    assignPermissions: boolean;
   };
 };

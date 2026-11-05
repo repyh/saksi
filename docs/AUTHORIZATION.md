@@ -1,38 +1,37 @@
 # SAKSI Authorization Design
 
-**Status:** Authorization foundation and catalog are implemented, with the migration deployed and catalog seeded to the configured Supabase project on 4 November 2026. Account listing, display-name edits, and invite creation are permission guarded. Account disable/delete controls remain non-functional mockups; report moderation and data-operations workflows are not available yet.
+**Status:** Permission-bit persistence is implemented in the working tree. A migration is prepared to flatten the existing bundle-grant data; it has not been deployed. Some access-management controls remain mockups. The staff report queue is read-only; report moderation actions and evidence review are not available.
 **Scope:** Staff access to moderation, analytics, data operations, and account administration.
 
-This document defines a permission catalog for SAKSI. Every authenticated account is a `User`; there is no default `user` role. Users receive no staff access unless an administrator grants one or more permission bundles. Public map browsing and the planned anonymous report-submission path do not require an account.
+Every authenticated account is a `User`; there is no implicit user/admin/moderator role. Authorization is expressed as individual permission codes. Named access packages such as Analyst, Moderator, and Admin are source-controlled presets that expand into permission codes before persistence. The database does not store a package assignment on a user.
 
 ## 1. Design principles
 
-1. **Authentication and authorization are separate.** Better Auth establishes who is signed in. SAKSI's server-side authorization layer decides what that account may do.
-2. **Deny by default.** A user with no active grants has no staff permissions.
-3. **Permissions name actions.** Avoid broad flags such as `isAdmin`, `isModerator`, or `canManageReports`.
-4. **Bundles are additive.** A person may receive one or more bundles. The Admin bundle intentionally includes every permission in the catalog, including moderation and sensitive evidence permissions; Analyst and Moderator remain narrower bundles.
-5. **Sensitive access is explicit.** Reading original photos, exact locations, or exporting records requires separate permissions.
-6. **Every grant and sensitive action is auditable.** Permission checks and UI visibility do not replace audit records for changes or consequential actions.
-7. **Public reporting stays account-optional.** Do not collect a real-world identity as a condition of submitting a report. If an authenticated user chooses to associate an account, that relation is optional.
-8. **Permission codes are stable API identifiers.** They are lowercase, namespaced, and not translated. Labels and descriptions may change without changing the code.
+1. Better Auth identifies the account and manages sessions. SAKSI's server authority decides what the account may do.
+2. Deny by default. An account with no active permission grants has no staff access.
+3. A permission bit is the smallest authorization unit. Each user grant is a separate `UserPermissionGrant` row.
+4. Presets are convenience inputs, not roles or persisted user state. Assigning a preset expands its current permission codes into individual grant rows.
+5. An invitation stores the expanded permission-code list as a snapshot. Changing a preset later does not silently change an already-issued invitation.
+6. Sensitive reads and consequential changes require explicit bits and audit events.
+7. Public map browsing and the public road-report flow remain account-optional.
 
 ## 2. Permission catalog
 
-The permission catalog is the complete set of actions that the application may grant. New permissions should be added only when a real workflow requires them. `read_deidentified` must return records with direct identifiers and restricted evidence removed; `read_sensitive_evidence` and `read_precise_location` are distinct grants.
+`src/server/authorization/catalog.ts` is the canonical, source-controlled list. Database `Permission` rows mirror that catalog and are seeded by `bun run db:seed:authorization`. The admin UI may assign catalog codes, but may not create new codes.
 
 ### Reports
 
 | Permission code | Allows | Boundary |
 |---|---|---|
-| `reports.read_queue` | See report IDs, status, timestamps, and coarse area in the review queue | Does not reveal evidence or exact coordinates |
-| `reports.read_deidentified` | Read report details with direct identifiers and restricted evidence omitted | Suitable for aggregate review and analysis |
-| `reports.read_sensitive_evidence` | Open original or otherwise restricted report evidence | Grant only to staff who need evidence for review |
-| `reports.read_precise_location` | View exact report coordinates or the most precise stored location | Keep separate from general report reading |
-| `reports.assign` | Assign or reassign a report to a reviewer | Every assignment change is audited |
-| `reports.change_status` | Move a report through the approved moderation states | State transitions are validated by the server |
-| `reports.add_internal_note` | Add staff-only notes to a report | Notes must never appear in public responses |
-| `reports.redact` | Hide or replace sensitive material in a public projection | Preserve an audit event; do not silently rewrite source evidence |
-| `reports.export` | Export report records | Export endpoint must apply the same sensitive-field checks and log the export |
+| `reports.read_queue` | See queue metadata and coarse area | No evidence or exact coordinates |
+| `reports.read_deidentified` | Read report details with restricted evidence and identifiers omitted | Suitable for aggregate review |
+| `reports.read_sensitive_evidence` | Open original or restricted evidence | Grant only when required |
+| `reports.read_precise_location` | View exact report coordinates | Separate from general report reading |
+| `reports.assign` | Assign or reassign a report | Audit each change |
+| `reports.change_status` | Apply approved moderation transitions | Server validates transitions |
+| `reports.add_internal_note` | Add staff-only notes | Never return notes publicly |
+| `reports.redact` | Redact sensitive material from public projections | Preserve source evidence and audit the change |
+| `reports.export` | Export report records | Apply field-level checks and audit exports |
 
 ### Analytics
 
@@ -41,192 +40,125 @@ The permission catalog is the complete set of actions that the application may g
 | `analytics.read` | View aggregate counts and regional summaries | No individual report evidence |
 | `analytics.export` | Download aggregate results | No row-level report export |
 
-### User and access administration
+### Account access
 
 | Permission code | Allows | Boundary |
 |---|---|---|
-| `access.users.read` | View staff account list and access state | Do not expose authentication secrets or session tokens |
-| `access.users.edit` | Update staff display name and non-sensitive profile details | Email changes require address verification |
-| `access.users.invite` | Create or invite staff accounts | Invitation does not imply a permission bundle |
-| `access.users.disable` | Disable staff access and revoke active sessions | Record actor, subject, reason, and time |
-| `access.bundles.assign` | Grant or revoke approved bundles for another account | Grants follow the explicit source-controlled delegation policy; no self-grant |
-| `access.audit.read` | Read access and moderation audit events | Audit history is read-only |
+| `access.users.read` | View account directory and access state | Never expose credentials or session tokens |
+| `access.permissions.read_own` | View the signed-in user's active permission details in Dashboard → Akun Saya | Does not grant access to another account's permissions |
+| `access.users.edit` | Edit display names and non-sensitive profile details | Email changes require verification |
+| `access.users.invite` | Issue and revoke registration invitations | Does not itself grant permissions |
+| `access.users.disable` | Disable accounts and revoke sessions | Audit actor, subject, reason, and time |
+| `access.presets.apply` | Apply approved source-controlled permission presets | Preset expands to permission bits; no user package row is created |
+| `access.permissions.assign` | Assign eligible individual permission bits | Cannot assign either delegation authority |
+| `access.audit.read` | Read authorization and moderation audit events | Read-only |
 
 ### Data operations
 
 | Permission code | Allows | Boundary |
 |---|---|---|
-| `sources.read` | View source configuration, snapshot metadata, and ingestion history | Read-only |
-| `sources.review_import` | Review a completed import and its validation summary | Does not edit official source records directly |
-| `sources.publish_snapshot` | Publish an approved normalized snapshot | Requires a recorded review and source provenance |
+| `sources.read` | View source configuration and ingestion metadata | Read-only |
+| `sources.review_import` | Review completed imports and validation summaries | Does not edit official records directly |
+| `sources.publish_snapshot` | Publish an approved normalized snapshot | Preserve review and source provenance |
 
-Report submission and private evidence storage have an API and persistent records. Moderation queue, status changes, assignments, audit review UI, and scraper operations workflows still need their own server-side handlers and permission checks before those catalog entries enable them.
+The catalog may include permissions before the corresponding workflow exists. A catalog entry alone does not make an operation available or safe; the server route must enforce it and apply resource and field-level checks.
 
-## 3. Permission bundles
+## 3. Permission presets
 
-Bundles are reusable collections of permission codes. Bundle names are conveniences for granting access, not account types. A user can have zero, one, or multiple bundles.
+`PERMISSION_PRESETS` in `catalog.ts` contains the source-controlled preset definitions:
 
-| Bundle code | Included permissions | Intended use |
+| Preset | Expanded permission codes | Purpose |
 |---|---|---|
-| `analyst` | `reports.read_queue`, `reports.read_deidentified`, `analytics.read` | Analyze report patterns without access to original evidence or exact location |
-| `moderator` | `reports.read_queue`, `reports.read_deidentified`, `reports.read_sensitive_evidence`, `reports.read_precise_location`, `reports.assign`, `reports.change_status`, `reports.add_internal_note`, `reports.redact` | Review and moderate reports |
-| `admin` | Every permission code in `PERMISSION_CATALOG`, including all Moderator permissions and sensitive evidence/export permissions | Full system access |
+| Analyst | `reports.read_queue`, `reports.read_deidentified`, `analytics.read` | Review de-identified records and aggregate patterns |
+| Moderator | Report review, sensitive evidence, precise location, assignment, status change, internal notes, and redaction | Moderate reports |
+| Admin | Every current permission code | Full system access, including moderator capabilities |
 
-The `admin` bundle derives its permission list from `PERMISSION_CATALOG`, so it receives newly added permissions when the authorization catalog is reseeded. This is an intentional superuser grant. Use Analyst or Moderator for narrower access. `reports.export` and `analytics.export` are available to Admin because the bundle is full access; they remain excluded from the narrower starter bundles.
+When an inviter selects a preset, the API checks `access.presets.apply`, validates that the preset is allowed, expands it into its permission codes, and stores only those codes. The invite response may echo the chosen preset for display, and the audit event may record it as provenance. Neither the invite nor the user has a persisted preset-code field. Admin receives new catalog bits after the preset is applied again; existing user grants do not silently grow when the catalog changes.
 
-There is no `user` bundle. A user with no rows in `UserBundleGrant` has no staff privileges. Anonymous visitors are not represented in the auth tables.
+Individual-bit assignment uses `access.permissions.assign` and `PERMISSION_ASSIGNMENT_POLICY`. That policy excludes `access.presets.apply` and `access.permissions.assign`, preventing a custom grant from delegating its own assignment authority. Admin receives both authority bits through the Admin preset or the controlled bootstrap path.
 
-## 4. Authorization persistence
+The two assignment modes are mutually exclusive on an invitation: choose one preset, choose individual bits, or grant no staff access. No account can grant access to itself.
 
-Better Auth continues to own `User`, `Session`, `Account`, and `Verification`. The authorization schema adds the following tables, defined in the Prisma schema and migration.
+## 4. Persistence model
+
+The intended normalized model stores authorization at permission-bit granularity.
+
+### `User`
+
+Better Auth owns the account. It has relations to permission-grant rows, but no role, bundle, or preset field/relation. Effective authorization is the union of its active grant rows.
 
 ### `Permission`
 
-| Field | Type | Constraints / purpose |
-|---|---|---|
-| `code` | String | Primary key, for example `reports.assign` |
-| `description` | String | Staff-facing explanation |
-| `sensitive` | Boolean | Marks actions involving restricted evidence, location, exports, or access changes |
-| `createdAt` | DateTime | Catalog creation time |
+The stable permission code is the primary key. Its description and sensitivity marker are seeded from source code. This table is the foreign-key target for grants.
 
-Permission codes are seeded from source-controlled definitions. They are not created freely in the admin UI.
+### `UserPermissionGrant`
 
-### `PermissionBundle`
+Each row grants exactly one `permissionCode` to one user.
 
-| Field | Type | Constraints / purpose |
-|---|---|---|
-| `id` | String | Primary key |
-| `code` | String | Unique stable identifier such as `moderator` |
-| `name` | String | Display name |
-| `description` | String | Intended use |
-| `isSystem` | Boolean | True for built-in bundles whose definitions are source-controlled |
-| `isActive` | Boolean | Deactivation prevents new grants; existing grants must be reviewed |
-| `createdAt` / `updatedAt` | DateTime | Lifecycle timestamps |
+| Field | Purpose |
+|---|---|
+| `id` | Grant-row identifier |
+| `userId` | Account receiving the bit |
+| `permissionCode` | The single permission bit being granted |
+| `grantedByUserId` / `grantedAt` | Grantor and timestamp |
+| `grantBatchId` | Optional grouping for a multi-bit operation; it does not encode a preset |
+| `expiresAt` | Optional expiry |
+| `revokedAt` / `revokedByUserId` | Revocation history; ordinary revocation retains the row |
+| `reason` | Required justification |
 
-### `PermissionBundlePermission`
+The same user may have multiple historical grants for one code. Effective access exists while at least one matching grant is unrevoked and unexpired. Revoking one row does not remove access if another active row still grants the same bit. Grant rows and audit events are written in the same transaction.
 
-Join table for bundle definitions.
+### `RegistrationInvite`
 
-| Field | Type | Constraints / purpose |
-|---|---|---|
-| `bundleId` | String | Foreign key to `PermissionBundle`, cascade on bundle deletion only for non-system bundles |
-| `permissionCode` | String | Foreign key to `Permission.code` |
-
-Use the pair (`bundleId`, `permissionCode`) as the primary key. System bundle contents are updated by reviewed migrations or seed changes, not ad hoc UI edits.
-
-### `UserBundleGrant`
-
-An assignment of a bundle to a Better Auth user.
-
-| Field | Type | Constraints / purpose |
-|---|---|---|
-| `id` | String | Primary key |
-| `userId` | String | Foreign key to Better Auth `User` |
-| `bundleId` | String | Foreign key to `PermissionBundle` |
-| `grantedByUserId` | String | Foreign key to the granting staff user |
-| `grantedAt` | DateTime | Grant timestamp |
-| `expiresAt` | DateTime? | Optional expiry for temporary access |
-| `revokedAt` | DateTime? | Revocation timestamp; retain the row for history |
-| `revokedByUserId` | String? | Staff user who revoked the grant |
-| `reason` | String | Required justification for the original grant; revocation reasons are recorded on the audit event |
-
-Index active grants by `userId`, `bundleId`, and expiry/revocation state. Prevent duplicate active grants for the same user and bundle. Do not hard-delete grant history during ordinary revocation.
-
-**Initial scope:** grants are global. If future moderation must be restricted to districts, introduce an explicit district-scope relation with a real foreign key to the district table. Avoid a polymorphic `scopeId` that can point to unrelated tables without referential integrity. Per-report assignments should use the report's assignment field, not a permission-scope string.
+An invitation stores `permissionCodes`, a snapshot list of individual bits to grant on redemption, plus a reason. The API accepts a transient `permissionPresetCode` or permission-code list, expands a preset before writing, and never stores the preset code in the invite. The redemption trigger validates each code against `Permission` and creates one `UserPermissionGrant` row per code in the same transaction as user creation. An empty array means the new account receives no staff access.
 
 ### `AuthorizationAuditEvent`
 
-Append-only event log for permission changes and sensitive operations.
+Audit rows record the actor, subject, action, resource, reason, request ID, minimal metadata, and timestamp. A preset application may record its preset code in audit metadata for provenance; this is historical context, not an authorization source. Never put passwords, raw invite tokens, or image bytes in metadata. The database does not yet enforce append-only behavior or retention.
 
-| Field | Type | Constraints / purpose |
-|---|---|---|
-| `id` | String | Primary key |
-| `actorUserId` | String? | User who initiated the event; nullable only for controlled system actions |
-| `action` | String | Stable code, e.g. `bundle.granted`, `report.status_changed`, `report.exported` |
-| `subjectUserId` | String? | Account affected by access changes |
-| `resourceType` | String? | Affected domain type such as `report` or `bundle` |
-| `resourceId` | String? | Identifier of the affected domain record |
-| `reason` | String? | Required for high-impact access or moderation changes |
-| `requestId` | String? | Correlation ID for application logs |
-| `metadata` | Json? | Minimal before/after summary; must not contain passwords, tokens, or photo bytes |
-| `createdAt` | DateTime | Event timestamp; immutable after creation |
+### Migration from package-backed grants
 
-Index by actor, resource, action, and timestamp. Keep this table inaccessible to normal update/delete code paths. Define retention and export policy before production use.
+`20261105110000_flatten_permission_grants` copies every historical package grant into per-code grant rows, retaining grantor, timestamps, expiry, revocation state, reason, and source grant grouping. Grants sourced from disabled presets remain revoked. The migration backfills the individual-permission delegation bit for legacy effective administrators, expands pending package invitations to code snapshots, updates the redemption trigger, then drops package-grant tables and invite preset fields. Prior audit history remains intact. The migration is not deployed yet; deploy it before running application code that expects the normalized schema.
 
-## 5. Strategy architecture
+## 5. Authorization authority
 
-The central authority is the only entry point that application routes and server use cases should call. It authenticates requests, loads active permissions, denies unknown codes, selects a domain strategy, and converts denials into consistent errors. Strategies own rules for their domain; they do not create a second permission catalog.
+Routes call `requireRequestPermission()` or another server authority entry point. The authority resolves active `UserPermissionGrant` rows, rejects unknown codes and unauthenticated users, and delegates domain policy to the registered strategy. A UI check is never a substitute for a server check.
 
-```text
-src/server/authorization/
-  authority.ts       # Shared authorize / require entry point
-  registry.ts        # Routes permission namespaces to a strategy
-  catalog.ts         # Canonical permission codes, bundles, delegation policy
-  permissions.ts     # Resolves active grants from persistence
-  audit.ts           # Shared transactional audit writer
-  strategies/
-    reports.ts       # Report visibility and action prerequisites
-    analytics.ts     # Aggregate access and export prerequisites
-    access.ts        # Account-access policy and grant/revoke operations
-    sources.ts       # Import review and snapshot permissions
-```
+`src/server/authorization/strategies/access.ts` provides transactional grant operations:
 
-Strategies may add resource-level checks and return obligations such as a de-identified projection as those workflows are built. Routes must not call strategy modules directly. Features without protected operations should not get placeholder strategies until there is a real policy to enforce.
+- `grantPermissionPreset()` expands a source preset into per-bit rows and requires the preset delegation authority.
+- `grantIndividualPermissions()` validates every code against the direct-assignment policy and requires individual-bit delegation authority.
+- `revokePermissionGrant()` revokes one bit-grant row and audits the change. It protects the last remaining delegation authority.
 
-The current strategies require de-identified report access alongside report actions and sensitive reads; analytics export also requires analytics read. Access bundle assignment is governed by `BUNDLE_ASSIGNMENT_POLICY`, currently allowing the Admin bundle to assign the built-in Analyst, Moderator, and Admin bundles. Admin already has all catalog permissions; bundle assignment remains audited and a user cannot grant a bundle to themselves. No direct self-grant is allowed.
+The central resolver combines duplicate active grants into an effective permission set. It ignores expired and revoked rows. Resource ownership, district scope, sensitive projections, and allowed state transitions remain separate checks.
 
-## 6. Authorization checks
+## 6. Security invariants
 
-1. **Check on the server for every protected operation.** Hiding a button or route in the UI is not authorization.
-2. **Resolve permissions from active grants.** Ignore revoked and expired grants. Permission bundles are additive; there is no implicit deny override in the initial design.
-3. **Fail closed.** Missing user, missing grant data, unknown permission code, or database failure must not grant access.
-4. **Check record ownership and scope separately.** Permission to `reports.read_deidentified` does not imply access to every field or that a report may be changed.
-5. **Enforce field-level projections.** Sensitive evidence and precise coordinates should not be loaded into a general report response then hidden in the UI.
-6. **Validate state transitions.** `reports.change_status` allows approved transitions only; it does not allow arbitrary status strings.
-7. **Audit grants, revocations, exports, redactions, and status changes.** Write the audit event in the same transaction as the consequential mutation where possible.
-8. **Keep permission caches short-lived or invalidatable.** Revocation must take effect promptly, including for existing sessions.
-9. **Protect the last administrator path.** The current revoke operation prevents removing a user's last active grant that includes `access.bundles.assign`. A global administrator-count check, account disabling controls, and out-of-band recovery process remain future work.
-10. **Do not permit self-escalation.** A user cannot grant bundles or permissions to themselves or edit system bundle definitions. Delegation is a separate authority from the permissions being delegated: `access.bundles.assign` can assign only the built-in bundles explicitly listed in `BUNDLE_ASSIGNMENT_POLICY` in the source catalog. Admin has the full catalog by design; narrower accounts still cannot self-grant or edit system bundles.
+1. Check each protected server operation. Do not rely on route visibility or client state.
+2. Fail closed on missing identity, unknown permissions, or database errors.
+3. Never allow a user to grant permissions to themselves.
+4. A direct permission assignment cannot grant either delegation authority.
+5. Preset assignment is restricted by `PRESET_ASSIGNMENT_POLICY` and expands to bits before persistence.
+6. An invite is email-bound, single-use, short-lived, and stores only permission codes, never a preset assignment or raw token.
+7. Revoke a single permission row without deleting history. Effective access persists if another active grant supplies the same bit.
+8. Guard the last active holder of delegation authority; define an out-of-band recovery path before production.
+9. Audit permission changes in the same transaction as the grant mutation.
+10. Keep credentials, invite tokens, and sensitive evidence out of browser responses and audit metadata.
+11. Return a user's own permission details only when `access.permissions.read_own` is active; `access.users.read` is the separate permission for the staff directory.
 
-## 7. Better Auth boundary
+## 7. Implementation status
 
-The current Better Auth configuration provides email/password authentication and Prisma-backed core auth tables. Do not assume that signing in means a user has staff permissions.
-
-For this design, use Better Auth for authentication and session lifecycle, and keep the permission catalog and bundle grants in SAKSI-owned tables and server authorization functions. This avoids storing a comma-separated role as a second source of truth. If a future implementation chooses Better Auth's Admin plugin instead, map its custom access-control definitions to this catalog and do not also maintain a competing permission evaluator.
-
-Before enabling account creation for deployment, decide whether staff accounts are invite-only. Public reporting remains available without signing up. Any role/bundle field exposed through Better Auth must be server-owned and excluded from user-controlled registration/update input.
-
-## 8. Implementation status and rollout
-
-Implemented foundation:
-
-- `src/server/authorization/catalog.ts` is the source-controlled permission and built-in bundle catalog.
-- `src/server/authorization/authority.ts` is the server-only decision entry point; the registry dispatches to one strategy per implemented permission domain. It denies unknown permissions and ignores expired/revoked grants.
-- `src/server/authorization/strategies/access.ts` handles grant/revoke policy and writes audit events transactionally. Assignment is limited by `BUNDLE_ASSIGNMENT_POLICY` and self-grants are blocked.
-- Prisma models and `prisma/migrations/20261104090000_authorization_authority/` persist bundles, grants, and audit events. The migration bootstraps the Better Auth tables only because the repository has no earlier auth-table migration.
-- `scripts/seed-authorization.ts` and `bun run db:seed:authorization` seed the catalog and bundles. An initial admin may be bootstrapped only by setting `AUTHZ_BOOTSTRAP_ADMIN_EMAIL` to an existing verified account.
-- `docs/ARCHITECTURE.md` records the boundary between Better Auth and SAKSI authorization.
-
-Still required before staff features are usable:
-
-1. Verify or run `bun run db:seed:authorization` against the intended database so the permission and bundle catalog is populated.
-2. Add guarded administration endpoints for account lookup and bundle grant/revoke, and add staff route handlers using `requireRequestPermission()`.
-3. Add audit events in the same transaction as any sensitive report operation. Currently only bundle grants/revocations and bootstrap are audited.
-4. Add tests for permission resolution, grant boundaries, expiry, revocation, and authorization failures before exposing the workflows.
-5. Add report persistence and moderation only after privacy, retention, evidence access, and anonymous submission rules are finalized.
-6. Add district scope only when a concrete workflow requires it and the district domain table is established.
-
-## 9. Decisions still open
-
-- Are staff accounts invite-only, or can authenticated public users also create accounts?
-- Should moderators receive access to exact coordinates and original photos through the same bundle, or should those remain separate case-by-case grants?
-- Which status transitions are allowed, and does any status require a second reviewer?
-- Should report exports exist at all? If so, which fields, filters, and approval/audit controls are mandatory?
-- What retention period applies to authorization audit events and moderation notes?
-- Is district-scoped moderation actually needed for the initial launch?
+- Permission and preset definitions: `src/server/authorization/catalog.ts`.
+- Effective permissions: `src/server/authorization/permissions.ts`.
+- Central authority and strategies: `src/server/authorization/authority.ts` and `src/server/authorization/strategies/`.
+- Invite issuance expands presets before persistence; registration creates per-bit grant rows.
+- Account management opens a profile/access dialog. Profile edits use `PATCH /api/access/accounts/[userId]`; active per-bit grants are read from `GET /api/access/accounts/[userId]/permissions`, granted via `POST` to that endpoint, and individually revoked via `DELETE /api/access/accounts/[userId]/permissions/[grantId]`. Directory reads require `access.users.read`; grant and revoke require `access.permissions.assign`, a reason, and server-side policy checks. Users cannot change their own profile access grants from this dialog.
+- Permission bundles shown in the account directory remain derived summaries. The dialog reads and changes individual permission-grant rows. Grant scope is currently global; package-scoped grants are not represented by the schema.
+- `scripts/seed-authorization.ts` seeds permission definitions and can bootstrap permissions for an existing verified administrator.
+- `scripts/bootstrap-admin.ts` creates an initial account and grants individual rows expanded from the Admin preset.
+- Migration source is prepared in `prisma/migrations/20261105110000_flatten_permission_grants/`; it has not been deployed.
+- Account-management disable/delete controls remain mockups. Protected staff/report workflows still need server endpoints and enforcement.
 
 ## References
 
 - [Better Auth user and account model](https://better-auth.com/docs/concepts/users-accounts)
-- [Better Auth server-owned additional fields](https://better-auth.com/docs/concepts/typescript)
-- [Better Auth Admin plugin and access control](https://better-auth.com/docs/plugins/admin)

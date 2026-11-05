@@ -1,8 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { requireRequestPermission } from "@/server/authorization/authority";
+import { grantIndividualPermissions, requireRequestPermission, revokePermissionGrant } from "@/server/authorization/authority";
 import { recordAuthorizationEvent } from "@/server/authorization/audit";
-import { createRegistrationInviteSchema, updateAccountProfileSchema } from "./access-schema";
+import { createRegistrationInviteSchema, grantAccountPermissionsSchema, revokeAccountPermissionSchema, updateAccountProfileSchema } from "./access-schema";
+import { PERMISSION_ASSIGNMENT_POLICY, PERMISSION_CATALOG, PERMISSION_PRESETS, PRESET_ASSIGNMENT_POLICY, isPermissionCode, isPermissionPresetCode } from "@/server/authorization/catalog";
 import { ApiError } from "../shared/api-error";
 import { ApiController } from "../shared/api-controller";
 import { createRegistrationToken, hashRegistrationToken } from "@/server/registration/token";
@@ -39,7 +40,7 @@ export class AccessApi extends ApiController {
       if (!process.env.DATABASE_URL) {
         throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Daftar akun belum tersedia.");
       }
-      await requireRequestPermission(request.headers, "access.users.read");
+      const actor = await requireRequestPermission(request.headers, "access.users.read");
 
       const now = new Date();
       const accounts = await prisma.user.findMany({
@@ -50,14 +51,10 @@ export class AccessApi extends ApiController {
           email: true,
           emailVerified: true,
           createdAt: true,
-          bundleGrants: {
-            where: {
-              revokedAt: null,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-              bundle: { isActive: true },
-            },
+          permissionGrants: {
+            where: { revokedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
             orderBy: { grantedAt: "desc" },
-            select: { bundle: { select: { code: true, name: true } } },
+            select: { permissionCode: true },
           },
         },
       });
@@ -65,11 +62,12 @@ export class AccessApi extends ApiController {
       return {
         accounts: accounts.map((account) => ({
           id: account.id,
+          isCurrentUser: account.id === actor.id,
           name: account.name,
           email: account.email,
           emailVerified: account.emailVerified,
           createdAt: account.createdAt.toISOString(),
-          accessBundles: [...new Map(account.bundleGrants.map(({ bundle }) => [bundle.code, bundle])).values()],
+          permissionCodes: [...new Set(account.permissionGrants.map(({ permissionCode }) => permissionCode))].sort(),
         })),
       };
     }, { code: "ACCOUNT_DIRECTORY_UNAVAILABLE", message: "Daftar akun belum dapat dimuat." });
@@ -124,6 +122,103 @@ export class AccessApi extends ApiController {
     return this.noStore(response);
   }
 
+  async listAccountPermissionGrants(request: Request, accountId: string): Promise<Response> {
+    const response = await this.respond(async () => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Layanan akun belum tersedia.");
+      }
+      const targetId = accountId.trim();
+      if (!targetId) throw new ApiError(400, "INVALID_ACCOUNT", "ID akun tidak valid.");
+      await requireRequestPermission(request.headers, "access.users.read");
+
+      const grants = await prisma.userPermissionGrant.findMany({
+        where: {
+          userId: targetId,
+          revokedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        orderBy: [{ permissionCode: "asc" }, { grantedAt: "desc" }],
+        select: {
+          id: true,
+          permissionCode: true,
+          grantedAt: true,
+          expiresAt: true,
+          reason: true,
+          grantedBy: { select: { name: true } },
+        },
+      });
+      const descriptions = new Map<string, { description: string; sensitive: boolean }>(PERMISSION_CATALOG.map(({ code, description, sensitive }) => [code, { description, sensitive }]));
+      return {
+        grants: grants.map((grant) => ({
+          id: grant.id,
+          permissionCode: grant.permissionCode,
+          description: descriptions.get(grant.permissionCode)?.description ?? grant.permissionCode,
+          sensitive: descriptions.get(grant.permissionCode)?.sensitive ?? false,
+          grantedAt: grant.grantedAt.toISOString(),
+          expiresAt: grant.expiresAt?.toISOString() ?? null,
+          reason: grant.reason,
+          grantedByName: grant.grantedBy.name,
+        })),
+      };
+    }, { code: "ACCOUNT_PERMISSIONS_UNAVAILABLE", message: "Izin akun belum dapat dimuat." });
+    return this.noStore(response);
+  }
+
+  async grantAccountPermissions(request: Request, accountId: string): Promise<Response> {
+    const response = await this.respond(async () => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Layanan akun belum tersedia.");
+      }
+      this.assertInviteRequestOrigin(request);
+      const targetId = accountId.trim();
+      if (!targetId) throw new ApiError(400, "INVALID_ACCOUNT", "ID akun tidak valid.");
+      const actor = await requireRequestPermission(request.headers, "access.users.read");
+      await requireRequestPermission(request.headers, "access.permissions.assign");
+
+      let payload: unknown;
+      try { payload = await request.json(); } catch { throw new ApiError(400, "INVALID_REQUEST", "Permintaan izin tidak valid."); }
+      const parsed = grantAccountPermissionsSchema.safeParse(payload);
+      if (!parsed.success) throw new ApiError(400, "INVALID_REQUEST", "Pilih izin dan isi alasan minimal 8 karakter.");
+
+      const grant = await grantIndividualPermissions({
+        actorUserId: actor.id,
+        targetUserId: targetId,
+        permissionCodes: parsed.data.permissionCodes,
+        reason: parsed.data.reason,
+        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
+      });
+      return grant;
+    }, { code: "ACCOUNT_PERMISSION_GRANT_FAILED", message: "Izin akun belum dapat diberikan." });
+    return this.noStore(response);
+  }
+
+  async revokeAccountPermission(request: Request, accountId: string, grantId: string): Promise<Response> {
+    const response = await this.respond(async () => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Layanan akun belum tersedia.");
+      }
+      this.assertInviteRequestOrigin(request);
+      const targetId = accountId.trim();
+      const id = grantId.trim();
+      if (!targetId || !id) throw new ApiError(400, "INVALID_REQUEST", "ID akun atau izin tidak valid.");
+      const actor = await requireRequestPermission(request.headers, "access.users.read");
+
+      let payload: unknown;
+      try { payload = await request.json(); } catch { throw new ApiError(400, "INVALID_REQUEST", "Permintaan pencabutan izin tidak valid."); }
+      const parsed = revokeAccountPermissionSchema.safeParse(payload);
+      if (!parsed.success) throw new ApiError(400, "INVALID_REQUEST", "Alasan pencabutan minimal 8 karakter.");
+
+      const grant = await revokePermissionGrant({
+        actorUserId: actor.id,
+        targetUserId: targetId,
+        grantId: id,
+        reason: parsed.data.reason,
+      });
+      return { id: grant.id, revokedAt: grant.revokedAt?.toISOString() ?? null };
+    }, { code: "ACCOUNT_PERMISSION_REVOKE_FAILED", message: "Izin akun belum dapat dicabut." });
+    return this.noStore(response);
+  }
+
   async createInvite(request: Request): Promise<Response> {
     const response = await this.respond(async () => {
       if (!process.env.DATABASE_URL) {
@@ -141,6 +236,38 @@ export class AccessApi extends ApiController {
       const parsed = createRegistrationInviteSchema.safeParse(payload);
       if (!parsed.success) {
         throw new ApiError(400, "INVALID_REQUEST", "Isi email, masa berlaku, dan alasan undangan dengan benar.");
+      }
+
+      const permissionPresetCode = parsed.data.permissionPresetCode;
+      const requestedPermissionCodes = parsed.data.permissionCodes;
+      if (permissionPresetCode) {
+        await requireRequestPermission(request.headers, "access.presets.apply");
+        const grantablePresets = PRESET_ASSIGNMENT_POLICY["access.presets.apply"];
+        if (!grantablePresets.includes(permissionPresetCode as (typeof grantablePresets)[number])) {
+          throw new ApiError(403, "PRESET_NOT_ASSIGNABLE", "Paket izin ini tidak dapat diberikan melalui undangan.");
+        }
+      }
+      if (requestedPermissionCodes.length > 0) {
+        await requireRequestPermission(request.headers, "access.permissions.assign");
+        const grantablePermissions = PERMISSION_ASSIGNMENT_POLICY["access.permissions.assign"];
+        const allowed = new Set<string>(grantablePermissions);
+        if (requestedPermissionCodes.some((code) => !isPermissionCode(code) || !allowed.has(code))) {
+          throw new ApiError(403, "PERMISSION_NOT_ASSIGNABLE", "Satu atau beberapa izin tidak dapat diberikan secara langsung.");
+        }
+      }
+
+      const selectedPreset = permissionPresetCode && isPermissionPresetCode(permissionPresetCode)
+        ? PERMISSION_PRESETS.find(({ code }) => code === permissionPresetCode)
+        : undefined;
+      const permissionCodes = [...new Set(selectedPreset?.permissions ?? requestedPermissionCodes)];
+      if (permissionCodes.length > 0) {
+        const availablePermissions = await prisma.permission.findMany({
+          where: { code: { in: permissionCodes } },
+          select: { code: true },
+        });
+        if (availablePermissions.length !== permissionCodes.length) {
+          throw new ApiError(503, "PERMISSION_CATALOG_UNAVAILABLE", "Katalog izin belum tersedia. Coba lagi setelah disinkronkan.");
+        }
       }
 
       const email = parsed.data.email.trim().toLowerCase();
@@ -173,8 +300,10 @@ export class AccessApi extends ApiController {
             email,
             createdByUserId: actor.id,
             expiresAt,
+            permissionCodes,
+            permissionGrantReason: permissionCodes.length > 0 ? parsed.data.reason : null,
           },
-          select: { id: true, expiresAt: true },
+          select: { id: true, expiresAt: true, permissionCodes: true },
         });
         await recordAuthorizationEvent(tx, {
           actorUserId: actor.id,
@@ -182,7 +311,11 @@ export class AccessApi extends ApiController {
           resourceType: "registration_invite",
           resourceId: created.id,
           reason: parsed.data.reason,
-          metadata: { expiresAt: created.expiresAt.toISOString() },
+          metadata: {
+            expiresAt: created.expiresAt.toISOString(),
+            permissionPresetCode,
+            permissionCodes: created.permissionCodes,
+          },
         });
         return created;
       }, { isolationLevel: "Serializable" });
@@ -194,6 +327,8 @@ export class AccessApi extends ApiController {
         id: invite.id,
         email,
         expiresAt: invite.expiresAt.toISOString(),
+        permissionPresetCode,
+        permissionCodes: invite.permissionCodes,
         inviteUrl: inviteUrl.toString(),
       };
     }, {
