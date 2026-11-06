@@ -523,7 +523,23 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                     <div className="p-6 text-sm text-muted-foreground">
                       {kelurahanKosong
                         ? "Belum ada kelurahan dipilih. Centang minimal satu kelurahan pada filter Kelurahan."
-                        : "Tidak ada paket yang cocok dengan filter saat ini."}
+                        : searchQuery.trim() && locatedOnly
+                          ? (
+                            <span className="block">
+                              Tidak ada paket <strong>berlokasi</strong> yang cocok dengan pencarian. Paket dengan
+                              lokasi umum (presisi kabupaten) menyembunyikan hasil ini.
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => setLocatedOnly(false)}
+                                className="mt-2 block h-7 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary"
+                              >
+                                Tampilkan paket berlokasi umum
+                              </Button>
+                            </span>
+                          )
+                          : "Tidak ada paket yang cocok dengan filter saat ini."}
                     </div>
                   )}
                 </div>
