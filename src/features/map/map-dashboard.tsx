@@ -101,6 +101,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
   const [selectedVillages, setSelectedVillages] = useState<string[] | null>(null);
   const [openVillages, setOpenVillages] = useState(false);
+  const [tampilSemuaPenyedia, setTampilSemuaPenyedia] = useState(false);
   const villagesRef = useRef<HTMLDivElement | null>(null);
   const [locatedOnly, setLocatedOnly] = useState(true);
 
@@ -240,10 +241,44 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
 
   const selectPackage = (pkg: RoadPackageItem) => {
     const address = addressForPackage(pkg);
+    setTampilSemuaPenyedia(false);
     updateSelectedPackage(pkg);
     setSelectedRegion(address);
     writeReportPath(routeForPackage(pkg));
   };
+
+  const penyediaPanel = useMemo(() => {
+    const kontrak = selectedPackage?.kontrak;
+    if (!kontrak) return [] as Array<{ nama: string; nilai: number }>;
+    const perPaket = kontrak.paketRealisasi ?? [];
+    if (perPaket.length <= 1) {
+      return [{ nama: kontrak.penyedia, nilai: kontrak.nilai_kontrak ?? 0 }];
+    }
+    const agregat = new Map<string, number>();
+    for (const paket of perPaket) {
+      agregat.set(paket.penyedia, (agregat.get(paket.penyedia) ?? 0) + paket.nilai);
+    }
+    return [...agregat.entries()]
+      .map(([nama, nilai]) => ({ nama, nilai }))
+      .sort((a, b) => b.nilai - a.nilai);
+  }, [selectedPackage]);
+
+  const paketPerPenyedia = useMemo(() => {
+    const paket = selectedPackage?.kontrak?.paketRealisasi ?? [];
+    const grup = new Map<string, Array<{ kodePaket: string; nilai: number; sumber: string | null }>>();
+    for (const baris of paket) {
+      const daftar = grup.get(baris.penyedia) ?? [];
+      daftar.push({ kodePaket: baris.kodePaket, nilai: baris.nilai, sumber: baris.sumber });
+      grup.set(baris.penyedia, daftar);
+    }
+    return [...grup.entries()]
+      .map(([nama, daftar]) => ({
+        nama,
+        daftar: daftar.sort((a, b) => b.nilai - a.nilai),
+        total: daftar.reduce((jumlah, item) => jumlah + item.nilai, 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [selectedPackage]);
 
   const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" | "Kecamatan" } | null, pkg: RoadPackageItem | null) => {
     if (!region) {
@@ -664,10 +699,28 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             <tbody>
                               <tr className="border-b border-border/60">
                                 <th scope="row" className="w-24 py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia</th>
-                                <td className="py-2 pr-3 font-semibold leading-snug text-foreground">
-                                  <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.penyedia)}`} className="text-primary underline-offset-2 hover:underline">
-                                    {selectedPackage.kontrak.penyedia}
-                                  </Link>
+                                <td className="py-2 pr-3 leading-snug text-foreground">
+                                  <ul className="space-y-1">
+                                    {penyediaPanel.slice(0, tampilSemuaPenyedia ? undefined : 2).map((baris) => (
+                                      <li key={baris.nama} className="flex items-baseline justify-between gap-2">
+                                        <Link href={`/penyedia/${slugPenyedia(baris.nama)}`} className="font-semibold text-primary underline-offset-2 hover:underline">
+                                          {baris.nama}
+                                        </Link>
+                                        {baris.nilai ? (
+                                          <span className="shrink-0 font-sans text-[11px] tabular-nums text-muted-foreground">{formatRupiahFull(baris.nilai)}</span>
+                                        ) : null}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  {penyediaPanel.length > 2 && !tampilSemuaPenyedia ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setTampilSemuaPenyedia(true)}
+                                      className="mt-1 font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
+                                    >
+                                      +{penyediaPanel.length - 2} penyedia lainnya
+                                    </button>
+                                  ) : null}
                                 </td>
                               </tr>
                               <tr className="border-b border-border/60">
@@ -684,21 +737,12 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                               ) : null}
                               {selectedPackage.kontrak.nilai_kontrak ? (
                                 <tr>
-                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                                  {selectedPackage.kontrak.jumlahPaket && selectedPackage.kontrak.jumlahPaket > 1
-                                    ? "Selisih pagu (vs total realisasi)"
-                                    : "Selisih pagu"}
-                                </th>
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Selisih pagu</th>
                                   <td className="py-2 pr-3 tabular-nums text-foreground">
                                     {formatRupiahFull(selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak)}
                                     <span className="ml-1 text-[11px] text-muted-foreground">
                                       ({(((selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak) / selectedPackage.pagu) * 100).toFixed(1)}% dari pagu)
                                     </span>
-                                    {selectedPackage.kontrak.jumlahPaket && selectedPackage.kontrak.jumlahPaket > 1 ? (
-                                      <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
-                                        Pembandingnya jumlah realisasi {selectedPackage.kontrak.jumlahPaket} paket, bukan satu nilai kontrak.
-                                      </span>
-                                    ) : null}
                                   </td>
                                 </tr>
                               ) : null}
@@ -718,45 +762,48 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                                   <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Paket realisasi</th>
                                   <td className="py-2 pr-3 text-foreground">
                                     <span className="font-semibold">{selectedPackage.kontrak.jumlahPaket} paket</span>
-                                    <details className="mt-1">
-                                      <summary className="cursor-pointer font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
-                                        Rincian {selectedPackage.kontrak.jumlahPaket} paket
+                                    <details className="mt-1 border-t border-border/60 pt-1.5">
+                                      <summary className="flex cursor-pointer items-center justify-between gap-2 font-sans text-[11px] font-bold text-primary">
+                                        <span>Rincian {selectedPackage.kontrak.jumlahPaket} paket</span>
+                                        <span className="tabular-nums text-muted-foreground">
+                                          {selectedPackage.kontrak.nilai_kontrak ? formatRupiahFull(selectedPackage.kontrak.nilai_kontrak) : ""}
+                                        </span>
                                       </summary>
-                                      <ul className="mt-1.5 space-y-1.5 border-l border-border pl-2.5">
-                                        {(selectedPackage.kontrak.paketRealisasi ?? []).map((paket) => (
-                                          <li key={paket.kodePaket} className="text-[11px] leading-snug">
-                                            <a
-                                              href={`https://data.inaproc.id/realisasi?kode=${encodeURIComponent(paket.kodePaket)}`}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              className="font-mono text-[10px] text-primary underline-offset-2 hover:underline"
-                                            >
-                                              {paket.kodePaket}
-                                            </a>
-                                            <span className="block text-foreground/80">{paket.penyedia}</span>
-                                            <span className="block tabular-nums text-muted-foreground">
-                                              {formatRupiahFull(paket.nilai)}
-                                              {paket.sumber ? ` · ${paket.sumber}` : ""}
-                                            </span>
-                                          </li>
+                                      <div className="mt-2 space-y-2">
+                                        {paketPerPenyedia.map((grup) => (
+                                          <div key={grup.nama} className="border-l-2 border-primary/30 pl-2">
+                                            <p className="flex items-baseline justify-between gap-2 font-sans text-[11px] font-semibold text-foreground">
+                                              <span className="truncate">{grup.nama}</span>
+                                              <span className="shrink-0 text-[10px] font-normal tabular-nums text-muted-foreground">
+                                                {grup.daftar.length} paket · {formatRupiahFull(grup.total)}
+                                              </span>
+                                            </p>
+                                            <ul className="mt-1 space-y-1">
+                                              {grup.daftar.map((paket) => (
+                                                <li key={paket.kodePaket} className="flex items-baseline justify-between gap-2">
+                                                  <a
+                                                    href={`https://data.inaproc.id/realisasi?kode=${encodeURIComponent(paket.kodePaket)}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="truncate font-mono text-[10px] text-primary underline-offset-2 hover:underline"
+                                                    title={`${paket.kodePaket}${paket.sumber ? ` · ${paket.sumber}` : ""}`}
+                                                  >
+                                                    {paket.kodePaket.slice(0, 16)}{paket.kodePaket.length > 16 ? "…" : ""}
+                                                  </a>
+                                                  <span className="shrink-0 text-[10px] tabular-nums text-foreground/80">
+                                                    {formatRupiahFull(paket.nilai)}
+                                                  </span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
                                         ))}
-                                      </ul>
-                                      <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
-                                        Nilai tiap baris adalah realisasi paket itu sendiri, bukan nilai kontrak.
+                                      </div>
+                                      <p className="mt-2 text-[10px] leading-snug text-muted-foreground">
+                                        Tiap nilai adalah realisasi paket itu sendiri, bukan nilai kontrak. Kode paket membuka halaman
+                                        realisasi Data INAPROC.
                                       </p>
                                     </details>
-                                  </td>
-                                </tr>
-                              ) : null}
-                              {selectedPackage.kontrak.penyediaLain?.length ? (
-                                <tr className="border-t border-border/60">
-                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia lain</th>
-                                  <td className="py-2 pr-3 leading-snug text-foreground">
-                                    {selectedPackage.kontrak.penyediaLain.map((nama) => (
-                                      <Link key={nama} href={`/penyedia/${slugPenyedia(nama)}`} className="block text-primary underline-offset-2 hover:underline">
-                                        {nama}
-                                      </Link>
-                                    ))}
                                   </td>
                                 </tr>
                               ) : null}
