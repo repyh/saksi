@@ -93,8 +93,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   join. Detail RUP tetap bisa dibuka lewat `https://data.inaproc.id/rup?kode=<kode_rup>`.
   Relasi RUP↔paket dan ketersediaan halaman detail dianalisis di `docs/RELASI-RUP-REALISASI.md`.
 - RUP dengan **lebih dari satu paket realisasi** (relasi 1–N, hanya e-purchasing/pengadaan langsung)
-  ditampilkan eksplisit: badge "· N paket" di daftar, dan baris **Paket realisasi** di panel berisi
-  penjelasan bahwa nama teratas adalah penerima nilai terbesar. Relasi M–N tidak muncul di cakupan ini
+  ditampilkan eksplisit: badge "· N paket" di daftar, baris **Paket realisasi** di panel dengan
+  rincian tiap paket (kode paket, penyedia, nilai, tautan bukti), dan label **Selisih pagu (vs total
+  realisasi)** yang menyebut pembandingnya jumlah realisasi seluruh paket, bukan satu nilai kontrak. Relasi M–N tidak muncul di cakupan ini
   (0 dari 1.634 paket; 11 kasus hanya di seluruh D44).
 - Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi (Dinas, OPD,
   Pegawai Dinas) **tidak** dihitung sebagai pelaksana — 43 paket swakelola tampil sebagai tanpa rekam

@@ -684,12 +684,21 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                               ) : null}
                               {selectedPackage.kontrak.nilai_kontrak ? (
                                 <tr>
-                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Selisih pagu</th>
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+                                  {selectedPackage.kontrak.jumlahPaket && selectedPackage.kontrak.jumlahPaket > 1
+                                    ? "Selisih pagu (vs total realisasi)"
+                                    : "Selisih pagu"}
+                                </th>
                                   <td className="py-2 pr-3 tabular-nums text-foreground">
                                     {formatRupiahFull(selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak)}
                                     <span className="ml-1 text-[11px] text-muted-foreground">
                                       ({(((selectedPackage.pagu - selectedPackage.kontrak.nilai_kontrak) / selectedPackage.pagu) * 100).toFixed(1)}% dari pagu)
                                     </span>
+                                    {selectedPackage.kontrak.jumlahPaket && selectedPackage.kontrak.jumlahPaket > 1 ? (
+                                      <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                                        Pembandingnya jumlah realisasi {selectedPackage.kontrak.jumlahPaket} paket, bukan satu nilai kontrak.
+                                      </span>
+                                    ) : null}
                                   </td>
                                 </tr>
                               ) : null}
@@ -709,10 +718,33 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                                   <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Paket realisasi</th>
                                   <td className="py-2 pr-3 text-foreground">
                                     <span className="font-semibold">{selectedPackage.kontrak.jumlahPaket} paket</span>
-                                    <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
-                                      Satu RUP ini dibayar lewat {selectedPackage.kontrak.jumlahPaket} paket/transaksi berbeda.
-                                      Nama di atas adalah penerima nilai terbesar; tautan bukti membuka paket tersebut.
-                                    </span>
+                                    <details className="mt-1">
+                                      <summary className="cursor-pointer font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
+                                        Rincian {selectedPackage.kontrak.jumlahPaket} paket
+                                      </summary>
+                                      <ul className="mt-1.5 space-y-1.5 border-l border-border pl-2.5">
+                                        {(selectedPackage.kontrak.paketRealisasi ?? []).map((paket) => (
+                                          <li key={paket.kodePaket} className="text-[11px] leading-snug">
+                                            <a
+                                              href={`https://data.inaproc.id/realisasi?kode=${encodeURIComponent(paket.kodePaket)}`}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="font-mono text-[10px] text-primary underline-offset-2 hover:underline"
+                                            >
+                                              {paket.kodePaket}
+                                            </a>
+                                            <span className="block text-foreground/80">{paket.penyedia}</span>
+                                            <span className="block tabular-nums text-muted-foreground">
+                                              {formatRupiahFull(paket.nilai)}
+                                              {paket.sumber ? ` · ${paket.sumber}` : ""}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                      <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+                                        Nilai tiap baris adalah realisasi paket itu sendiri, bukan nilai kontrak.
+                                      </p>
+                                    </details>
                                   </td>
                                 </tr>
                               ) : null}

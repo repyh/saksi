@@ -104,7 +104,7 @@ interface AgregatRealisasi {
   metode: string | null;
   tahun: number;
   sumberTransaksi: string | null;
-  paket: Map<string, { nilai: number; sumber: string | null }>;
+  paket: Map<string, { nilai: number; sumber: string | null; penyedia: Map<string, number> }>;
 }
 
 /** Swakelola & instansi bukan penyedia jasa — jangan pernah tampil sebagai "pemenang". */
@@ -130,8 +130,13 @@ for (const baris of real.item) {
   agg.total += nilai;
   agg.penyedia.set(baris.penyedia, (agg.penyedia.get(baris.penyedia) ?? 0) + nilai);
   if (baris.kode_paket) {
-    const paket = agg.paket.get(baris.kode_paket) ?? { nilai: 0, sumber: baris.sumber_transaksi ?? null };
+    const paket = agg.paket.get(baris.kode_paket) ?? {
+      nilai: 0,
+      sumber: baris.sumber_transaksi ?? null,
+      penyedia: new Map<string, number>(),
+    };
     paket.nilai += nilai;
+    paket.penyedia.set(baris.penyedia, (paket.penyedia.get(baris.penyedia) ?? 0) + nilai);
     agg.paket.set(baris.kode_paket, paket);
   }
   realisasiPerRup.set(rup, agg);
@@ -163,6 +168,14 @@ for (const [rup, agg] of realisasiPerRup) {
     url: paketBukti ? urlRealisasiPaket(paketBukti[0]) : urlRupInaproc(rup),
     kodePaket: paketBukti?.[0] ?? null,
     jumlahPaket: agg.paket.size,
+    paketRealisasi: [...agg.paket.entries()]
+      .map(([kodePaket, isi]) => ({
+        kodePaket,
+        nilai: Math.round(isi.nilai),
+        sumber: isi.sumber,
+        penyedia: [...isi.penyedia.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? urut[0][0],
+      }))
+      .sort((a, b) => b.nilai - a.nilai),
     transaksi: agg.transaksi,
     penyediaLain: urut.slice(1).map(([nama]) => nama),
     sumberTransaksi: agg.sumberTransaksi,
