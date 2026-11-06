@@ -30,7 +30,7 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Two contract sources: **LPSE/SPSE** for tender and direct procurement, **Data INAPROC**
   (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
   The INAPROC layer uses the official CSV export (4 requests/year for the whole municipality),
-  and names a vendor for **1,424 of 1,557** road packages (87.1%).
+  and names a vendor for **1,426 of 1,634** road packages (87.3%).
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
   interactive filters call `GET /api/packages`. The adapter reads the checked-in JSON snapshot.
 - Better Auth and Prisma are wired for server use. They are **optional for the FDS**: when
@@ -42,7 +42,7 @@ review, not proof of wrongdoing or a guarantee of government action.
 
 | | |
 |---|---:|
-| Packages (road, bridge, drainage) | **1,557** |
+| Packages (road, bridge, drainage) | **1,634** |
 | Budget | **Rp650.18 bn** |
 | Fiscal years | 2025: 981 · 2026: 653 |
 | Kelurahan touched | **85 of 104** · 13 kecamatan |
@@ -85,7 +85,7 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
 - Prisma domain models and a repository backed by Postgres/PostGIS instead of the JSON snapshot
 - Scheduled scraper workers for government and social sources, with provenance and run history
 - Viewport-aware map queries and a paginated package register (`/api/packages` currently returns all
-  1,557 items)
+  1,634 items)
 - Published methodology page and source metadata for every displayed metric
 - Provenance badges (`DATA RESMI` / `SIMULASI PROTOTIPE`) — required by the project rules, not yet shown
 

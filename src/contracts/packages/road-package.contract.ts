@@ -22,6 +22,10 @@ export interface RoadPackageContract {
   /** Penyedia lain bila satu paket punya beberapa transaksi. */
   penyediaLain?: string[];
   sumberTransaksi?: string | null;
+  /** Kode paket di Data INAPROC (dipakai halaman realisasi), bukan kode RUP. */
+  kodePaket?: string | null;
+  /** Berapa paket realisasi yang terhubung ke RUP ini (relasi bisa satu-ke-banyak). */
+  jumlahPaket?: number;
 }
 
 export type RoadContractFilter = "SEMUA" | "ADA" | "TANPA";

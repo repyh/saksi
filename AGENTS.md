@@ -22,9 +22,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Angka kunci (snapshot 31 Okt 2026, diperkaya detail RUP 3 Nov 2026): **1.634 paket jalan · Rp683,34 M
   · 821 anchor RW · 375 kelurahan · 90 kecamatan · 312 tanpa lokus**.
 - Jangkauan wilayah: **85 kelurahan dari 104 · 490 RW dari 1.020**.
-- Rekam penyedia (3 Nov 2026): **1.424 dari 1.634 paket** punya nama penyedia — 731 dari LPSE/SPSE,
+- Rekam penyedia (6 Nov 2026): **1.426 dari 1.634 paket** punya nama penyedia — 731 dari LPSE/SPSE,
   693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **210** paket tanpa
-  rekam publik (Rp130,72 M); **522** penyedia unik.
+  rekam publik (Rp130,67 M); **522** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
@@ -89,8 +89,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya ada di
   `docs/LPSE-PEMENANG.md` dan `docs/RUP-DATA-INAPROC.md`.
 - **Tautan bukti penyedia:** paket dengan rekam LPSE memakai URL SPSE aslinya; paket lain memakai
-  `https://data.inaproc.id/rup?kode=<kode_rup>` (halaman Detail Paket). Varian `/realisasi?kode=`
-  diuji dan selalu kosong — jangan dipakai.
+  `https://data.inaproc.id/realisasi?kode=<kode paket>`. Parameter itu **kode paket** (kode tender /
+  e-katalog), **bukan kode RUP**; detail RUP memakai `https://data.inaproc.id/rup?kode=<kode_rup>`.
+  Relasi RUP↔paket: lihat `docs/RELASI-RUP-REALISASI.md`.
 - **Swakelola & instansi bukan pemenang.** Baris realisasi ber-metode Swakelola atau bernama Dinas/OPD/
   Pegawai Dinas tidak boleh tampil sebagai penyedia.
 

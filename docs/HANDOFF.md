@@ -15,7 +15,7 @@ SAKSI makes public road-work package records easier to inspect by connecting the
 
 Location anchor, after enriching from RUP details: **821 RW (50.2%)**, **375 kelurahan (22.9%)**, **90 kecamatan (5.5%)**, **312 without any locus (21.3%)** — so 1.286 packages (78.7%) carry a derived location. Coverage touches 85 of 104 kelurahan, 490 of 1,020 RW, in 13 kecamatan.
 
-Vendor records: **1.424 of 1.634 packages (87.1%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
+Vendor records: **1.426 of 1.634 packages (87.3%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -96,7 +96,7 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
 - Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
-- Format numbers for Indonesian readers (`1.634`, `87,1%`, `Rp683,34 Miliar`). Attach source, date, coverage, and methodology to public claims.
+- Format numbers for Indonesian readers (`1.634`, `87,3%`, `Rp683,34 Miliar`). Attach source, date, coverage, and methodology to public claims.
 - Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
 - Never present an inferred map location as an official package coordinate, and never place per-package pins.
 - Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.

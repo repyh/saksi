@@ -1,12 +1,12 @@
 # Sisa paket tanpa penyedia — sebab dan sisa pekerjaan
 
 > **Catatan 5 November 2026:** setelah sumber RUP pindah ke `data.inaproc.id`, populasi menjadi
-> **1.634 paket** dan paket tanpa rekam penyedia **210 paket (Rp130,72 M, 19,1% pagu)**. Angka 176/133
+> **1.634 paket** dan paket tanpa rekam penyedia **208 paket (Rp130,67 M, 19,1% pagu)**. Angka 176/133
 > di bawah adalah riwayat proses penarikan data, bukan kondisi terkini.
 
 Snapshot 3 November 2026. Setelah LPSE (731 paket) dan **ekspor Data INAPROC realisasi untuk seluruh
-satker `D44`** (693 paket tambahan), **1.424 dari 1.634** paket jalan punya nama penyedia.
-Sisa **210 paket · Rp130,72 M** (19,1% pagu).
+satker `D44`** (693 paket tambahan), **1.426 dari 1.634** paket jalan punya nama penyedia.
+Sisa **208 paket · Rp130,67 M** (19,1% pagu).
 
 > Riwayat angka: 176 paket (LPSE + PUPR saja) → 140 (lima satker) → **133** (ekspor CSV seluruh
 > satker). Dua lompatan terakhir menutup 43 paket; sisanya bukan lagi soal satker yang belum
@@ -62,5 +62,5 @@ node scripts/realisasi.mjs --mode table --satker <kode>   # cadangan per satker,
 npm run build                                             # lalu cek /api/packages?kontrak=ADA
 ```
 
-Angka acuan setelah penarikan: `?kontrak=ADA` **1.424** · `?kontrak=TANPA` **133** · penyedia unik
+Angka acuan setelah penarikan: `?kontrak=ADA` **1.426** · `?kontrak=TANPA` **208** · penyedia unik
 **522**.

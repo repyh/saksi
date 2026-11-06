@@ -22,8 +22,8 @@ Angka snapshot **31 Oktober 2026**, diperkaya detail RUP **3 November 2026**:
 - Anchor lokasi: **RW 821 (50,2%)**, **kelurahan 375 (22,9%)**, **kecamatan 90 (5,5%)**,
   **tanpa lokus 348 (21,3%)** → **1.286 paket (78,7%) punya lokus turunan**.
 - Jangkauan: **85 dari 104 kelurahan**, **490 dari 1.020 RW**, **13 kecamatan**.
-- Penyedia: **1.424 dari 1.634 paket (87,1%)** punya nama penyedia — **731 dari LPSE/SPSE**,
-  **693 dari Data INAPROC realisasi**; **210 paket** (Rp130,72 M; 19,1% pagu) tanpa rekam publik;
+- Penyedia: **1.426 dari 1.634 paket (87,3%)** punya nama penyedia — **731 dari LPSE/SPSE**,
+  **693 dari Data INAPROC realisasi**; **208 paket** (Rp130,67 M; 19,1% pagu) tanpa rekam publik;
   **522 penyedia unik**; rasio kontrak/pagu median **0,99**.
 - **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
 
@@ -88,9 +88,10 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom), legenda mengikuti tingkat, agregasi
   kecamatan memakai kelas kuantil.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
-  (e-purchasing/swakelola-celah) membuka **`https://data.inaproc.id/rup?kode=<kode_rup>`** — halaman
-  Detail Paket Data INAPROC, bukan halaman daftar. Varian `?kode=` pada `/realisasi` sudah diuji dan
-  selalu menjawab "tidak memiliki Data Detail", jadi tidak dipakai.
+  membuka **`https://data.inaproc.id/realisasi?kode=<kode paket>`**. Penting: parameter itu memakai
+  **kode paket realisasi** (kode tender / kode e-katalog), **bukan** kode RUP — RUP hanya dipakai untuk
+  join. Detail RUP tetap bisa dibuka lewat `https://data.inaproc.id/rup?kode=<kode_rup>`.
+  Relasi RUP↔paket dan ketersediaan halaman detail dianalisis di `docs/RELASI-RUP-REALISASI.md`.
 - Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi (Dinas, OPD,
   Pegawai Dinas) **tidak** dihitung sebagai pemenang — 43 paket swakelola tampil sebagai tanpa rekam
   kontrak, bukan dengan penyedia palsu.

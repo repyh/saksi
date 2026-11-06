@@ -149,7 +149,7 @@ kerusakan di peta:
 | **FR-04** | **Sandingan data resmi vs kontrak** | Panel paket: pagu RUP, jadwal/bulan, sumber dana, metode; bila ada rekam LPSE/INAPROC — HPS, nilai kontrak, pemenang, selisih pagu, dan sumber transaksi. Badge sumber melekat pada angka. | Orisinalitas 20% |
 | **FR-05** | **Moderasi laporan & bukti warga** | Laporan warga (`SUBMITTED`) masuk antrean tinjauan dashboard; moderator melihat foto tersanitasi, jenis/penyebab/ukuran, wilayah, dan paket tertaut, lalu menetapkan `PUBLISHED`/`NEEDS_MORE_INFO`/`REJECTED`/`WITHDRAWN`/`ARCHIVED`. | Civic Reporting |
 | **FR-06** | **Agregasi kecamatan** | Tiga belas poligon kecamatan diwarnai dengan kelas **kuantil** jumlah paket; tooltip menyebut jumlah paket, total pagu, dan (pada tampilan jenis) kelas pekerjaan. Klik wilayah → filter daftar paket. | Decision Support, Konten 20% |
-| **FR-07** | **Rekam jejak penyedia (berimbang)** | 522 penyedia unik dari LPSE/SPSE + Data INAPROC: 1.424 dari 1.634 paket (87,1%) punya rekam kontrak; 210 paket (Rp130,72 M, 19,1% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
+| **FR-07** | **Rekam jejak penyedia (berimbang)** | 522 penyedia unik dari LPSE/SPSE + Data INAPROC: 1.426 dari 1.634 paket (87,3%) punya rekam kontrak; 208 paket (Rp130,67 M, 19,1% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
 
 ---
 

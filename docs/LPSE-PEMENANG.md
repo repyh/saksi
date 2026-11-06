@@ -141,8 +141,8 @@ Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 
 | | Sebelum | Sesudah |
 |---|---:|---:|
-| Paket punya nama penyedia | 731 (46,9%) | **1.424 (87,1%)** |
-| Paket tanpa rekam | 826 | **210** |
+| Paket punya nama penyedia | 731 (46,9%) | **1.426 (87,3%)** |
+| Paket tanpa rekam | 826 | **208** |
 | Penyedia unik | 330 | **522** |
 
 693 paket terisi dari realisasi: **375 e-purchasing**, 304 pengadaan langsung, 14 dikecualikan.
@@ -175,6 +175,6 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Sisa yang belum tertutup
 
-210 paket (Rp130,72 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
+208 paket (Rp130,67 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
 **`docs/SISA-176-PAKET.md`**.
 

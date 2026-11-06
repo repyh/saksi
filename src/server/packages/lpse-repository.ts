@@ -14,6 +14,18 @@ function urlRupInaproc(kodeRup: string) {
   return `https://data.inaproc.id/rup?kode=${encodeURIComponent(kodeRup)}`;
 }
 
+/**
+ * Halaman realisasi memakai **kode paket** milik transaksi (kode tender / kode e-katalog),
+ * bukan kode RUP. Halaman ini berisi detail hanya untuk paket yang punya rekam tender di SPSE;
+ * paket e-katalog biasanya menjawab "tidak memiliki Data Detail" meski halamannya tetap terbuka.
+ */
+function urlRealisasiPaket(kodePaket: string) {
+  return `https://data.inaproc.id/realisasi?kode=${encodeURIComponent(kodePaket)}`;
+}
+
+/** Sumber transaksi yang biasanya punya halaman detail realisasi (tender SPSE lebih dulu). */
+const PRIORITAS_SUMBER = ["Tender", "Non Tender", "Pencatatan Non Tender", "Pencatatan Swakelola"];
+
 interface LpseRow {
   kode_rup: string;
   jenis_lpse: "lelang" | "nontender";
@@ -92,6 +104,7 @@ interface AgregatRealisasi {
   metode: string | null;
   tahun: number;
   sumberTransaksi: string | null;
+  paket: Map<string, { nilai: number; sumber: string | null }>;
 }
 
 /** Swakelola & instansi bukan penyedia jasa — jangan pernah tampil sebagai "pemenang". */
@@ -110,11 +123,17 @@ for (const baris of real.item) {
     metode: baris.metode,
     tahun: baris.tahun,
     sumberTransaksi: baris.sumber_transaksi,
+    paket: new Map(),
   };
   const nilai = Number(baris.nilai ?? 0);
   agg.transaksi += 1;
   agg.total += nilai;
   agg.penyedia.set(baris.penyedia, (agg.penyedia.get(baris.penyedia) ?? 0) + nilai);
+  if (baris.kode_paket) {
+    const paket = agg.paket.get(baris.kode_paket) ?? { nilai: 0, sumber: baris.sumber_transaksi ?? null };
+    paket.nilai += nilai;
+    agg.paket.set(baris.kode_paket, paket);
+  }
   realisasiPerRup.set(rup, agg);
 }
 
@@ -123,6 +142,14 @@ for (const [rup, agg] of realisasiPerRup) {
   if (kontrakPerRup.has(rup)) continue;
   const urut = [...agg.penyedia.entries()].sort((a, b) => b[1] - a[1]);
   if (!urut.length) continue;
+
+  const peringkat = (sumber: string | null) => {
+    const i = PRIORITAS_SUMBER.indexOf(String(sumber ?? ""));
+    return i === -1 ? PRIORITAS_SUMBER.length : i;
+  };
+  const paketBukti = [...agg.paket.entries()].sort(
+    (a, b) => peringkat(a[1].sumber) - peringkat(b[1].sumber) || b[1].nilai - a[1].nilai,
+  )[0];
 
   kontrakPerRup.set(rup, {
     jenis: agg.metode === "E-Purchasing" ? "e-purchasing" : "lainnya",
@@ -133,7 +160,9 @@ for (const [rup, agg] of realisasiPerRup) {
     hps: null,
     nilai_kontrak: agg.total ? Math.round(agg.total) : null,
     tahun: agg.tahun,
-    url: urlRupInaproc(rup),
+    url: paketBukti ? urlRealisasiPaket(paketBukti[0]) : urlRupInaproc(rup),
+    kodePaket: paketBukti?.[0] ?? null,
+    jumlahPaket: agg.paket.size,
     transaksi: agg.transaksi,
     penyediaLain: urut.slice(1).map(([nama]) => nama),
     sumberTransaksi: agg.sumberTransaksi,

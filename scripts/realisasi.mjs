@@ -316,6 +316,7 @@ writeFileSync(
       per_rup: [...perRup.values()].sort((a, b) => b.nilai - a.nilai),
       item: semuaBaris.map((r) => ({
         kode_rup: r.kode_rup,
+        kode_paket: r.kode_paket,
         tahun: r.tahun_anggaran,
         metode: r.metode_pengadaan,
         sumber_transaksi: r.sumber_transaksi,

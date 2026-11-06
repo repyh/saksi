@@ -90,8 +90,8 @@ operasional dan jasa konsultansi, dan **membatasi pada pekerjaan jalan**:
 | Kelurahan tersentuh | **85 dari 104** · 13 kecamatan |
 | RW tersentuh | 490 dari 1.020 |
 | Anchor lokasi turunan (RW/kelurahan/kecamatan) | **1.286 (78,7%)** |
-| Penyedia bernama (LPSE/SPSE + Data INAPROC) | 1.424 (87,1%) · 522 penyedia unik |
-| Tanpa rekam publik | 210 paket (Rp130,72 M, 19,1% pagu) |
+| Penyedia bernama (LPSE/SPSE + Data INAPROC) | 1.426 (87,3%) · 522 penyedia unik |
+| Tanpa rekam publik | 208 paket (Rp130,67 M, 19,1% pagu) |
 | Rasio kontrak/pagu median | 0,99 |
 
 Komposisi pekerjaan (dari nama paket): drainase/saluran **1.303** · pekerjaan permukaan

@@ -75,7 +75,7 @@ panel detail dengan penyedia, nilai kontrak, dan tautan sumber; halaman rekam pe
 3. **Jangan memaksa titik.** Tidak ada pin/jitter per paket: peta hanya koroplet poligon wilayah.
    348 paket (21,3%) tanpa lokus hanya tampil di tabel dengan label `Lokasi umum · Kota Tangerang`.
 4. Bahasa indikator selalu **"Diduga Tidak Sesuai"** — tidak pernah korupsi, fiktif, atau tuduhan.
-5. Penyedia disebut nama asli tetapi berimbang: tanpa skor gabungan, selalu dengan penyebut; 210 paket
+5. Penyedia disebut nama asli tetapi berimbang: tanpa skor gabungan, selalu dengan penyebut; 208 paket
    tanpa rekam publik ditandai apa adanya, bukan ditebak.
 6. Privasi: blur wajah & plat + hapus EXIF **di browser sebelum** data disimpan.
 7. Format angka Indonesia: `1.634`, `78,7%`, `Rp683,34 Miliar`.
@@ -84,7 +84,7 @@ panel detail dengan penyedia, nilai kontrak, dan tautan sumber; halaman rekam pe
 9. Stack terkunci: Next.js App Router + React 19 + Tailwind v4 + shadcn/base-ui; peta hanya Leaflet
    1.9.4 + react-leaflet 5; tanpa state manager, tanpa pemilih basemap.
 
-**Terbuka:** 210 paket (Rp130,72 M) belum punya rekam penyedia publik; tidak ada koordinat pekerjaan
+**Terbuka:** 208 paket (Rp130,67 M) belum punya rekam penyedia publik; tidak ada koordinat pekerjaan
 sehingga peta tetap koroplet; geometri ruas jalan (bukan poligon wilayah) belum ada.
 
 ## Brand Commitments
@@ -104,7 +104,7 @@ sehingga peta tetap koroplet; geometri ruas jalan (bukan poligon wilayah) belum 
   (LPSE/SPSE dan ekspor CSV satker D44 di Data INAPROC).
 - Batas wilayah resmi RW/kelurahan/kecamatan — ArcGIS Kota Tangerang (13 / 104 / 1.020 poligon).
 - `docs/` — transkrip bimbingan dosen, memo uji Tangerang, uji NLP lokasi (bukti keputusan).
-- **Tidak ada:** koordinat pekerjaan per paket, foto kerusakan asli, data penyedia untuk 210 paket.
+- **Tidak ada:** koordinat pekerjaan per paket, foto kerusakan asli, data penyedia untuk 208 paket.
   Foto contoh tidak boleh dipalsukan sebagai foto nyata; laporan contoh wajib berlabel
   `SIMULASI PROTOTIPE`.
 
