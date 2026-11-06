@@ -87,7 +87,7 @@ for (const baris of data.item) {
     jenis: baris.jenis_lpse === "lelang" ? "tender" : "nontender",
     sumber: "LPSE",
     metode: baris.metode,
-    pemenang: nama,
+    penyedia: nama,
     npwp: baris.npwp,
     hps: baris.hps,
     nilai_kontrak: baris.nilai_kontrak,
@@ -155,7 +155,7 @@ for (const [rup, agg] of realisasiPerRup) {
     jenis: agg.metode === "E-Purchasing" ? "e-purchasing" : "lainnya",
     sumber: "Data INAPROC",
     metode: agg.metode,
-    pemenang: urut[0][0],
+    penyedia: urut[0][0],
     npwp: null,
     hps: null,
     nilai_kontrak: agg.total ? Math.round(agg.total) : null,
@@ -173,7 +173,7 @@ for (const [rup, agg] of realisasiPerRup) {
 /** Indeks penyedia → kode RUP, dibangun dari kontrak gabungan. */
 const rupPerPenyedia = new Map<string, Set<string>>();
 for (const [rup, kontrak] of kontrakPerRup) {
-  for (const nama of [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])]) {
+  for (const nama of [kontrak.penyedia, ...(kontrak.penyediaLain ?? [])]) {
     const kunci = nama.trim().toLocaleUpperCase("id-ID");
     const daftar = rupPerPenyedia.get(kunci);
     if (daftar) daftar.add(rup);
@@ -222,7 +222,7 @@ export function ringkasanPenyedia(rupDiizinkan: Set<string> | null): VendorSumma
     if (rupDiizinkan && !rupDiizinkan.has(rup)) continue;
 
     const perPenyedia = realisasiPerRup.get(rup)?.penyedia;
-    const daftar = [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])];
+    const daftar = [kontrak.penyedia, ...(kontrak.penyediaLain ?? [])];
 
     for (const nama of daftar) {
       const kunci = nama.trim().toLocaleUpperCase("id-ID");
@@ -238,7 +238,7 @@ export function ringkasanPenyedia(rupDiizinkan: Set<string> | null): VendorSumma
       entri.nilai += Math.round(
         perPenyedia
           ? Number(perPenyedia.get(nama) ?? 0)
-          : kunci === kontrak.pemenang.trim().toLocaleUpperCase("id-ID")
+          : kunci === kontrak.penyedia.trim().toLocaleUpperCase("id-ID")
             ? Number(kontrak.nilai_kontrak ?? 0)
             : 0,
       );

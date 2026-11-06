@@ -92,8 +92,10 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
   `https://data.inaproc.id/realisasi?kode=<kode paket>`. Parameter itu **kode paket** (kode tender /
   e-katalog), **bukan kode RUP**; detail RUP memakai `https://data.inaproc.id/rup?kode=<kode_rup>`.
   Relasi RUP↔paket: lihat `docs/RELASI-RUP-REALISASI.md`.
-- **Swakelola & instansi bukan pemenang.** Baris realisasi ber-metode Swakelola atau bernama Dinas/OPD/
+- **Swakelola & instansi bukan pelaksana.** Baris realisasi ber-metode Swakelola atau bernama Dinas/OPD/
   Pegawai Dinas tidak boleh tampil sebagai penyedia.
+- **Notasi pelaksana:** label **"Pemenang"** hanya untuk kontrak tender/seleksi; selain itu label
+  **"Penyedia"**. Field kontrak & API memakai `penyedia` (kolom SPSE tetap `pemenang`).
 
 ## Perintah verifikasi (wajib hijau sebelum lapor selesai)
 

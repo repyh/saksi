@@ -508,7 +508,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                       <p className="mt-1 line-clamp-2 font-sans text-xs font-semibold text-foreground">{pkg.nama}</p>
                       {pkg.kontrak && (
                         <p className="mt-0.5 truncate font-sans text-[10px] text-muted-foreground">
-                          Pemenang: <span className="font-semibold text-foreground/80">{pkg.kontrak.pemenang}</span>
+                          {pkg.kontrak.jenis === "tender" ? "Pemenang" : "Penyedia"}: <span className="font-semibold text-foreground/80">{pkg.kontrak.penyedia}</span>
                         </p>
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
@@ -636,7 +636,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                       {selectedPackage.kontrak ? (
                         <div className="mt-4 border border-border">
                           <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
-                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Pemenang &amp; kontrak</p>
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{selectedPackage.kontrak.jenis === "tender" ? "Pemenang & kontrak" : "Penyedia & kontrak"}</p>
                             <span className="shrink-0 border border-primary/30 bg-primary/5 px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">
                               {selectedPackage.kontrak.sumber === "LPSE" ? "Data resmi (LPSE)" : "Data resmi (INAPROC)"}
                             </span>
@@ -646,8 +646,8 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                               <tr className="border-b border-border/60">
                                 <th scope="row" className="w-24 py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia</th>
                                 <td className="py-2 pr-3 font-semibold leading-snug text-foreground">
-                                  <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.pemenang)}`} className="text-primary underline-offset-2 hover:underline">
-                                    {selectedPackage.kontrak.pemenang}
+                                  <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.penyedia)}`} className="text-primary underline-offset-2 hover:underline">
+                                    {selectedPackage.kontrak.penyedia}
                                   </Link>
                                 </td>
                               </tr>
@@ -700,7 +700,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             </tbody>
                           </table>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-2">
-                            <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.pemenang)}`} className="font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
+                            <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.penyedia)}`} className="font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
                               Rekam jejak penyedia
                             </Link>
                             {selectedPackage.kontrak.url ? (
@@ -720,7 +720,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                           <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Tanpa rekam kontrak di LPSE</p>
                           <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
                             {(selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("e-purchasing")
-                              ? "Paket ini melalui e-purchasing (e-katalog), yang tidak menerbitkan nama pemenang di LPSE."
+                              ? "Paket ini melalui e-purchasing (e-katalog), yang tidak menerbitkan nama penyedia di LPSE."
                               : (selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("dikecualikan")
                                 ? "Paket dikecualikan dari prosedur pengadaan LPSE."
                                 : "Belum ada pencatatan tender atau pengadaan langsung yang cocok di LPSE untuk paket ini."}

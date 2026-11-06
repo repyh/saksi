@@ -17,7 +17,7 @@ function matchesQuery(item: RoadPackageItem, query: string): boolean {
     item.desa_resmi ?? "",
     item.rw ?? "",
     item.kecamatan_resmi ?? "",
-    item.kontrak?.pemenang ?? "",
+    item.kontrak?.penyedia ?? "",
   ]
     .join(" ")
     .toLocaleLowerCase("id-ID");
@@ -66,7 +66,7 @@ export async function searchRoadPackages(
   const vendorCount = new Set(
     allPackages.flatMap((item) =>
       item.kontrak
-        ? [item.kontrak.pemenang, ...(item.kontrak.penyediaLain ?? [])].map((nama) =>
+        ? [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])].map((nama) =>
             nama.toLocaleUpperCase("id-ID"),
           )
         : [],
@@ -94,7 +94,7 @@ export async function listVendors(query?: string): Promise<VendorSummary[]> {
   const kategori = new Map<string, Set<string>>();
   for (const item of paket.items) {
     if (!item.kontrak) continue;
-    for (const nama of [item.kontrak.pemenang, ...(item.kontrak.penyediaLain ?? [])]) {
+    for (const nama of [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])]) {
       const kunci = slugPenyedia(nama);
       const isi = kategori.get(kunci) ?? new Set<string>();
       isi.add(classifyRoadWork(item.nama));

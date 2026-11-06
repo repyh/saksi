@@ -89,7 +89,7 @@ membuka halaman dengan konteks paket yang benar, tetapi badan halaman menjawab
 `src/server/packages/lpse-repository.ts`:
 
 1. Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi
-   (Dinas/OPD/Pegawai) **tidak** dihitung sebagai pemenang.
+   (Dinas/OPD/Pegawai) **tidak** dihitung sebagai pelaksana.
 2. Satu RUP → kumpulan paket; tautan bukti memilih paket dengan prioritas sumber
    `Tender → Non Tender → Pencatatan Non Tender → Pencatatan Swakelola → E-Katalog`, lalu nilai terbesar.
 3. `nilai_kontrak` untuk jalur realisasi = **jumlah nilai transaksi**, bukan nilai kontrak; field

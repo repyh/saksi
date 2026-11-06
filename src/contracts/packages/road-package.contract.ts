@@ -11,7 +11,11 @@ export interface RoadPackageContract {
   jenis: "tender" | "nontender" | "e-purchasing" | "lainnya";
   sumber: "LPSE" | "Data INAPROC";
   metode: string | null;
-  pemenang: string;
+  /**
+   * Nama pelaksana. Disebut "pemenang" hanya bila `jenis === "tender"` (lelang/seleksi);
+   * untuk pengadaan langsung, e-purchasing, dan sejenisnya istilahnya "penyedia".
+   */
+  penyedia: string;
   npwp: string | null;
   hps: number | null;
   nilai_kontrak: number | null;

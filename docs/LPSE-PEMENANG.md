@@ -1,5 +1,9 @@
 # Data LPSE → RUP: pemenang kontrak
 
+> **Notasi:** istilah **"pemenang"** hanya dipakai untuk paket tender/seleksi. Untuk
+> pengadaan langsung, e-purchasing, dan penunjukan langsung, istilah yang benar adalah **"penyedia"**;
+> kode memakai field `penyedia` dan hanya menampilkan label "Pemenang" bila `jenis === "tender"`.
+
 Snapshot **2 November 2026**. Skrip: `scripts/lpse.mjs` (`npm run lpse:list|detail|match`).
 Keluaran: `data/lpse_kota_tangerang_2025_2026.json`.
 
