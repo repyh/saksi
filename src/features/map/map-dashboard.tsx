@@ -509,6 +509,9 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                       {pkg.kontrak && (
                         <p className="mt-0.5 truncate font-sans text-[10px] text-muted-foreground">
                           {pkg.kontrak.jenis === "tender" ? "Pemenang" : "Penyedia"}: <span className="font-semibold text-foreground/80">{pkg.kontrak.penyedia}</span>
+                          {pkg.kontrak.jumlahPaket && pkg.kontrak.jumlahPaket > 1 ? (
+                            <span className="ml-1 text-[10px] text-muted-foreground">· {pkg.kontrak.jumlahPaket} paket</span>
+                          ) : null}
                         </p>
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
@@ -698,6 +701,18 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                                     {selectedPackage.kontrak.transaksi && selectedPackage.kontrak.transaksi > 1 ? (
                                       <span className="ml-1 text-[11px] text-muted-foreground">· {selectedPackage.kontrak.transaksi} transaksi</span>
                                     ) : null}
+                                  </td>
+                                </tr>
+                              ) : null}
+                              {selectedPackage.kontrak.jumlahPaket && selectedPackage.kontrak.jumlahPaket > 1 ? (
+                                <tr className="border-t border-border/60">
+                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Paket realisasi</th>
+                                  <td className="py-2 pr-3 text-foreground">
+                                    <span className="font-semibold">{selectedPackage.kontrak.jumlahPaket} paket</span>
+                                    <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                                      Satu RUP ini dibayar lewat {selectedPackage.kontrak.jumlahPaket} paket/transaksi berbeda.
+                                      Nama di atas adalah penerima nilai terbesar; tautan bukti membuka paket tersebut.
+                                    </span>
                                   </td>
                                 </tr>
                               ) : null}
