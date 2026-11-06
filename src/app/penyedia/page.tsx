@@ -7,7 +7,7 @@ import { listVendors, searchRoadPackages } from "@/server/packages/service";
 export const metadata: Metadata = {
   title: "Penyedia & Kontrak Jalan — SAKSI",
   description:
-    "Rekam jejak penyedia paket jalan Kota Tangerang dari LPSE, disandingkan dengan paket RUP.",
+    "Rekam jejak penyedia paket jalan Kota Tangerang dari LPSE/SPSE dan Data INAPROC, disandingkan dengan paket RUP.",
 };
 
 const KATEGORI_LABEL: Record<string, string> = {

@@ -1,4 +1,8 @@
 # RUP dari data.inaproc.id (pengganti sirup.inaproc.id)
+> **Status 5 November 2026:** sumber utama sudah **dipindah ke ekspor RUP `data.inaproc.id`**
+> (`scripts/build-snapshot.mjs`) di branch `feat/data-pipeline`, karena ekspor ini juga memuat
+> seluruh paket yang dulu diambil dari SIRUP. Angka di dokumen ini adalah **analisis historis**
+> (sebelum perpindahan): populasi akhir sekarang **1.634 paket · Rp683,34 M**, bukan 1.557.
 
 Snapshot 3 November 2026. Skrip: `scripts/rup.mjs` (`npm run data:rup`, `npm run data:rup-detail`).
 

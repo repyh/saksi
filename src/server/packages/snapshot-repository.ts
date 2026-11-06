@@ -26,9 +26,9 @@ function isRoadPackageItem(value: unknown): value is RoadPackageItem {
     typeof item.nama === "string" &&
     typeof item.pagu === "number" &&
     typeof item.sektor === "string" &&
-    typeof item.metode === "string" &&
-    typeof item.sumber === "string" &&
-    typeof item.bulan === "string" &&
+    isNullableString(item.metode) &&
+    isNullableString(item.sumber) &&
+    isNullableString(item.bulan) &&
     isNullableString(item.lokasi_mikro) &&
     isNullableString(item.desa_resmi) &&
     isNullableString(item.rw) &&

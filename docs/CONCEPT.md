@@ -5,7 +5,7 @@
 **Tema:** *Designing Digital Futures – Powering Public Transparency*
 **Subtema:** **Civic Reporting & Accountability**
 **Studi kasus:** **Jalan di Kota Tangerang** (`idKldi=D44`, BPS `3671`) — mencakup jalan, jembatan, drainase/saluran, trotoar, TPT/turap
-**Status:** v4 — 5 November 2026. Semua angka dari snapshot SIRUP 31 Oktober 2026 + enrich detail RUP 3 November 2026.
+**Status:** v5 — 5 November 2026. Semua angka dari ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi; sumber utama SIRUP sudah ditinggalkan.
 
 > **Riwayat versi.** v1 studi kasus Kab. Bandung (5 sektor) · v2 pindah ke Kab. Tangerang (5 sektor)
 > · v3 mempersempit ke satu jenis infrastruktur: jalan. Dasar: arahan dosen pembimbing —
@@ -23,7 +23,7 @@
 > **"Kalau jalan di depan rumah Anda rusak padahal baru diaspal tahun ini, SAKSI menunjukkan paket mana yang membangunnya, berapa uangnya, siapa penyedianya, dan apakah kerusakannya masih dalam masa garansi — lalu membuat laporan warga itu tidak bisa diabaikan."**
 
 Satu kalimat untuk juri:
-> *"Kami tidak membuat aplikasi aduan jalan yang baru. Kami membuat lapisan yang menautkan 1.557 paket pekerjaan jalan Kota Tangerang (Rp650,18 Miliar) dengan foto warga di wilayah yang sama, sehingga laporan warga berubah dari keluhan menjadi bukti yang punya nomor paket, tanggal, dan penerima yang jelas."*
+> *"Kami tidak membuat aplikasi aduan jalan yang baru. Kami membuat lapisan yang menautkan 1.634 paket pekerjaan jalan Kota Tangerang (Rp683,34 Miliar) dengan foto warga di wilayah yang sama, sehingga laporan warga berubah dari keluhan menjadi bukti yang punya nomor paket, tanggal, dan penerima yang jelas."*
 
 ---
 
@@ -61,7 +61,7 @@ batasan yang ditulis terbuka.
 | **ICW OpenTender** | Agregat kab/kota + skor risiko | Tidak | **Tidak** |
 | **KPK JAGA** | Per entitas (sekolah/desa/puskesmas) | Ya | Tidak untuk paket konstruksi jalan |
 | **Sumbong sa Pangulo 2.0 / DPWH** (Filipina) | Ya + **koordinat** | Ya | **Ya — prior art internasional** |
-| **SAKSI** | **Ya** — 1.557 paket jalan, dibaca per poligon RW/kelurahan/kecamatan | **Ya** | **Ya, dengan tingkat anchor + jendela pemeliharaan** |
+| **SAKSI** | **Ya** — 1.634 paket jalan, dibaca per poligon RW/kelurahan/kecamatan | **Ya** | **Ya, dengan tingkat anchor + jendela pemeliharaan** |
 
 ### Klaim inovasi sempit
 1. **Penautan paket jalan ↔ laporan warga** di kelurahan/RW yang sama, tahun anggaran berjalan atau
@@ -84,18 +84,18 @@ operasional dan jasa konsultansi, dan **membatasi pada pekerjaan jalan**:
 
 | | |
 |---|---:|
-| Paket jalan, jembatan & drainase | **1.557** |
-| Pagu | **Rp650,18 Miliar** |
-| Paket TA 2025 / TA 2026 | 939 / 618 |
-| Kelurahan tersentuh | **80 dari 104** · 13 kecamatan |
-| RW tersentuh | 483 dari 1.020 |
-| Anchor lokasi turunan (RW/kelurahan/kecamatan) | **1.245 (80,0%)** |
-| Penyedia bernama (LPSE/SPSE + Data INAPROC) | 1.424 (91,4%) · 522 penyedia unik |
-| Tanpa rekam publik | 133 paket (Rp97,6 M, 15,0% pagu) |
+| Paket jalan, jembatan & drainase | **1.634** |
+| Pagu | **Rp683,34 Miliar** |
+| Paket TA 2025 / TA 2026 | 981 / 653 |
+| Kelurahan tersentuh | **85 dari 104** · 13 kecamatan |
+| RW tersentuh | 490 dari 1.020 |
+| Anchor lokasi turunan (RW/kelurahan/kecamatan) | **1.286 (78,7%)** |
+| Penyedia bernama (LPSE/SPSE + Data INAPROC) | 1.426 (87,3%) · 522 penyedia unik |
+| Tanpa rekam publik | 208 paket (Rp130,67 M, 19,1% pagu) |
 | Rasio kontrak/pagu median | 0,99 |
 
-Komposisi pekerjaan (dari nama paket): drainase/saluran **1.238** · pekerjaan permukaan
-(paving/beton/hotmix, trotoar, TPT) **269** · jembatan/gorong-gorong **50**.
+Komposisi pekerjaan (dari nama paket): drainase/saluran **1.303** · pekerjaan permukaan
+(paving/beton/hotmix, trotoar, TPT) **287** · jembatan/gorong-gorong **50**.
 Artinya "jalan" di sini bukan hanya aspal — mayoritas justru pekerjaan drainase dan permukaan
 kampung, persis jenis pekerjaan yang paling sering dikeluhkan warga.
 
@@ -103,10 +103,10 @@ kampung, persis jenis pekerjaan yang paling sering dikeluhkan warga.
 
 | Tingkat anchor | Paket | Arti di peta |
 |---|---:|---|
-| RW | 818 (52,5%) | nama paket menyebut RW → masuk poligon RW resmi |
-| Kelurahan | 337 (21,6%) | hanya kelurahan disebut → poligon kelurahan |
-| Kecamatan | 90 (5,8%) | hanya kecamatan disebut → poligon kecamatan |
-| Tanpa lokus | 312 (20,0%) | tidak menyebut tempat → **tidak masuk peta**, hanya di tabel |
+| RW | 821 (50,2%) | nama paket menyebut RW → masuk poligon RW resmi |
+| Kelurahan | 375 (22,9%) | hanya kelurahan disebut → poligon kelurahan |
+| Kecamatan | 90 (5,5%) | hanya kecamatan disebut → poligon kecamatan |
+| Tanpa lokus | 348 (21,3%) | tidak menyebut tempat → **tidak masuk peta**, hanya di tabel |
 
 **Tidak ada pin, titik, atau jitter per paket** — karena tidak ada koordinat pekerjaan di sumber mana
 pun. Peta adalah koroplet batas wilayah resmi (ArcGIS Kota Tangerang) dengan segmented control di peta
@@ -125,7 +125,7 @@ bukan sebaran yang dangkal di lima domain.
 
 ## 5. Dampak — Siapa Berubah Perilakunya
 
-**Pengguna utama:** warga di 80 kelurahan yang punya paket jalan 2025–2026, dan **dinas teknis
+**Pengguna utama:** warga di 85 kelurahan yang punya paket jalan 2025–2026, dan **dinas teknis
 pengelola jalan** serta **Inspektorat** sebagai pihak yang bisa bertindak.
 
 | Siapa | Perubahan yang diharapkan |
@@ -135,7 +135,7 @@ pengelola jalan** serta **Inspektorat** sebagai pihak yang bisa bertindak.
 | Inspektorat / DPRD | punya sampel lapangan yang bisa diuji, bukan hanya laporan berjenjang |
 | Penyedia jasa yang jujur | rekam jejak terbuka membuat pekerjaan di bawah spesifikasi kehilangan keunggulan biaya |
 
-**Yang bisa diklaim, bukan dijanjikan:** 1.557 paket jalan bisa dicari per kelurahan/RW; 1.245 (80,0%)
+**Yang bisa diklaim, bukan dijanjikan:** 1.634 paket jalan bisa dicari per kelurahan/RW; 1.286 (78,7%)
 punya anchor lokasi di poligon resmi; setiap laporan warga terikat ke satu nomor RUP; dan setiap paket
 yang dilaporkan rusak dalam masa pemeliharaan masuk daftar tagih.
 
@@ -150,7 +150,7 @@ mengatakan laporan itu tidak ada.
 
 1. **Bahasa indikator "Diduga", bukan tuduhan.** Status tertinggi *"Diduga Tidak Sesuai — Perlu
    Tinjauan Lapangan"*; tidak ada label korupsi atau fiktif.
-2. **Tidak memaksa titik.** 312 paket (20,0%) tanpa penanda tempat tidak dipetakan, dan tidak ada
+2. **Tidak memaksa titik.** 348 paket (21,3%) tanpa penanda tempat tidak dipetakan, dan tidak ada
    pin per paket yang dikarang: peta hanya menjumlahkan paket ke poligon wilayah resmi.
 3. **IRI hanya mencakup jalan nasional** (8,6% jaringan), sedangkan paket kita mayoritas jalan kota.
    Komparasi IRI hanya berlaku bila paket berimpit dengan ruas nasional; selebihnya

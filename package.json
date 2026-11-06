@@ -23,7 +23,9 @@
     "data:rup": "node scripts/rup.mjs",
     "data:rup-detail": "node scripts/rup.mjs --detail",
     "data:enrich": "node scripts/enrich-rup.mjs",
-    "data:kecamatan": "node scripts/kecamatan.mjs"
+    "data:kecamatan": "node scripts/kecamatan.mjs",
+    "data:snapshot": "node scripts/build-snapshot.mjs",
+    "data:rup-detail-tambal": "node scripts/rup-detail-tambal.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

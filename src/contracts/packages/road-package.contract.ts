@@ -11,7 +11,11 @@ export interface RoadPackageContract {
   jenis: "tender" | "nontender" | "e-purchasing" | "lainnya";
   sumber: "LPSE" | "Data INAPROC";
   metode: string | null;
-  pemenang: string;
+  /**
+   * Nama pelaksana. Disebut "pemenang" hanya bila `jenis === "tender"` (lelang/seleksi);
+   * untuk pengadaan langsung, e-purchasing, dan sejenisnya istilahnya "penyedia".
+   */
+  penyedia: string;
   npwp: string | null;
   hps: number | null;
   nilai_kontrak: number | null;
@@ -22,6 +26,12 @@ export interface RoadPackageContract {
   /** Penyedia lain bila satu paket punya beberapa transaksi. */
   penyediaLain?: string[];
   sumberTransaksi?: string | null;
+  /** Kode paket di Data INAPROC (dipakai halaman realisasi), bukan kode RUP. */
+  kodePaket?: string | null;
+  /** Berapa paket realisasi yang terhubung ke RUP ini (relasi bisa satu-ke-banyak). */
+  jumlahPaket?: number;
+  /** Rincian tiap paket realisasi; `nilai` = realisasi per paket, bukan nilai kontrak. */
+  paketRealisasi?: Array<{ kodePaket: string; penyedia: string; nilai: number; sumber: string | null }>;
 }
 
 export type RoadContractFilter = "SEMUA" | "ADA" | "TANPA";
@@ -41,9 +51,11 @@ export interface RoadPackageItem {
   satker: string;
   nama: string;
   pagu: number;
-  metode: string;
-  sumber: string;
-  bulan: string;
+  /** `null` bila ekspor RUP tidak mencantumkan metode (mis. baris "-"). */
+  metode: string | null;
+  sumber: string | null;
+  /** `null` bila detail RUP belum ditarik untuk paket ini. */
+  bulan: string | null;
   sektor: string;
   lokasi_mikro: string | null;
   desa_resmi: string | null;

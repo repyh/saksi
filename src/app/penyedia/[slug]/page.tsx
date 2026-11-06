@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PenyediaDetailPageProps): Pro
 
   return {
     title: `${data.summary.nama} — Penyedia SAKSI`,
-    description: `Rekam kontrak ${data.summary.nama} pada paket jalan Kota Tangerang dari LPSE.`,
+    description: `Rekam kontrak ${data.summary.nama} pada paket jalan Kota Tangerang dari LPSE dan Data INAPROC.`,
   };
 }
 
@@ -66,7 +66,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
           <p className="mt-5 max-w-3xl font-sans text-[12px] leading-relaxed text-foreground/70">
             Angka di atas adalah <strong>penyebut</strong> untuk membaca nama penyedia: jumlah paket,
             nilai, dan tahun. Tidak ada skor kinerja atau peringkat kualitas di SAKSI — nama penyedia
-            ditampilkan sebagai fakta kontrak yang bisa diperiksa di LPSE.
+            ditampilkan sebagai fakta kontrak yang bisa diperiksa di LPSE/SPSE atau Data INAPROC.
           </p>
         </div>
       </section>
@@ -100,7 +100,12 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
                       <Link href={`/laporan/paket/${item.kode_rup}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
-                      <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">{item.metode}</span>
+                      <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">
+                        {item.metode ?? "metode tidak dicantumkan"}
+                        {item.kontrak?.jumlahPaket && item.kontrak.jumlahPaket > 1
+                          ? ` · ${item.kontrak.jumlahPaket} paket realisasi`
+                          : ""}
+                      </span>
                     </td>
                     <td className="px-3 py-2.5 text-[12px] leading-snug text-muted-foreground">
                       {item.desa_resmi ? `${item.desa_resmi}${item.presisi_peta === "RW" && item.rw ? `, RW ${item.rw}` : ""}` : "Lokasi umum"}
@@ -113,7 +118,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
                     <td className="px-3 py-2.5 text-right">
                       {item.kontrak?.url ? (
                         <a href={item.kontrak.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-sans text-[11px] font-semibold text-primary underline-offset-2 hover:underline">
-                          LPSE <FiExternalLink aria-hidden="true" className="size-3" />
+                          {item.kontrak?.sumber === "LPSE" ? "LPSE" : "INAPROC"} <FiExternalLink aria-hidden="true" className="size-3" />
                         </a>
                       ) : null}
                     </td>
@@ -129,7 +134,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
             Lihat di peta audit <FiArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
           <p className="font-sans text-[11px] text-muted-foreground">
-            NPWP penyedia disamarkan oleh LPSE; penyedia dibedakan lewat nama.
+            NPWP hanya ada pada rekam LPSE dan disamarkan di sana; penyedia dibedakan lewat nama.
           </p>
         </div>
       </section>

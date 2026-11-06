@@ -9,7 +9,22 @@ import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 
 export { slugPenyedia };
 
-const SUMBER_REALISASI = "https://data.inaproc.id/realisasi";
+/** Halaman detail paket di Data INAPROC — membuka RUP yang sama, bukan halaman daftar. */
+function urlRupInaproc(kodeRup: string) {
+  return `https://data.inaproc.id/rup?kode=${encodeURIComponent(kodeRup)}`;
+}
+
+/**
+ * Halaman realisasi memakai **kode paket** milik transaksi (kode tender / kode e-katalog),
+ * bukan kode RUP. Halaman ini berisi detail hanya untuk paket yang punya rekam tender di SPSE;
+ * paket e-katalog biasanya menjawab "tidak memiliki Data Detail" meski halamannya tetap terbuka.
+ */
+function urlRealisasiPaket(kodePaket: string) {
+  return `https://data.inaproc.id/realisasi?kode=${encodeURIComponent(kodePaket)}`;
+}
+
+/** Sumber transaksi yang biasanya punya halaman detail realisasi (tender SPSE lebih dulu). */
+const PRIORITAS_SUMBER = ["Tender", "Non Tender", "Pencatatan Non Tender", "Pencatatan Swakelola"];
 
 interface LpseRow {
   kode_rup: string;
@@ -72,7 +87,7 @@ for (const baris of data.item) {
     jenis: baris.jenis_lpse === "lelang" ? "tender" : "nontender",
     sumber: "LPSE",
     metode: baris.metode,
-    pemenang: nama,
+    penyedia: nama,
     npwp: baris.npwp,
     hps: baris.hps,
     nilai_kontrak: baris.nilai_kontrak,
@@ -89,11 +104,17 @@ interface AgregatRealisasi {
   metode: string | null;
   tahun: number;
   sumberTransaksi: string | null;
+  paket: Map<string, { nilai: number; sumber: string | null; penyedia: Map<string, number> }>;
 }
+
+/** Swakelola & instansi bukan penyedia jasa — jangan pernah tampil sebagai "pemenang". */
+const BUKAN_PENYEDIA = /^\s*(dinas|pegawai|opd|pemerintah|badan|kantor|uptd|kecamatan|kelurahan|unsur)\b/i;
 
 const realisasiPerRup = new Map<string, AgregatRealisasi>();
 for (const baris of real.item) {
   if (!baris.kode_rup || !baris.penyedia) continue;
+  if (String(baris.metode ?? "").toLowerCase() === "swakelola") continue;
+  if (BUKAN_PENYEDIA.test(String(baris.penyedia))) continue;
   const rup = String(baris.kode_rup);
   const agg = realisasiPerRup.get(rup) ?? {
     penyedia: new Map<string, number>(),
@@ -102,11 +123,22 @@ for (const baris of real.item) {
     metode: baris.metode,
     tahun: baris.tahun,
     sumberTransaksi: baris.sumber_transaksi,
+    paket: new Map(),
   };
   const nilai = Number(baris.nilai ?? 0);
   agg.transaksi += 1;
   agg.total += nilai;
   agg.penyedia.set(baris.penyedia, (agg.penyedia.get(baris.penyedia) ?? 0) + nilai);
+  if (baris.kode_paket) {
+    const paket = agg.paket.get(baris.kode_paket) ?? {
+      nilai: 0,
+      sumber: baris.sumber_transaksi ?? null,
+      penyedia: new Map<string, number>(),
+    };
+    paket.nilai += nilai;
+    paket.penyedia.set(baris.penyedia, (paket.penyedia.get(baris.penyedia) ?? 0) + nilai);
+    agg.paket.set(baris.kode_paket, paket);
+  }
   realisasiPerRup.set(rup, agg);
 }
 
@@ -116,16 +148,34 @@ for (const [rup, agg] of realisasiPerRup) {
   const urut = [...agg.penyedia.entries()].sort((a, b) => b[1] - a[1]);
   if (!urut.length) continue;
 
+  const peringkat = (sumber: string | null) => {
+    const i = PRIORITAS_SUMBER.indexOf(String(sumber ?? ""));
+    return i === -1 ? PRIORITAS_SUMBER.length : i;
+  };
+  const paketBukti = [...agg.paket.entries()].sort(
+    (a, b) => peringkat(a[1].sumber) - peringkat(b[1].sumber) || b[1].nilai - a[1].nilai,
+  )[0];
+
   kontrakPerRup.set(rup, {
     jenis: agg.metode === "E-Purchasing" ? "e-purchasing" : "lainnya",
     sumber: "Data INAPROC",
     metode: agg.metode,
-    pemenang: urut[0][0],
+    penyedia: urut[0][0],
     npwp: null,
     hps: null,
     nilai_kontrak: agg.total ? Math.round(agg.total) : null,
     tahun: agg.tahun,
-    url: SUMBER_REALISASI,
+    url: paketBukti ? urlRealisasiPaket(paketBukti[0]) : urlRupInaproc(rup),
+    kodePaket: paketBukti?.[0] ?? null,
+    jumlahPaket: agg.paket.size,
+    paketRealisasi: [...agg.paket.entries()]
+      .map(([kodePaket, isi]) => ({
+        kodePaket,
+        nilai: Math.round(isi.nilai),
+        sumber: isi.sumber,
+        penyedia: [...isi.penyedia.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? urut[0][0],
+      }))
+      .sort((a, b) => b.nilai - a.nilai),
     transaksi: agg.transaksi,
     penyediaLain: urut.slice(1).map(([nama]) => nama),
     sumberTransaksi: agg.sumberTransaksi,
@@ -136,7 +186,7 @@ for (const [rup, agg] of realisasiPerRup) {
 /** Indeks penyedia → kode RUP, dibangun dari kontrak gabungan. */
 const rupPerPenyedia = new Map<string, Set<string>>();
 for (const [rup, kontrak] of kontrakPerRup) {
-  for (const nama of [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])]) {
+  for (const nama of [kontrak.penyedia, ...(kontrak.penyediaLain ?? [])]) {
     const kunci = nama.trim().toLocaleUpperCase("id-ID");
     const daftar = rupPerPenyedia.get(kunci);
     if (daftar) daftar.add(rup);
@@ -185,7 +235,7 @@ export function ringkasanPenyedia(rupDiizinkan: Set<string> | null): VendorSumma
     if (rupDiizinkan && !rupDiizinkan.has(rup)) continue;
 
     const perPenyedia = realisasiPerRup.get(rup)?.penyedia;
-    const daftar = [kontrak.pemenang, ...(kontrak.penyediaLain ?? [])];
+    const daftar = [kontrak.penyedia, ...(kontrak.penyediaLain ?? [])];
 
     for (const nama of daftar) {
       const kunci = nama.trim().toLocaleUpperCase("id-ID");
@@ -201,7 +251,7 @@ export function ringkasanPenyedia(rupDiizinkan: Set<string> | null): VendorSumma
       entri.nilai += Math.round(
         perPenyedia
           ? Number(perPenyedia.get(nama) ?? 0)
-          : kunci === kontrak.pemenang.trim().toLocaleUpperCase("id-ID")
+          : kunci === kontrak.penyedia.trim().toLocaleUpperCase("id-ID")
             ? Number(kontrak.nilai_kontrak ?? 0)
             : 0,
       );
