@@ -103,7 +103,7 @@ Aturan yang menjaga presisi:
 | **Tanpa computer vision pengukuran kerusakan** | Pengukuran luas menambah metrik tanpa menambah urgensi laporan; CV tidak mencakup semua jenis kerusakan. Diganti kategorisasi oleh pelapor (lihat 2.5). |
 | **Tanpa titik paksa untuk paket tanpa lokus** | 348 paket (21,3%) lebih baik tetap di register daripada diberi wilayah salah — bertentangan dengan postur "diduga, bukan tuduhan". |
 | **Tanpa pin per paket** | Data resmi tidak memuat koordinat pekerjaan; pin akan menampilkan presisi yang tidak ada. Peta memakai koroplet batas. |
-| **Tanpa pemilih basemap** | Satu variabel `NEXT_PUBLIC_BASEMAP_URL` (default OSM) dan atribusi otomatis per host; menghindari ToS tile berlapis. |
+| **Tanpa pemilih basemap** | Satu variabel `NEXT_PUBLIC_BASEMAP_URL` (URL style JSON, default OpenFreeMap Positron) dan atribusi OpenStreetMap/OpenFreeMap; menghindari ToS tile berlapis. |
 
 ### 2.5 Model data laporan warga (D5)
 
@@ -189,7 +189,7 @@ alur lapor untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
   kelurahan dilepas, tampil peringatan merah dan tidak ada request API — bukan daftar kosong.
 - **Tidak ada filter sektor** di UI: produk adalah jalan. Jenis pekerjaan (permukaan/drainase/
   jembatan) yang menjadi filter, bukan 5 sektor.
-- Peta dasar tunggal dari `NEXT_PUBLIC_BASEMAP_URL` (default OSM) dengan atribusi otomatis per host;
-  tidak ada pemilih basemap.
+- Peta dasar tunggal dari `NEXT_PUBLIC_BASEMAP_URL` (URL style JSON, default OpenFreeMap Positron)
+  dengan atribusi OpenStreetMap/OpenFreeMap; tidak ada pemilih basemap.
 - Kecamatan memakai kelas **kuantil**; kelurahan/RW memakai kelas 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
   Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk presisi RW/kelurahan.

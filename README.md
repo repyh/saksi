@@ -15,9 +15,9 @@ review, not proof of wrongdoing or a guarantee of government action.
   package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
   package anchored inside them, including RW- and kelurahan-precision packages, and use their own
   quantile class breaks so 13 polygons do not all land in one colour.
-- Basemap tile source comes from a single `NEXT_PUBLIC_BASEMAP_URL` (default
-  `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`); attribution switches automatically for
-  OpenStreetMap, CARTO, and Esri hosts.
+- Basemap comes from a single `NEXT_PUBLIC_BASEMAP_URL`, which holds a **vector style JSON URL**
+  (default `https://tiles.openfreemap.org/styles/positron`, OpenFreeMap Positron). Attribution is
+  OpenStreetMap + OpenFreeMap and switches for CARTO and Esri style hosts.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
   The map shows only packages with a derived location by default; the 312 packages whose only
@@ -57,7 +57,7 @@ road segment that can be matched to the city's road layer, so the product anchor
 ## Technology
 
 - Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, React Icons
-- Leaflet / React Leaflet with OpenStreetMap tiles and attribution
+- MapLibre GL JS with the OpenFreeMap Positron vector style and OpenStreetMap/OpenFreeMap attribution
 - Supabase Postgres + PostGIS, Prisma ORM, and Better Auth as an optional server foundation
 - PWA install and offline fallback; the service worker does not cache map tiles or API responses
 
