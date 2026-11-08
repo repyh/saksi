@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tarik **Data INAPROC — Realisasi** (data.inaproc.id) untuk Kota Tangerang.
+ * Tarik **Data INAPROC — Realisasi** (data.inaproc.id) untuk satu region (bawaan Kota Tangerang).
  *
  * Melengkapi LPSE: e-purchasing tidak pernah muncul di SPSE, tetapi transaksinya tercatat
  * di Data INAPROC lengkap dengan `kode_rup` dan `nama_penyedia`.
@@ -17,21 +17,20 @@
  *  2. TABEL (cadangan, `--mode table`) — 20 baris/halaman dengan cursor, per satker.
  *
  * Semua request API butuh anti-bot: `x-request-time` (epoch ms) dan `x-secret` = base64(timestamp dibalik).
- * Filter wajib: tahun + jenis instansi ("5" = pemerintah daerah) + instansi ("D44").
+ * Filter wajib: tahun + jenis instansi ("5" = pemerintah daerah) + instansi dari region.json.
  *
  * Pakai: node scripts/realisasi.mjs [--mode csv|table] [--tahun 2025,2026] [--satker kode,...]
  *        Mode csv TANPA --satker = snapshot penuh (berkas ditimpa); dengan --satker = digabung.
  * Keluaran: data/realisasi_kota_tangerang.json
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { muatRegion } from "./lib/region.mjs";
 
 const AKAR = dirname(dirname(fileURLToPath(import.meta.url)));
 const BASE = "https://data.inaproc.id";
-const INSTANSI = "D44"; // Kota Tangerang
 const JENIS_INSTANSI = "5"; // Pemerintah Daerah
-const SATKER_PU = "1.03.2.10.0.00.01.0000";
 const UA = "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0";
 const JEDA_MS = 250;
 
@@ -41,7 +40,18 @@ const arg = (nama, bawaan) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : bawaan;
 };
 const MODE = arg("mode", "csv");
-const TAHUN = arg("tahun", "2025,2026").split(",").map(Number);
+const REGION_ID = arg("region", "kota-tangerang");
+const region = await muatRegion(REGION_ID).catch((error) => {
+  console.error(`region: ${error.message}`);
+  process.exit(1);
+});
+const INSTANSI = region.instansi;
+const SATKER_PU = region.satkerPu;
+const TAHUN = arg("tahun", region.tahun.join(",")).split(",").map(Number);
+if (!region.sumber.realisasi) {
+  throw new Error(`region ${REGION_ID}: "sumber.realisasi" wajib diisi`);
+}
+const BERKAS = resolve(AKAR, region.sumber.realisasi);
 const SATKERS = arg("satker", "")
   .split(",")
   .map((k) => k.trim())
@@ -225,6 +235,9 @@ function normalkan(r) {
 const rows = [];
 for (const tahun of TAHUN) {
   if (MODE === "table") {
+    if (!SATKERS.length && !SATKER_PU) {
+      throw new Error(`region ${REGION_ID}: "realisasi.satker_pu" wajib untuk mode table tanpa --satker`);
+    }
     for (const satker of SATKERS.length ? SATKERS : [SATKER_PU]) {
       rows.push(...(await tabelSatker(tahun, satker)).map(normalkan));
     }
@@ -234,7 +247,7 @@ for (const tahun of TAHUN) {
 }
 
 // Berkas lama hanya digabung bila penarikan bersifat sebagian (mode tabel / daftar satker).
-const berkas = join(AKAR, "data", "realisasi_kota_tangerang.json");
+const berkas = BERKAS;
 const penuh = MODE === "csv" && SATKERS.length === 0;
 let lama = [];
 if (!penuh && existsSync(berkas)) {
@@ -299,7 +312,7 @@ for (const r of semuaBaris) {
   perMetode[k] = (perMetode[k] ?? 0) + 1;
 }
 
-mkdirSync(join(AKAR, "data"), { recursive: true });
+mkdirSync(dirname(BERKAS), { recursive: true });
 writeFileSync(
   berkas,
   JSON.stringify(

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tarik data LPSE (SPSE) Kota Tangerang lalu cocokkan dengan snapshot RUP.
+ * Tarik data LPSE (SPSE) untuk satu region lalu cocokkan dengan snapshot RUP.
  *
  * Sumber: https://spse.inaproc.id/tangerangkota (SPSE 4.5, pengganti lpse.tangerangkota.go.id)
  *   - Tender      : POST /dt/lelang?tahun=YYYY       (daftar)  + /lelang/<id>/pengumumanlelang
@@ -9,23 +9,37 @@
  *                   /evaluasinontender/<id>/pemenangberkontrak
  *
  * Pakai:
- *   node scripts/lpse.mjs list      # daftar paket tender + non-tender (2025, 2026)
- *   node scripts/lpse.mjs detail    # detail + pemenang untuk kandidat yang namanya cocok RUP
- *   node scripts/lpse.mjs match     # cocokkan ke data/saksi_kota_tangerang_2025_2026.json
+ *   node scripts/lpse.mjs list [--region <id>]    # daftar paket tender + non-tender
+ *   node scripts/lpse.mjs detail [--region <id>]  # detail + pemenang untuk kandidat yang cocok RUP
+ *   node scripts/lpse.mjs match [--region <id>]   # cocokkan ke snapshot region
  *
- * Keluaran: data/lpse/rows.json, data/lpse/details.jsonl,
- *           data/lpse_kota_tangerang_2025_2026.json
+ * Host, direktori kerja, dan berkas keluaran diambil dari blok "lpse" di region.json.
  */
 import { readFileSync, writeFileSync, existsSync, appendFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { muatRegion } from "./lib/region.mjs";
 
 const AKAR = dirname(dirname(fileURLToPath(import.meta.url)));
-const DIR = join(AKAR, "data", "lpse");
-const BASE = "https://spse.inaproc.id/tangerangkota";
+const argv = process.argv.slice(2);
+const arg = (nama, bawaan) => {
+  const i = argv.indexOf(`--${nama}`);
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : bawaan;
+};
+const REGION_ID = arg("region", "kota-tangerang");
+const region = await muatRegion(REGION_ID).catch((error) => {
+  console.error(`region: ${error.message}`);
+  process.exit(1);
+});
+if (!region.lpse?.base || !region.lpse?.direktori || !region.lpse?.keluaran) {
+  throw new Error(`region ${REGION_ID}: blok "lpse" (base, direktori, keluaran) wajib diisi`);
+}
+const DIR = resolve(AKAR, region.lpse.direktori);
+const BASE = region.lpse.base;
+const KELUARAN = resolve(AKAR, region.lpse.keluaran);
 const UA =
   "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0";
-const TAHUN = [2025, 2026];
+const TAHUN = region.tahun;
 const JEDA_MS = 300;
 
 let kuki = "";
@@ -193,7 +207,7 @@ async function detailTender(item) {
 }
 
 function muatSnapshot() {
-  const jalur = join(AKAR, "data", "saksi_kota_tangerang_2025_2026.json");
+  const jalur = resolve(AKAR, region.keluaran);
   const data = JSON.parse(readFileSync(jalur, "utf8"));
   return Array.isArray(data) ? data : data.paket ?? [];
 }
@@ -352,7 +366,7 @@ function cmdMatch() {
   const median = rasio.length ? rasio[Math.floor(rasio.length / 2)] : null;
 
   writeFileSync(
-    join(AKAR, "data", "lpse_kota_tangerang_2025_2026.json"),
+    KELUARAN,
     JSON.stringify(
       {
         snapshot: "2 Nov 2026",
@@ -390,7 +404,7 @@ function cmdMatch() {
   for (const p of [...penyedia.values()].sort((a, b) => b.nilai - a.nilai).slice(0, 5)) {
     console.log(`  ${p.nama} — ${p.paket} paket · Rp${(p.nilai / 1e9).toFixed(2)} M`);
   }
-  console.log("→ data/lpse_kota_tangerang_2025_2026.json");
+  console.log(`→ ${region.lpse.keluaran}`);
 }
 
 const cmd = process.argv[2] ?? "list";

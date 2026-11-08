@@ -29,9 +29,10 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
   `public/data/kec.geojson` (13, dari ArcGIS kota, `npm run data:kecamatan`).
-- Konfigurasi daerah: `data/regions/<id>/{region.json,aliases.json}`. Skrip snapshot menerima
-  `--region <id>` (bawaan `kota-tangerang`); path sumber, properti batas, token lokasi, dan alias
-  tidak boleh ditanam di skrip.
+- Konfigurasi daerah: `data/regions/<id>/{region.json,aliases.json}`. Skrip snapshot dan penarikan
+  (`rup.mjs`, `realisasi.mjs`, `lpse.mjs`) menerima `--region <id>` (bawaan `kota-tangerang`); path
+  sumber, instansi, properti batas, token lokasi, host SPSE, dan alias tidak boleh ditanam di skrip.
+  `batas.lingkungan` opsional; tanpanya presisi tertinggi kelurahan.
 - Lomba: MIA 2026 / Web In Action. **FDS 1 Nov 2026**, penyisihan 11 Nov, final onsite 28 Nov.
 
 ## Aturan keras (jangan dilanggar tanpa bertanya)

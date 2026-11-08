@@ -108,12 +108,6 @@ export async function muatRegion(id, akar = AKAR) {
     [config.batas?.kelurahan?.berkas, "batas.kelurahan.berkas"],
     [config.batas?.kelurahan?.nama, "batas.kelurahan.nama"],
     [config.batas?.kelurahan?.kecamatan, "batas.kelurahan.kecamatan"],
-    [config.batas?.lingkungan?.berkas, "batas.lingkungan.berkas"],
-    [config.batas?.lingkungan?.nama, "batas.lingkungan.nama"],
-    [config.batas?.lingkungan?.kecamatan, "batas.lingkungan.kecamatan"],
-    [config.batas?.lingkungan?.nomor, "batas.lingkungan.nomor"],
-    [config.batas?.lingkungan?.label, "batas.lingkungan.label"],
-    [config.lokasi?.token_lingkungan?.length, "lokasi.token_lingkungan"],
     [config.lokasi?.penanda_kelurahan?.length, "lokasi.penanda_kelurahan"],
   ]) {
     wajib(nilai, `region ${id}: "${nama}" wajib diisi`);
@@ -126,9 +120,8 @@ export async function muatRegion(id, akar = AKAR) {
   }
 
   const batasKelurahan = config.batas.kelurahan;
-  const batasLingkungan = config.batas.lingkungan;
+  const batasLingkungan = config.batas.lingkungan ?? null;
   const kelurahanGeojson = await bacaJson(batasKelurahan.berkas, akar);
-  const lingkunganGeojson = await bacaJson(batasLingkungan.berkas, akar);
 
   const kelurahanResmi = new Map();
   for (const f of kelurahanGeojson.features ?? []) {
@@ -145,26 +138,47 @@ export async function muatRegion(id, akar = AKAR) {
     );
   }
 
+  // Unit lingkungan (RW/dusun/banjar/RT) opsional: region tanpa poligon lingkungan tetap boleh
+  // membangun snapshot, tetapi presisi tertinggi hanya sampai kelurahan.
   const unitLingkungan = new Map();
-  for (const f of lingkunganGeojson.features ?? []) {
-    const kelurahan = String(f.properties?.[batasLingkungan.nama] ?? "").trim();
-    const nomor = String(f.properties?.[batasLingkungan.nomor] ?? "").trim();
-    if (!kelurahan || !nomor) continue;
-    unitLingkungan.set(`${norm(kelurahan)}|${nomor}`, {
-      kecamatan: judul(String(f.properties?.[batasLingkungan.kecamatan] ?? "").trim()),
-    });
-  }
-  if (!unitLingkungan.size) {
-    throw new RegionError(
-      `region ${id}: "${batasLingkungan.berkas}" tidak menghasilkan unit lingkungan; periksa "batas.lingkungan.nama" (${batasLingkungan.nama}) dan "nomor" (${batasLingkungan.nomor})`,
-    );
+  let reLingkungan = null;
+  if (batasLingkungan) {
+    for (const [nilai, nama] of [
+      [batasLingkungan.berkas, "batas.lingkungan.berkas"],
+      [batasLingkungan.nama, "batas.lingkungan.nama"],
+      [batasLingkungan.kecamatan, "batas.lingkungan.kecamatan"],
+      [batasLingkungan.nomor, "batas.lingkungan.nomor"],
+      [batasLingkungan.label, "batas.lingkungan.label"],
+    ]) {
+      wajib(nilai, `region ${id}: "${nama}" wajib diisi bila batas.lingkungan dipakai`);
+    }
+    const tokenLingkungan = config.lokasi?.token_lingkungan ?? [];
+    if (!Array.isArray(tokenLingkungan) || !tokenLingkungan.length) {
+      throw new RegionError(
+        `region ${id}: "lokasi.token_lingkungan" wajib diisi bila batas.lingkungan dipakai`,
+      );
+    }
+    const lingkunganGeojson = await bacaJson(batasLingkungan.berkas, akar);
+    for (const f of lingkunganGeojson.features ?? []) {
+      const kelurahan = String(f.properties?.[batasLingkungan.nama] ?? "").trim();
+      const nomor = String(f.properties?.[batasLingkungan.nomor] ?? "").trim();
+      if (!kelurahan || !nomor) continue;
+      unitLingkungan.set(`${norm(kelurahan)}|${nomor}`, {
+        kecamatan: judul(String(f.properties?.[batasLingkungan.kecamatan] ?? "").trim()),
+      });
+    }
+    if (!unitLingkungan.size) {
+      throw new RegionError(
+        `region ${id}: "${batasLingkungan.berkas}" tidak menghasilkan unit lingkungan; periksa "batas.lingkungan.nama" (${batasLingkungan.nama}) dan "nomor" (${batasLingkungan.nomor})`,
+      );
+    }
+    const token = tokenLingkungan.map(escapeRe).join("|");
+    reLingkungan = new RegExp(`\\b(?:${token})\\.?\\s*[0o]*(\\d{1,3})\\b`, "i");
   }
 
-  const tokenLingkungan = config.lokasi.token_lingkungan.map(escapeRe).join("|");
   const penandaKelurahan = config.lokasi.penanda_kelurahan
     .map((penanda) => `${escapeRe(penanda)}\\.?`)
     .join("|");
-  const reLingkungan = new RegExp(`\\b(?:${tokenLingkungan})\\.?\\s*[0o]*(\\d{1,3})\\b`, "i");
   const reKelurahan = new RegExp(`\\b(?:${penandaKelurahan})\\s*([A-Za-z][\\w'\\- ]{2,28})`, "i");
 
   let dokumenAlias;
@@ -184,6 +198,9 @@ export async function muatRegion(id, akar = AKAR) {
     sumber: config.sumber,
     keluaran: config.keluaran,
     batas: config.batas,
+    lpse: config.lpse ?? null,
+    realisasi: config.realisasi ?? null,
+    satkerPu: config.realisasi?.satker_pu ?? null,
     kelurahanResmi,
     unitLingkungan,
     aliasKelurahan,

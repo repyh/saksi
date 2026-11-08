@@ -9,7 +9,8 @@
   },
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
-    "detail": "data/rup_detail_kota_tangerang.json"
+    "detail": "data/rup_detail_kota_tangerang.json",
+    "realisasi": "data/realisasi_kota_tangerang.json"
   },
   "keluaran": "data/saksi_kota_tangerang_2025_2026.json",
   "batas": {
@@ -29,5 +30,13 @@
   "lokasi": {
     "token_lingkungan": ["RW"],
     "penanda_kelurahan": ["kel", "kelurahan"]
+  },
+  "realisasi": {
+    "satker_pu": "1.03.2.10.0.00.01.0000"
+  },
+  "lpse": {
+    "base": "https://spse.inaproc.id/tangerangkota",
+    "direktori": "data/lpse",
+    "keluaran": "data/lpse_kota_tangerang_2025_2026.json"
   }
 }

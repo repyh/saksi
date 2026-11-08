@@ -86,9 +86,11 @@ nomor RW dan **20,6%** kelurahan.
   snapshot 6 November 2026) untuk seluruh satker D44; sumber penyedia e-purchasing.
 - `public/data/rw.geojson` (1.020 poligon), `kel.geojson` (104), `kec.geojson` (13, dari ArcGIS kota,
   dibuat ulang lewat `npm run data:kecamatan`).
-- `data/regions/kota-tangerang/{region.json,aliases.json}` — konfigurasi daerah untuk
-  `scripts/build-snapshot.mjs` (path sumber, properti batas, token lokasi, alias kelurahan). Region
-  lain cukup menambah direktori baru dan menjalankan `node scripts/build-snapshot.mjs --region <id>`.
+- `data/regions/kota-tangerang/{region.json,aliases.json}` — konfigurasi daerah untuk snapshot dan
+  pipeline penarikan (`rup.mjs`, `realisasi.mjs`, `lpse.mjs`): path sumber, kode instansi, tahun,
+  properti batas, token lokasi, host SPSE, dan alias kelurahan. Region lain cukup menambah direktori
+  baru lalu menjalankan `--region <id>`; `batas.lingkungan` opsional, dan tanpanya presisi tertinggi
+  adalah kelurahan (`rw` selalu `null`).
 - Arsip pipeline lama (Kabupaten/Bandung) hanya untuk referensi, tidak dipakai UI.
 
 Sumber utama: **ekspor RUP `data.inaproc.id`** (28.699 baris D44 2025+2026, ditarik `scripts/rup.mjs`), detail RUP

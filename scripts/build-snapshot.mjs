@@ -3,7 +3,7 @@
 // menyimpan path, kode instansi, properti batas, token lokasi, atau alias khas satu daerah.
 // Pemakaian: node scripts/build-snapshot.mjs [--region <id>]   (bawaan: kota-tangerang)
 // Aturan  : tidak ada koordinat pekerjaan; lokasi hanya poligon lingkungan/kelurahan/kecamatan.
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AKAR, bacaJson, judul, muatRegion, norm } from "./lib/region.mjs";
 
@@ -37,7 +37,7 @@ async function main() {
       ((await bacaJson(region.sumber.detail)).item ?? []).map((d) => [String(d.kode_rup), d]),
     );
   } catch {
-    console.warn(`peringatan: ${region.sumber.detail} tidak ada — \`bulan\` akan kosong`);
+    console.warn(`peringatan: ${region.sumber.detail ?? "sumber.detail"} tidak tersedia — \`bulan\` akan kosong`);
   }
 
   const kecamatanResmi = new Set([...kelurahanResmi.values()].map((k) => norm(k.kecamatan)));
@@ -79,7 +79,7 @@ async function main() {
       const tanda = nama.match(reKelurahan);
       if (tanda && kelurahanResmi.has(norm(tanda[1]))) kelurahan = kelurahanResmi.get(norm(tanda[1]));
     }
-    const cocokRw = nama.match(reLingkungan);
+    const cocokRw = reLingkungan ? nama.match(reLingkungan) : null;
     const nomorRw = cocokRw ? String(Number(cocokRw[1])) : null;
 
     const kode = String(r.kode_rup);
@@ -139,8 +139,10 @@ async function main() {
 
   // Tahun terbaru dulu, lalu pagu terbesar: paket yang paling lengkap datanya tampil lebih dulu.
   paket.sort((a, b) => b.tahun - a.tahun || b.pagu - a.pagu || a.kode_rup.localeCompare(b.kode_rup));
+  const jalurKeluaran = path.resolve(AKAR, region.keluaran);
+  await mkdir(path.dirname(jalurKeluaran), { recursive: true });
   await writeFile(
-    path.resolve(AKAR, region.keluaran),
+    jalurKeluaran,
     JSON.stringify({ snapshot: region.metadata.snapshot, sumber: region.metadata.sumber, paket }),
   );
 
@@ -153,7 +155,9 @@ async function main() {
 
   console.log(`region            : ${region.label} (${region.id}, ${region.instansi})`);
   console.log(
-    `batas             : ${region.jumlahKelurahan} kelurahan · ${region.jumlahUnitLingkungan} ${region.batas.lingkungan.label}`,
+    region.batas.lingkungan
+      ? `batas             : ${region.jumlahKelurahan} kelurahan · ${region.jumlahUnitLingkungan} ${region.batas.lingkungan.label}`
+      : `batas             : ${region.jumlahKelurahan} kelurahan · tanpa unit lingkungan`,
   );
   console.log(`RUP dibaca        : ${rup.length}`);
   console.log(`ditolak (non-fisik): ${ditolakBukanFisik}`);

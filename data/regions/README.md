@@ -14,9 +14,14 @@ ini, lalu jalankan:
 
 ```bash
 node scripts/build-snapshot.mjs --region <id>
+node scripts/rup.mjs --region <id>            # daftar RUP
+node scripts/rup.mjs --detail --region <id>   # detail RUP
+node scripts/realisasi.mjs --region <id>      # realisasi
+node scripts/lpse.mjs match --region <id>     # cocokkan LPSE ke snapshot
 ```
 
-Tanpa `--region`, skrip memakai `kota-tangerang` agar `npm run data:snapshot` tetap sama.
+Tanpa `--region`, semua skrip memakai `kota-tangerang` agar perintah `npm run ...` yang sudah ada
+tetap sama.
 
 ## region.json
 
@@ -26,15 +31,19 @@ Tanpa `--region`, skrip memakai `kota-tangerang` agar `npm run data:snapshot` te
 | `instansi` | Kode instansi INAPROC (mis. `D44`); dipakai pipeline penarikan |
 | `tahun` | Tahun anggaran yang dicakup |
 | `metadata.snapshot`, `metadata.sumber` | Ditulis apa adanya ke snapshot |
-| `sumber.rup`, `sumber.detail` | Berkas RUP dan detail RUP |
+| `sumber.rup`, `sumber.detail`, `sumber.realisasi` | Berkas RUP, detail RUP, dan realisasi |
 | `keluaran` | Berkas snapshot yang ditulis |
+| `realisasi.satker_pu` | Satker cadangan untuk mode tabel tanpa `--satker` (opsional) |
+| `lpse.base`, `lpse.direktori`, `lpse.keluaran` | Host SPSE, direktori kerja, dan berkas hasil pencocokan |
 | `batas.kelurahan` | `berkas`, `nama` (properti nama), `kecamatan` (properti kecamatan) |
-| `batas.lingkungan` | Sama seperti kelurahan, plus `nomor` (properti nomor RW/dusun) dan `label` |
+| `batas.lingkungan` | **Opsional**. Sama seperti kelurahan, plus `nomor` (properti nomor RW/dusun) dan `label` |
 | `lokasi.token_lingkungan` | Token nomor lingkungan yang dikenali, mis. `["RW"]` |
 | `lokasi.penanda_kelurahan` | Penanda kelurahan, mis. `["kel", "kelurahan"]` |
 
 Properti GeoJSON **tidak boleh** diasumsikan sama antar daerah; selalu isi lewat `batas.*`. Build gagal
-bila properti yang dikonfigurasi tidak menghasilkan satu pun kelurahan atau unit lingkungan.
+bila properti kelurahan tidak menghasilkan satu pun kelurahan. Bila `batas.lingkungan` diisi, properti
+lingkungan juga wajib menghasilkan minimal satu unit; bila blok itu dihilangkan, snapshot tetap dibangun
+dengan presisi tertinggi **kelurahan** dan `rw` selalu `null`.
 
 ## aliases.json
 

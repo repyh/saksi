@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tarik **Data INAPROC — RUP** (data.inaproc.id/rup) untuk Kota Tangerang.
+ * Tarik **Data INAPROC — RUP** (data.inaproc.id/rup) untuk satu region (bawaan Kota Tangerang).
  *
  * Pengganti `sirup.inaproc.id`: SIRUP kini login-gated dan datatable publiknya hanya 8 kolom
  * (tanpa penyedia). Dashboard RUP di data.inaproc.id memakai alur ekspor CSV yang sama dengan
@@ -12,19 +12,19 @@
  *  3. GET  /dashboard-api/export/<id>/events (text/event-stream) → data: {"download_url": ...}
  *  4. GET  <download_url>                    URL GCS bertanda tangan; TANPA header API.
  *
- * Filter wajib: tahun + jenis ("5" = pemerintah daerah) + instansi ("D44").
+ * Filter wajib: tahun + jenis ("5" = pemerintah daerah) + instansi dari `data/regions/<id>/region.json`.
  * Anti-bot: x-request-time (epoch ms) + x-secret = base64(timestamp dibalik).
  *
  * Pakai: node scripts/rup.mjs [--tahun 2025,2026]
  * Keluaran: data/rup_kota_tangerang_2025_2026.json
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { muatRegion } from "./lib/region.mjs";
 
 const AKAR = dirname(dirname(fileURLToPath(import.meta.url)));
 const BASE = "https://data.inaproc.id";
-const INSTANSI = "D44";
 const JENIS_INSTANSI = "5";
 const UA = "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0";
 
@@ -33,9 +33,17 @@ const arg = (nama, bawaan) => {
   const i = argv.indexOf(`--${nama}`);
   return i >= 0 && argv[i + 1] ? argv[i + 1] : bawaan;
 };
-const TAHUN = arg("tahun", "2025,2026").split(",").map(Number);
+const REGION_ID = arg("region", "kota-tangerang");
+const region = await muatRegion(REGION_ID).catch((error) => {
+  console.error(`region: ${error.message}`);
+  process.exit(1);
+});
+const INSTANSI = region.instansi;
+const TAHUN = arg("tahun", region.tahun.join(",")).split(",").map(Number);
 const DETAIL = argv.includes("--detail");
 const JEDA_MS = 250;
+const JALUR_SNAPSHOT = resolve(AKAR, region.keluaran);
+const JALUR_RUP = resolve(AKAR, region.sumber.rup);
 
 function header(extra = {}) {
   const t = Date.now().toString();
@@ -174,8 +182,10 @@ async function eksporRup(tahun) {
 }
 
 async function tarikDetail() {
-  const jalurSnapshot = join(AKAR, "data", "saksi_kota_tangerang_2025_2026.json");
-  if (!existsSync(jalurSnapshot)) throw new Error("snapshot paket tidak ada — jalankan mode daftar dulu");
+  if (!region.sumber.detail) throw new Error(`region ${REGION_ID}: "sumber.detail" wajib untuk --detail`);
+  if (!existsSync(JALUR_SNAPSHOT)) throw new Error("snapshot paket tidak ada — jalankan mode daftar dulu");
+  const jalurDetail = resolve(AKAR, region.sumber.detail);
+  mkdirSync(dirname(jalurDetail), { recursive: true });
   const paket = JSON.parse(readFileSync(jalurSnapshot, "utf8")).paket ?? [];
   const hasil = [];
 
@@ -210,7 +220,7 @@ async function tarikDetail() {
   const adaJadwal = hasil.filter((h) => h.jadwal_pemilihan_mulai).length;
   const adaLokasi = hasil.filter((h) => h.lokasi_raw.length > 0).length;
   writeFileSync(
-    join(AKAR, "data", "rup_detail_kota_tangerang.json"),
+    jalurDetail,
     JSON.stringify(
       {
         snapshot: new Date().toISOString().slice(0, 10),
@@ -225,7 +235,7 @@ async function tarikDetail() {
     ),
   );
   console.log(`${hasil.length} paket · jadwal ${adaJadwal} · lokasi ${adaLokasi}`);
-  console.log("→ data/rup_detail_kota_tangerang.json");
+  console.log(`→ ${region.sumber.detail}`);
 }
 
 if (DETAIL) {
@@ -261,9 +271,8 @@ const per = (kunci) => {
 
 // Cek cakupan terhadap snapshot jalan yang dipakai produk (kalau ada).
 let cakupan = null;
-const jalurSnapshot = join(AKAR, "data", "saksi_kota_tangerang_2025_2026.json");
-if (existsSync(jalurSnapshot)) {
-  const snapshot = JSON.parse(readFileSync(jalurSnapshot, "utf8")).paket ?? [];
+if (existsSync(JALUR_SNAPSHOT)) {
+  const snapshot = JSON.parse(readFileSync(JALUR_SNAPSHOT, "utf8")).paket ?? [];
   const ada = new Set(item.map((r) => String(r.kode_rup)));
   const hilang = snapshot.filter((p) => !ada.has(String(p.kode_rup)));
   cakupan = {
@@ -275,9 +284,9 @@ if (existsSync(jalurSnapshot)) {
   console.log(`cakupan snapshot: ${cakupan.ada_di_rup}/${cakupan.paket_snapshot} paket ada di ekspor RUP`);
 }
 
-mkdirSync(join(AKAR, "data"), { recursive: true });
+mkdirSync(dirname(JALUR_RUP), { recursive: true });
 writeFileSync(
-  join(AKAR, "data", "rup_kota_tangerang_2025_2026.json"),
+  JALUR_RUP,
   JSON.stringify(
     {
       snapshot: new Date().toISOString().slice(0, 10),
@@ -297,4 +306,4 @@ writeFileSync(
 );
 
 console.log(`total ${item.length} RUP · Rp${(item.reduce((n, r) => n + r.total_nilai, 0) / 1e9).toFixed(2)} M`);
-console.log("→ data/rup_kota_tangerang_2025_2026.json");
+console.log(`→ ${region.sumber.rup}`);
