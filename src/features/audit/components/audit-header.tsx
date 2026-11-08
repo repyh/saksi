@@ -61,8 +61,8 @@ export function AuditHeader({ metrics }: AuditHeaderProps) {
                   type="search"
                   value={heroQuery}
                   onChange={(event) => setHeroQuery(event.target.value)}
-                  aria-label="Cari paket berdasarkan desa, ruas jalan, atau nomor RUP"
-                  placeholder="Cari desa, ruas jalan, atau nomor RUP"
+                  aria-label="Cari paket berdasarkan kelurahan, ruas jalan, atau nomor RUP"
+                  placeholder="Cari kelurahan, ruas jalan, atau nomor RUP"
                   className="h-12 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground sm:text-base"
                 />
                 <button

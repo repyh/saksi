@@ -533,15 +533,15 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
                 <span className="font-sans text-[11px]">Hanya paket berlokasi</span>
               </label>
               {!showIntro && <label className="relative min-w-[150px] flex-1 sm:w-[260px] sm:flex-none">
-                <span className="sr-only">Cari paket berdasarkan desa, jalan, kecamatan, atau nomor RUP</span>
+                <span className="sr-only">Cari paket berdasarkan kelurahan, jalan, kecamatan, atau nomor RUP</span>
                 <FiSearch aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="map-package-search"
-                  aria-label="Cari paket berdasarkan desa, jalan, kecamatan, atau nomor RUP"
+                  aria-label="Cari paket berdasarkan kelurahan, jalan, kecamatan, atau nomor RUP"
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Cari desa, jalan, atau RUP"
+                  placeholder="Cari kelurahan, jalan, atau RUP"
                   className="h-8 pl-8 pr-2 text-[11px]"
                 />
               </label>}

@@ -152,7 +152,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
     const controller = new AbortController();
     fetch("/data/rw.geojson", { signal: controller.signal })
       .then((response) => {
-        if (!response.ok) throw new Error("Daftar desa dan RW belum dapat dimuat.");
+        if (!response.ok) throw new Error("Daftar kelurahan dan RW belum dapat dimuat.");
         return response.json();
       })
       .then((geojson: { features?: Array<{ properties?: { wadmkc?: string; wadmkd?: string; rw?: string }; geometry?: AreaGeometry }> }) => {
@@ -251,13 +251,13 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
         setAreaId("");
         invalidateSubmissionKey();
         setSelectedPackage(null);
-        setLocationMessage("Lokasi berada di luar batas RW pada data peta. Pilih desa/RW secara manual.");
+        setLocationMessage("Lokasi berada di luar batas RW pada data peta. Pilih kelurahan/RW secara manual.");
       }
       setLocating(false);
     }, (error) => {
       setLocationMessage(error.code === error.PERMISSION_DENIED
-        ? "Izin lokasi tidak diberikan. Anda tetap dapat memilih desa/RW secara manual."
-        : "Lokasi belum dapat dibaca. Coba lagi atau pilih desa/RW secara manual.");
+        ? "Izin lokasi tidak diberikan. Anda tetap dapat memilih kelurahan/RW secara manual."
+        : "Lokasi belum dapat dibaca. Coba lagi atau pilih kelurahan/RW secara manual.");
       setLocating(false);
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   }
@@ -371,7 +371,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                 )}
               </div>
               <span id="advance-requirement" className="sr-only">
-                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Kirim laporan untuk menyelesaikan pengiriman." : "Pilih desa/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
+                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Kirim laporan untuk menyelesaikan pengiriman." : "Pilih kelurahan/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
               </span>
             </div>
 
@@ -506,7 +506,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                     <div>
-                      <label htmlFor="report-area" className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Desa / kelurahan / RW</label>
+                      <label htmlFor="report-area" className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Kelurahan / RW</label>
                       <select id="report-area" value={areaId} onChange={(event) => {
                         const nextArea = areas.find((area) => area.id === event.target.value) ?? null;
                         setAreaId(event.target.value);

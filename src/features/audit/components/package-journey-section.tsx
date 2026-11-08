@@ -1,7 +1,7 @@
 const steps = [
   {
     title: "Temukan ruas",
-    description: "Cari nama desa, jalan, atau nomor RUP di peta.",
+    description: "Cari nama kelurahan, jalan, atau nomor RUP di peta.",
   },
   {
     title: "Periksa paket",

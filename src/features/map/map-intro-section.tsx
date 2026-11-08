@@ -22,11 +22,11 @@ export function MapIntroSection({ searchQuery, onSearchChange }: MapIntroSection
           <FiSearch aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="map-package-search"
-            aria-label="Cari paket berdasarkan desa, jalan, kecamatan, atau nomor RUP"
+            aria-label="Cari paket berdasarkan kelurahan, jalan, kecamatan, atau nomor RUP"
             type="search"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Nama desa, jalan, kecamatan, atau nomor RUP"
+            placeholder="Nama kelurahan, jalan, kecamatan, atau nomor RUP"
             className="h-12 border-white bg-white pl-12 pr-12 text-sm text-foreground shadow-none placeholder:text-muted-foreground focus-visible:border-secondary focus-visible:ring-2 focus-visible:ring-secondary/50 sm:h-14 sm:text-base"
           />
           {searchQuery && (
