@@ -20,6 +20,7 @@ import { formatRupiahFull } from "./road-types";
 import { MapIntroSection } from "./map-intro-section";
 import { MAP_SEARCH_EVENT } from "./map-search-events";
 import { fetchRoadPackages } from "./package-api";
+import { buildPenyediaPanel, labelPenyediaLain } from "./penyedia-panel";
 import { ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
 import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 import {
@@ -253,21 +254,12 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
     writeReportPath(routeForPackage(pkg));
   };
 
-  const penyediaPanel = useMemo(() => {
-    const kontrak = selectedPackage?.kontrak;
-    if (!kontrak) return [] as Array<{ nama: string; nilai: number }>;
-    const perPaket = kontrak.paketRealisasi ?? [];
-    if (perPaket.length <= 1) {
-      return [{ nama: kontrak.penyedia, nilai: kontrak.nilai_kontrak ?? 0 }];
-    }
-    const agregat = new Map<string, number>();
-    for (const paket of perPaket) {
-      agregat.set(paket.penyedia, (agregat.get(paket.penyedia) ?? 0) + paket.nilai);
-    }
-    return [...agregat.entries()]
-      .map(([nama, nilai]) => ({ nama, nilai }))
-      .sort((a, b) => b.nilai - a.nilai);
-  }, [selectedPackage]);
+  const panelPenyedia = useMemo(
+    () => buildPenyediaPanel(selectedPackage?.kontrak),
+    [selectedPackage],
+  );
+  const penyediaPanel = panelPenyedia.baris;
+  const labelPenyediaTersembunyi = labelPenyediaLain(penyediaPanel.length);
 
   const paketPerPenyedia = useMemo(() => {
     const paket = selectedPackage?.kontrak?.paketRealisasi ?? [];
@@ -744,14 +736,19 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
                                       </li>
                                     ))}
                                   </ul>
-                                  {penyediaPanel.length > 2 && !tampilSemuaPenyedia ? (
+                                  {labelPenyediaTersembunyi && !tampilSemuaPenyedia ? (
                                     <button
                                       type="button"
                                       onClick={() => setTampilSemuaPenyedia(true)}
                                       className="mt-1 font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
                                     >
-                                      +{penyediaPanel.length - 2} penyedia lainnya
+                                      {labelPenyediaTersembunyi}
                                     </button>
+                                  ) : null}
+                                  {panelPenyedia.adaPenyediaBersama ? (
+                                    <p className="mt-1 font-sans text-[10px] leading-snug text-muted-foreground">
+                                      Nilai transaksi dicatat bersama untuk penyedia dalam satu paket dan tidak dibagi.
+                                    </p>
                                   ) : null}
                                 </td>
                               </tr>

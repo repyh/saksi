@@ -30,7 +30,8 @@
     "region:check": "node scripts/check-region.mjs",
     "region:ingest": "node scripts/ingest.mjs",
     "start": "next start",
-    "storage:reports:ensure": "bun scripts/ensure-report-storage.ts"
+    "storage:reports:ensure": "bun scripts/ensure-report-storage.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

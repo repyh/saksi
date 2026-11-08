@@ -5,6 +5,7 @@ import type {
   RoadPackageContract,
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
+import { normalizeVendorNames } from "@/contracts/packages/vendor-name";
 import { slugPenyedia } from "@/contracts/packages/vendor-slug";
 import {
   DEFAULT_REGION_ID,
@@ -126,6 +127,36 @@ function bacaJson<T>(berkas: string): T {
 /** Swakelola & instansi bukan penyedia jasa — jangan pernah tampil sebagai "pemenang". */
 const BUKAN_PENYEDIA = /^\s*(dinas|pegawai|opd|pemerintah|badan|kantor|uptd|kecamatan|kelurahan|unsur)\b/i;
 
+/** Kunci pembanding nama penyedia (case-insensitive). */
+function kunciPenyedia(nama: string) {
+  return nama.trim().toLocaleUpperCase("id-ID");
+}
+
+/**
+ * Tambah nilai ke peta penyedia tanpa membuat entri ganda karena beda kapitalisasi.
+ * Ejaan pertama dipertahankan.
+ */
+function tambahNilai(map: Map<string, number>, nama: string, nilai: number) {
+  const kunci = kunciPenyedia(nama);
+  let pakai = nama;
+  for (const ada of map.keys()) {
+    if (kunciPenyedia(ada) === kunci) {
+      pakai = ada;
+      break;
+    }
+  }
+  map.set(pakai, (map.get(pakai) ?? 0) + nilai);
+}
+
+/** Nilai penyedia pada peta, dicocokkan case-insensitive. */
+function nilaiPenyedia(map: Map<string, number>, nama: string): number {
+  const kunci = kunciPenyedia(nama);
+  for (const [ada, nilai] of map) {
+    if (kunciPenyedia(ada) === kunci) return nilai;
+  }
+  return 0;
+}
+
 export interface IndeksKontrak {
   kontrakPerRup: Map<string, RoadPackageContract>;
   realisasiPerRup: Map<string, AgregatRealisasi>;
@@ -192,6 +223,8 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
     if (!baris.kode_rup || !baris.penyedia) continue;
     if (String(baris.metode ?? "").toLowerCase() === "swakelola") continue;
     if (BUKAN_PENYEDIA.test(String(baris.penyedia))) continue;
+    const daftarNama = normalizeVendorNames(baris.penyedia);
+    if (!daftarNama.length) continue;
     const rup = String(baris.kode_rup);
     const agg = realisasiPerRup.get(rup) ?? {
       penyedia: new Map<string, number>(),
@@ -205,7 +238,12 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
     const nilai = Number(baris.nilai ?? 0);
     agg.transaksi += 1;
     agg.total += nilai;
-    agg.penyedia.set(baris.penyedia, (agg.penyedia.get(baris.penyedia) ?? 0) + nilai);
+    // Nilai adalah nilai transaksi bersama: diberikan penuh ke penyedia pertama
+    // dan 0 ke penyedia gabungan lain. Nilai bersama tidak dibagi agar total
+    // RUP/paket tetap sama dan rekonsiliasi terjaga.
+    for (const [urutan, nama] of daftarNama.entries()) {
+      tambahNilai(agg.penyedia, nama, urutan === 0 ? nilai : 0);
+    }
     if (baris.kode_paket) {
       const paket = agg.paket.get(baris.kode_paket) ?? {
         nilai: 0,
@@ -213,7 +251,9 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
         penyedia: new Map<string, number>(),
       };
       paket.nilai += nilai;
-      paket.penyedia.set(baris.penyedia, (paket.penyedia.get(baris.penyedia) ?? 0) + nilai);
+      for (const [urutan, nama] of daftarNama.entries()) {
+        tambahNilai(paket.penyedia, nama, urutan === 0 ? nilai : 0);
+      }
       agg.paket.set(baris.kode_paket, paket);
     }
     realisasiPerRup.set(rup, agg);
@@ -246,12 +286,17 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
       kodePaket: paketBukti?.[0] ?? null,
       jumlahPaket: agg.paket.size,
       paketRealisasi: [...agg.paket.entries()]
-        .map(([kodePaket, isi]) => ({
-          kodePaket,
-          nilai: Math.round(isi.nilai),
-          sumber: isi.sumber,
-          penyedia: [...isi.penyedia.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? urut[0][0],
-        }))
+        .map(([kodePaket, isi]) => {
+          const urutPaket = [...isi.penyedia.entries()].sort((a, b) => b[1] - a[1]);
+          const namaPaket = urutPaket.length ? urutPaket.map(([nama]) => nama) : [urut[0][0]];
+          return {
+            kodePaket,
+            nilai: Math.round(isi.nilai),
+            sumber: isi.sumber,
+            penyedia: namaPaket[0],
+            penyediaSemua: namaPaket,
+          };
+        })
         .sort((a, b) => b.nilai - a.nilai),
       transaksi: agg.transaksi,
       penyediaLain: urut.slice(1).map(([nama]) => nama),
@@ -342,7 +387,7 @@ export function ringkasanPenyedia(
     const daftar = [kontrak.penyedia, ...(kontrak.penyediaLain ?? [])];
 
     for (const nama of daftar) {
-      const kunci = nama.trim().toLocaleUpperCase("id-ID");
+      const kunci = kunciPenyedia(nama);
       const entri = hasil.get(kunci) ?? {
         slug: slugPenyedia(nama),
         nama,
@@ -354,8 +399,8 @@ export function ringkasanPenyedia(
       entri.paket += 1;
       entri.nilai += Math.round(
         perPenyedia
-          ? Number(perPenyedia.get(nama) ?? 0)
-          : kunci === kontrak.penyedia.trim().toLocaleUpperCase("id-ID")
+          ? nilaiPenyedia(perPenyedia, nama)
+          : kunci === kunciPenyedia(kontrak.penyedia)
             ? Number(kontrak.nilai_kontrak ?? 0)
             : 0,
       );

@@ -32,8 +32,18 @@ export interface RoadPackageContract {
   kodePaket?: string | null;
   /** Berapa paket realisasi yang terhubung ke RUP ini (relasi bisa satu-ke-banyak). */
   jumlahPaket?: number;
-  /** Rincian tiap paket realisasi; `nilai` = realisasi per paket, bukan nilai kontrak. */
-  paketRealisasi?: Array<{ kodePaket: string; penyedia: string; nilai: number; sumber: string | null }>;
+  /**
+   * Rincian tiap paket realisasi; `nilai` = realisasi per paket, bukan nilai kontrak.
+   * `penyedia` adalah penyedia utama (pemegang nilai transaksi); `penyediaSemua`
+   * memuat seluruh nama valid bila satu transaksi dicatat untuk beberapa penyedia.
+   */
+  paketRealisasi?: Array<{
+    kodePaket: string;
+    penyedia: string;
+    penyediaSemua: string[];
+    nilai: number;
+    sumber: string | null;
+  }>;
 }
 
 export type RoadContractFilter = "SEMUA" | "ADA" | "TANPA";
