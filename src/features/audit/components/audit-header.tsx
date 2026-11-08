@@ -4,36 +4,19 @@ import Image from "next/image";
 import { type FormEvent, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { CoverageSection } from "./coverage-section";
-import type { AuditSummaryMetrics } from "../audit-types";
+import type { AuditSummaryMetrics } from "@/contracts/audit/audit-summary.contract";
 import { dispatchMapSearch } from "@/features/map/map-search-events";
 
 interface AuditHeaderProps {
-  metrics?: AuditSummaryMetrics;
+  metrics: AuditSummaryMetrics;
 }
 
-export const DEFAULT_KOTA_TANGERANG_METRICS: AuditSummaryMetrics = {
-  regionName: "Kota Tangerang",
-  snapshotDate: "31 OKT 2026",
-  fiscalYears: [2025, 2026],
-  totalPackages: 1557,
-  packagesByYear: { y2025: 939, y2026: 618 },
-  totalBudgetDisplay: "Rp650,18 M",
-  coveredKelurahan: 80,
-  totalKelurahan: 104,
-  totalDistricts: 13,
-  mappedCount: 1155,
-  mappedPercent: "74,2%",
-  spatial: {
-    rwPackages: 818,
-    kelurahanPackages: 337,
-    unmappedPackages: 402,
-  },
-};
-
-export function AuditHeader({ metrics = DEFAULT_KOTA_TANGERANG_METRICS }: AuditHeaderProps) {
+export function AuditHeader({ metrics }: AuditHeaderProps) {
   const [heroQuery, setHeroQuery] = useState("");
   const {
     regionName,
+    snapshotDate,
+    snapshotSource,
     fiscalYears,
     totalPackages,
     packagesByYear,
@@ -111,6 +94,9 @@ export function AuditHeader({ metrics = DEFAULT_KOTA_TANGERANG_METRICS }: AuditH
               <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-0 font-heading font-extrabold tracking-[-0.035em]">
                 <span className="text-4xl leading-none sm:text-5xl lg:text-[3.5rem]">{budgetAmount}</span>
                 {budgetUnit && <span className="text-xl leading-none text-white/85 sm:text-2xl">{budgetUnit}</span>}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-white/70">
+                Snapshot {snapshotDate} · {snapshotSource}
               </p>
             </div>
             <div className="grid grid-cols-3 gap-x-3 sm:gap-x-6">

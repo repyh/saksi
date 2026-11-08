@@ -7,6 +7,12 @@ import { kontrakUntukRup } from "./lpse-repository";
 const ROAD_SECTOR = "Jalan, Jembatan & Drainase";
 const PRECISION_TYPES = new Set(["RW", "Kelurahan", "Kecamatan", "Kabupaten"]);
 
+/** Provenance of the checked-in snapshot, used by audit metrics instead of a hard-coded date. */
+export const snapshotMeta = {
+  snapshot: snapshot.snapshot,
+  sumber: snapshot.sumber,
+} as const;
+
 function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }

@@ -1,15 +1,16 @@
-import type { AuditSummaryMetrics } from "../audit-types";
-import { FiMap, FiMapPin, FiX } from "react-icons/fi";
+import type { AuditSummaryMetrics } from "@/contracts/audit/audit-summary.contract";
+import { FiLayers, FiMap, FiMapPin, FiX } from "react-icons/fi";
 
 interface CoverageSectionProps {
   metrics: AuditSummaryMetrics;
 }
 
-function LocationMark({ kind }: { kind: "rw" | "kelurahan" | "none" }) {
+function LocationMark({ kind }: { kind: "rw" | "kelurahan" | "kecamatan" | "none" }) {
   const iconClass = "size-6 shrink-0";
 
   if (kind === "rw") return <FiMapPin aria-hidden="true" className={iconClass} />;
   if (kind === "kelurahan") return <FiMap aria-hidden="true" className={iconClass} />;
+  if (kind === "kecamatan") return <FiLayers aria-hidden="true" className={iconClass} />;
 
   return (
     <span aria-hidden="true" className="relative inline-flex size-6 shrink-0 items-center justify-center">
@@ -21,10 +22,14 @@ function LocationMark({ kind }: { kind: "rw" | "kelurahan" | "none" }) {
 
 export function CoverageSection({ metrics }: CoverageSectionProps) {
   const {
+    snapshotDate,
+    snapshotSource,
     totalPackages,
     coveredKelurahan,
     totalKelurahan,
     totalDistricts,
+    coveredRw,
+    totalRw,
     mappedCount,
     mappedPercent,
     spatial,
@@ -44,6 +49,12 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
       description: "Nama kelurahan cocok, tanpa kecocokan RW.",
     },
     {
+      kind: "kecamatan" as const,
+      label: "Kecamatan",
+      count: spatial.kecamatanPackages,
+      description: "Hanya kecamatan pada paket yang dapat dipastikan.",
+    },
+    {
       kind: "none" as const,
       label: "Tanpa lokasi",
       count: spatial.unmappedPackages,
@@ -52,6 +63,7 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
   ];
   const mappedRatio = totalPackages > 0 ? (mappedCount / totalPackages) * 100 : 0;
   const kelurahanRatio = totalKelurahan > 0 ? (coveredKelurahan / totalKelurahan) * 100 : 0;
+  const rwRatio = totalRw > 0 ? (coveredRw / totalRw) * 100 : 0;
 
   return (
     <section aria-labelledby="coverage-section-title" className="border-t border-border bg-white">
@@ -66,8 +78,8 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
         </div>
 
         <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:gap-16">
-          <div className="flex flex-col justify-center gap-9 sm:flex-row sm:items-start sm:gap-12 lg:flex-col lg:items-stretch lg:gap-10">
-            <div className="min-w-0 flex-1">
+          <div className="grid gap-9 sm:grid-cols-3 sm:items-start sm:gap-8 lg:grid-cols-1 lg:gap-9">
+            <div className="min-w-0">
               <p className="font-heading text-6xl leading-[0.95] font-extrabold tracking-[-0.05em] text-primary sm:text-7xl">{mappedPercent}</p>
               <p className="mt-2 text-base font-semibold leading-6 text-foreground">Paket terhubung ke wilayah peta</p>
               <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${mappedPercent} paket terhubung ke wilayah peta`}>
@@ -77,15 +89,25 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
                 {mappedCount.toLocaleString("id-ID")} dari {totalPackages.toLocaleString("id-ID")} paket
               </p>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <p className="font-heading text-4xl leading-[1.05] font-extrabold tracking-[-0.04em] text-foreground sm:text-5xl">
-                {coveredKelurahan}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalKelurahan}</span>
+                {coveredKelurahan.toLocaleString("id-ID")}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalKelurahan.toLocaleString("id-ID")}</span>
               </p>
               <p className="mt-2 text-base font-semibold leading-6 text-foreground">Kelurahan tersentuh paket</p>
               <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredKelurahan} dari ${totalKelurahan} kelurahan tersentuh paket`}>
                 <div className="h-full bg-secondary" style={{ width: `${kelurahanRatio}%` }} />
               </div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">Di {totalDistricts} kecamatan</p>
+            </div>
+            <div className="min-w-0">
+              <p className="font-heading text-4xl leading-[1.05] font-extrabold tracking-[-0.04em] text-foreground sm:text-5xl">
+                {coveredRw.toLocaleString("id-ID")}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalRw.toLocaleString("id-ID")}</span>
+              </p>
+              <p className="mt-2 text-base font-semibold leading-6 text-foreground">RW tersentuh paket</p>
+              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredRw} dari ${totalRw} RW tersentuh paket`}>
+                <div className="h-full bg-primary" style={{ width: `${rwRatio}%` }} />
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Dari batas RW resmi kota</p>
             </div>
           </div>
 
@@ -116,6 +138,7 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
               })}
           </ul>
             <figcaption className="pt-3 text-xs leading-5 text-muted-foreground">
+              Snapshot {snapshotDate} · {snapshotSource} · Batas wilayah ArcGIS Kota Tangerang.
               Peta menampilkan batas administrasi, bukan titik lokasi pekerjaan.
             </figcaption>
           </figure>
