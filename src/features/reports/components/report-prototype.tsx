@@ -9,7 +9,7 @@ import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib
 import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
-import { FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
 
 const STEPS = ["Foto", "Kerusakan", "Lokasi & paket", "Sukses"] as const;
 const DAMAGE_TYPES = [
@@ -313,11 +313,16 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
           <div className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
               <div className="max-w-2xl">
-                <h1 className="font-heading text-3xl font-bold leading-tight tracking-[-0.03em] text-foreground sm:text-4xl">
+                <span className="inline-flex items-center gap-1.5 bg-secondary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-secondary-foreground">
+                  <FiAlertTriangle aria-hidden="true" className="size-3.5" />
+                  SIMULASI PROTOTIPE
+                </span>
+                <h1 className="mt-3 font-heading text-3xl font-bold leading-tight tracking-[-0.03em] text-foreground sm:text-4xl">
                   Laporkan kerusakan jalan
                 </h1>
                 <p className="mt-3 max-w-[62ch] text-sm leading-6 text-muted-foreground sm:text-base">
                   Tambahkan bukti kerusakan dan, jika dapat dipastikan, tautkan ke paket pekerjaan terkait.
+                  Laporan masuk antrean tinjauan internal dan tidak langsung dipublikasikan.
                 </p>
               </div>
               <Link href="/project" className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
@@ -380,7 +385,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
 
                   {photo ? (
                     <div className="mt-5 grid gap-4 border border-border p-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center sm:p-4">
-                      {/* Local object URL preview; no file is uploaded or persisted. */}
+                      {/* Local object URL preview of the sanitised WebP uploaded on submit. */}
                       <Image src={photo.previewUrl} alt="Pratinjau foto kerusakan yang dipilih" width={360} height={144} unoptimized className="h-36 w-full bg-muted object-cover sm:h-32" />
                       <div className="flex min-w-0 items-center justify-between gap-4">
                         <div className="min-w-0">
@@ -401,7 +406,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                       </span>
                       <span className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</span>
                       <span className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
-                        {isProcessingPhoto ? "Memproses dan menghapus metadata di perangkat…" : "Foto dinormalisasi di perangkat. File tidak diunggah atau disimpan dalam simulasi ini."}
+                        {isProcessingPhoto ? "Memproses dan menghapus metadata di perangkat…" : "EXIF dihapus di perangkat. Saat laporan dikirim, foto tersanitasi disimpan privat sebagai bukti laporan."}
                       </span>
                       <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors group-hover:bg-[#004682]">
                         <FiImage aria-hidden="true" />
@@ -526,7 +531,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                   </div>
                   <label htmlFor="report-landmark" className="mt-4 block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Patokan lokasi (opsional) — nama jalan, kampung, RT/RW</label>
                   <input id="report-landmark" value={landmark} onChange={(event) => { setLandmark(event.target.value); invalidateSubmissionKey(); }} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
-                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; tidak diunggah.</p>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; disimpan privat dan tidak ditampilkan publik.</p>
 
                   {locationMessage && <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{locationMessage}</p>}
                   {!selectedArea && !locationMessage && <p className="mt-4 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{selectedPackage ? "Belum ada area laporan. Paket rujukan tetap dapat digunakan; pilih wilayah untuk melihat kandidat paket." : "Pilih kelurahan/RW atau gunakan lokasi saya untuk melihat kandidat paket."}</p>}
