@@ -119,6 +119,8 @@ pemeriksaan yang menuntut Postgres di jalur build.
 |---|---|
 | `docs/STATE.md` | status, keputusan, angka snapshot, kesenjangan implementasi |
 | `docs/ARCHITECTURE.md` | batas frontend/backend, API, repository, database, worker, tahapan |
+| `docs/DATABASE.md` | ERD ingestion multi-region, kunci unik, FK, index, provenance, retensi |
+| `docs/INGESTION.md` | worker, lock/retry/log, riwayat run, cron systemd/GitHub Actions, runbook |
 | `docs/PRODUCT.md` | produk, masalah, sasaran, dan batas interpretasi |
 | `docs/DESIGN.md` | sistem visual dan aturan antarmuka |
 | `docs/HANDOFF.md` | status operasional dan keputusan kerja |

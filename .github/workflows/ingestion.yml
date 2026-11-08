@@ -1,0 +1,72 @@
+name: SAKSI ingestion
+
+on:
+  schedule:
+    # 19:30 UTC = 02:30 WIB (Asia/Jakarta), setiap hari.
+    - cron: "30 19 * * *"
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Region id (data/regions/<id>)"
+        required: false
+        default: kota-tangerang
+      dry_run:
+        description: "Dry-run tanpa tulis DB/berkas"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingestion-${{ github.event.inputs.region || 'kota-tangerang' }}
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      REGION: ${{ github.event.inputs.region || 'kota-tangerang' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Terapkan migrasi
+        run: npx prisma migrate deploy
+
+      - name: Jalankan worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if [ "$DRY_RUN" = "true" ]; then
+            npm run ingest:worker -- --region "$REGION" --dry-run 2>&1 | tee artifacts/ingestion.log
+          else
+            npm run ingest:worker -- --region "$REGION" --trigger cron 2>&1 | tee artifacts/ingestion.log
+          fi
+
+      - name: Rekonsiliasi DB dengan manifest
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm run db:verify -- --region "$REGION"
+
+      - name: Simpan bukti
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingestion-${{ env.REGION }}-${{ github.run_id }}
+          path: |
+            artifacts/ingestion.log
+            data/regions/${{ env.REGION }}/manifest.json
+          if-no-files-found: warn
+          retention-days: 30

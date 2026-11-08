@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-08T14:18:09.818Z",
+  "dibuat": "2026-11-08T17:36:18.816Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -92,6 +92,15 @@
       "tanpa_rekam": 218,
       "tanpa_rekam_pagu": 132343800219,
       "unik": 633
+    },
+    "sumber": {
+      "rup": 28699,
+      "detail": 2553,
+      "realisasi": 50836,
+      "lpse": 1739,
+      "batas_kecamatan": 13,
+      "batas_kelurahan": 104,
+      "batas_rw": 1020
     }
   },
   "masalah": []

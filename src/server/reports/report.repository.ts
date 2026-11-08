@@ -7,6 +7,7 @@ import { ApiError } from "@/server/api/shared/api-error";
 import type { ReportAreaSnapshot } from "@/server/reports/report-area-catalog";
 import type { StoredReportPhoto } from "@/server/uploads/purposes/report-photo.handler";
 
+const DEFAULT_REGION_ID = "kota-tangerang";
 const DATASET_VERSION = "kota-tangerang-2025-2026-2026-11-05";
 const DATASET_RETRIEVED_AT = new Date("2026-11-05T00:00:00.000Z");
 
@@ -27,7 +28,9 @@ export async function persistSubmittedReport(input: {
   return prisma.$transaction(async (transaction) => {
     let areaId: string | null = null;
     if (input.areaSnapshot) {
-      const area = await transaction.administrativeArea.findUnique({ where: { stableKey: input.areaSnapshot.stableKey } });
+      const area = await transaction.administrativeArea.findFirst({
+        where: { regionId: DEFAULT_REGION_ID, stableKey: input.areaSnapshot.stableKey },
+      });
       if (area?.isActive && area.level === "RW") areaId = area.id;
     }
 
@@ -35,8 +38,9 @@ export async function persistSubmittedReport(input: {
     if (input.packageItem) {
       const item = input.packageItem;
       const roadPackage = await transaction.roadPackage.upsert({
-        where: { rup: item.kode_rup },
+        where: { regionId_rup: { regionId: DEFAULT_REGION_ID, rup: item.kode_rup } },
         create: {
+          regionId: DEFAULT_REGION_ID,
           rup: item.kode_rup,
           year: item.tahun,
           name: item.nama,
