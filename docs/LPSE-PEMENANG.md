@@ -4,7 +4,7 @@
 > pengadaan langsung, e-purchasing, dan penunjukan langsung, istilah yang benar adalah **"penyedia"**;
 > kode memakai field `penyedia` dan hanya menampilkan label "Pemenang" bila `jenis === "tender"`.
 
-Snapshot **2 November 2026**. Skrip: `scripts/lpse.mjs` (`npm run lpse:list|detail|match`).
+Snapshot LPSE **2 November 2026**, dicocokkan ulang **8 November 2026** ke snapshot RUP 2.552 paket. Skrip: `scripts/lpse.mjs` (`npm run lpse:list|detail|match`).
 Keluaran: `data/lpse_kota_tangerang_2025_2026.json`.
 
 ## Sumber
@@ -31,12 +31,12 @@ format penuh.
 
 | | |
 |---|---:|
-| Paket RUP (snapshot 5 Nov 2026) | **1.634** |
+| Paket RUP (snapshot 5 Nov 2026) | **2.552** |
 | Baris LPSE ditarik (2025+2026) | 4.869 (tender 192 · non-tender 4.677) |
 | Detail diambil (nama cocok RUP) | 949 |
-| **Paket RUP tercocok** | **943 (60,6%)** — semuanya lewat **Kode RUP**, bukan tebakan nama |
+| **Paket RUP tercocok** | **1.739 (68,1%)** — 943 lewat **Kode RUP**, 796 lewat **nama persis** yang unik dan setahun (tanpa pencocokan fuzzy) |
 | Paket dengan pemenang | **731** |
-| Pagu paket tercocok | Rp182,48 M dari Rp683,34 M |
+| Pagu paket tercocok | Rp290,56 M dari Rp813,13 M |
 | Nilai kontrak total | **Rp138,81 M** |
 | Rasio median kontrak/pagu | **0,99** (tidak ada outlier >1,2 atau <0,3) |
 
@@ -44,16 +44,17 @@ Penyedia terbesar dari sisi nilai: **CV. TRISULA UTAMA** (1 paket, Rp4,07 M — 
 Cisadane Barat), **CV. SINAR AGAM LESTARI** (1 paket, Rp1,45 M), lalu beberapa kontraktor dengan 7
 paket drainase @Rp200 jt.
 
-## Temuan yang lebih penting: 614 paket tidak punya rekam kontrak
+## Temuan yang lebih penting: 813 paket tidak punya rekam kontrak LPSE
 
 | Metode pada RUP | Paket tidak tercocok |
 |---|---:|
-| **E-Purchasing** | **448** |
-| Pengadaan Langsung | 117 |
+| **E-Purchasing** | **454** |
+| Pengadaan Langsung | 233 |
+| Tanpa metode di ekspor | 76 |
 | Dikecualikan | 33 |
-| Tender | 16 |
+| Tender | 17 |
 
-Nilainya **Rp467,69 M (71,9% pagu)** — dan yang terbesar justru e-purchasing: Jembatan Saluran
+Nilainya **Rp522,56 M (64,3% pagu)** — dan yang terbesar justru e-purchasing: Jembatan Saluran
 Cisadane Barat 1 (Rp11,76 M), Bahan Material Pemeliharaan Rutin Jalan (Rp8,74 M), Peningkatan Jalan
 Iskandar Muda (Rp5,30 M). Artinya: **semakin besar paketnya, semakin kecil kemungkinan nama pemenang
 tersedia di LPSE**, karena pengadaannya lewat e-katalog dan bukan tender/penunjukan yang dicatat SPSE.
@@ -65,10 +66,11 @@ Ini bukan tuduhan; ini kesenjangan keterbukaan data yang layak ditampilkan apa a
 
 - **NPWP disamarkan** oleh LPSE (`0*.5**.4**.*-*17.**0`), jadi deduplikasi penyedia hanya bisa lewat
   nama — varian penulisan (`CV`, `cv.`, `PT`) perlu dinormalisasi lebih lanjut.
-- 117 paket pengadaan langsung tidak muncul di daftar non-tender meski ada di RUP — kemungkinan belum
+- 233 paket pengadaan langsung tidak muncul di daftar non-tender meski ada di RUP — kemungkinan belum
   dicatat atau tercatat di tahun berbeda; jangan diklaim sebagai "tidak ada kontrak".
 - 33 paket `Dikecualikan` memang tidak melalui LPSE.
-- Nama paket di SPSE kadang berbeda kapitalisasi dari RUP; pencocokan tetap memakai Kode RUP.
+- Nama paket di SPSE kadang berbeda kapitalisasi dari RUP; pencocokan memakai Kode RUP lebih dulu,
+  lalu nama persis yang ternormalisasi hanya bila kandidatnya tunggal dan tahunnya sama.
 
 ## Langkah berikutnya (UI)
 
@@ -90,8 +92,9 @@ Ketiganya sudah dikerjakan 2 November 2026:
   alasan (e-purchasing / dikecualikan / belum tercatat).
 - `src/app/penyedia/page.tsx` dan `src/app/penyedia/[slug]/page.tsx` — halaman penyedia.
 
-Hasil verifikasi: `GET /api/packages?kontrak=ADA` → 731 paket, `?kontrak=TANPA` → 826,
-`?q=fakhri` → 12 paket (pencarian nama penyedia), 330 penyedia di `/penyedia`.
+Hasil verifikasi 8 November 2026: `GET /api/packages?kontrak=ADA` → 2.334 paket,
+`?kontrak=TANPA` → 218, `?q=fakhri` → 14 paket (pencarian nama penyedia), 633 penyedia di
+`/penyedia`.
 
 ---
 
@@ -146,13 +149,13 @@ Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 
 | | Sebelum | Sesudah |
 |---|---:|---:|
-| Paket punya nama penyedia | 731 (46,9%) | **1.426 (87,3%)** |
-| Paket tanpa rekam | 826 | **208** |
-| Penyedia unik | 330 | **522** |
+| Paket punya nama penyedia | 731 (28,6%) | **2.334 (91,5%)** |
+| Paket tanpa rekam | 1.821 | **218** |
+| Penyedia unik | 330 | **633** |
 
-695 paket terisi dari realisasi: **378 e-purchasing**, 297 pengadaan langsung, 20 dikecualikan.
-Yang masih kosong: 71 e-purchasing, 32 pengadaan langsung, 13 dikecualikan, 16 tender, 76 tanpa
-metode di ekspor RUP (rinciannya di `docs/SISA-176-PAKET.md`).
+1.603 paket terisi dari realisasi: **383 e-purchasing**, 1.199 pengadaan langsung, 20 dikecualikan,
+1 tender. Yang masih kosong: 71 e-purchasing, 42 pengadaan langsung, 13 dikecualikan, 16 tender,
+76 tanpa metode di ekspor RUP (rinciannya di `docs/SISA-176-PAKET.md`).
 
 **2 paket jalan** punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya
 sebagai baris "Penyedia lain". Contoh transaksi terbanyak: pembangunan jalan sisi Saluran Cisadane
@@ -180,6 +183,6 @@ Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 
 ## Sisa yang belum tertutup
 
-208 paket (Rp130,67 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
+218 paket (Rp132,34 M) masih tanpa penyedia. Sebabnya per kategori dan sisa pekerjaan ada di
 **`docs/SISA-176-PAKET.md`**.
 

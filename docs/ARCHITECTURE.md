@@ -61,7 +61,7 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - Changes to year, district, work type, or search text call `GET /api/packages`.
 - `src/app/api/packages/route.ts` delegates `GET` to `src/server/api/packages/packages.api.ts`. `PackagesApi` validates query parameters, calls the package use case, and returns the shared `ApiResult<T>` envelope through shared HTTP response handling.
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
-- `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
+- `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_kota_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
 - Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`.
 - `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, and the read-only staff review queue. Better Auth's catch-all route continues to delegate directly to Better Auth.
 

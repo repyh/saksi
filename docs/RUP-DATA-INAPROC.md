@@ -1,8 +1,12 @@
 # RUP dari data.inaproc.id (pengganti sirup.inaproc.id)
 > **Catatan historis (8 November 2026):** dokumen ini merekam perpindahan sumber 31 Oktober–3 November
-> 2026. Kondisi aktif: **snapshot 5 November 2026**, **1.634 paket · Rp683,34 M**, **348 paket tanpa
-> lokus**, **1.286 (78,7%) berlokus**. Angka 1.557/402/312 di bawah adalah tahap proses, bukan
-> kondisi terkini.
+> 2026. Kondisi aktif: **snapshot 5 November 2026** (rebuild 8 November 2026), **2.552 paket ·
+> Rp813,13 M**, **362 paket tanpa lokus**, **2.190 (85,8%) berlokus**. Angka 1.557/402/312 di bawah
+> adalah tahap proses, bukan kondisi terkini.
+>
+> Rebuild 8 November 2026 memperbaiki pengenalan prefiks ruas `Jl.`/`Jl` di `scripts/build-snapshot.mjs`
+> dan menarik detail RUP untuk seluruh 2.552 paket, sehingga `bulan` terisi 2.472 paket dan anchor
+> kecamatan bertambah dari 90 menjadi 108.
 >
 > **Status 5 November 2026:** sumber utama sudah **dipindah ke ekspor RUP `data.inaproc.id`**
 > (`scripts/build-snapshot.mjs`) di branch `feat/data-pipeline`, karena ekspor ini juga memuat

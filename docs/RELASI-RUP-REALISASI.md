@@ -49,17 +49,18 @@ muncul pada pengadaan langsung, ketika satu paket SPSE dirujuk beberapa RUP.
 | Pencatatan Swakelola | 3.897 | 3.814 | 3.897 | 77 | 0 | 1–N |
 | Tender | 173 | 173 | 173 | 0 | 0 | 1–1 |
 
-Catatan penting: hubungan **paket → banyak RUP** (11 kasus) **tidak terlihat** saat dipecah per
+Catatan penting: hubungan **paket → banyak RUP** (40 kasus di seluruh D44) **tidak terlihat** saat dipecah per
 sumber, karena pasangan itu selalu menyeberang antara `Non Tender` dan `Pencatatan Non Tender`.
 Artinya: satu kode tender tercatat dua kali (pencatatan + transaksi), dan dua RUP berbeda bisa
 menunjuk kode tender yang sama.
 
-## 4. Di dalam cakupan produk (1.634 paket)
+## 4. Di dalam cakupan produk (2.552 paket)
 
-- Baris transaksi: **6.582** · RUP: **1.471** · kode paket unik: **1.484**
-- Distribusi jumlah paket per RUP: 1 paket **1.466 RUP**, 2 paket 3, 5 paket 1, 7 paket 1 (maksimum 7)
-- Metode: Pengadaan Langsung 1.020 · E-Purchasing 5.486 baris · Dikecualikan 22 · Swakelola 44 · Seleksi 7 · Tender 3
-- Sumber: E-Katalog 5.0 5.347 · Non Tender 1.018 · E-Katalog 6.0 139 · Pencatatan Swakelola 44 · Pencatatan Non Tender 24 · Tender 10
+- Baris transaksi: **7.518** · RUP: **2.379** · kode paket unik: **2.392**
+- Distribusi jumlah paket per RUP: 1 paket **2.374 RUP**, 2 paket 3, 5 paket 1, 7 paket 1 (maksimum 7)
+- Metode: Pengadaan Langsung 1.922 · E-Purchasing 5.519 baris · Dikecualikan 22 · Swakelola 44 · Seleksi 7 · Tender 4
+- Sumber: E-Katalog 5.0 5.379 · Non Tender 1.920 · E-Katalog 6.0 140 · Pencatatan Swakelola 44 · Pencatatan Non Tender 24 · Tender 11
+- Relasi **paket → banyak RUP** di dalam cakupan: **0** (di seluruh D44 ada 40 kode paket seperti itu)
 
 Konsekuensi untuk UI: penyedia dan nilai diambil dari **penyedia dengan nilai terbesar**, sisa
 penyedia ditampilkan sebagai "penyedia lain", dan nilai yang ditampilkan adalah **nilai realisasi**

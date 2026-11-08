@@ -20,7 +20,7 @@ review, not proof of wrongdoing or a guarantee of government action.
   OpenStreetMap + OpenFreeMap and switches for CARTO and Esri style hosts.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
-  The map shows only packages with a derived location by default; the 348 packages whose only
+  The map shows only packages with a derived location by default; the 362 packages whose only
   location is "Kota Tangerang" stay hidden until **Hanya paket berlokasi** is unchecked.
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
   package and ranks candidate packages by RW → kelurahan → landmark, without inventing a score.
@@ -30,8 +30,8 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Two contract sources: **LPSE/SPSE** for tender and direct procurement, **Data INAPROC**
   (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
   The INAPROC layer uses the official CSV export (4 requests/year for the whole municipality),
-  and names a vendor for **1,426 of 1,634** road packages (87.3%); the remaining **208** have no
-  public record. There are **522** unique suppliers.
+  and names a vendor for **2,334 of 2,552** road packages (91.5%); the remaining **218** have no
+  public record. There are **633** unique suppliers.
 - Landing and audit figures are derived from the active snapshot and the checked-in boundary
   GeoJSON in `src/server/packages/audit-metrics.ts`; the UI holds no headline constants.
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
@@ -49,13 +49,13 @@ review, not proof of wrongdoing or a guarantee of government action.
 
 | | |
 |---|---:|
-| Packages (road, bridge, drainage) | **1,634** |
-| Budget | **Rp683.34 bn** |
-| Fiscal years | 2025: 981 · 2026: 653 |
+| Packages (road, bridge, drainage) | **2,552** |
+| Budget | **Rp813.13 bn** |
+| Fiscal years | 2025: 1,592 · 2026: 960 |
 | Kelurahan touched | **85 of 104** · 13 kecamatan |
-| RW touched | **490 of 1,020** |
-| Location anchor | RW 821 · kelurahan 375 · kecamatan 90 · none 348 |
-| Vendor record | **1,426** with a public record · 208 without · 522 unique suppliers |
+| RW touched | **572 of 1,020** |
+| Location anchor | RW 1,571 · kelurahan 511 · kecamatan 108 · none 362 |
+| Vendor record | **2,334** with a public record · 218 without · 633 unique suppliers |
 
 Snapshot date **5 November 2026**. Sources: RUP export `data.inaproc.id/rup` (`idKldi=D44`, 28,699
 D44 rows for 2025–2026), LPSE/SPSE plus the Data INAPROC realisation CSV (`50,836` rows, snapshot
@@ -93,7 +93,7 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
 - Prisma domain models and a repository backed by Postgres/PostGIS instead of the JSON snapshot
 - Scheduled scraper workers for government and social sources, with provenance and run history
 - Viewport-aware map queries and a paginated package register (`/api/packages` currently returns all
-  1,634 items)
+  2,552 items)
 - Published methodology page and source metadata for every displayed metric
 - Provenance badges beyond the report flow: `SIMULASI PROTOTIPE` now marks `/laporan`, while the
   `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel; SIRUP/Bina Marga badges are not shown

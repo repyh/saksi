@@ -4,18 +4,18 @@
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `fix/p0-review-fixes` (review branch; same commit as `master`)
-**P0 branches merged:** `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`, `feat/report-prototype-badge`, `test/report-e2e-supabase`
+**Branch:** `fix/parser-jl-road-prefix` (P1: prefiks ruas `Jl.`/`Jl` di parser snapshot)
+**Base:** `master` pasca-P0 (`e53cb79`); P0 branches merged: `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`, `feat/report-prototype-badge`, `test/report-e2e-supabase`
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
 ## Product and data scope
 
-SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.634 road/junction/drainage packages, Rp683,34 billion**, snapshot **5 November 2026** from the `data.inaproc.id/rup` export. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **2.552 road/junction/drainage packages, Rp813,13 billion**, snapshot **5 November 2026** from the `data.inaproc.id/rup` export (rebuilt 8 November 2026 after the `Jl.` prefix fix). Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
 
-Location anchor, after enriching from RUP details: **821 RW (50.2%)**, **375 kelurahan (22.9%)**, **90 kecamatan (5.5%)**, **348 without any locus (21.3%)** — so 1.286 packages (78.7%) carry a derived location. Coverage touches 85 of 104 kelurahan, 490 of 1,020 RW, in 13 kecamatan.
+Location anchor, after enriching from RUP details: **1,571 RW (61.6%)**, **511 kelurahan (20.0%)**, **108 kecamatan (4.2%)**, **362 without any locus (14.2%)** — so 2,190 packages (85.8%) carry a derived location. Coverage touches 85 of 104 kelurahan, 572 of 1,020 RW, in 13 kecamatan.
 
-Vendor records: **1.426 of 1.634 packages (87.3%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **695 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 208 packages (Rp130.67 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
+Vendor records: **2,334 of 2,552 packages (91.5%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **1,603 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 218 packages (Rp132.34 billion, 16.3% of pagu) have no public record; 633 unique suppliers; median contract/pagu ratio 0.99.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -24,7 +24,7 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | Route | Purpose | Current behavior |
 |---|---|---|
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
-| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (1.286 of 1.634). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
+| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (2,190 of 2,552). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
 | `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
 | `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
@@ -113,7 +113,7 @@ behaviour without it.
 | Tooltip wilayah | Arahkan kursor ke poligon | Popup memuat nama wilayah, jumlah paket/pagu, dan “Batas wilayah, bukan titik pekerjaan” |
 | Klik wilayah | Klik poligon kecamatan | URL berubah ke rute wilayah/paket, panel detail terbuka |
 | Klik area kosong | Klik di luar poligon | URL kembali `/project`, panel detail tertutup |
-| Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | 13 ikon agregat di kecamatan, 490 di RW; tidak ada marker per paket |
+| Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | 13 ikon agregat di kecamatan, 572 di RW; tidak ada marker per paket |
 | fitBounds awal | Muat `/project` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
 | flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 11,5 (kelurahan) / ≤ 15 (RW) |
 | Legenda & overlay | Periksa tiga mode tampilan | Teks legenda dan peringatan sesuai mode; legenda wilayah terpilih muncul |
@@ -146,7 +146,7 @@ it is enabled (`tgenabled = O`). No snapshot, GeoJSON, or schema migration was c
 
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
 - Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
-- Format numbers for Indonesian readers (`1.634`, `87,3%`, `Rp683,34 Miliar`). Attach source, date, coverage, and methodology to public claims.
+- Format numbers for Indonesian readers (`2.552`, `91,5%`, `Rp813,13 Miliar`). Attach source, date, coverage, and methodology to public claims.
 - Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
 - Never present an inferred map location as an official package coordinate, and never place per-package pins.
 - Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.

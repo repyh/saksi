@@ -15,17 +15,24 @@ Fokus dipersempit ke **satu jenis infrastruktur: JALAN** (jalan, jembatan, drain
 trotoar, TPT/turap), studi kasus **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
 Kabupaten Tangerang (D50) dan Bandung hanya tersisa sebagai arsip pipeline, bukan produk.
 
-Angka snapshot **5 November 2026** (sumber RUP `data.inaproc.id`); realisasi penyedia dari ekspor CSV
-**6 November 2026**. Angka 31 Oktober/3 November di dokumen lama adalah riwayat pipeline.
+Angka snapshot **5 November 2026** (sumber RUP `data.inaproc.id`); detail RUP ditarik ulang
+**8 November 2026**; realisasi penyedia dari ekspor CSV **6 November 2026**. Angka 31 Oktober/3
+November di dokumen lama adalah riwayat pipeline.
 
-- **1.634 paket jalan/jembatan/drainase**, pagu **Rp683,34 Miliar** (TA2025 981 · TA2026 653).
-- Jenis pekerjaan: **drainase 1.303 · permukaan 287 · jembatan 44**.
-- Anchor lokasi: **RW 821 (50,2%)**, **kelurahan 375 (22,9%)**, **kecamatan 90 (5,5%)**,
-  **tanpa lokus 348 (21,3%)** → **1.286 paket (78,7%) punya lokus turunan**.
-- Jangkauan: **85 dari 104 kelurahan**, **490 dari 1.020 RW**, **13 kecamatan**.
-- Penyedia: **1.426 dari 1.634 paket (87,3%)** punya nama penyedia — **731 dari LPSE/SPSE**,
-  **695 dari Data INAPROC realisasi**; **208 paket** (Rp130,67 M; 19,1% pagu) tanpa rekam publik;
-  **522 penyedia unik**; rasio kontrak/pagu median **0,99**.
+Rebuild 8 November 2026 memperbaiki pengenalan prefiks ruas **`Jl.`/`Jl`** sebagai objek jalan
+(`scripts/build-snapshot.mjs`). Sebelumnya 918 paket "Peningkatan Jl. Lingk. ..." tidak masuk karena
+tidak memuat kata "jalan"; audit seluruh penambahan memastikan semuanya berbentuk
+`Peningkatan Jl. Lingk.` (satu paket supervisi) dan empat kasus positif palsu — gapura, ornamen,
+signage, dan wisata kano yang hanya menyebut `Jl.` sebagai alamat — tetap ditolak.
+
+- **2.552 paket jalan/jembatan/drainase**, pagu **Rp813,13 Miliar** (TA2025 1.592 · TA2026 960).
+- Jenis pekerjaan: **drainase 1.303 · permukaan 1.205 · jembatan 44**.
+- Anchor lokasi: **RW 1.571 (61,6%)**, **kelurahan 511 (20,0%)**, **kecamatan 108 (4,2%)**,
+  **tanpa lokus 362 (14,2%)** → **2.190 paket (85,8%) punya lokus turunan**.
+- Jangkauan: **85 dari 104 kelurahan**, **572 dari 1.020 RW**, **13 kecamatan**.
+- Penyedia: **2.334 dari 2.552 paket (91,5%)** punya nama penyedia — **731 dari LPSE/SPSE**,
+  **1.603 dari Data INAPROC realisasi**; **218 paket** (Rp132,34 M; 16,3% pagu) tanpa rekam publik;
+  **633 penyedia unik**; rasio kontrak/pagu median **0,99**.
 - **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
 
 Alasan pindah dari Kabupaten: Kabupaten tidak punya GIS publik (hanya TileServer GL OSM), sedangkan
@@ -65,9 +72,10 @@ nomor RW dan **20,6%** kelurahan.
 
 ### 2.2 Dataset Tersedia (`data/` dan `public/data/`)
 
-- `data/saksi_kota_tangerang_2025_2026.json` — 1.634 paket jalan + anchor (`rw`, `unit_id`,
+- `data/saksi_kota_tangerang_2025_2026.json` — 2.552 paket jalan + anchor (`rw`, `unit_id`,
   `presisi_peta`, `bulan`, `kecamatan_resmi`, `desa_resmi`); dibaca server-only.
-- `data/lpse_kota_tangerang_2025_2026.json` — 731 paket dengan nama pelaksana dari SPSE (kolom sumber `pemenang`).
+- `data/lpse_kota_tangerang_2025_2026.json` — 731 paket dengan nama pelaksana dari SPSE (kolom sumber
+  `pemenang`); 1.739 paket RUP punya pengumuman LPSE yang tercocokkan.
 - `data/realisasi_kota_tangerang.json` — 50.836 baris realisasi (37.278 TA2025 + 13.558 TA2026,
   snapshot 6 November 2026) untuk seluruh satker D44; sumber penyedia e-purchasing.
 - `public/data/rw.geojson` (1.020 poligon), `kel.geojson` (104), `kec.geojson` (13, dari ArcGIS kota,
@@ -82,7 +90,7 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 ### 2.3 Implementasi dan Batas Frontend/Backend
 
 - `src/app/page.tsx` — Server Component yang meminta data awal ke use case paket (default hanya
-  paket berlokasi: 1.286).
+  paket berlokasi: 2.190).
 - `src/features/map/map-dashboard.tsx` — filter tahun, kecamatan → kelurahan (checkbox), jenis
   pekerjaan, kontrak, pencarian, mode tampilan (Jumlah paket / Nilai anggaran / Jenis pekerjaan),
   register paket, panel pelaksana & kontrak.
@@ -100,13 +108,14 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   **Paket realisasi** membuka rincian per penyedia (jumlah paket + total), dan tiap paket menampilkan
   kode paket (tautan ke Data INAPROC) serta nilai realisasinya. Tidak ada baris "Penyedia lain" terpisah
   dan label "Selisih pagu" tetap apa adanya (pembanding = total realisasi RUP). Relasi M–N tidak muncul di cakupan ini
-  (0 dari 1.634 paket; 11 kasus hanya di seluruh D44).
+  (0 dari 2.552 paket; 40 kode paket di seluruh D44 memetakan ke lebih dari satu RUP).
 - Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi (Dinas, OPD,
   Pegawai Dinas) **tidak** dihitung sebagai pelaksana — 43 paket swakelola tampil sebagai tanpa rekam
   kontrak, bukan dengan penyedia palsu.
 - `src/app/api/packages/route.ts` → `src/server/api/packages/*` → `src/server/packages/service.ts` →
   `snapshot-repository.ts` + `lpse-repository.ts` (server-only + type guard runtime).
-- `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 695 dari realisasi).
+- `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 1.603 dari realisasi;
+  633 penyedia unik).
 - `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
   metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit lewat route API yang sama
   dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,
@@ -117,12 +126,11 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 
 ### 2.4 Keadaan Git
 
-- Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree P0:
-  `.../worktrees/p0-review-fixes`.
-- **Branch aktif: `fix/p0-review-fixes`** — branch review P0; isinya sama dengan `master` setelah
-  seluruh pekerjaan di-merge 8 November 2026:
-  `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`,
-  `feat/report-prototype-badge`, `test/report-e2e-supabase`.
+- Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree aktif P1:
+  `.../worktrees/parser-jl-road-prefix`.
+- **Branch aktif: `fix/parser-jl-road-prefix`** — perbaikan pengenalan prefiks ruas `Jl.`/`Jl` di
+  `scripts/build-snapshot.mjs`, rebuild snapshot 8 November 2026, dan penyelarasan dokumen. Basis:
+  `master` pasca-P0 (`e53cb79`).
 - **Basis peta:** migrasi MapLibre sudah ada di `master` sebelum P0.
 - **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**;
   basemap tunggal produk kini OpenFreeMap Positron.
@@ -137,7 +145,7 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 |---|---|---|---|
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; snapshot server-only | Ganti adapter snapshot dengan Prisma setelah katalog domain diimpor |
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak | Paginasi/limit API untuk daftar besar |
-| **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 1.634 paket, Rp683,34 M, 981/653, 1.286 (78,7%), 348 tanpa lokus, 85/104 kelurahan, 490/1.020 RW, 13 kecamatan, anchor 821/375/90, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
+| **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.190 (85,8%), 362 tanpa lokus, 85/104 kelurahan, 572/1.020 RW, 13 kecamatan, anchor 1.571/511/108, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migration auth, undangan, report sudah diterapkan; tabel katalog paket/wilayah belum diimpor | Impor katalog bersumber sebelum mengganti repository snapshot |
 | **Scraper terjadwal** | Worker terpisah | Belum ada (pengambilan data masih manual via `scripts/`) | Tentukan jadwal, idempotensi, log |
@@ -163,7 +171,7 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 3. **Tingkat poligon dipilih manual**, bukan mengikuti zoom.
 4. **Filter wilayah bertingkat:** kecamatan dulu, lalu kelurahan (checkbox). Nol kelurahan bukan
    berarti "semua" — tampilkan peringatan merah dan jangan kirim permintaan.
-5. **Default hanya paket berlokasi** (1.286 dari 1.634); 348 paket presisi kabupaten muncul hanya bila
+5. **Default hanya paket berlokasi** (2.190 dari 2.552); 362 paket presisi kabupaten muncul hanya bila
    "Hanya paket berlokasi" dimatikan.
 6. **Notasi pelaksana:** sebut **"pemenang" hanya untuk `jenis === "tender"`** (lelang/seleksi);
    selain itu (pengadaan langsung, e-purchasing, penunjukan langsung) sebut **"penyedia"**. Field

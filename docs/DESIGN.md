@@ -14,7 +14,7 @@ Setiap elemen visual maupun teks yang masuk ke antarmuka **wajib** lulus uji fun
 2. **Dilarang Menambah Konten Hanya untuk Estetika atau Mengisi Ruang Kosong:**
    - Jika ruang kosong terlihat lega, biarkan menjadi *whitespace* struktural. Jangan menaruh subjudul berulang, ikon dekoratif tanpa fungsi, atau paragraf basa-basi hanya agar kartu terlihat penuh.
 3. **Dilarang Over-Exposition (*"No-Shit-Sherlock"* Copy):**
-   - Jangan menulis kalimat yang menjelaskan kembali angka yang sudah terpampang jelas di sebelahnya (misal: menulis *"Terdapat 1.634 paket jalan TA 2025–2026"* di paragraf padahal kartu di sebelahnya sudah bertuliskan `1.634 Paket · 2025–2026`).
+   - Jangan menulis kalimat yang menjelaskan kembali angka yang sudah terpampang jelas di sebelahnya (misal: menulis *"Terdapat 2.552 paket jalan TA 2025–2026"* di paragraf padahal kartu di sebelahnya sudah bertuliskan `2.552 Paket · 2025–2026`).
    - Jangan memberi judul/deskripsi redundan pada komponen yang fungsinya sudah jelas secara visual (misal: menulis *"Peta OpenStreetMap — geser dan perbesar untuk menjelajahi"* di atas peta interaktif).
    - Jangan menduplikasi tombol navigasi yang sudah ada di Navbar pada posisi yang berdekatan tanpa konteks spesifik paket.
 
@@ -65,7 +65,7 @@ Sistem warna menggunakan *architectural color-blocking* **Putih (`#FFFFFF`), Kun
 ## 3. Tipografi Resmi: Raleway & Open Sans (Google Fonts)
 
 Diambil dari `next/font/google` di `src/app/layout.tsx`:
-- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp683,34 Miliar`, `1.634`, `78,7%`).
+- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp813,13 Miliar`, `2.552`, `85,8%`).
 - **Open Sans (`--font-sans`):** Digunakan untuk teks body, tabel data, navigasi, dan metadata teknis.
 
 ---
@@ -87,7 +87,7 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 > 3. **Dilarang memakai Emoji sebagai ikon fitur:** `✨`, `🚀`, `🎯`, `⚡`, `🔥`, `💡`.
 > 4. **Dilarang memakai font acak di luar Raleway & Open Sans.**
 > 5. **Dilarang membuat kartu rounded dengan border-kiri berwarna tebal** (*AI dashboard tile*).
-> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`1.634`, `Rp683,34 Miliar`, `78,7%`, `85` kelurahan).
+> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`2.552`, `Rp813,13 Miliar`, `85,8%`, `85` kelurahan).
 > 7. **Dilarang menulis over-exposition / filler copy:** Jangan mengulang angka yang sudah tampil di kartu sebelahnya atau menjelaskan cara kerja dasar peta ("geser dan perbesar untuk menjelajahi").
 >
 > ### 2. Soft Tells (P1 — Hindari Pola Template)

@@ -21,10 +21,10 @@ dibaca aplikasi; hanya tersimpan di arsip pipeline sebagai kapabilitas.
 
 | Kode | Sumber | Cakupan & volume | Atribut kunci | Berkas |
 |---|---|---|---|---|
-| **D1** | **Data INAPROC — ekspor RUP** (`data.inaproc.id/rup`, `idKldi=D44`, TA 2025 & 2026; sumber utama sejak 5 Nov 2026) | 28.699 baris RUP → **1.634 paket sektor jalan** (981 TA2025, 653 TA2026), pagu **Rp683,34 M** | `kode_rup`, `tahun`, `satker`, `nama`, `pagu`, `metode`, `sumber`, `bulan`, `sektor` | `data/rup_kota_tangerang_2025_2026.json` (28.699 baris) → `scripts/build-snapshot.mjs` → `data/saksi_kota_tangerang_2025_2026.json` |
-| **D2** | **Batas administrasi Kota Tangerang** (ArcGIS Pemkot) + kode wilayah BPS `3671` | **13 kecamatan · 104 kelurahan · 1.020 RW**; 85 kelurahan dan 490 RW terisi paket | `wadmkc`, `wadmkd`, `rw`, geometri | `public/data/kec.geojson`, `kel.geojson`, `rw.geojson` |
-| **D3** | **LPSE / SPSE Kota Tangerang** (`spse.inaproc.id/tangerangkota`) | 4.869 baris pengumuman → **943 paket RUP tercocokkan**, 731 dengan pelaksana | `id_lpse`, `hps`, `nilai_kontrak`, `pemenang` (sumber), `npwp`, `status` | `data/lpse_kota_tangerang_2025_2026.json` |
-| **D4** | **Data INAPROC realisasi** (`data.inaproc.id/realisasi`) | **50.836 baris** (snapshot 6 Nov 2026), **695 paket** dengan transaksi realisasi — menutup celah e-purchasing yang tidak muncul di LPSE | `penyedia`, `nilai_transaksi`, `sumber_transaksi` | `data/realisasi_kota_tangerang.json` |
+| **D1** | **Data INAPROC — ekspor RUP** (`data.inaproc.id/rup`, `idKldi=D44`, TA 2025 & 2026; sumber utama sejak 5 Nov 2026) | 28.699 baris RUP → **2.552 paket sektor jalan** (1.592 TA2025, 960 TA2026), pagu **Rp813,13 M** | `kode_rup`, `tahun`, `satker`, `nama`, `pagu`, `metode`, `sumber`, `bulan`, `sektor` | `data/rup_kota_tangerang_2025_2026.json` (28.699 baris) → `scripts/build-snapshot.mjs` → `data/saksi_kota_tangerang_2025_2026.json` |
+| **D2** | **Batas administrasi Kota Tangerang** (ArcGIS Pemkot) + kode wilayah BPS `3671` | **13 kecamatan · 104 kelurahan · 1.020 RW**; 85 kelurahan dan 572 RW terisi paket | `wadmkc`, `wadmkd`, `rw`, geometri | `public/data/kec.geojson`, `kel.geojson`, `rw.geojson` |
+| **D3** | **LPSE / SPSE Kota Tangerang** (`spse.inaproc.id/tangerangkota`) | 4.869 baris pengumuman → **1.739 paket RUP tercocokkan** (943 lewat kode RUP · 796 lewat nama persis yang unik dan setahun), 731 dengan pelaksana | `id_lpse`, `hps`, `nilai_kontrak`, `pemenang` (sumber), `npwp`, `status` | `data/lpse_kota_tangerang_2025_2026.json` |
+| **D4** | **Data INAPROC realisasi** (`data.inaproc.id/realisasi`) | **50.836 baris** (snapshot 6 Nov 2026), **1.603 paket** dengan transaksi realisasi — menutup celah e-purchasing yang tidak muncul di LPSE | `penyedia`, `nilai_transaksi`, `sumber_transaksi` | `data/realisasi_kota_tangerang.json` |
 | **D5** | **Laporan warga & moderasi** | Foto kerusakan (webp tersanitasi, EXIF dibuang), jenis & penyebab kerusakan, ukuran kasar, wilayah RW, tautan paket opsional | `publicCode`, `damageType`, `observedCauses[]`, `coarseSize`, `areaId`, `locationSource`, `packageLink`, `status` | PostgreSQL/PostGIS (`Report`, `ReportMedia`, `ReportPackageLink`, `ReportStatusEvent`) + Supabase Storage |
 
 **Yang tidak dimiliki data Indonesia:** koordinat paket. Record SIRUP hanya memuat `lokasi` teks
@@ -68,20 +68,20 @@ menerbitkan `latitude`/`longitude` per kontrak.)
    `turap`/`TPT`/`gorong-gorong` tidak jatuh ke permukaan): `drainase`, `saluran`, `u-ditch`/`uditch`,
    `spal`, `turap`, `talud`, `tpt`, `bronjong`, `gorong`, `culvert` → **drainase**; `jembatan` →
    **jembatan**; sisanya (paving, beton, hotmix, aspal, rabat, **trotoar**) → **permukaan**.
-5. Hasil snapshot 5 November 2026: **1.634 paket · Rp683,34 M** (drainase 1.303 · permukaan 287 ·
-   jembatan 44).
+5. Hasil snapshot 5 November 2026 (rebuild 8 November 2026): **2.552 paket · Rp813,13 M** (drainase
+   1.303 · permukaan 1.205 · jembatan 44).
 
 ### 2.3 Pemetaan lokus wilayah (bukan titik)
 
 ```mermaid
 flowchart LR
   TXT["Nama paket (setelah dibersihkan)"] --> RW{"Nomor RW eksplisit / unit_id RW terpetakan?"}
-  RW -->|ya| T1["Wilayah RW<br/>821 paket (50,2%)"]
+  RW -->|ya| T1["Wilayah RW<br/>1.571 paket (61,6%)"]
   RW -->|tidak| KEL{"Nama kelurahan dikenali?"}
-  KEL -->|ya| T2["Wilayah kelurahan<br/>375 paket (22,9%)"]
+  KEL -->|ya| T2["Wilayah kelurahan<br/>511 paket (20,0%)"]
   KEL -->|tidak| KEC{"Kecamatan disebut?"}
-  KEC -->|ya| T3["Wilayah kecamatan<br/>90 paket (5,5%)"]
-  KEC -->|tidak| T4["Tanpa lokus — register saja<br/>348 paket (21,3%)"]
+  KEC -->|ya| T3["Wilayah kecamatan<br/>108 paket (4,2%)"]
+  KEC -->|tidak| T4["Tanpa lokus — register saja<br/>362 paket (14,2%)"]
 ```
 
 Aturan yang menjaga presisi:
@@ -90,9 +90,9 @@ Aturan yang menjaga presisi:
   **tidak** dipecah ke RW.
 - Nama kelurahan yang sama dengan nama kecamatan hanya diterima lewat penanda `Kel./Desa/Ds.`.
 - Kecamatan dipakai hanya bila tidak ada RW/kelurahan.
-- **Paket tanpa penanda tempat tidak dipetakan.** Hasil: 1.286 dari 1.634 (**78,7%**) punya lokus
-  turunan; 348 paket (21,3%) tetap ada di register dengan label wilayah umum.
-- Jangkauan: 85 dari 104 kelurahan, 490 dari 1.020 RW, seluruh 13 kecamatan.
+- **Paket tanpa penanda tempat tidak dipetakan.** Hasil: 2.190 dari 2.552 (**85,8%**) punya lokus
+  turunan; 362 paket (14,2%) tetap ada di register dengan label wilayah umum.
+- Jangkauan: 85 dari 104 kelurahan, 572 dari 1.020 RW, seluruh 13 kecamatan.
 - Angka kecamatan = agregasi **semua** paket di dalamnya, termasuk yang presisi RW/kelurahan.
 
 ### 2.4 Keputusan yang sudah diuji (jangan diulang)
@@ -101,7 +101,7 @@ Aturan yang menjaga presisi:
 |---|---|
 | **Tanpa NLP/LLM di ekstraksi lokasi** | Diuji 29 Okt pada 982 paket sisa Kab. Bandung: fuzzy 0/100, LLM+gazetteer 0/38 baris, LLM+Nominatim 4/23 token (2–3 realistis, 1 salah). Regex menemukan nama tempat di 12/40 baris, LLM 15/40 (tambahan berupa `RT. 001`, `Kabupaten Bandung`). Plafon ~+1,5 poin, risiko titik palsu. |
 | **Tanpa computer vision pengukuran kerusakan** | Pengukuran luas menambah metrik tanpa menambah urgensi laporan; CV tidak mencakup semua jenis kerusakan. Diganti kategorisasi oleh pelapor (lihat 2.5). |
-| **Tanpa titik paksa untuk paket tanpa lokus** | 348 paket (21,3%) lebih baik tetap di register daripada diberi wilayah salah — bertentangan dengan postur "diduga, bukan tuduhan". |
+| **Tanpa titik paksa untuk paket tanpa lokus** | 362 paket (14,2%) lebih baik tetap di register daripada diberi wilayah salah — bertentangan dengan postur "diduga, bukan tuduhan". |
 | **Tanpa pin per paket** | Data resmi tidak memuat koordinat pekerjaan; pin akan menampilkan presisi yang tidak ada. Peta memakai koroplet batas. |
 | **Tanpa pemilih basemap** | Satu variabel `NEXT_PUBLIC_BASEMAP_URL` (URL style JSON, default OpenFreeMap Positron) dan atribusi OpenStreetMap/OpenFreeMap; menghindari ToS tile berlapis. |
 
@@ -144,27 +144,27 @@ kerusakan di peta:
 | Kode | Modul | Deskripsi | Nilai rubrik |
 |---|---|---|---|
 | **FR-01** | **Peta audit jalan** | Koroplet batas resmi Kota Tangerang pada tiga tingkat — kecamatan (13), kelurahan (104), RW (1.020) — dipilih lewat *segmented control* di peta, bukan dari tingkat perbesaran. Filter tahun, kecamatan, kelurahan (checkbox), jenis pekerjaan, status kontrak, pencarian; panel detail paket; tanpa pin/titik per paket. | Fungsionalitas 25%, Desain 20%, Tema 15% |
-| **FR-02** | **Pencarian paket "Jalan mana yang dibangun di dekat saya?"** | Pencarian desa/ruas/RUP di hero dan di peta → daftar paket (nama, pagu, wilayah, bulan), klik → panel detail. Default "Hanya paket berlokasi" aktif (1.286 dari 1.634). | Konten 20% |
+| **FR-02** | **Pencarian paket "Jalan mana yang dibangun di dekat saya?"** | Pencarian desa/ruas/RUP di hero dan di peta → daftar paket (nama, pagu, wilayah, bulan), klik → panel detail. Default "Hanya paket berlokasi" aktif (2.190 dari 2.552). | Konten 20% |
 | **FR-03** | **Form lapor 4 langkah** | (1) foto + pemeriksaan manual wajah/plat + pembersihan EXIF; (2) kategorisasi jenis kerusakan, penyebab, ukuran kasar; (3) lokasi kelurahan/RW (manual atau GPS *point-in-polygon*) + pilih paket rujukan opsional; (4) sukses dengan kode laporan. Tanpa CV, tanpa klaim cm². | Fungsionalitas 25%, Orisinalitas 20% |
 | **FR-04** | **Sandingan data resmi vs kontrak** | Panel paket: pagu RUP, jadwal/bulan, sumber dana, metode; bila ada rekam LPSE/INAPROC — HPS, nilai kontrak, pelaksana (pemenang bila tender; penyedia bila bukan), selisih pagu, dan sumber transaksi. Badge sumber melekat pada angka. | Orisinalitas 20% |
 | **FR-05** | **Moderasi laporan & bukti warga** | Laporan warga (`SUBMITTED`) masuk antrean tinjauan dashboard; antrean saat ini **ringkasan baca-saja** (status, jenis kerusakan, waktu, wilayah kasar, paket rujukan) tanpa identitas pelapor, deskripsi, atau media. Melihat foto tersanitasi dan menetapkan `PUBLISHED`/`NEEDS_MORE_INFO`/`REJECTED`/`WITHDRAWN`/`ARCHIVED` belum diimplementasikan. | Civic Reporting |
 | **FR-06** | **Agregasi kecamatan** | Tiga belas poligon kecamatan diwarnai dengan kelas **kuantil** jumlah paket; tooltip menyebut jumlah paket, total pagu, dan (pada tampilan jenis) kelas pekerjaan. Klik wilayah → filter daftar paket. | Decision Support, Konten 20% |
-| **FR-07** | **Rekam jejak penyedia (berimbang)** | 522 penyedia unik dari LPSE/SPSE + Data INAPROC: 1.426 dari 1.634 paket (87,3%) punya rekam kontrak; 208 paket (Rp130,67 M, 19,1% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
+| **FR-07** | **Rekam jejak penyedia (berimbang)** | 633 penyedia unik dari LPSE/SPSE + Data INAPROC: 2.334 dari 2.552 paket (91,5%) punya rekam kontrak; 218 paket (Rp132,34 M, 16,3% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
 
 ---
 
 ## 5. Layar & Aturan UI
 
 ### Daftar layar
-1. **`/` — Beranda & peta audit jalan.** Metrik: **1.634 paket jalan · Rp683,34 M · 85 kelurahan ·
-   1.286 (78,7%) berlokus**. Hero + pencarian, diikuti peta dan panel detail paket.
+1. **`/` — Beranda & peta audit jalan.** Metrik: **2.552 paket jalan · Rp813,13 M · 85 kelurahan ·
+   2.190 (85,8%) berlokus**. Hero + pencarian, diikuti peta dan panel detail paket.
 2. **`/project` dan `/project/kota-tangerang/…` — Peta pekerjaan.** Peta koroplet tiga
    tingkat dengan *segmented control* Kecamatan / Kelurahan / RW; filter tahun, kecamatan, kelurahan,
    jenis, kontrak, pencarian; register paket di samping peta. Segmen URL menyimpan wilayah
    (`<kecamatan>/<kelurahan>/rw-<n>`) dan paket terpilih (`rup-<kode>/<slug>`) agar bisa dibagikan.
 3. **`/laporan` dan `/laporan/paket/:rup` — Lapor & tautkan paket.** 4 langkah seperti FR-03; membuka
    dari paket mengisi paket rujukan lebih dulu.
-4. **`/penyedia` dan `/penyedia/:slug` — Rekam jejak penyedia.** Daftar 522 penyedia dengan
+4. **`/penyedia` dan `/penyedia/:slug` — Rekam jejak penyedia.** Daftar 633 penyedia dengan
    pengurutan nilai/paket/nama/tahun; halaman penyedia memuat paket yang tercatat.
 5. **`/dashboard` — Akun, laporan saya, antrean tinjauan.** Perlu login; memuat profil, riwayat
    laporan, moderasi (sesuai izin), dan undangan.
@@ -176,7 +176,7 @@ Screenshot wajib: **landing page + minimal satu halaman fitur**. Yang dibangun l
 alur lapor untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
 
 ### Aturan tampilan
-- Format angka Indonesia: `1.634`, `78,7%`, `Rp683,34 Miliar`.
+- Format angka Indonesia: `2.552`, `85,8%`, `Rp813,13 Miliar`.
 - Badge sumber: **`Data resmi (LPSE)`** / **`Data resmi (INAPROC)`** melekat pada angka kontrak yang
   ditampilkan; tidak ada badge pada data yang tidak punya sumber.
 - Presisi lokus ditulis sebagai label (`RW`, `Kelurahan`, `Kecamatan`, atau

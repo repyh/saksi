@@ -1,31 +1,32 @@
 # Sisa paket tanpa penyedia — sebab dan sisa pekerjaan
 
-> **Catatan 8 November 2026:** kondisi aktif = **1.634 paket** dan **208 paket (Rp130,67 M, 19,1%
+> **Catatan 8 November 2026:** kondisi aktif = **2.552 paket** dan **218 paket (Rp132,34 M, 16,3%
 > pagu) tanpa rekam penyedia publik**. Angka 176/140/133 di bagian riwayat adalah tahap penarikan
 > data, bukan kondisi terkini.
 
 Snapshot RUP **5 November 2026**; realisasi **6 November 2026**. Setelah LPSE (731 paket) dan **ekspor
-Data INAPROC realisasi untuk seluruh satker `D44`** (695 paket tambahan), **1.426 dari 1.634** paket
-jalan punya nama penyedia. Sisa **208 paket · Rp130,67 M** (19,1% pagu).
+Data INAPROC realisasi untuk seluruh satker `D44`** (1.603 paket tambahan), **2.334 dari 2.552** paket
+jalan punya nama penyedia. Sisa **218 paket · Rp132,34 M** (16,3% pagu).
 
 > Riwayat angka: 176 paket (LPSE + PUPR saja) → 140 (lima satker) → **133** (ekspor CSV seluruh
-> satker) → **208** setelah populasi RUP naik ke 1.634 paket.
+> satker) → **208** setelah populasi RUP naik ke 1.634 paket → **218** setelah rebuild prefiks `Jl.`
+> menaikkan populasi ke 2.552 paket.
 
 Dokumen ini mencatat **kenapa** sisanya kosong dan **apa** langkah berikutnya — supaya angka ini
 tidak ditebak ulang di sesi lain.
 
-## Rincian sisa 208 paket (data 6 November 2026)
+## Rincian sisa 218 paket (data 6 November 2026)
 
 | Metode di ekspor RUP | Paket |
 |---|---:|
 | E-Purchasing | 71 |
-| Pengadaan Langsung | 32 |
+| Pengadaan Langsung | 42 |
 | Tanpa metode di ekspor | 76 |
 | Tender | 16 |
 | Dikecualikan | 13 |
-| **Total** | **208** |
+| **Total** | **218** |
 
-Menurut tahun: **2025 = 119 · 2026 = 89**. Menurut satker terbesar: PUPR 136, Dishub 27, enam
+Menurut tahun: **2025 = 120 · 2026 = 98**. Menurut satker terbesar: PUPR 146, Dishub 27, enam
 kecamatan 43, Disperindagkop 1, DLH 1.
 
 Bukan karena kolom penyedia kosong: ekspor 6 November 2026 memuat **50.836 baris** dan **tidak ada**
@@ -34,7 +35,7 @@ baris berpenyedia `-`. Ada 265 baris tanpa `kode_rup`; baris itu tidak dipakai s
 ## Riwayat analisis sebab (kondisi 133 paket, 4 November 2026)
 
 > Bagian di bawah adalah riwayat proses penarikan data. Angka 111/22/15 dan totalnya **tidak lagi
-> menjumlah ke 208**; rincian aktif ada di tabel metode di atas.
+> menjumlah ke 218**; rincian aktif ada di tabel metode di atas.
 
 | Sebab | Paket | Bukti |
 |---|---:|---|
@@ -59,7 +60,7 @@ Menurut tahun saat itu: **2025 = 77 · 2026 = 56**.
 
 ## Sisa pekerjaan
 
-1. **Uji RUP switch** untuk 136 paket PUPR: cocokkan nama + pagu ke seluruh 50.836 baris; kalau ada
+1. **Uji RUP switch** untuk 146 paket PUPR: cocokkan nama + pagu ke seluruh 50.836 baris; kalau ada
    pasangan dengan pagu sama dan nama mirip tetapi `kode_rup` berbeda, paket itu dieksekusi dengan
    RUP lain. Ini satu-satunya cara menaikkan angka tanpa data baru.
 2. **Biarkan kosong** paket berjadwal Agustus–November 2026 dan paket `Dikecualikan`; UI sudah
@@ -75,5 +76,5 @@ node scripts/realisasi.mjs --mode table --satker <kode>   # cadangan per satker,
 npm run build                                             # lalu cek /api/packages?kontrak=ADA
 ```
 
-Angka acuan setelah penarikan: `?kontrak=ADA` **1.426** · `?kontrak=TANPA` **208** · penyedia unik
-**522**.
+Angka acuan setelah penarikan: `?kontrak=ADA` **2.334** · `?kontrak=TANPA` **218** · penyedia unik
+**633**.

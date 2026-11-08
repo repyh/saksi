@@ -270,13 +270,23 @@ function cmdMatch() {
 
   const paket = muatSnapshot();
   const perRup = new Map(paket.map((p) => [String(p.kode_rup), p]));
-  const perNama = new Map(paket.map((p) => [norm(p.nama), p]));
+  // Nama paket tidak unik (mis. "Peningkatan ... Lanjutan" muncul di TA2025 dan TA2026).
+  // Cocokkan lewat nama hanya bila kandidatnya tepat satu DAN tahunnya sama; kalau ragu, lewati.
+  const perNama = new Map();
+  for (const p of paket) {
+    const kunci = norm(p.nama);
+    const daftar = perNama.get(kunci) ?? [];
+    daftar.push(p);
+    perNama.set(kunci, daftar);
+  }
 
   const hasil = [];
   for (const r of rows) {
     const d = detail.get(`${r.jenis}:${r.id}`);
     const viaRup = d?.kode_rup ? perRup.get(String(d.kode_rup)) : null;
-    const viaNama = perNama.get(norm(r.nama)) ?? null;
+    const kandidat = perNama.get(norm(r.nama)) ?? [];
+    const viaNama =
+      kandidat.length === 1 && String(kandidat[0].tahun) === String(r.tahun) ? kandidat[0] : null;
     const target = viaRup ?? viaNama;
     if (!target) continue;
     hasil.push({

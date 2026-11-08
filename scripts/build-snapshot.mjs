@@ -14,6 +14,10 @@ const VERB =
 const OBJ = "(jalan|jembatan|trotoar|drainase|saluran|turap|talud|paving|hotmix|rabat|gorong)";
 const BUKAN = "(puskesmas|sekolah|gedung|kantor|ruang|aula|klinik|posyandu|pasar|terminal|instalasi)";
 const RE_FISIK = new RegExp(`${VERB}[^|]{0,40}${OBJ}|${OBJ}[^|]{0,25}${VERB}`, "i");
+// Prefiks ruas "Jl." / "Jl" adalah objek jalan hanya bila ia langsung mengikuti kata kerja,
+// mis. "Peningkatan Jl. Lingk. RW 04". Penyebutan "Jl." sebagai alamat saja
+// (mis. "... Signage di Jl. Mayjen Sutoyo") tidak dihitung sebagai objek pekerjaan.
+const RE_OBJ_JL = new RegExp(`\\b${VERB}\\s+\\bjl\\b\\.?`, "i");
 const RE_BUKAN = new RegExp(BUKAN, "i");
 const RE_RW = /\bRW\.?\s*0*(\d{1,3})\b/i;
 const RE_KEL_MARK = /\b(kel\.?|kelurahan)\s*([A-Za-z][\w'\- ]{2,28})/i;
@@ -74,7 +78,7 @@ async function main() {
 
   for (const r of rup) {
     const nama = String(r.paket ?? "").replace(/&#x27;/g, "'");
-    if (!RE_FISIK.test(nama)) {
+    if (!RE_FISIK.test(nama) && !RE_OBJ_JL.test(nama)) {
       ditolakBukanFisik += 1;
       continue;
     }
