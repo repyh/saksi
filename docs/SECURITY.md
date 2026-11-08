@@ -1,7 +1,7 @@
 # SAKSI Security
 
 **Last reviewed:** 8 November 2026
-**Status:** Security foundations exist in code. The permission-bit normalization migration is prepared in the working tree but has not been deployed. Existing Supabase state may still contain package-backed grants until that migration is applied. Protected business APIs are not yet broadly wired to the authorization authority, and the report workflow has not had a confirmed end-to-end UI submission. Do not treat the current prototype as production-ready.
+**Status:** Security foundations exist in code. The permission-bit normalization migration is prepared in the working tree but has not been deployed. Existing Supabase state may still contain package-backed grants until that migration is applied. Protected business APIs are not yet broadly wired to the authorization authority. The report workflow was verified end to end on 8 November 2026 (submit, account history, review queue, private WebP, cleanup). Do not treat the current prototype as production-ready.
 
 This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission-bit and preset semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -90,7 +90,7 @@ Audit event writes exist for permission changes, but the database does not enfor
 
 ## 6. Reports and personal data
 
-The report form keeps unsent state in page memory; the IndexedDB helper remains unwired. The report migration and private `report-evidence` bucket are configured in Supabase. A browser-to-storage-to-database submission has not yet been confirmed. Submission is account-optional, and exact reporter identity is not a prerequisite. See [REPORTS.md](./REPORTS.md) for the schema and submission boundary.
+The report form keeps unsent state in page memory; the IndexedDB helper remains unwired. The report migration and private `report-evidence` bucket are configured in Supabase. A browser-to-storage-to-database submission was verified on 8 November 2026 against a complete local Supabase environment; see [REPORTS.md](./REPORTS.md) for the checks and cleanup. Submission is account-optional, and exact reporter identity is not a prerequisite.
 
 Photo selection runs through a local sanitizer for preview, then the user may submit the sanitized image. The Node API independently streams and bounds the multipart request, validates the decoded image format and pixel count, and re-encodes it to WebP at a maximum dimension of 1024 px and 5 MiB before upload to the private Supabase bucket. This removes embedded metadata but does not blur faces or plates; the interface asks reporters to check those manually. The service-role key is accessed only from server-only code. The browser never receives a Storage URL or database credential.
 

@@ -4,8 +4,8 @@
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `docs/snapshot-status-alignment` (active)
-**`master`:** `9309a33` (after the audit-metrics fix; the MapLibre work is already merged)
+**Branch:** `test/report-e2e-supabase` (active)
+**`master`:** `3179ff7` (audit metrics + documentation + report badge already merged)
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
@@ -93,7 +93,7 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 
 ## Known gaps and next implementation decisions
 
-1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, and authenticated history are implemented. End-to-end UI submission still needs confirmation; moderation, retention cleanup, and public queries are unimplemented (`docs/REPORTS.md`).
+1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, authenticated history, and the read-only review queue are implemented. The submit route was verified end to end on 8 November 2026 (receipt, account history, review queue, Postgres rows, private WebP, cleanup). Moderation, retention cleanup, and public queries are unimplemented (`docs/REPORTS.md`).
 2. **Spatial/package domain model:** review and deploy the model, import source-provenanced package and area catalogs, then replace the snapshot adapter with repository queries. Keep package DTOs stable.
 3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
 4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
@@ -121,6 +121,26 @@ behaviour without it.
 | Tanpa marker per paket / pemilih basemap | Mode jumlah paket; cari kontrol basemap | 0 marker; tidak ada kontrol pemilih basemap |
 | Mount/unmount berulang | Bolak-balik `/` ↔ `/project` tiga kali | Selalu 1 canvas dan 1 instance peta; tanpa error halaman |
 | Basemap vector | Periksa request dan style | Request `styles/positron`; source `openmaptiles` bertipe `vector`; override `NEXT_PUBLIC_BASEMAP_URL` ke `styles/liberty` juga dihormati |
+
+## Report submission verification (8 November 2026)
+
+One test administrator submitted a report through the same `POST /api/reports` route the UI calls.
+The run used a complete `.env.local` from `~/dev/saksi-web-auth` (Supabase project `hnhidatzcqyewsnouqvu`),
+because the `~/dev/saksi-web` copy pairs `SUPABASE_SERVICE_ROLE_KEY` with a **publishable** key
+(`sb_publishable…`) and cannot write to Storage.
+
+| Check | Result |
+|---|---|
+| Submit | `201`, receipt returned, `SUBMITTED` |
+| Same idempotency key | Same receipt; no duplicate report |
+| `GET /api/reports/mine` | Receipt present with `POTHOLE`, `Sukarasa, RW 5`, `Tangerang` |
+| `GET /api/reports/review?status=active` | Same report present in the staff queue |
+| Postgres | One report, one media row (`image/webp`), one status event, one completed idempotency row |
+| Private bucket | Object `reports/<reportId>/<uuid>.webp` downloaded; WebP, 96×72, no EXIF |
+| Cleanup | Storage object, report, media, status event, idempotency row, test user, sessions, grants deleted; baseline 2 reports/2 users restored |
+
+The append-only status-event trigger had to be disabled and re-enabled inside the cleanup transaction;
+it is enabled (`tgenabled = O`). No snapshot, GeoJSON, or schema migration was changed by this check.
 
 ## Working rules
 

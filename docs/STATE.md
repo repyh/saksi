@@ -108,8 +108,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   `snapshot-repository.ts` + `lpse-repository.ts` (server-only + type guard runtime).
 - `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 695 dari realisasi).
 - `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
-  metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit end-to-end dari UI belum
-  dikonfirmasi ulang.
+  metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit lewat route API yang sama
+  dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,
+  baris Postgres, dan objek WebP privat; data uji dihapus.
 - `src/lib/prisma.ts` + `src/lib/auth.ts` — **opsional**: klien dibuat saat dipakai, route
   `/api/auth/*` menjawab `503` tanpa `DATABASE_URL`.
 - `docs/ARCHITECTURE.md` — batas frontend/backend, kontrak API, rencana worker scraper.
@@ -118,10 +119,11 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 
 - Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree P0:
   `.../worktrees/p0-review-fixes`.
-- **Branch aktif saat pembaruan: `docs/snapshot-status-alignment`** — menyelaraskan dokumen dengan
-  snapshot 5 November 2026.
-- **`master` = `9309a33`** — memuat migrasi peta MapLibre dan perbaikan metrik audit dari snapshot
-  (`fix/audit-metrics-snapshot`, sudah di-merge).
+- **Branch aktif saat pembaruan: `test/report-e2e-supabase`** — verifikasi submit laporan end-to-end
+  ke Supabase dan pencatatan hasilnya.
+- **`master` = `3179ff7`** — memuat migrasi peta MapLibre, metrik audit dari snapshot
+  (`fix/audit-metrics-snapshot`), penyelarasan dokumen (`docs/snapshot-status-alignment`), dan badge
+  alur lapor (`feat/report-prototype-badge`), semuanya sudah di-merge.
 - **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**;
   basemap tunggal produk kini OpenFreeMap Positron.
 - Repo arsip FDS: `~/Hermes/wia-webcomp-2026` (HEAD `c88f667`, bersih); repo Vite kanonik FDS:
@@ -139,7 +141,7 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migration auth, undangan, report sudah diterapkan; tabel katalog paket/wilayah belum diimpor | Impor katalog bersumber sebelum mengganti repository snapshot |
 | **Scraper terjadwal** | Worker terpisah | Belum ada (pengambilan data masih manual via `scripts/`) | Tentukan jadwal, idempotensi, log |
-| **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review tersedia | Konfirmasi submit end-to-end; akses bukti, transisi status, retensi (`docs/REPORTS.md`) |
+| **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review tersedia; submit end-to-end terverifikasi 8 Nov 2026 | Akses bukti, transisi status, retensi (`docs/REPORTS.md`) |
 | **Dokumentasi** | Selaras dengan kode | STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, DESIGN diperbarui 8 Nov 2026 | Jaga `AGENTS.md` tetap sinkron saat aturan produk berubah |
 
 ---

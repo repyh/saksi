@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (8 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured; an end-to-end submission from the browser still needs confirmation.
+**Status (8 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured. A full submission was verified end to end on 8 November 2026 (see the verification section below); the test account and report were removed afterwards.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -21,7 +21,29 @@ Photo sanitation removes embedded metadata; face and plate redaction remains a m
 
 `prisma/schema.prisma` now includes `AdministrativeArea`, `RoadPackage`, `Report`, `ReportMedia`, `ReportPackageLink`, and `ReportStatusEvent`, plus the enums described below. The migration is `prisma/migrations/20261104150000_report_domain/migration.sql`. It creates an SRID 4326 PostGIS `MultiPolygon` column and GIST index, foreign keys, uniqueness constraints, and an append-only trigger for status events. Media metadata checks restrict records to sanitized WebP, dimensions up to 1024 px, and a maximum of 5 MiB.
 
-The API writes a package row on demand from the checked-in, server-only package snapshot when a RUP is selected. Area names are validated against the checked-in RW GeoJSON; until the area catalog is imported, the report stores validated area snapshots with a null area foreign key. The API, repository, photo sanitizer, and UI are implemented. On 4 November 2026, migrations `20261104130000_registration_invites` and `20261104150000_report_domain` were deployed to the configured Supabase project, and the report tables were verified as present. The private `report-evidence` bucket was also created and verified. These checks confirm setup, not a full report submission transaction from the browser.
+The API writes a package row on demand from the checked-in, server-only package snapshot when a RUP is selected. Area names are validated against the checked-in RW GeoJSON; until the area catalog is imported, the report stores validated area snapshots with a null area foreign key. The API, repository, photo sanitizer, and UI are implemented. On 4 November 2026, migrations `20261104130000_registration_invites` and `20261104150000_report_domain` were deployed to the configured Supabase project, and the report tables were verified as present. The private `report-evidence` bucket was also created and verified. On 8 November 2026 a complete submission transaction was verified end to end (below).
+
+## End-to-end verification (8 November 2026)
+
+A test administrator submitted one report through `POST /api/reports` with a real multipart JPEG, the
+UUID v4 idempotency key, area `tangerang|sukarasa|5`, `POTHOLE`, and a location hint. The run used a
+complete `.env.local` whose `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` belong to the same Supabase
+project, because the worktree copy paired a publishable key with `SUPABASE_SERVICE_ROLE_KEY` and
+therefore could not write to Storage.
+
+| Check | Result |
+|---|---|
+| Response | `201` with receipt `Rwa__4g_9QJHJeYlIWLZSBBIeVOZ8hUm` and `status: SUBMITTED` |
+| Retry with the same idempotency key | Same receipt; no second report |
+| `GET /api/reports/mine` | Returned the receipt, `SUBMITTED`, `POTHOLE`, `Sukarasa, RW 5`, `Tangerang` |
+| `GET /api/reports/review?status=active` | Returned the same report in the staff queue |
+| Postgres | `reports` + `report_media` + one status event + one completed idempotency row; media `image/webp` |
+| Private Storage | Object existed at `reports/<reportId>/<uuid>.webp`; downloaded as WebP with no EXIF |
+| Cleanup | Storage object removed; report, media, status event, idempotency row, test user, sessions, and grants deleted; baseline counts restored |
+
+The status-event table is append-only, so deleting the test report required temporarily disabling and
+re-enabling the `report_status_events_append_only` trigger inside the cleanup transaction. The trigger
+is enabled again.
 
 ## Logical model
 

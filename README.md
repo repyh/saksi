@@ -41,7 +41,9 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Reports submit through `POST /api/reports` (multipart, idempotency key, sanitised WebP to the private
   `report-evidence` bucket). `GET /api/reports/mine` returns the signed-in account's receipts and
   `GET /api/reports/review` serves the staff review queue. Both require `DATABASE_URL`; without it the
-  API answers `503`. Drafts are still stored on the device in IndexedDB (`saksi-local-reports`).
+  API answers `503`. The submit route was verified end to end on 8 November 2026 (receipt, account
+  history, review queue, Postgres rows, private WebP, test-data cleanup). Drafts are still stored on
+  the device in IndexedDB (`saksi-local-reports`).
 
 ## Dataset shown in the app
 
