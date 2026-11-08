@@ -63,7 +63,7 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
 - `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
 - Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`.
-- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` remains a scaffold. Better Auth's catch-all route continues to delegate directly to Better Auth.
+- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, and the read-only staff review queue. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
 The endpoint returns all matching package rows because the current map and list operate on the same set; the list displays at most 120 rows while the map renders the matching coordinates. This establishes the boundary but is not yet a payload or map-rendering optimization. The next scale step is separate list pagination from a compact map-feature query, ideally bounded by map viewport.
 

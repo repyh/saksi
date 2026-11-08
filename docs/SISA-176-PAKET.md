@@ -1,24 +1,40 @@
 # Sisa paket tanpa penyedia — sebab dan sisa pekerjaan
 
-> **Catatan 5 November 2026:** setelah sumber RUP pindah ke `data.inaproc.id`, populasi menjadi
-> **1.634 paket** dan paket tanpa rekam penyedia **208 paket (Rp130,67 M, 19,1% pagu)**. Angka 176/133
-> di bawah adalah riwayat proses penarikan data, bukan kondisi terkini.
+> **Catatan 8 November 2026:** kondisi aktif = **1.634 paket** dan **208 paket (Rp130,67 M, 19,1%
+> pagu) tanpa rekam penyedia publik**. Angka 176/140/133 di bagian riwayat adalah tahap penarikan
+> data, bukan kondisi terkini.
 
-Snapshot 3 November 2026. Setelah LPSE (731 paket) dan **ekspor Data INAPROC realisasi untuk seluruh
-satker `D44`** (693 paket tambahan), **1.426 dari 1.634** paket jalan punya nama penyedia.
-Sisa **208 paket · Rp130,67 M** (19,1% pagu).
+Snapshot RUP **5 November 2026**; realisasi **6 November 2026**. Setelah LPSE (731 paket) dan **ekspor
+Data INAPROC realisasi untuk seluruh satker `D44`** (695 paket tambahan), **1.426 dari 1.634** paket
+jalan punya nama penyedia. Sisa **208 paket · Rp130,67 M** (19,1% pagu).
 
 > Riwayat angka: 176 paket (LPSE + PUPR saja) → 140 (lima satker) → **133** (ekspor CSV seluruh
-> satker). Dua lompatan terakhir menutup 43 paket; sisanya bukan lagi soal satker yang belum
-> ditarik.
+> satker) → **208** setelah populasi RUP naik ke 1.634 paket.
 
 Dokumen ini mencatat **kenapa** sisanya kosong dan **apa** langkah berikutnya — supaya angka ini
 tidak ditebak ulang di sesi lain.
 
-## Sebab, dengan bukti
+## Rincian sisa 208 paket (data 6 November 2026)
 
-Cakupan kini **seluruh instansi** (51.051 baris CSV: 37.799 TA2025 + 13.252 TA2026), jadi kategori
-"satker belum ditarik" sudah tidak berlaku.
+| Metode di ekspor RUP | Paket |
+|---|---:|
+| E-Purchasing | 71 |
+| Pengadaan Langsung | 32 |
+| Tanpa metode di ekspor | 76 |
+| Tender | 16 |
+| Dikecualikan | 13 |
+| **Total** | **208** |
+
+Menurut tahun: **2025 = 119 · 2026 = 89**. Menurut satker terbesar: PUPR 136, Dishub 27, enam
+kecamatan 43, Disperindagkop 1, DLH 1.
+
+Bukan karena kolom penyedia kosong: ekspor 6 November 2026 memuat **50.836 baris** dan **tidak ada**
+baris berpenyedia `-`. Ada 265 baris tanpa `kode_rup`; baris itu tidak dipakai sebagai rekam paket.
+
+## Riwayat analisis sebab (kondisi 133 paket, 4 November 2026)
+
+> Bagian di bawah adalah riwayat proses penarikan data. Angka 111/22/15 dan totalnya **tidak lagi
+> menjumlah ke 208**; rincian aktif ada di tabel metode di atas.
 
 | Sebab | Paket | Bukti |
 |---|---:|---|
@@ -27,26 +43,23 @@ Cakupan kini **seluruh instansi** (51.051 baris CSV: 37.799 TA2025 + 13.252 TA20
 | **Tender yang tidak ada di daftar lelang SPSE** | 16 | kemiripan nama tertinggi dengan 192 baris lelang hanya **0,38** |
 | **Dikecualikan** (di luar prosedur pengadaan) | 15 | tidak muncul di LPSE maupun realisasi |
 
-Menurut metode: **e-purchasing 70 · pengadaan langsung 32 · tender 16 · dikecualikan 15**.
-Menurut tahun: **2025 = 77 · 2026 = 56**.
-
-Bukan karena kolom penyedia kosong: dari 50.530 baris realisasi, semua punya `kode_rup`, dan hanya
-11 baris berpenyedia `-` — **tidak satu pun** milik paket kita.
+Menurut metode saat itu: **e-purchasing 70 · pengadaan langsung 32 · tender 16 · dikecualikan 15**.
+Menurut tahun saat itu: **2025 = 77 · 2026 = 56**.
 
 ## Kenapa paket ini bisa tidak punya transaksi
 
 1. **Belum berjalan.** Paket TA2026 berjadwal Agustus–November 2026 belum tentu sudah bertransaksi;
-   data INAPROC tersinkron 2 Nov 2026.
+   data INAPROC tersinkron 6 Nov 2026.
 2. **RUP tidak dieksekusi / diganti.** Paket TA2025 yang tidak pernah bertransaksi biasanya
    dibatalkan, digeser ke tahun berikutnya, atau dieksekusi dengan kode RUP lain ("RUP switch").
-3. **Di luar SPSE dan INAPROC sekaligus.** 15 paket `Dikecualikan` memang tidak lewat prosedur
+3. **Di luar SPSE dan INAPROC sekaligus.** 13 paket `Dikecualikan` memang tidak lewat prosedur
    pengadaan, jadi tidak akan pernah muncul di kedua sumber.
 4. **Tender tidak terdaftar** di LPSE Kota Tangerang — 16 paket, kemungkinan ditenderkan lewat
    mekanisme/instansi lain atau dibatalkan.
 
 ## Sisa pekerjaan
 
-1. **Uji RUP switch** untuk 111 paket PUPR: cocokkan nama + pagu ke seluruh 50.530 baris; kalau ada
+1. **Uji RUP switch** untuk 136 paket PUPR: cocokkan nama + pagu ke seluruh 50.836 baris; kalau ada
    pasangan dengan pagu sama dan nama mirip tetapi `kode_rup` berbeda, paket itu dieksekusi dengan
    RUP lain. Ini satu-satunya cara menaikkan angka tanpa data baru.
 2. **Biarkan kosong** paket berjadwal Agustus–November 2026 dan paket `Dikecualikan`; UI sudah

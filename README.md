@@ -20,7 +20,7 @@ review, not proof of wrongdoing or a guarantee of government action.
   OpenStreetMap + OpenFreeMap and switches for CARTO and Esri style hosts.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
-  The map shows only packages with a derived location by default; the 312 packages whose only
+  The map shows only packages with a derived location by default; the 348 packages whose only
   location is "Kota Tangerang" stay hidden until **Hanya paket berlokasi** is unchecked.
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
   package and ranks candidate packages by RW → kelurahan → landmark, without inventing a score.
@@ -30,27 +30,34 @@ review, not proof of wrongdoing or a guarantee of government action.
 - Two contract sources: **LPSE/SPSE** for tender and direct procurement, **Data INAPROC**
   (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
   The INAPROC layer uses the official CSV export (4 requests/year for the whole municipality),
-  and names a vendor for **1,426 of 1,634** road packages (87.3%).
+  and names a vendor for **1,426 of 1,634** road packages (87.3%); the remaining **208** have no
+  public record. There are **522** unique suppliers.
+- Landing and audit figures are derived from the active snapshot and the checked-in boundary
+  GeoJSON in `src/server/packages/audit-metrics.ts`; the UI holds no headline constants.
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
   interactive filters call `GET /api/packages`. The adapter reads the checked-in JSON snapshot.
 - Better Auth and Prisma are wired for server use. They are **optional for the FDS**: when
   `DATABASE_URL` is absent the build still succeeds and the auth route answers `503`.
-- Report drafts are stored on the device in IndexedDB (`saksi-local-reports`). There is no submission
-  API yet, and the page says so.
+- Reports submit through `POST /api/reports` (multipart, idempotency key, sanitised WebP to the private
+  `report-evidence` bucket). `GET /api/reports/mine` returns the signed-in account's receipts and
+  `GET /api/reports/review` serves the staff review queue. Both require `DATABASE_URL`; without it the
+  API answers `503`. Drafts are still stored on the device in IndexedDB (`saksi-local-reports`).
 
 ## Dataset shown in the app
 
 | | |
 |---|---:|
 | Packages (road, bridge, drainage) | **1,634** |
-| Budget | **Rp650.18 bn** |
+| Budget | **Rp683.34 bn** |
 | Fiscal years | 2025: 981 · 2026: 653 |
 | Kelurahan touched | **85 of 104** · 13 kecamatan |
 | RW touched | **490 of 1,020** |
-| Location anchor | RW 821 · kelurahan 375 · none 402 |
+| Location anchor | RW 821 · kelurahan 375 · kecamatan 90 · none 348 |
+| Vendor record | **1,426** with a public record · 208 without · 522 unique suppliers |
 
-Snapshot date **31 Oct 2026**. Sources: SIRUP Inaproc (`idKldi=D44`, 21,402 RUP rows for 2025–2026)
-and the Kota Tangerang ArcGIS server (`Batas_Adminsitratif/batas_rw_2021`,
+Snapshot date **5 November 2026**. Sources: RUP export `data.inaproc.id/rup` (`idKldi=D44`, 28,699
+D44 rows for 2025–2026), LPSE/SPSE plus the Data INAPROC realisation CSV (`50,836` rows, snapshot
+6 November 2026), and the Kota Tangerang ArcGIS server (`Batas_Adminsitratif/batas_rw_2021`,
 `Batas_Wilayah_Kelurahan_def`). No package carries a work-site coordinate; only 7% of packages name a
 road segment that can be matched to the city's road layer, so the product anchors on RW instead.
 
@@ -81,13 +88,14 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
 
 ## Remaining implementation
 
-- Report submission API with moderation and abuse controls (drafts are local-only today)
 - Prisma domain models and a repository backed by Postgres/PostGIS instead of the JSON snapshot
 - Scheduled scraper workers for government and social sources, with provenance and run history
 - Viewport-aware map queries and a paginated package register (`/api/packages` currently returns all
   1,634 items)
 - Published methodology page and source metadata for every displayed metric
-- Provenance badges (`DATA RESMI` / `SIMULASI PROTOTIPE`) — required by the project rules, not yet shown
+- Provenance badges beyond the report flow: `SIMULASI PROTOTIPE` now marks `/laporan`, while the
+  `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel; SIRUP/Bina Marga badges are not shown
+- Report moderation actions, evidence review, and retention cleanup (`docs/REPORTS.md`)
 
 ### FDS checklist — November 1, 2026
 
@@ -95,7 +103,7 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
   screenshots of at least two live pages
 - Two live screens: the audit map (with one sourced figure explained) and the report flow
 - No CV readout, no damage-area measurement: the reporter classifies damage type, cause, and a coarse
-  size; photos are processed in the browser and never uploaded
+  size; photos are sanitised in the browser, then submitted to private storage as report evidence
 
 Do not present inferred location precision as an official contract coordinate. Keep report status and
 uncertainty explicit, and do not show derived comparisons without source, period, coverage, and method.
@@ -138,6 +146,8 @@ npm run db:status     # check migration status
 | `npm run build` | Production build (must pass without `DATABASE_URL`) |
 | `npm run lint` | ESLint |
 | `npm run db:generate` / `db:migrate` / `db:deploy` / `db:status` | Prisma commands |
+| `npm run storage:reports:ensure` | Create/verify the private `report-evidence` bucket |
+| `npm run db:seed:authorization` / `db:bootstrap-admin` | Seed permissions / create an admin account |
 
 ## Repository structure
 
@@ -157,8 +167,8 @@ docs/           # Product, design, handoff, and architecture documentation
 ## Privacy and data quality principles
 
 - Public reporters do not need accounts. Do not request names, national ID numbers, or phone numbers.
-- Report submission is not implemented. Keep the design explicit; do not add a server photo upload
-  path if photos are promised to stay on-device.
+- Report submission is implemented against a private bucket. Keep that path server-only; never promise
+  that photos stay on the device. Unsent drafts remain local in IndexedDB.
 - Ask for consent before accessing location; blur it before submission and show public locations at a
   coarse level.
 - Clearly label report status and uncertainty. Rejected reports remain recorded as unverified so

@@ -49,14 +49,14 @@ memakai poligon wilayah resmi dan batasannya dinyatakan terbuka, bukan disembuny
 - **Lomba:** MIA 2026 / Web In Action, subtema *Civic Reporting & Accountability*. FDS 1 November 2026
   sudah lewat (repo publik, README, PDF ≤10 halaman, screenshot landing, halaman fitur hidup); jadwal
   berikutnya penyisihan 11 November 2026 dan final 28 November 2026.
-- **Dua layar yang dinilai:** `/` (peta audit jalan) dan `/laporan` (alur lapor 3 langkah). Keduanya
+- **Dua layar yang dinilai:** `/` (peta audit jalan) dan `/laporan` (alur lapor 4 langkah). Keduanya
   di-screenshot ke PDF, jadi layar harus utuh dan padat data tanpa perlu interaksi untuk terlihat benar.
 - **Perangkat:** desktop 1440×900 untuk screenshot, tetapi harus bekerja di ponsel 360 px — warga
   melapor dari jalan, sering satu tangan, sinyal lambat.
 - **Data:** ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi, snapshot 5 November 2026. Filter dijalankan di
   server lewat route `/api/packages` (tahun anggaran, kecamatan, kelurahan, jenis pekerjaan, status
   rekam kontrak, pencarian teks); default "Hanya paket berlokasi" menampilkan 1.286 dari 1.634 paket.
-  Angka akan bergeser bila SIRUP menambah paket; dokumen baru wajib menyebut tanggal snapshot.
+  Angka akan bergeser bila `data.inaproc.id` menambah paket; dokumen baru wajib menyebut tanggal snapshot.
 - **Tanpa akun:** identitas pelapor tidak diminta; draf disimpan di perangkat (IndexedDB), laporan
   terkirim disimpan di server dengan foto di Supabase Storage, dan akun hanya perlu untuk melihat
   riwayat laporan sendiri.
@@ -100,8 +100,9 @@ sehingga peta tetap koroplet; geometri ruas jalan (bukan poligon wilayah) belum 
 ## Evidence on Hand
 
 - `data/saksi_kota_tangerang_2025_2026.json` — 1.634 paket jalan Kota Tangerang (Rp683,34 M).
-- `data/rup_kota_tangerang_2025_2026.json` — 21.402 baris RUP D44 TA 2025–2026 (snapshot).
-- `data/rup_detail_kota_tangerang.json` — enrich detail RUP 3 November 2026.
+- `data/rup_kota_tangerang_2025_2026.json` — 28.699 baris RUP D44 TA 2025–2026 (ekspor
+  `data.inaproc.id`, snapshot 5 November 2026).
+- `data/rup_detail_kota_tangerang.json` — enrich detail RUP (arsip 3 November 2026).
 - `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json` — rekam penyedia
   (LPSE/SPSE dan ekspor CSV satker D44 di Data INAPROC).
 - Batas wilayah resmi RW/kelurahan/kecamatan — ArcGIS Kota Tangerang (13 / 104 / 1.020 poligon).

@@ -5,7 +5,7 @@
 **Tema:** *Designing Digital Futures – Powering Public Transparency*
 **Subtema:** **Civic Reporting & Accountability**
 **Studi kasus:** **Jalan di Kota Tangerang** (`idKldi=D44`, BPS `3671`) — mencakup jalan, jembatan, drainase/saluran, trotoar, TPT/turap
-**Status:** v5 — 5 November 2026. Semua angka dari ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi; sumber utama SIRUP sudah ditinggalkan.
+**Status:** v5.1 — 8 November 2026. Semua angka dari ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi; sumber utama SIRUP sudah ditinggalkan.
 
 > **Riwayat versi.** v1 studi kasus Kab. Bandung (5 sektor) · v2 pindah ke Kab. Tangerang (5 sektor)
 > · v3 mempersempit ke satu jenis infrastruktur: jalan. Dasar: arahan dosen pembimbing —
@@ -31,7 +31,7 @@ Satu kalimat untuk juri:
 
 1. **Warga tidak tahu uangnya ke mana.** Ketika jalan kampung berlubang, warga tidak bisa mengetahui
    apakah ruas itu baru saja dianggarkan, siapa kontraktornya, dan kapan pekerjaannya selesai. Data
-   RUP tersedia — 21.402 baris untuk Kota Tangerang — tetapi berupa teks tanpa peta dan tanpa kait ke
+   RUP tersedia — 28.699 baris untuk Kota Tangerang — tetapi berupa teks tanpa peta dan tanpa kait ke
    wilayah mana pun.
 2. **Laporan yang bisa diabaikan.** Kanal aduan yang ada menampung laporan, tetapi tidak menempelkan
    laporan itu pada sesuatu yang punya konsekuensi administratif. Bawahan bisa melaporkan "sudah
@@ -79,7 +79,7 @@ batasan yang ditulis terbuka.
 
 ## 4. Cakupan: Satu Jenis Infrastruktur, Dikembangkan ke Dalam
 
-Dari 21.402 baris RUP Kota Tangerang (TA 2025 + TA 2026), setelah membuang belanja
+Dari 28.699 baris RUP Kota Tangerang (TA 2025 + TA 2026), setelah membuang belanja
 operasional dan jasa konsultansi, dan **membatasi pada pekerjaan jalan**:
 
 | | |
@@ -95,7 +95,7 @@ operasional dan jasa konsultansi, dan **membatasi pada pekerjaan jalan**:
 | Rasio kontrak/pagu median | 0,99 |
 
 Komposisi pekerjaan (dari nama paket): drainase/saluran **1.303** · pekerjaan permukaan
-(paving/beton/hotmix, trotoar, TPT) **287** · jembatan/gorong-gorong **50**.
+(paving/beton/hotmix, trotoar, TPT) **287** · jembatan/gorong-gorong **44**.
 Artinya "jalan" di sini bukan hanya aspal — mayoritas justru pekerjaan drainase dan permukaan
 kampung, persis jenis pekerjaan yang paling sering dikeluhkan warga.
 

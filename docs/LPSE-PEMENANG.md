@@ -132,13 +132,14 @@ Keduanya wajib mengirim anti-bot `x-request-time` (epoch ms) + `x-secret` = base
 Catatan: `POST /realisasi/export` tanpa header `x-auth-*` menjawab **401** — bukan karena perlu akun,
 tapi karena tanda tangannya belum ada.
 
-Data tersinkron 2 Nov 2026 02.39 WIB. Untuk Kota Tangerang: **2025 = 37.799 paket · 2026 = 13.252
-paket**, semuanya dalam satu ekspor per tahun.
+Data tersinkron 6 Nov 2026. Untuk Kota Tangerang: **2025 = 37.278 baris · 2026 = 13.558 baris**,
+semuanya dalam satu ekspor per tahun.
 
 ## Hasil
 
 `node scripts/realisasi.mjs --mode csv` → `data/realisasi_kota_tangerang.json`:
-**50.530 transaksi · 20.648 RUP · 12 detik** (seluruh satker `D44`, ekspor 2025 + 2026).
+**50.836 transaksi · 20.817 RUP · 12 detik** (seluruh satker `D44`, ekspor 2025 + 2026, snapshot
+6 November 2026).
 Jalur tabel butuh ~2.549 request (~40 menit) untuk cakupan yang sama — itu sebabnya CSV jadi bawaan.
 
 Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
@@ -149,11 +150,11 @@ Digabung ke snapshot jalan (LPSE lebih dulu, celahnya diisi realisasi):
 | Paket tanpa rekam | 826 | **208** |
 | Penyedia unik | 330 | **522** |
 
-693 paket terisi dari realisasi: **375 e-purchasing**, 304 pengadaan langsung, 14 dikecualikan.
-Yang masih kosong: 70 e-purchasing, 32 pengadaan langsung, 15 dikecualikan, 16 tender
-(rinciannya di `docs/SISA-176-PAKET.md`).
+695 paket terisi dari realisasi: **378 e-purchasing**, 297 pengadaan langsung, 20 dikecualikan.
+Yang masih kosong: 71 e-purchasing, 32 pengadaan langsung, 13 dikecualikan, 16 tender, 76 tanpa
+metode di ekspor RUP (rinciannya di `docs/SISA-176-PAKET.md`).
 
-**3 paket jalan** punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya
+**2 paket jalan** punya lebih dari satu penyedia (satu paket, banyak pesanan) — UI menampilkannya
 sebagai baris "Penyedia lain". Contoh transaksi terbanyak: pembangunan jalan sisi Saluran Cisadane
 Barat = Rp4,73 M dari **28 transaksi** dengan CV JAYA KONSTRUKSI.
 

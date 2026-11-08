@@ -19,12 +19,12 @@ dan `docs/ARCHITECTURE.md` (batas frontend/backend) sebelum menyentuh kode.
 jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
-- Angka kunci (snapshot 31 Okt 2026, diperkaya detail RUP 3 Nov 2026): **1.634 paket jalan · Rp683,34 M
-  · 821 anchor RW · 375 kelurahan · 90 kecamatan · 312 tanpa lokus**.
-- Jangkauan wilayah: **85 kelurahan dari 104 · 490 RW dari 1.020**.
-- Rekam penyedia (6 Nov 2026): **1.426 dari 1.634 paket** punya nama penyedia — 731 dari LPSE/SPSE,
-  693 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44). **210** paket tanpa
-  rekam publik (Rp130,67 M); **522** penyedia unik.
+- Angka kunci (snapshot **5 Nov 2026**, sumber RUP `data.inaproc.id`): **1.634 paket jalan · Rp683,34 M
+  · 821 anchor RW · 375 kelurahan · 90 kecamatan · 348 tanpa lokus**.
+- Jangkauan wilayah: **85 kelurahan dari 104 · 490 RW dari 1.020 · 13 kecamatan**.
+- Rekam penyedia (realisasi 6 Nov 2026): **1.426 dari 1.634 paket** punya nama penyedia — 731 dari
+  LPSE/SPSE, 695 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44, **50.836**
+  baris). **208** paket tanpa rekam publik (Rp130,67 M); **522** penyedia unik.
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
@@ -52,7 +52,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.
 5. **Peta tidak boleh berpura-pura presisi.** Tidak ada marker/dot per paket. Peta memakai koroplet
    batas RW (zoom ≥ 12) dan kelurahan (zoom jauh); paket terpilih menyorot batas wilayahnya. Ikon
-   agregat tidak boleh berbentuk pin yang terbaca sebagai lokasi pekerjaan. Paket tanpa anchor (312)
+   agregat tidak boleh berbentuk pin yang terbaca sebagai lokasi pekerjaan. Paket tanpa anchor (348)
    hanya tampil di tabel dengan label `Kota Tangerang (umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
 7. **Penyedia disebut nama asli** (data publik) tetapi **berimbang**: tanpa skor gabungan, selalu
@@ -65,11 +65,12 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 9. **Badge wajib**: `SIMULASI PROTOTIPE` (amber) untuk laporan warga; `DATA RESMI (LPSE)` atau
    `DATA RESMI (INAPROC)` sesuai sumber kontrak; `DATA RESMI (SIRUP / BINA MARGA)` untuk data asli
    lain; plus badge sumber lokasi (`RW 04` / `Kelurahan` / `Kecamatan`). Badge kontrak dan lokasi
-   sudah ada (2 Nov 2026); badge SIRUP/Bina Marga belum.
-10. **Privasi**: blur wajah & plat nomor + hapus EXIF **di browser sebelum** data disimpan/diunggah.
+   sudah ada (2 Nov 2026); `SIMULASI PROTOTIPE` terpasang di alur lapor (8 Nov 2026); badge SIRUP/Bina
+   Marga belum.
+10. **Privasi**: EXIF dihapus di browser dan wajah/plat nomor diperiksa sebelum data disimpan/diunggah.
 11. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
     database (auth, simpan laporan) hanya aktif bila env itu ada.
-12. **Format angka Indonesia**: `1.634`, `74,2%`, `Rp683,34 Miliar`.
+12. **Format angka Indonesia**: `1.634`, `78,7%`, `Rp683,34 Miliar`.
 
 ## Konvensi repo
 

@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (5 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured; an end-to-end submission from the UI still needs confirmation.
+**Status (8 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured; an end-to-end submission from the browser still needs confirmation.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -8,7 +8,7 @@ This document defines the report domain model for the four-step **Laporkan Jalan
 
 The current form collects:
 
-- One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. It stays in browser memory for preview only.
+- One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. The local object URL is a preview only; on submit, the sanitised WebP is uploaded to the private bucket as report evidence.
 - One required damage category: pothole, crack, subsidence, standing water, blocked drainage, damaged bridge, or other.
 - Optional observed causes (multiple choices), coarse size, and a description of up to 500 characters.
 - An optional RW/kelurahan area, optionally determined from device location. Exact GPS coordinates are used to find the RW and then discarded.

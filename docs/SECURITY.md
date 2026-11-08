@@ -1,6 +1,6 @@
 # SAKSI Security
 
-**Last reviewed:** 5 November 2026
+**Last reviewed:** 8 November 2026
 **Status:** Security foundations exist in code. The permission-bit normalization migration is prepared in the working tree but has not been deployed. Existing Supabase state may still contain package-backed grants until that migration is applied. Protected business APIs are not yet broadly wired to the authorization authority, and the report workflow has not had a confirmed end-to-end UI submission. Do not treat the current prototype as production-ready.
 
 This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission-bit and preset semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
@@ -76,7 +76,7 @@ Permission definitions, source-controlled presets, and direct permission assignm
 
 ### Important enforcement gap
 
-The authority and permission strategies exist. Invite issue/revoke operations now call the central authority, but report and other staff APIs remain unimplemented. A hidden button or a client-side check is not authorization. Every protected server operation must call the central authority and apply field/resource checks before loading or returning sensitive data.
+The authority and permission strategies exist. Invite issue/revoke operations now call the central authority, and the report review queue requires `reports.read_queue`; moderation actions and the remaining staff-administration endpoints are still unimplemented. A hidden button or a client-side check is not authorization. Every protected server operation must call the central authority and apply field/resource checks before loading or returning sensitive data.
 
 Audit event writes exist for permission changes, but the database does not enforce an append-only policy. Audit retention, access controls, operational review, and alerting remain to be defined.
 
@@ -86,7 +86,7 @@ Audit event writes exist for permission changes, but the database does not enfor
 - Package query values are validated at the HTTP boundary, and unexpected failures return a generic public error rather than internal exception details.
 - Shared API helpers standardize success and failure envelopes. `request-context.ts` currently defines a scaffold only; request IDs are not yet consistently passed into logs or audit records.
 - Better Auth's catch-all route is intentionally delegated directly to Better Auth so its authentication responses and cookies are not altered by the generic API wrapper.
-- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. `ReportsApi` accepts a bounded multipart submit operation with an idempotency key; report review and general staff-administration endpoints remain unimplemented.
+- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. `ReportsApi` accepts a bounded multipart submit operation with an idempotency key and serves the authenticated history plus the read-only review queue; moderation transitions and general staff-administration endpoints remain unimplemented.
 
 ## 6. Reports and personal data
 
@@ -152,7 +152,7 @@ Before enabling staff operations or invite registration in production:
 4. Wire every protected route to the central authorization authority; add resource-level and field-level checks.
 5. Add rate limits to public endpoints based on their abuse and cost profile; configure trusted client-IP handling at the hosting proxy.
 6. Define audit-log access, retention, backups, and operational review. Ensure credentials and bearer tokens never enter logs.
-7. Implement report submission only after the open privacy, moderation, retention, and abuse-control decisions in [REPORTS.md](./REPORTS.md) are resolved. Keep report submission account-optional.
+7. Implement report moderation and publication only after the open privacy, retention, and abuse-control decisions in [REPORTS.md](./REPORTS.md) are resolved. Report submission itself is already account-optional and must stay that way.
 
 ## References
 

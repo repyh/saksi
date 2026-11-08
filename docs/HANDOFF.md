@@ -1,21 +1,21 @@
 # SAKSI — Developer Handoff
 
-**Updated:** 5 November 2026
+**Updated:** 8 November 2026
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `feat/map-improvement` (active)
-**`master`:** `8842dc9` (state before the map-work branch)
+**Branch:** `docs/snapshot-status-alignment` (active)
+**`master`:** `9309a33` (after the audit-metrics fix; the MapLibre work is already merged)
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
 ## Product and data scope
 
-SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.634 road/junction/drainage packages, Rp683,34 billion**. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **1.634 road/junction/drainage packages, Rp683,34 billion**, snapshot **5 November 2026** from the `data.inaproc.id/rup` export. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
 
-Location anchor, after enriching from RUP details: **821 RW (50.2%)**, **375 kelurahan (22.9%)**, **90 kecamatan (5.5%)**, **312 without any locus (21.3%)** — so 1.286 packages (78.7%) carry a derived location. Coverage touches 85 of 104 kelurahan, 490 of 1,020 RW, in 13 kecamatan.
+Location anchor, after enriching from RUP details: **821 RW (50.2%)**, **375 kelurahan (22.9%)**, **90 kecamatan (5.5%)**, **348 without any locus (21.3%)** — so 1.286 packages (78.7%) carry a derived location. Coverage touches 85 of 104 kelurahan, 490 of 1,020 RW, in 13 kecamatan.
 
-Vendor records: **1.426 of 1.634 packages (87.3%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **693 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export for all D44 work units). 133 packages (Rp97.6 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
+Vendor records: **1.426 of 1.634 packages (87.3%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **695 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 208 packages (Rp130.67 billion, 19.1% of pagu) have no public record; 522 unique suppliers; median contract/pagu ratio 0.99.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -30,6 +30,9 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
 | `/penyedia`, `/penyedia/[slug]` | Supplier register | Suppliers with at least one road package, joined to RUP; every figure carries its denominator, never a composite score. |
 | `/api/packages` | Package search API | Validates filter/search parameters and returns an `ApiResult` response. |
+| `POST /api/reports` | Report submission | Bounded multipart with an `Idempotency-Key`; validates the RW area and optional RUP, stores sanitised WebP in the private bucket, and returns an opaque receipt code. |
+| `GET /api/reports/mine` | Account report history | Session-authenticated; returns only the current account's receipt, status, damage type, coarse area, and optional package reference. |
+| `GET /api/reports/review` | Staff review queue | Requires `reports.read_queue`; paginated, read-only summaries without reporter identity, private text, or media. |
 
 There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
 
@@ -94,8 +97,8 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 2. **Spatial/package domain model:** review and deploy the model, import source-provenanced package and area catalogs, then replace the snapshot adapter with repository queries. Keep package DTOs stable.
 3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
 4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
-5. **Header metrics and provenance badges:** some counters are still constants and the `DATA RESMI (…)` / `SIMULASI PROTOTIPE` badges are not yet applied everywhere.
-6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 5 November 2026.
+5. **Header metrics and provenance badges:** landing/audit counters now come from `src/server/packages/audit-metrics.ts` (snapshot + boundary GeoJSON). `SIMULASI PROTOTIPE` marks `/laporan`; `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel. SIRUP/Bina Marga badges are still missing.
+6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 8 November 2026.
 
 ## MapLibre migration verification (7 November 2026)
 
