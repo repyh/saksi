@@ -7,8 +7,8 @@ import { ApiError } from "@/server/api/shared/api-error";
 import type { ReportAreaSnapshot } from "@/server/reports/report-area-catalog";
 import type { StoredReportPhoto } from "@/server/uploads/purposes/report-photo.handler";
 
-const DATASET_VERSION = "kota-tangerang-2025-2026-2026-10-31";
-const DATASET_RETRIEVED_AT = new Date("2026-10-31T00:00:00.000Z");
+const DATASET_VERSION = "kota-tangerang-2025-2026-2026-11-05";
+const DATASET_RETRIEVED_AT = new Date("2026-11-05T00:00:00.000Z");
 
 function precisionCode(value: RoadPackageItem["presisi_peta"]) {
   return value.toLocaleUpperCase("en-US") as "RW" | "KELURAHAN" | "KECAMATAN" | "KABUPATEN";
