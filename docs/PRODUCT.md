@@ -8,9 +8,11 @@ web
 
 ## Stack
 
-Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4, shadcn/base-ui, peta Leaflet 1.9.4 +
-react-leaflet 5. Peta dasar dari satu variabel `NEXT_PUBLIC_BASEMAP_URL` (default OpenStreetMap;
-atribusi menyesuaikan host) — tidak ada pemilih basemap di produk. Prisma + Better Auth opsional:
+Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4, shadcn/base-ui, peta MapLibre GL JS
+6.16 dengan vector style **OpenFreeMap Positron**. Peta dasar dari satu variabel
+`NEXT_PUBLIC_BASEMAP_URL` (berisi URL style JSON; default
+`https://tiles.openfreemap.org/styles/positron`; atribusi OpenStreetMap/OpenFreeMap) — tidak ada
+pemilih basemap di produk. Prisma + Better Auth opsional:
 build lolos tanpa `DATABASE_URL`. Bukti foto laporan disimpan di Supabase Storage.
 
 ## Users
@@ -81,8 +83,8 @@ panel detail dengan penyedia, nilai kontrak, dan tautan sumber; halaman rekam pe
 7. Format angka Indonesia: `1.634`, `78,7%`, `Rp683,34 Miliar`.
 8. Label sumber data persis: `Data resmi (LPSE)` dan `Data resmi (INAPROC)`; tidak ada badge yang
    mengklaim presisi titik.
-9. Stack terkunci: Next.js App Router + React 19 + Tailwind v4 + shadcn/base-ui; peta hanya Leaflet
-   1.9.4 + react-leaflet 5; tanpa state manager, tanpa pemilih basemap.
+9. Stack terkunci: Next.js App Router + React 19 + Tailwind v4 + shadcn/base-ui; peta hanya MapLibre
+   GL JS 6.16 dengan OpenFreeMap Positron; tanpa state manager, tanpa pemilih basemap.
 
 **Terbuka:** 208 paket (Rp130,67 M) belum punya rekam penyedia publik; tidak ada koordinat pekerjaan
 sehingga peta tetap koroplet; geometri ruas jalan (bukan poligon wilayah) belum ada.

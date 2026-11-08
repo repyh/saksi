@@ -42,7 +42,7 @@ Browser filters ─> GET /api/packages ─────┘
 ```
 
 - `src/app/**` owns routes, server-rendered page entry points, and HTTP route handlers.
-- `src/features/map/**` owns map UI, filter/search state, URL selection state, and rendering. Leaflet stays client-side.
+- `src/features/map/**` owns map UI, filter/search state, URL selection state, and rendering. MapLibre stays client-side.
 - `src/features/reports/**` owns report form state and browser-side photo preview sanitation.
 - `src/server/api/packages/**` validates HTTP query input (`query-schema.ts`); it holds no SQL or scraping logic.
 - `src/server/packages/**` owns package search, the snapshot repository, and the LPSE contract index (`lpse-repository.ts`).
@@ -57,13 +57,14 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 - `/project` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
 - Kelurahan selection is **tri-state**: `null` = all kelurahan of the chosen kecamatan, an array = explicit subset, and an **empty array is invalid** — the picker stays open with a red warning, the list shows the empty message, and no request is sent. Never treat "none selected" as "all".
 - `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching packages are passed to the map.
-- `src/features/map/map-canvas.tsx` owns Leaflet rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom, and switching level does not change the current zoom either.
+- `src/features/map/map-canvas.tsx` owns MapLibre rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom, and switching level does not change the current zoom either.
 - Multi-paket relations are surfaced, not hidden: `kontrak.jumlahPaket > 1` renders "· N paket" in the
   list row and a **Paket realisasi** row in the detail panel explaining that the top name is the largest
   recipient and the evidence link opens that package. M–N (one paket → several RUP) does not occur in the
   1,634-package scope.
 - Kecamatan choropleth counts aggregate every package inside the kecamatan, including RW- and kelurahan-precision packages, and use quantile class breaks so 13 polygons do not collapse into one colour. Kelurahan/RW layers use the fixed classes 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
-- Basemap comes from one environment variable, `NEXT_PUBLIC_BASEMAP_URL` (default `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`). Attribution switches automatically for OpenStreetMap, CARTO, and Esri hosts, so changing the tile source does not silently break attribution.
+- Basemap comes from one environment variable, `NEXT_PUBLIC_BASEMAP_URL`. It now holds a **vector style JSON URL** (default `https://tiles.openfreemap.org/styles/positron`), not a raster tile template. Attribution is OpenStreetMap + OpenFreeMap for the default style, and switches for CARTO and Esri hosts so changing the style does not silently break attribution.
+- MapLibre's worker URL cannot be derived from the package's `import.meta.url` under Turbopack. `predev`/`prebuild` run `scripts/copy-maplibre-worker.mjs` to copy `maplibre-gl-worker.mjs` into `public/vendor/`, and `map-canvas.tsx` calls `setWorkerUrl("/vendor/maplibre-gl-worker.mjs")`. Keep both when upgrading MapLibre.
 - `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state.
 - `src/app/api/reports/route.ts` enforces the CORS origin allowlist and delegates to `ReportsApi` (bounded multipart, validation, idempotency key, rate limit, sanitised WebP to private Storage, single-transaction metadata).
 - `GET /api/reports/mine` is session-authenticated and returns only the current account's report summaries.
@@ -72,10 +73,10 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 ## Current stack and local commands
 
 - Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4
-- Leaflet 1.9.4 / React Leaflet 5, tile source via `NEXT_PUBLIC_BASEMAP_URL`
+- MapLibre GL JS 6.16, vector style via `NEXT_PUBLIC_BASEMAP_URL` (default OpenFreeMap Positron)
 - Supabase Postgres + PostGIS and Prisma foundations; Better Auth (optional — build works without `DATABASE_URL`)
 - Node 24 per the package engine range (`>=24 <25`); the current dev machine runs v26.8.1
-- `package-lock.json` is **not tracked** in git yet
+- `bun.lock` and `package-lock.json` are both tracked and must stay in sync (`bun install` / `npm install --package-lock-only`)
 
 ```bash
 npm install
@@ -95,6 +96,28 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
 5. **Header metrics and provenance badges:** some counters are still constants and the `DATA RESMI (…)` / `SIMULASI PROTOTIPE` badges are not yet applied everywhere.
 6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 5 November 2026.
+
+## MapLibre migration verification (7 November 2026)
+
+Runtime checks ran in Chromium (Playwright, 1440×900) against `npm run dev`; `npm run lint` and
+`env -u DATABASE_URL npm run build` also passed. A temporary dev-only `window.__saksiMap` hook was
+used to read camera/layer state, then removed; a final UI-only pass (15/15 checks) confirmed the same
+behaviour without it.
+
+| Butir | Langkah | Hasil |
+|---|---|---|
+| Koroplet tiga tingkat | Klik **Kecamatan / Kelurahan / RW** di segmented control | `aria-pressed` berpindah; hanya layer tingkat aktif `visible`; zoom tidak berubah |
+| Tooltip wilayah | Arahkan kursor ke poligon | Popup memuat nama wilayah, jumlah paket/pagu, dan “Batas wilayah, bukan titik pekerjaan” |
+| Klik wilayah | Klik poligon kecamatan | URL berubah ke rute wilayah/paket, panel detail terbuka |
+| Klik area kosong | Klik di luar poligon | URL kembali `/project`, panel detail tertutup |
+| Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | 13 ikon agregat di kecamatan, 490 di RW; tidak ada marker per paket |
+| fitBounds awal | Muat `/project` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
+| flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 11,5 (kelurahan) / ≤ 15 (RW) |
+| Legenda & overlay | Periksa tiga mode tampilan | Teks legenda dan peringatan sesuai mode; legenda wilayah terpilih muncul |
+| Atribusi | Periksa kontrol atribusi | `© OpenStreetMap © OpenFreeMap` tampil |
+| Tanpa marker per paket / pemilih basemap | Mode jumlah paket; cari kontrol basemap | 0 marker; tidak ada kontrol pemilih basemap |
+| Mount/unmount berulang | Bolak-balik `/` ↔ `/project` tiga kali | Selalu 1 canvas dan 1 instance peta; tanpa error halaman |
+| Basemap vector | Periksa request dan style | Request `styles/positron`; source `openmaptiles` bertipe `vector`; override `NEXT_PUBLIC_BASEMAP_URL` ke `styles/liberty` juga dihormati |
 
 ## Working rules
 

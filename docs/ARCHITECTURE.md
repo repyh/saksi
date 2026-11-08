@@ -9,7 +9,7 @@ SAKSI uses one repository with two deployment boundaries:
 1. **Web application:** Next.js App Router provides the user interface, server-rendered initial data, API routes, authentication, and application use cases.
 2. **Scraper workers:** Government-site and public social-source collectors run as separately deployed scheduled processes. They do not run in the user's browser or as part of a web request.
 
-The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because Leaflet requires browser interaction.
+The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because MapLibre GL JS requires browser interaction.
 
 This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines package, administrative-area, and report persistence models; the database migrations are deployed, but package/area catalogs are not populated and package search does not yet query those tables.
 
@@ -17,7 +17,7 @@ This decision supersedes the older FDS instruction to load the JSON directly fro
 
 ```mermaid
 flowchart LR
-  Browser["Browser<br/>UI, filters, Leaflet"] -->|"GET /api/packages"| Routes["Next.js route handlers"]
+  Browser["Browser<br/>UI, filters, MapLibre"] -->|"GET /api/packages"| Routes["Next.js route handlers"]
   Page["Next.js server page"] --> UseCases["Package use cases"]
   Routes --> UseCases
   UseCases --> Repository["Road package repository"]

@@ -54,12 +54,13 @@ nomor RW dan **20,6%** kelurahan.
 - **Framework:** Next.js 16 (Turbopack, App Router, React 19, TypeScript 5).
 - **Styling & UI Kit:** Tailwind CSS v4, `shadcn/ui` (`@base-ui/react`, `class-variance-authority`),
   ikon `lucide-react` + `react-icons`.
-- **Peta:** Leaflet 1.9.4 & `react-leaflet` 5.0.0. Peta dasar diatur satu variabel
-  `NEXT_PUBLIC_BASEMAP_URL` (default OpenStreetMap); atribusi menyesuaikan host.
+- **Peta:** MapLibre GL JS 6.16 dengan vector style **OpenFreeMap Positron**. Peta dasar diatur satu
+  variabel `NEXT_PUBLIC_BASEMAP_URL` (berisi URL style JSON; default
+  `https://tiles.openfreemap.org/styles/positron`); atribusi OpenStreetMap/OpenFreeMap.
 - **Auth & data opsional:** Prisma + Better Auth (menjawab `503` bila `DATABASE_URL` kosong),
   Supabase Storage untuk bukti laporan.
-- **Verifikasi terakhir (5 Nov 2026):** `tsc --noEmit` 0 error, `eslint .` 0 temuan,
-  `next build` hijau **tanpa `DATABASE_URL`**.
+- **Verifikasi terakhir (7 Nov 2026):** `eslint .` 0 temuan, `next build` hijau **tanpa `DATABASE_URL`**,
+  dan peta MapLibre/OpenFreeMap diperiksa di browser (lihat `docs/HANDOFF.md`).
 
 ### 2.2 Dataset Tersedia (`data/` dan `public/data/`)
 
@@ -118,7 +119,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 - **Branch aktif `feat/map-improvement`** — memuat filter wilayah bertingkat, poligon kecamatan,
   segmented control tingkat poligon, dan basemap via env. Belum di-merge.
 - **`master` = `8842dc9`** — keadaan sebelum pekerjaan peta di atas.
-- **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**.
+- **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**;
+  basemap tunggal produk kini OpenFreeMap Positron.
 - Repo arsip FDS: `~/Hermes/wia-webcomp-2026` (HEAD `c88f667`, bersih); repo Vite kanonik FDS:
   `~/dev/saksi` (`fds-poc`, HEAD `010738a`).
 

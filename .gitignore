@@ -45,6 +45,9 @@ next-env.d.ts
 # Generated Prisma Client
 /src/generated/prisma/
 
+# Generated MapLibre worker (scripts/copy-maplibre-worker.mjs)
+/public/vendor/
+
 # Local agent skills
 /.agents/
 
