@@ -26,14 +26,15 @@ The API writes a package row on demand from the checked-in, server-only package 
 ## End-to-end verification (8 November 2026)
 
 A test administrator submitted one report through `POST /api/reports` with a real multipart JPEG, the
-UUID v4 idempotency key, area `tangerang|sukarasa|5`, `POTHOLE`, and a location hint. The run used a
-complete `.env.local` whose `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` belong to the same Supabase
-project, because the worktree copy paired a publishable key with `SUPABASE_SERVICE_ROLE_KEY` and
-therefore could not write to Storage.
+UUID v4 idempotency key, area `tangerang|sukarasa|5`, `POTHOLE`, and a location hint. The run used the
+worktree `.env.local`, whose `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` belong to the same Supabase
+project that holds the report schema and the private bucket. The earlier copy pointed at a project
+with only a publishable key and no bucket; it is backed up at
+`~/.config/saksi/env.local.jdgu-20261108`.
 
 | Check | Result |
 |---|---|
-| Response | `201` with receipt `Rwa__4g_9QJHJeYlIWLZSBBIeVOZ8hUm` and `status: SUBMITTED` |
+| Response | `201` with receipt `vS-rLb_Fx7oAPlJWNc0P2niByVAzv2EA` and `status: SUBMITTED` |
 | Retry with the same idempotency key | Same receipt; no second report |
 | `GET /api/reports/mine` | Returned the receipt, `SUBMITTED`, `POTHOLE`, `Sukarasa, RW 5`, `Tangerang` |
 | `GET /api/reports/review?status=active` | Returned the same report in the staff queue |

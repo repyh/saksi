@@ -4,8 +4,8 @@
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `test/report-e2e-supabase` (active)
-**`master`:** `3179ff7` (audit metrics + documentation + report badge already merged)
+**Branch:** `fix/p0-review-fixes` (review branch; same commit as `master`)
+**P0 branches merged:** `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`, `feat/report-prototype-badge`, `test/report-e2e-supabase`
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
@@ -125,13 +125,13 @@ behaviour without it.
 ## Report submission verification (8 November 2026)
 
 One test administrator submitted a report through the same `POST /api/reports` route the UI calls.
-The run used a complete `.env.local` from `~/dev/saksi-web-auth` (Supabase project `hnhidatzcqyewsnouqvu`),
-because the `~/dev/saksi-web` copy pairs `SUPABASE_SERVICE_ROLE_KEY` with a **publishable** key
-(`sb_publishable…`) and cannot write to Storage.
+The run used the worktree `.env.local`, which now points at the Supabase project that holds both the
+report schema and the private bucket. The previous copy (project with only a publishable key and no
+bucket) is backed up at `~/.config/saksi/env.local.jdgu-20261108`.
 
 | Check | Result |
 |---|---|
-| Submit | `201`, receipt returned, `SUBMITTED` |
+| Submit | `201`, receipt `vS-rLb_Fx7oAPlJWNc0P2niByVAzv2EA`, `SUBMITTED` |
 | Same idempotency key | Same receipt; no duplicate report |
 | `GET /api/reports/mine` | Receipt present with `POTHOLE`, `Sukarasa, RW 5`, `Tangerang` |
 | `GET /api/reports/review?status=active` | Same report present in the staff queue |

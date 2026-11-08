@@ -5,7 +5,7 @@
 **Tema:** *Designing Digital Futures – Powering Public Transparency*
 **Subtema:** **Civic Reporting & Accountability**
 **Studi kasus:** **Jalan di Kota Tangerang** (`idKldi=D44`, BPS `3671`) — mencakup jalan, jembatan, drainase/saluran, trotoar, TPT/turap
-**Status:** v5.1 — 8 November 2026. Semua angka dari ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi; sumber utama SIRUP sudah ditinggalkan.
+**Status:** v5.1 — 8 November 2026 (snapshot 5 November 2026). Semua angka dari ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi; sumber utama SIRUP sudah ditinggalkan.
 
 > **Riwayat versi.** v1 studi kasus Kab. Bandung (5 sektor) · v2 pindah ke Kab. Tangerang (5 sektor)
 > · v3 mempersempit ke satu jenis infrastruktur: jalan. Dasar: arahan dosen pembimbing —
