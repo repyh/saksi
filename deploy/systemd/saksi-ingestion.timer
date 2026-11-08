@@ -1,0 +1,12 @@
+[Unit]
+Description=Jadwal harian ingestion SAKSI (02:30 WIB)
+Documentation=file:/opt/saksi/docs/INGESTION.md
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 Asia/Jakarta
+RandomizedDelaySec=300
+Persistent=true
+Unit=saksi-ingestion.service
+
+[Install]
+WantedBy=timers.target

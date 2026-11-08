@@ -168,8 +168,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak | Paginasi/limit API untuk daftar besar |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
-| **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migration auth, undangan, report sudah diterapkan; tabel katalog paket/wilayah belum diimpor | Impor katalog bersumber sebelum mengganti repository snapshot |
-| **Scraper terjadwal** | Worker terpisah | Belum ada (pengambilan data masih manual via `scripts/`) | Tentukan jadwal, idempotensi, log |
+| **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi tetap snapshot | Verifikasi rekonsiliasi `npm run db:verify`; pertahankan snapshot sebagai sumber tampilan |
+| **Scraper terjadwal** | Worker terpisah | `workers/ingest.mjs` + lock/retry/log/riwayat run; artefak systemd timer & GitHub Actions disediakan | Deployment cron dan approval merge |
 | **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review tersedia; submit end-to-end terverifikasi 8 Nov 2026 | Akses bukti, transisi status, retensi (`docs/REPORTS.md`) |
 | **Dokumentasi** | Selaras dengan kode | STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, DESIGN diperbarui 8 Nov 2026 | Jaga `AGENTS.md` tetap sinkron saat aturan produk berubah |
 

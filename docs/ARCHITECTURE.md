@@ -11,7 +11,7 @@ SAKSI uses one repository with two deployment boundaries:
 
 The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because MapLibre GL JS requires browser interaction.
 
-This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines package, administrative-area, and report persistence models; the database migrations are deployed, but package/area catalogs are not populated and package search does not yet query those tables.
+This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines the ingestion, package, administrative-area, and report persistence models; migrations are deployed, and the Kota Tangerang catalog is populated by `workers/ingest.mjs`, but package search still reads the snapshot.
 
 ## System context
 
@@ -41,7 +41,7 @@ The dotted Supabase package-search path is planned. The current package search d
 | `src/server/**` (outside `api/`) | Use cases, domain filtering, repository interfaces and implementations | HTTP transport concerns, React components or browser APIs |
 | `src/contracts/**` | Shared request/response and domain DTO types | Runtime secrets or persistence logic |
 | `prisma/**` | Database schema and migrations | Scraper schedules or UI behavior |
-| `workers/**` | Source adapters, schedules, parsing, normalization, validation, ingestion | Browser UI, public web request handling |
+| `workers/**` | Source adapters, schedules, parsing, normalization, validation, ingestion, run history | Browser UI, public web request handling |
 
 Allowed dependency direction:
 
@@ -72,8 +72,8 @@ The endpoint returns all matching package rows because the current map and list 
 ### Database and authentication
 
 - Supabase is the managed PostgreSQL host. PostGIS is enabled in the `extensions` schema.
-- Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation.
-- The Prisma schema defines Better Auth, authorization, registration-invitation, road-package, administrative-area, and report tables. The migrations are deployed; provenance fields exist on package/area models, while ingestion-run records and official measurement series remain undefined.
+- Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation. The multi-region ingestion worker uses parameterized `pg` SQL for large batches against the same schema.
+- The Prisma schema defines Better Auth, authorization, registration-invitation, ingestion provenance, road-package, administrative-area, and report tables. The migrations are deployed; the Kota Tangerang RUP, detail, contract, realization, and boundary catalogs are populated. Official measurement series remain undefined.
 - Browser code must not connect directly to Postgres or receive database credentials or a Supabase service-role key.
 - Use Prisma for ordinary reads/writes. Put complex spatial operations behind named repository methods and parameterized SQL; do not spread raw GIS SQL across route handlers or UI code.
 
@@ -89,16 +89,13 @@ Better Auth applies a database-backed IP rate limit to email/password sign-in an
 
 The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries. `GET /api/reports/review` requires `reports.read_queue` and returns a paginated, read-only staff queue without reporter identity, private text, or media references. The Dashboard review tab displays those summaries; evidence review and status changes remain unimplemented. A submission was verified end to end on 8 November 2026 (receipt, account history, review queue, Postgres rows, and private WebP); see [REPORTS.md](./REPORTS.md). Retention cleanup and public report queries are not implemented. Faces and plates require a manual reporter check.
 
-### Scrapers
+### Ingestion worker
 
-Neither scraper is implemented in this repository. They are planned as separate deployments with independent schedules, credentials, logs, retries, and failure alerts. A worker should:
+`workers/ingest.mjs` is the standalone government-data worker for one region. It runs RUP → detail → realization → LPSE → normalize → validate → database upsert → snapshot rebuild → `region:check`. It supports `--region`, `--dry-run`, `--sources`, `--refresh`, a database lock, retries with backoff, rate-limited source commands, structured JSON logs, run history, and atomic failure behavior: the normalized batch is one transaction, and the snapshot is only published after the temporary snapshot passes the gate. See [INGESTION.md](./INGESTION.md).
 
-1. Fetch only the source data it is permitted to access.
-2. Preserve source URL, retrieval time, source period, checksum, and parser version.
-3. Normalize and validate a complete batch before applying it.
-4. Upsert idempotently and record a run outcome, including rejected records.
+The worker preserves every source row as a checksummed artifact plus `raw_records`, including rows that do not match a RUP, package, or boundary. It does not replace the application repository: package search still reads the checked-in snapshot.
 
-The government-site and social-source pipelines should remain separate adapters because their rate limits, formats, provenance, and failure modes differ. Do not treat an X post as an official record or as proof of an allegation. Decide and document the permitted access method for X before implementing that worker.
+A social-source scraper is not implemented. Do not treat an X post as an official record or as proof of an allegation. Decide and document the permitted access method for X before implementing that worker.
 
 ## API contract
 

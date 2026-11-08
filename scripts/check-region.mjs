@@ -13,13 +13,14 @@ const arg = (nama, bawaan) => {
 };
 const REGION_ID = arg("region", "kota-tangerang");
 const TULIS_MANIFEST = argv.includes("--manifest");
+const SNAPSHOT_OVERRIDE = arg("snapshot", null);
 
 const region = await muatRegion(REGION_ID).catch((error) => {
   console.error(`region: ${error.message}`);
   process.exit(1);
 });
 
-const snapshot = await bacaJson(region.keluaran);
+const snapshot = await bacaJson(SNAPSHOT_OVERRIDE ?? region.keluaran);
 const paket = Array.isArray(snapshot.paket) ? snapshot.paket : [];
 const masalah = [];
 const tolak = (pesan) => {
@@ -148,6 +149,36 @@ function cakupanPenyedia() {
 }
 
 const penyedia = cakupanPenyedia();
+
+// Angka sumber dipakai `workers/verify-db.mjs` untuk merekonsiliasi isi database dengan manifest.
+function metrikSumber() {
+  const hitungBerkas = (rel) => {
+    if (!rel) return null;
+    const absolut = path.resolve(AKAR, rel);
+    if (!existsSync(absolut)) return null;
+    try {
+      const isi = JSON.parse(readFileSync(absolut, "utf8"));
+      if (Array.isArray(isi.item)) return isi.item.length;
+      if (Array.isArray(isi.features)) return isi.features.length;
+      if (Array.isArray(isi.paket)) return isi.paket.length;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+  return {
+    rup: hitungBerkas(region.sumber.rup),
+    detail: hitungBerkas(region.sumber.detail),
+    realisasi: hitungBerkas(region.sumber.realisasi),
+    lpse: region.lpse?.keluaran ? hitungBerkas(region.lpse.keluaran) : null,
+    batas_kecamatan: region.batas.kecamatan?.berkas
+      ? hitungBerkas(region.batas.kecamatan.berkas)
+      : null,
+    batas_kelurahan: region.jumlahKelurahan,
+    batas_rw: region.jumlahUnitLingkungan,
+  };
+}
+const sumber = metrikSumber();
 const pagu = paket.reduce((total, item) => total + (item.pagu ?? 0), 0);
 const hitung = (kunci) => {
   const hasil = {};
@@ -231,6 +262,7 @@ if (TULIS_MANIFEST) {
         tanpa_rekam_pagu: penyedia.tanpaPagu,
         unik: penyedia.penyedia,
       },
+      sumber,
     },
     masalah,
   };
