@@ -191,7 +191,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
     if (!selectedArea) return;
 
     const controller = new AbortController();
-    fetchRoadPackages({ district: selectedArea.district }, controller.signal)
+    fetchRoadPackages({ district: selectedArea.district, limit: 300 }, controller.signal)
       .then((data) => {
         setCandidates(data.items);
         setCandidateAreaId(selectedArea.id);

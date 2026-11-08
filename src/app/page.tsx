@@ -2,7 +2,7 @@ import { AuditHeader } from "@/features/audit/components/audit-header";
 import { PackageJourneySection } from "@/features/audit/components/package-journey-section";
 import MapDashboard from "@/features/map/map-dashboard";
 import { buildAuditSummaryMetrics } from "@/server/packages/audit-metrics";
-import { searchRoadPackages } from "@/server/packages/service";
+import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
 
 interface HomeProps {
@@ -12,8 +12,9 @@ interface HomeProps {
 export default async function Home({ searchParams }: HomeProps) {
   const query = await searchParams;
   const regionId = resolveRegionId(query.region);
-  const [initialPackages, metrics] = await Promise.all([
+  const [initialPackages, initialAggregate, metrics] = await Promise.all([
     searchRoadPackages({ region: regionId, locatedOnly: true }),
+    aggregateRoadPackages({ region: regionId, locatedOnly: true }),
     buildAuditSummaryMetrics(regionId),
   ]);
 
@@ -23,6 +24,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <PackageJourneySection />
       <MapDashboard
         initialData={initialPackages}
+        initialAggregate={initialAggregate}
         regionId={regionId}
         availableRegions={listRegions()}
       />

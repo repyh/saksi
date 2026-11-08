@@ -104,16 +104,45 @@ export interface RoadPackageSearchFilters {
   work?: RoadWorkCategory;
   contract?: RoadContractFilter;
   query?: string;
+  /** Halaman register (1-based). */
+  page?: number;
+  /** Jumlah baris register per halaman. */
+  limit?: number;
 }
 
 export interface RoadPackageSearchData {
   region: RegionSummary;
+  /** Baris register pada halaman yang diminta, bukan seluruh hasil filter. */
   items: RoadPackageItem[];
   districts: string[];
   /** Kelurahan per kecamatan, untuk pemilih checkbox di UI. */
   villagesByDistrict: Record<string, string[]>;
   totalCount: number;
+  /** Jumlah seluruh paket yang cocok sebelum paginasi. */
   filteredCount: number;
   withContractCount: number;
   vendorCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+/** Agregat koroplet untuk satu wilayah; cukup untuk mewarnai peta tanpa seluruh baris paket. */
+export interface RoadAreaAggregate {
+  count: number;
+  budget: number;
+  workCounts: Record<"PERMUKAAN" | "DRAINASE" | "JEMBATAN", number>;
+  /** RUP contoh di wilayah ini; detailnya dimuat saat wilayah dipilih. */
+  sampleRup: string | null;
+}
+
+/** Agregat peta per tingkat batas wilayah, memakai kunci yang dinormalisasi. */
+export interface RoadPackageMapData {
+  region: RegionSummary;
+  rw: Record<string, RoadAreaAggregate>;
+  kel: Record<string, RoadAreaAggregate>;
+  kec: Record<string, RoadAreaAggregate>;
+  totalCount: number;
+  filteredCount: number;
 }

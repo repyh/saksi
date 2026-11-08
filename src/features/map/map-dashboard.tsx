@@ -19,7 +19,7 @@ import {
 import { formatRupiahFull } from "./road-types";
 import { MapIntroSection } from "./map-intro-section";
 import { MAP_SEARCH_EVENT } from "./map-search-events";
-import { fetchRoadPackages } from "./package-api";
+import { fetchRoadPackage, fetchRoadPackageMap, fetchRoadPackages } from "./package-api";
 import { buildPenyediaPanel, labelPenyediaLain } from "./penyedia-panel";
 import { ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
 import { slugPenyedia } from "@/contracts/packages/vendor-slug";
@@ -37,7 +37,9 @@ import {
 import type {
   RoadContractFilter,
   RoadPackageItem,
+  RoadPackageMapData,
   RoadPackageSearchData,
+  RoadPackageSearchFilters,
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
 import type { RegionOption } from "@/contracts/regions/region.contract";
@@ -82,6 +84,7 @@ function currentAddressUrl() {
 
 interface MapDashboardProps {
   initialData: RoadPackageSearchData;
+  initialAggregate: RoadPackageMapData;
   regionId: string;
   availableRegions: RegionOption[];
   showIntro?: boolean;
@@ -98,10 +101,14 @@ interface MapDashboardProps {
   };
 }
 
-export default function MapDashboard({ initialData, regionId, availableRegions, showIntro = true, fillViewport = false, addressRouting = false, initialRouteState }: MapDashboardProps) {
+const PAGE_SIZE = 50;
+
+export default function MapDashboard({ initialData, initialAggregate, regionId, availableRegions, showIntro = true, fillViewport = false, addressRouting = false, initialRouteState }: MapDashboardProps) {
   const router = useRouter();
   const [packageData, setPackageData] = useState<RoadPackageSearchData | null>(initialData);
+  const [mapData, setMapData] = useState<RoadPackageMapData | null>(initialAggregate);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<"SEMUA" | "2025" | "2026">(initialRouteState?.selectedYear ?? "SEMUA");
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
@@ -164,6 +171,17 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
   }, [selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, searchQuery]);
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
+  const currentFilters = useMemo<RoadPackageSearchFilters>(() => ({
+    region: regionId,
+    year: selectedYear === "SEMUA" ? undefined : selectedYear,
+    district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
+    villages: selectedVillages ?? undefined,
+    locatedOnly,
+    work: selectedWork,
+    contract: selectedContract,
+    query: searchQuery.trim() || undefined,
+  }), [locatedOnly, regionId, searchQuery, selectedContract, selectedDistrict, selectedVillages, selectedWork, selectedYear]);
+
   useEffect(() => {
     if (selectedVillages !== null && selectedVillages.length === 0) return;
     if (lastRequestedQuery.current === queryString) return;
@@ -174,21 +192,13 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
       setIsLoading(true);
       setLoadError(null);
 
-      fetchRoadPackages(
-        {
-          region: regionId,
-          year: selectedYear === "SEMUA" ? undefined : selectedYear,
-          district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
-          villages: selectedVillages ?? undefined,
-          locatedOnly,
-          work: selectedWork,
-          contract: selectedContract,
-          query: searchQuery.trim() || undefined,
-        },
-        controller.signal,
-      )
-        .then((result) => {
+      Promise.all([
+        fetchRoadPackages({ ...currentFilters, page: 1, limit: PAGE_SIZE }, controller.signal),
+        fetchRoadPackageMap(currentFilters, controller.signal),
+      ])
+        .then(([result, aggregate]) => {
           setPackageData(result);
+          setMapData(aggregate);
           const selected = selectedPackageRef.current;
           if (addressRouting && selected && !result.items.some((item) => item.kode_rup === selected.kode_rup)) {
             updateSelectedPackage(null);
@@ -198,6 +208,7 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
         .catch((error: unknown) => {
           if (!controller.signal.aborted) {
             setPackageData(null);
+            setMapData(null);
             updateSelectedPackage(null);
             if (addressRouting) {
               window.history.replaceState(null, "", currentAddressUrl());
@@ -214,7 +225,7 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [addressRouting, queryString, regionId, searchQuery, selectedContract, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedYear]);
+  }, [addressRouting, currentFilters, queryString, searchQuery, selectedVillages]);
 
   const districts = useMemo(() => packageData?.districts ?? [], [packageData]);
   const villagesByDistrict = useMemo(() => packageData?.villagesByDistrict ?? {}, [packageData]);
@@ -234,6 +245,40 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
   const filteredPackages = kelurahanKosong ? [] : packageData?.items ?? [];
   const totalCount = packageData?.totalCount ?? 0;
   const filteredCount = kelurahanKosong ? 0 : packageData?.filteredCount ?? 0;
+
+  const mapAggregate = useMemo<RoadPackageMapData>(() => {
+    const kosong: RoadPackageMapData = {
+      region: initialData.region,
+      rw: {},
+      kel: {},
+      kec: {},
+      totalCount,
+      filteredCount: 0,
+    };
+    if (kelurahanKosong) return kosong;
+    return mapData ?? { ...kosong, filteredCount };
+  }, [filteredCount, initialData.region, kelurahanKosong, mapData, totalCount]);
+
+  const loadMore = async () => {
+    if (!packageData?.hasMore || isLoadingMore) return;
+    const requestedQuery = queryString;
+    setIsLoadingMore(true);
+    setLoadError(null);
+    try {
+      const next = await fetchRoadPackages(
+        { ...currentFilters, page: packageData.page + 1, limit: packageData.limit },
+        new AbortController().signal,
+      );
+      if (lastRequestedQuery.current !== requestedQuery) return;
+      setPackageData((previous) => previous
+        ? { ...next, items: [...previous.items, ...next.items] }
+        : next);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Data paket jalan belum dapat dimuat.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const writeReportPath = (path: string) => {
     if (!addressRouting) return;
@@ -278,7 +323,7 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
       .sort((a, b) => b.total - a.total);
   }, [selectedPackage]);
 
-  const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" | "Kecamatan" } | null, pkg: RoadPackageItem | null) => {
+  const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" | "Kecamatan" } | null, sampleRup: string | null) => {
     if (!region) {
       setSelectedDistrict("SEMUA");
       setSelectedRegion(null);
@@ -286,18 +331,29 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
       writeReportPath("/project");
       return;
     }
-    const requestedDistrict = pkg?.kecamatan_resmi ?? region.district ?? "";
+    const requestedDistrict = region.district ?? "";
     const matchedDistrict = districts.find((name) => normalizeDistrictName(name) === normalizeDistrictName(requestedDistrict));
-    const packageAddress = pkg ? addressForPackage(pkg) : null;
-    const address: ReportAddress = packageAddress ?? {
+    const address: ReportAddress = {
       districtSlug: matchedDistrict ? districtSlug(matchedDistrict) : requestedDistrict ? districtSlug(requestedDistrict) : undefined,
       villageSlug: region.village ? addressSlug(region.village) : undefined,
       rwSlug: region.precision === "RW" && region.rw ? `rw-${addressSlug(region.rw.replace(/^rw-?/i, ""))}` : undefined,
     };
     setSelectedDistrict(matchedDistrict ?? "SEMUA");
     setSelectedRegion(address);
-    updateSelectedPackage(pkg);
-    writeReportPath(pkg ? routeForPackage(pkg) : routeForAddress(address));
+    updateSelectedPackage(null);
+    writeReportPath(routeForAddress(address));
+
+    if (sampleRup) {
+      fetchRoadPackage(sampleRup, regionId)
+        .then((pkg) => {
+          updateSelectedPackage(pkg);
+          setSelectedRegion(addressForPackage(pkg));
+          writeReportPath(routeForPackage(pkg));
+        })
+        .catch(() => {
+          // Wilayah tetap terpilih walau detail paket contoh gagal dimuat.
+        });
+    }
   };
 
   const closeSelectedPackage = () => {
@@ -343,10 +399,18 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
         rwSlug: selection.rwSlug,
       } : rupPackage ? addressForPackage(rupPackage) : null);
       updateSelectedPackage(rupPackage ?? null);
+      if (selection.rupCode && !rupPackage) {
+        fetchRoadPackage(selection.rupCode, regionId)
+          .then((pkg) => {
+            updateSelectedPackage(pkg);
+            setSelectedRegion(addressForPackage(pkg));
+          })
+          .catch(() => undefined);
+      }
     };
     window.addEventListener("popstate", restoreFromLocation);
     return () => window.removeEventListener("popstate", restoreFromLocation);
-  }, [addressRouting, districts, initialData.items]);
+  }, [addressRouting, districts, initialData.items, regionId]);
 
   const activeRegion = initialData.region;
   const regionLabel = activeRegion.label;
@@ -557,7 +621,7 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
             <aside className={`order-1 flex h-[580px] flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""}`}>
               <ScrollArea className="flex-1">
                 <div className="divide-y divide-border">
-                  {filteredPackages.slice(0, 120).map((pkg) => (
+                  {filteredPackages.map((pkg) => (
                     <article key={pkg.kode_rup} className="px-4 py-3 transition-colors hover:bg-muted/30">
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-primary">RUP {pkg.kode_rup}</span>
@@ -578,6 +642,25 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
                       </div>
                     </article>
                   ))}
+                  {packageData?.hasMore ? (
+                    <div className="border-t border-border p-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={loadMore}
+                        disabled={isLoadingMore}
+                        className="w-full font-sans text-[11px] font-bold uppercase tracking-[0.08em]"
+                      >
+                        {isLoadingMore
+                          ? "Memuat paket…"
+                          : `Muat ${Math.min(packageData.limit, filteredCount - filteredPackages.length)} paket lagi`}
+                      </Button>
+                      <p className="mt-1.5 text-center font-sans text-[10px] tabular-nums text-muted-foreground">
+                        {filteredPackages.length.toLocaleString("id-ID")} dari {filteredCount.toLocaleString("id-ID")} paket
+                      </p>
+                    </div>
+                  ) : null}
                   {loadError && <div role="alert" className="p-6 text-sm text-destructive">{loadError}</div>}
                   {isLoading && !packageData && <div role="status" className="p-6 text-sm text-muted-foreground">Memuat daftar paket…</div>}
                   {!isLoading && !loadError && filteredPackages.length === 0 && (
@@ -609,7 +692,7 @@ export default function MapDashboard({ initialData, regionId, availableRegions, 
 
             <div className={`relative order-2 border-b border-border lg:order-2 lg:border-b-0 ${selectedPackage ? "lg:col-span-6" : "lg:col-span-9"} ${fillViewport ? "h-[580px] lg:h-full lg:min-h-0" : ""}`}>
               <MapCanvas
-                packages={filteredPackages}
+                areaStats={mapAggregate}
                 region={activeRegion}
                 selectedPackage={selectedPackage}
                 selectedRegion={selectedRegion}

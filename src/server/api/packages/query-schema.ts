@@ -26,6 +26,10 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
     .filter(Boolean);
   const lokasi = url.searchParams.get("lokasi")?.trim() || undefined;
   const query = url.searchParams.get("q")?.trim() || undefined;
+  const pageParam = url.searchParams.get("page")?.trim() || undefined;
+  const limitParam = url.searchParams.get("limit")?.trim() || undefined;
+  const page = pageParam ? Number(pageParam) : undefined;
+  const limit = limitParam ? Number(limitParam) : undefined;
 
   if (region && !getRegionOrNull(region)) {
     throw new ApiError(400, "INVALID_QUERY", "Region tidak dikenal.");
@@ -51,6 +55,12 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   if (query && query.length > 120) {
     throw new ApiError(400, "INVALID_QUERY", "Pencarian maksimal 120 karakter.");
   }
+  if (pageParam && (!Number.isInteger(page) || (page as number) < 1 || (page as number) > 10_000)) {
+    throw new ApiError(400, "INVALID_QUERY", "Halaman harus bilangan bulat antara 1 dan 10000.");
+  }
+  if (limitParam && (!Number.isInteger(limit) || (limit as number) < 1 || (limit as number) > 300)) {
+    throw new ApiError(400, "INVALID_QUERY", "Limit harus bilangan bulat antara 1 dan 300.");
+  }
 
   return {
     region,
@@ -61,5 +71,7 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
     work: work as RoadWorkCategory | undefined,
     contract: contract as RoadPackageSearchFilters["contract"],
     query,
+    page,
+    limit,
   };
 }

@@ -7,9 +7,10 @@ import { FaRoad, FaWater } from "react-icons/fa6";
 import { GiBridge } from "react-icons/gi";
 import type { IconType } from "react-icons";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
-import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
+import type { RoadPackageItem, RoadPackageMapData } from "@/contracts/packages/road-package.contract";
 import type { RegionSummary } from "@/contracts/regions/region.contract";
-import { classifyRoadWork, ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from "@/contracts/packages/road-work";
+import { normalizeAreaKey } from "@/contracts/packages/area-key";
+import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from "@/contracts/packages/road-work";
 import { addressSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahFull } from "./road-types";
 
@@ -23,11 +24,12 @@ type ClickedRegion = {
 };
 
 interface MapCanvasProps {
-  packages: RoadPackageItem[];
+  /** Agregat per wilayah dari server; peta tidak lagi menerima seluruh baris paket. */
+  areaStats: RoadPackageMapData;
   region: RegionSummary;
   selectedPackage: RoadPackageItem | null;
   selectedRegion: ReportAddress | null;
-  onSelectRegion: (region: ClickedRegion | null, pkg: RoadPackageItem | null) => void;
+  onSelectRegion: (region: ClickedRegion | null, sampleRup: string | null) => void;
   viewMode: "packages" | "budget" | "work";
   mapHeightClassName?: string;
 }
@@ -40,7 +42,8 @@ const properti = (properties: BoundaryProperties, kunci: string | null) =>
 type BoundaryFeature = Feature<Geometry, BoundaryProperties>;
 type BoundaryCollection = FeatureCollection<Geometry, BoundaryProperties>;
 type WorkCounts = Record<SpecificRoadWorkCategory, number>;
-type AreaStats = { count: number; budget: number; packages: RoadPackageItem[]; workCounts: WorkCounts };
+type AreaStats = { count: number; budget: number; workCounts: WorkCounts; sampleRup: string | null };
+type AreaStatsMaps = { rw: Map<string, AreaStats>; kel: Map<string, AreaStats>; kec: Map<string, AreaStats> };
 type AreaView = MapCanvasProps["viewMode"];
 type Highlight = "exact" | "scope" | null;
 type StyledProperties = BoundaryProperties & {
@@ -78,7 +81,7 @@ const PRECISION_STATS_KEY: Record<BoundaryPrecision, "rw" | "kel" | "kec"> = {
   Kecamatan: "kec",
 };
 
-const normalize = (value: unknown) => String(value ?? "").toLocaleLowerCase("id-ID").replace(/[^a-z0-9]/g, "");
+const normalize = normalizeAreaKey;
 
 /** Satu variabel untuk peta dasar; nilai kini URL style JSON (vektor), default OpenFreeMap Positron. */
 const BASEMAP_URL =
@@ -165,28 +168,20 @@ function budgetBands(counts: Map<string, AreaStats>) {
   }]);
 }
 
-function statsByArea(packages: RoadPackageItem[]) {
-  const rw = new Map<string, AreaStats>();
-  const kel = new Map<string, AreaStats>();
-  const kec = new Map<string, AreaStats>();
-  const tambah = (map: Map<string, AreaStats>, key: string, item: RoadPackageItem) => {
-    const aggregate = map.get(key) ?? { count: 0, budget: 0, packages: [], workCounts: emptyWorkCounts() };
-    aggregate.count += 1;
-    aggregate.budget += item.pagu;
-    aggregate.packages.push(item);
-    aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
-    map.set(key, aggregate);
-  };
-  for (const item of packages) {
-    if (item.presisi_peta === "RW" && item.unit_id) tambah(rw, normalize(item.unit_id), item);
-    if (item.desa_resmi) tambah(kel, normalize(item.desa_resmi), item);
-    if (item.kecamatan_resmi) tambah(kec, normalize(item.kecamatan_resmi), item);
-  }
-  return { rw, kel, kec };
-}
-
-function emptyWorkCounts(): WorkCounts {
-  return { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 };
+function toAreaStatsMaps(data: RoadPackageMapData): AreaStatsMaps {
+  const build = (rows: RoadPackageMapData["rw"]) =>
+    new Map<string, AreaStats>(
+      Object.entries(rows).map(([key, value]) => [
+        key,
+        {
+          count: value.count,
+          budget: value.budget,
+          workCounts: { ...value.workCounts },
+          sampleRup: value.sampleRup,
+        },
+      ]),
+    );
+  return { rw: build(data.rw), kel: build(data.kel), kec: build(data.kec) };
 }
 
 function workTypeIconMarkup(categories: SpecificRoadWorkCategory[]) {
@@ -482,7 +477,7 @@ export default function MapCanvas(props: MapCanvasProps) {
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const initialFitRef = useRef(false);
   const view: AreaView = props.viewMode;
-  const areaStats = useMemo(() => statsByArea(props.packages), [props.packages]);
+  const areaStats = useMemo(() => toAreaStatsMaps(props.areaStats), [props.areaStats]);
   const bands = useMemo(
     () => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel), kec: budgetBands(areaStats.kec) }),
     [areaStats],
@@ -662,7 +657,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         const current = latestRef.current;
         const properties = (feature.properties ?? {}) as BoundaryProperties;
         const aggregate = current.areaStats[PRECISION_STATS_KEY[level]].get(areaKeyFromProperties(properties, level, fields));
-        current.onSelectRegion(clickedRegion(properties, level, fields), aggregate?.packages[0] ?? null);
+        current.onSelectRegion(clickedRegion(properties, level, fields), aggregate?.sampleRup ?? null);
       };
       const layerId = `${id}-fill`;
       map.on("mousemove", layerId, hover);

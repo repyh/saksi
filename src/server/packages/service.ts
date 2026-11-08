@@ -1,10 +1,13 @@
 import "server-only";
 import type {
+  RoadAreaAggregate,
   RoadPackageItem,
+  RoadPackageMapData,
   RoadPackageSearchData,
   RoadPackageSearchFilters,
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
+import { areaKeyForPackage, type RoadAreaLevel } from "@/contracts/packages/area-key";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
 import {
   DEFAULT_REGION_ID,
@@ -14,6 +17,9 @@ import {
 import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
 import type { RoadPackageRepository } from "./repository";
 import { createSnapshotRoadPackageRepository } from "./snapshot-repository";
+
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 300;
 
 function matchesQuery(item: RoadPackageItem, query: string): boolean {
   const searchableText = [
@@ -30,10 +36,21 @@ function matchesQuery(item: RoadPackageItem, query: string): boolean {
   return searchableText.includes(query);
 }
 
-export async function searchRoadPackages(
-  filters: RoadPackageSearchFilters = {},
+interface PackageContext {
+  region: ReturnType<typeof getRegion>;
+  allPackages: RoadPackageItem[];
+  filtered: RoadPackageItem[];
+  districts: string[];
+  villagesByDistrict: Record<string, string[]>;
+  withContractCount: number;
+  vendorCount: number;
+}
+
+/** Muat snapshot, terapkan filter yang sama untuk register dan agregat peta. */
+async function buildPackageContext(
+  filters: RoadPackageSearchFilters,
   repository?: RoadPackageRepository,
-): Promise<RoadPackageSearchData> {
+): Promise<PackageContext> {
   const regionId = filters.region ?? DEFAULT_REGION_ID;
   const region = getRegion(regionId);
   const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
@@ -45,7 +62,7 @@ export async function searchRoadPackages(
   const villages = filters.villages?.filter(Boolean) ?? [];
   const villagesTerpilih = villages.length ? new Set(villages) : null;
 
-  const items = allPackages.filter((item) => {
+  const filtered = allPackages.filter((item) => {
     if (filters.year && String(item.tahun) !== filters.year) return false;
     if (filters.district && item.kecamatan_resmi !== filters.district) return false;
     if (villagesTerpilih && (!item.desa_resmi || !villagesTerpilih.has(item.desa_resmi))) return false;
@@ -82,15 +99,105 @@ export async function searchRoadPackages(
   ).size;
 
   return {
-    region: regionSummary(region),
-    items,
+    region,
+    allPackages,
+    filtered,
     districts,
     villagesByDistrict,
-    totalCount: allPackages.length,
-    filteredCount: items.length,
     withContractCount,
     vendorCount,
   };
+}
+
+function normalizePage(value: number | undefined) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.max(1, Math.trunc(value as number));
+}
+
+function normalizeLimit(value: number | undefined) {
+  if (!Number.isFinite(value)) return DEFAULT_PAGE_SIZE;
+  return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(value as number)));
+}
+
+export async function searchRoadPackages(
+  filters: RoadPackageSearchFilters = {},
+  repository?: RoadPackageRepository,
+): Promise<RoadPackageSearchData> {
+  const context = await buildPackageContext(filters, repository);
+  const limit = normalizeLimit(filters.limit);
+  const totalPages = Math.max(1, Math.ceil(context.filtered.length / limit));
+  const page = Math.min(normalizePage(filters.page), totalPages);
+  const start = (page - 1) * limit;
+  const items = context.filtered.slice(start, start + limit);
+
+  return {
+    region: regionSummary(context.region),
+    items,
+    districts: context.districts,
+    villagesByDistrict: context.villagesByDistrict,
+    totalCount: context.allPackages.length,
+    filteredCount: context.filtered.length,
+    withContractCount: context.withContractCount,
+    vendorCount: context.vendorCount,
+    page,
+    limit,
+    totalPages,
+    hasMore: start + limit < context.filtered.length,
+  };
+}
+
+function emptyAreaAggregate(): RoadAreaAggregate {
+  return { count: 0, budget: 0, workCounts: { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 }, sampleRup: null };
+}
+
+/**
+ * Agregat koroplet per tingkat wilayah. Hasilnya harus identik dengan agregasi
+ * lama yang menghitung langsung dari seluruh baris paket di browser.
+ */
+export async function aggregateRoadPackages(
+  filters: RoadPackageSearchFilters = {},
+  repository?: RoadPackageRepository,
+): Promise<RoadPackageMapData> {
+  const context = await buildPackageContext(filters, repository);
+  const levels: RoadAreaLevel[] = ["rw", "kel", "kec"];
+  const maps: Record<RoadAreaLevel, Map<string, RoadAreaAggregate>> = {
+    rw: new Map(),
+    kel: new Map(),
+    kec: new Map(),
+  };
+
+  for (const item of context.filtered) {
+    for (const level of levels) {
+      const key = areaKeyForPackage(item, level);
+      if (!key) continue;
+      const aggregate = maps[level].get(key) ?? emptyAreaAggregate();
+      aggregate.count += 1;
+      aggregate.budget += item.pagu;
+      aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
+      if (!aggregate.sampleRup) aggregate.sampleRup = item.kode_rup;
+      maps[level].set(key, aggregate);
+    }
+  }
+
+  return {
+    region: regionSummary(context.region),
+    rw: Object.fromEntries(maps.rw),
+    kel: Object.fromEntries(maps.kel),
+    kec: Object.fromEntries(maps.kec),
+    totalCount: context.allPackages.length,
+    filteredCount: context.filtered.length,
+  };
+}
+
+/** Satu paket untuk panel detail; dimuat saat paket dipilih, bukan dari daftar halaman. */
+export async function getRoadPackage(
+  rup: string,
+  regionId: string = DEFAULT_REGION_ID,
+  repository?: RoadPackageRepository,
+): Promise<RoadPackageItem | null> {
+  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
+  const rows = await paketRepository.listRoadPackages();
+  return rows.find((item) => item.kode_rup === rup) ?? null;
 }
 
 /** Ringkasan penyedia dari rekam kontrak LPSE + Data INAPROC, dibatasi ke paket jalan region. */
@@ -99,12 +206,12 @@ export async function listVendors(
   regionId: string = DEFAULT_REGION_ID,
 ): Promise<VendorSummary[]> {
   const cari = query?.trim().toLocaleLowerCase("id-ID");
-  const paket = await searchRoadPackages({ region: regionId });
-  const rupJalan = new Set(paket.items.map((item) => String(item.kode_rup)));
+  const semuaPaket = await createSnapshotRoadPackageRepository(regionId).listRoadPackages();
+  const rupJalan = new Set(semuaPaket.map((item) => String(item.kode_rup)));
   const semua = ringkasanPenyedia(regionId, rupJalan);
 
   const kategori = new Map<string, Set<string>>();
-  for (const item of paket.items) {
+  for (const item of semuaPaket) {
     if (!item.kontrak) continue;
     for (const nama of [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])]) {
       const kunci = slugPenyedia(nama);
@@ -129,8 +236,7 @@ export async function getVendor(slug: string, regionId: string = DEFAULT_REGION_
   if (!summary) return null;
 
   const daftarRup = new Set(rupMilikPenyedia(regionId, slug).map(String));
-  const paket = await searchRoadPackages({ region: regionId });
-  const items = paket.items
+  const items = (await createSnapshotRoadPackageRepository(regionId).listRoadPackages())
     .filter((item) => daftarRup.has(String(item.kode_rup)))
     .sort((a, b) => (b.kontrak?.nilai_kontrak ?? 0) - (a.kontrak?.nilai_kontrak ?? 0));
 
