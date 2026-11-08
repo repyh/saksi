@@ -65,9 +65,9 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - `src/server/regions/region-registry.ts` discovers region configs from `data/regions/*/region.json` and exposes the region summary used by the API, audit metrics, and map (boundary URLs, GeoJSON property names, centre, environment label).
 - Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`; region DTOs live in `src/contracts/regions/region.contract.ts`.
 - `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
-- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, and the read-only staff review queue. Better Auth's catch-all route continues to delegate directly to Better Auth.
+- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, the staff review queue, public published-report queries, and Publish/Reject moderation. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
-The endpoint returns all matching package rows because the current map and list operate on the same set; the list displays at most 120 rows while the map renders the matching coordinates. This establishes the boundary but is not yet a payload or map-rendering optimization. The next scale step is separate list pagination from a compact map-feature query, ideally bounded by map viewport.
+The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The aggregate still covers the full filtered set; viewport-bounded aggregate queries are the next scale step.
 
 ### Database and authentication
 
@@ -87,7 +87,7 @@ Better Auth applies a database-backed IP rate limit to email/password sign-in an
 
 ### Reports
 
-The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries. `GET /api/reports/review` requires `reports.read_queue` and returns a paginated, read-only staff queue without reporter identity, private text, or media references. The Dashboard review tab displays those summaries; evidence review and status changes remain unimplemented. A submission was verified end to end on 8 November 2026 (receipt, account history, review queue, Postgres rows, and private WebP); see [REPORTS.md](./REPORTS.md). Retention cleanup and public report queries are not implemented. Faces and plates require a manual reporter check.
+The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries. `GET /api/reports/review` requires `reports.read_queue` and returns a paginated staff queue without reporter identity, private text, or media references. `GET /api/reports/public` exposes only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference; it never returns reporter identity, description, location hint, precise location, or media. `PATCH /api/reports/review/[publicCode]` requires `reports.change_status` (and `reports.read_deidentified`), accepts `PUBLISHED` or `REJECTED` with a mandatory reason, and appends a `ReportStatusEvent`. Submission and moderation were verified end to end on 8–9 November 2026; see [REPORTS.md](./REPORTS.md). Evidence review, public-photo policy, and retention cleanup remain unimplemented. Faces and plates require a manual reporter check.
 
 ### Ingestion worker
 
@@ -105,12 +105,22 @@ Optional query parameters:
 
 | Parameter | Accepted values | Meaning |
 |---|---|---|
+| `region` | Region id, default `kota-tangerang` | Snapshot and boundary configuration |
 | `year` | `2025`, `2026` | Fiscal year |
 | `district` | Kecamatan name, up to 100 characters | Exact kecamatan filter |
+| `desa` | Repeatable kelurahan names, up to 60 | Kelurahan subset inside the chosen kecamatan |
 | `work` | `SEMUA`, `PERMUKAAN`, `DRAINASE`, `JEMBATAN` | Work classification |
+| `kontrak` | `ADA`, `TANPA` | Contract-record presence |
+| `lokasi` | `0`, `1` | `1` hides packages without a derived area |
 | `q` | Up to 120 characters | Search package name, RUP, village, or district |
+| `page` | Integer 1–10,000, default 1 | Register page |
+| `limit` | Integer 1–300, default 50 | Register rows per page |
 
 Successful responses use `{ "data": ..., "error": null }`. Invalid filters return HTTP 400 with `INVALID_QUERY`; unavailable package data returns HTTP 500 with a generic message. Internal exception details are not sent to the browser.
+
+`GET /api/packages/map` accepts the same filters (page/limit are ignored) and returns compact per-RW/kelurahan/kecamatan counts, budgets, work counts, and a sample RUP. `GET /api/packages/[rup]` returns one package including its contract record, or 404 `PACKAGE_NOT_FOUND`.
+
+`GET /api/reports/public` accepts `region`, `paket`, `kecamatan`, `kelurahan`, `page`, and `limit`; it returns only `PUBLISHED` reports. `PATCH /api/reports/review/[publicCode]` accepts `{ status: "PUBLISHED" | "REJECTED", reason: string }`, requires `reports.change_status`, and appends a `ReportStatusEvent`.
 
 The contract types are shared across the UI and route. Query parameters are validated at the HTTP boundary; TypeScript types alone do not validate user input.
 

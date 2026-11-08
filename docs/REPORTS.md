@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (8 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated, read-only review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Evidence review and moderation actions are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured. A full submission was verified end to end on 8 November 2026 (see the verification section below); the test account and report were removed afterwards.
+**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference — never identity, description, location hint, precise location, or photos. Evidence review and public photo access are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -45,6 +45,23 @@ with only a publishable key and no bucket; it is backed up at
 The status-event table is append-only, so deleting the test report required temporarily disabling and
 re-enabling the `report_status_events_append_only` trigger inside the cleanup transaction. The trigger
 is enabled again.
+
+## Moderation and public projection verification (9 November 2026)
+
+One test report was inserted directly into the configured database with a package link, coarse area,
+damage type, coarse size, a secret description, and a secret location hint. A temporary session for the
+existing administrator (all report permissions) exercised the same HTTP routes the dashboard uses.
+
+| Check | Result |
+|---|---|
+| Unpublished report | Hidden from `GET /api/reports/public` |
+| Anonymous `PATCH /api/reports/review/[publicCode]` | `401` |
+| Publish with `reports.change_status` | `200`, status `PUBLISHED` |
+| Public API | Damage type, coarse size, `Sukarasa, RW 5`, district, submitted/published dates, and package RUP returned; description, location hint, media, reporter, and area id absent |
+| Public page `/laporan/publik` | Renders damage/size labels, area, and package link; secret description and hint absent |
+| Reject after publish | `200`; report disappears from the public API |
+| Database | Status `REJECTED`; three ordered events (`SUBMITTED`, `PUBLISHED`, `REJECTED`), each with a reason |
+| Cleanup | Events (trigger temporarily disabled and re-enabled), package link, report, and session deleted; 0 reports/0 events/0 links restored |
 
 ## Logical model
 
@@ -190,4 +207,4 @@ Staff review, sensitive media access, publishing, and export must be separate pe
 5. Exact permission bits and source-controlled presets for review, media viewing, publication, and export.
 6. Anonymous submission quotas and the short-lived signal used to enforce them.
 
-Until these decisions are made, do not enable public photo access or publication. The application accepts private submissions, authenticated reporter history, and a staff-only read-only summary queue. Moderation actions, evidence review, retention cleanup, public queries, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.
+Until these decisions are made, keep public photo access disabled. The application accepts private submissions, authenticated reporter history, a staff review queue, Publish/Reject moderation with reasons, and a public text-only projection of `PUBLISHED` reports. Evidence review, retention cleanup, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.

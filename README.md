@@ -10,11 +10,19 @@ review, not proof of wrongdoing or a guarantee of government action.
 ## Current implementation
 
 - Landing page (`/`) with the audit overview, a sourced budget figure, and an interactive map.
+- Methodology page (`/metode`) explaining every source and retrieval date, the pipeline and scheduled
+  worker, the RW anchor rationale (7% road-segment match versus 54.8% RW mentions), the snapshot
+  figures, both vendor layers, the 218 packages without a public record, and what the product does
+  **not** claim. Figures are derived from the region manifest, snapshot, and contract index.
 - Map (`/project`) as a **choropleth of official boundaries**, with a segmented control on the map that
   switches the polygon level: kecamatan (13), kelurahan (104), or RW (1,020). No per-package pins — a
   package is tied to an area, never to a work-site coordinate. Kecamatan counts aggregate every
   package anchored inside them, including RW- and kelurahan-precision packages, and use their own
   quantile class breaks so 13 polygons do not all land in one colour.
+- The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum). The map reads a separate
+  compact aggregate endpoint (`/api/packages/map`) instead of the full 2,552 rows; a selected package
+  is fetched on demand from `/api/packages/[rup]`. Filtered counts, district/village options, and the
+  choropleth values are unchanged from the previous full-row aggregation.
 - Basemap comes from a single `NEXT_PUBLIC_BASEMAP_URL`, which holds a **vector style JSON URL**
   (default `https://tiles.openfreemap.org/styles/positron`, OpenFreeMap Positron). Attribution is
   OpenStreetMap + OpenFreeMap and switches for CARTO and Esri style hosts.
@@ -31,7 +39,9 @@ review, not proof of wrongdoing or a guarantee of government action.
   (`data.inaproc.id/realisasi`, `scripts/realisasi.mjs`) for e-purchasing/e-katalog transactions.
   The INAPROC layer uses the official CSV export (4 requests/year for the whole municipality),
   and names a vendor for **2,334 of 2,552** road packages (91.5%); the remaining **218** have no
-  public record. There are **633** unique suppliers.
+  public record. The manifest holds **633** unique supplier entries; valid combined names such as
+  `CV. BUMI SALAKA, CV. ZARMINA FAIQA` are normalized into their constituent vendors, so the
+  supplier register shows **630** distinct names without changing any package total.
 - Landing and audit figures are derived from the active snapshot and the checked-in boundary
   GeoJSON in `src/server/packages/audit-metrics.ts`; the UI holds no headline constants.
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
@@ -44,6 +54,11 @@ review, not proof of wrongdoing or a guarantee of government action.
   API answers `503`. The submit route was verified end to end on 8 November 2026 (receipt, account
   history, review queue, Postgres rows, private WebP, test-data cleanup). Drafts are still stored on
   the device in IndexedDB (`saksi-local-reports`).
+- Published reports (`/laporan/publik`, `GET /api/reports/public`) show only `PUBLISHED` reports,
+  filtered by region, package, kecamatan, or kelurahan. They expose damage type, coarse size, area,
+  dates, and the package reference — never reporter identity, description, location hint, precise
+  location, or photos. Staff with `reports.change_status` can publish or reject a report from the
+  dashboard review queue; every change requires a reason and appends a `ReportStatusEvent`.
 
 ## Dataset shown in the app
 
@@ -55,7 +70,7 @@ review, not proof of wrongdoing or a guarantee of government action.
 | Kelurahan touched | **87 of 104** · 13 kecamatan |
 | RW touched | **585 of 1,020** |
 | Location anchor | RW 1,612 · kelurahan 517 · kecamatan 79 · none 344 |
-| Vendor record | **2,334** with a public record · 218 without · 633 unique suppliers |
+| Vendor record | **2,334** with a public record · 218 without · 633 manifest supplier entries (630 after normalization) |
 
 Snapshot date **5 November 2026**. Sources: RUP export `data.inaproc.id/rup` (`idKldi=D44`, 28,699
 D44 rows for 2025–2026), LPSE/SPSE plus the Data INAPROC realisation CSV (`50,836` rows, snapshot
@@ -92,12 +107,11 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
 
 - Prisma domain models and a repository backed by Postgres/PostGIS instead of the JSON snapshot
 - Scheduled scraper workers for government and social sources, with provenance and run history
-- Viewport-aware map queries and a paginated package register (`/api/packages` currently returns all
-  2,552 items)
-- Published methodology page and source metadata for every displayed metric
+- Viewport-aware map queries (the register is now paginated and the map reads a compact aggregate,
+  but the aggregate still covers the full filtered set rather than only the current viewport)
 - Provenance badges beyond the report flow: `SIMULASI PROTOTIPE` now marks `/laporan`, while the
   `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel; SIRUP/Bina Marga badges are not shown
-- Report moderation actions, evidence review, and retention cleanup (`docs/REPORTS.md`)
+- Evidence review, media access policy, and retention cleanup (`docs/REPORTS.md`)
 
 ### FDS checklist — November 1, 2026
 
@@ -165,6 +179,27 @@ public/data/    # Boundary GeoJSON served to the map
 prisma/         # Postgres schema and migrations
 docs/           # Product, design, handoff, and architecture documentation
 ```
+
+## Canonical branch and branch archive
+
+**`master` is the canonical integration branch.** Every feature, fix, and documentation branch starts
+from the latest `master`, is rebased onto it before merge, and is merged back with a fast-forward
+merge. `origin/master` is the published source of truth; do not treat a feature branch as canonical.
+
+Branches retained after the November 2026 cleanup:
+
+| Branch | Why it is kept |
+|---|---|
+| `master` | Canonical integration and deployment branch |
+| `fds` / `origin/fds` | First Draft Submission archive with its own commit history |
+| `origin/fds-poc` | Vite/FDS proof-of-concept archive with unique commits |
+| `feat/map-layer` | Unused basemap-picker experiment with a unique commit |
+| `test/report-e2e-supabase` | Unique end-to-end report test history |
+| `openchamber/logo-saksi` | Unique logo work; its worktree still has uncommitted changes |
+| `feat/auth-db-permissions`, `feat/ingestion-worker-db`, `feat/migrate-maplibre`, `feat/region-config`, `fix/p0-review-fixes`, `gentle-aardvark`, `review` | Already merged, but retained because each is checked out in a separate worktree |
+
+Fully merged branches whose worktrees were clean were deleted locally and on the remote. Merged
+branches are never deleted while a worktree still has uncommitted changes.
 
 ## Privacy and data quality principles
 

@@ -411,6 +411,11 @@ export default async function MetodePage({ searchParams }: MetodePageProps) {
               {penyedia.tanpaRekamPaguPersen} dari total pagu). Ketiadaan rekam bukan bukti
               pelanggaran; itu batas cakupan data yang ditampilkan terbuka.
             </p>
+            <p className="mt-2 max-w-3xl font-sans text-sm leading-relaxed text-muted-foreground">
+              Angka penyedia unik mengikuti manifest. Nama gabungan yang memuat beberapa badan usaha
+              dengan prefiks yang valid dinormalkan menjadi nama penyusunnya di panel paket dan daftar
+              penyedia, sehingga jumlah nama dapat sedikit berbeda tanpa mengubah total nilai paket.
+            </p>
           </div>
         </section>
       ) : null}

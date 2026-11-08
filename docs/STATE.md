@@ -1,6 +1,6 @@
 # STATE — Kondisi Terkini Proyek SAKSI
 
-**Tanggal Pembaruan:** 8 November 2026
+**Tanggal Pembaruan:** 9 November 2026
 **Target Terdekat:** Penyisihan **11 November 2026** (proposal ≤30 halaman, surat orisinalitas, video ≤5 menit)
 **Final:** onsite **28 November 2026**
 **Kompetisi:** Web In Action (WIA) — MIA 2026 (KSM Multimedia UPN Veteran Jakarta)
@@ -40,7 +40,7 @@ turun dari 108 menjadi 79.
 - Jangkauan: **87 dari 104 kelurahan**, **585 dari 1.020 RW**, **13 kecamatan**.
 - Penyedia: **2.334 dari 2.552 paket (91,5%)** punya nama penyedia — **731 dari LPSE/SPSE**,
   **1.603 dari Data INAPROC realisasi**; **218 paket** (Rp132,34 M; 16,3% pagu) tanpa rekam publik;
-  **633 penyedia unik**; rasio kontrak/pagu median **0,99**.
+  **633 entri penyedia unik** pada manifest (630 setelah normalisasi nama gabungan); rasio kontrak/pagu median **0,99**.
 - **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
 
 Alasan pindah dari Kabupaten: Kabupaten tidak punya GIS publik (hanya TileServer GL OSM), sedangkan
@@ -104,12 +104,18 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 
 - `src/app/page.tsx` — Server Component yang meminta data awal ke use case paket (default hanya
   paket berlokasi: 2.208).
+- `src/app/metode/page.tsx` — halaman `/metode` (Server Component) yang menjelaskan sumber dan
+  tanggal, pipeline, alasan anchor RW, angka snapshot, dua lapis penyedia, batas 218 paket, larangan
+  klaim koordinat, apa yang tidak diklaim, dan mekanisme pembaruan worker. Angka dibangun oleh
+  `src/server/packages/methodology.ts` dari manifest, snapshot, dan indeks kontrak.
 - `src/features/map/map-dashboard.tsx` — filter tahun, kecamatan → kelurahan (checkbox), jenis
   pekerjaan, kontrak, pencarian, mode tampilan (Jumlah paket / Nilai anggaran / Jenis pekerjaan),
-  register paket, panel pelaksana & kontrak.
+  register paket berpaginasi (`page`/`limit`, 50 baris pertama, tombol muat berikutnya), panel
+  pelaksana & kontrak.
 - `src/features/map/map-canvas.tsx` — koroplet tiga tingkat dengan segmented control
   **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom), legenda mengikuti tingkat, agregasi
-  kecamatan memakai kelas kuantil.
+  kecamatan memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map`, bukan
+  seluruh baris paket; klik wilayah memuat detail paket contoh lewat `GET /api/packages/[rup]`.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
   membuka **`https://data.inaproc.id/realisasi?kode=<kode paket>`**. Penting: parameter itu memakai
   **kode paket realisasi** (kode tender / kode e-katalog), **bukan** kode RUP — RUP hanya dipakai untuk
@@ -136,25 +142,59 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   RUP → detail → realisasi → LPSE → snapshot → gate dengan jeda antar-perintah; `--semua` untuk
   seluruh region, `--dry-run` untuk melihat rencana.
 - `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 1.603 dari realisasi;
-  633 penyedia unik).
+  manifest mencatat 633 entri penyedia unik; normalisasi nama gabungan yang valid menghasilkan 630
+  nama di register tanpa mengubah total paket).
 - `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
   metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit lewat route API yang sama
   dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,
   baris Postgres, dan objek WebP privat; data uji dihapus.
+- `/laporan/publik` + `GET /api/reports/public` — daftar laporan **PUBLISHED** per region/paket/
+  kecamatan/kelurahan; hanya jenis kerusakan, ukuran kasar, wilayah, tanggal, dan tautan paket.
+  Tidak memuat identitas pelapor, deskripsi, petunjuk lokasi, lokasi presisi, atau foto.
+- `PATCH /api/reports/review/[publicCode]` — aksi staf **Publikasikan** / **Tolak** dengan
+  `reports.change_status`, alasan wajib, dan `ReportStatusEvent` append-only. Antrean review di
+  Dashboard menampilkan tombol aksi dan formulir alasan. Diuji end-to-end 9 November 2026 dengan
+  satu laporan uji; baris uji, sesi, dan event dibersihkan setelahnya.
 - `src/lib/prisma.ts` + `src/lib/auth.ts` — **opsional**: klien dibuat saat dipakai, route
   `/api/auth/*` menjawab `503` tanpa `DATABASE_URL`.
 - `docs/ARCHITECTURE.md` — batas frontend/backend, kontrak API, rencana worker scraper.
 
 ### 2.4 Keadaan Git
 
-- Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree aktif P1:
-  `.../worktrees/parser-jl-road-prefix`.
-- **Branch aktif: `feat/region-config`** — konfigurasi region, pipeline penarikan per instansi,
-  parameter `region` di API/UI, gerbang kualitas, dan manifest provenance. Basis: `master` setelah
-  `fix/parser-jl-road-prefix` (`283156c`) dan `fix/anchor-location-variants` (`7062a49`).
-- **Basis peta:** migrasi MapLibre sudah ada di `master` sebelum P0.
-- **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**;
-  basemap tunggal produk kini OpenFreeMap Positron.
+**Branch kanonik: `master`.** Seluruh pekerjaan P1 (poin 10–15) di-merge ke `master` dengan
+fast-forward setelah rebase, lalu di-push ke `origin/master`.
+
+| Poin | Branch | Commit |
+|---|---|---|
+| 10 | `feat/methodology-page` | `ddb9d04` — halaman `/metode` dan tautan navigasi |
+| 11 | `feat/public-report-list` | `21b4024` — laporan publik dan aksi moderasi status |
+| 12 | `feat/paginated-package-api` | `b806bfa` — paginasi register dan agregat peta |
+| 13 | `fix/vendor-name-normalization` | `1b5a955` — normalisasi nama penyedia gabungan |
+| 14 | `fix/report-copy-terminology` | `55256c9` — copy kelurahan/RW di alur lapor |
+| 15 | `chore/branch-archive-canonical` | commit dokumentasi ini — kanonik branch dan arsip |
+
+Setelah pengarsipan, branch yang dipertahankan:
+
+- `fds` / `origin/fds` — arsip First Draft Submission dengan commit unik.
+- `origin/fds-poc` — arsip Vite/FDS dengan commit unik.
+- `feat/map-layer` / `origin/feat/map-layer` — eksperimen pemilih basemap yang tidak dipakai,
+  commit unik.
+- `test/report-e2e-supabase` / `origin/test/report-e2e-supabase` — riwayat uji E2E laporan, commit
+  unik.
+- `openchamber/logo-saksi` — pekerjaan logo dengan commit unik; worktree masih kotor.
+- Branch yang sudah merged tetapi tetap ada karena masing-masing di-checkout di worktree terpisah:
+  `feat/auth-db-permissions`, `feat/ingestion-worker-db`, `feat/migrate-maplibre`,
+  `feat/region-config`, `fix/p0-review-fixes`, `gentle-aardvark`, `review`.
+
+Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus: branch P0
+(`docs/snapshot-status-alignment`, `feat/data-pipeline`, `feat/lpse-pemenang`,
+`feat/map-improvement`, `feat/report-prototype-badge`, `fix/anchor-location-variants`,
+`fix/audit-metrics-snapshot`, `fix/parser-jl-road-prefix`), lima branch P1 di atas, serta remote
+`feat/auth-db-permissions`, `feat/ingestion-worker-db`, `feat/migrate-maplibre`, dan
+`fix/p0-review-fixes`. Tidak ada branch dengan commit unik atau worktree kotor yang dihapus.
+
+- Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree P1 sementara `saksi-wt-*` sudah
+  dibersihkan setelah merge.
 - Repo arsip FDS: `~/Hermes/wia-webcomp-2026` (HEAD `c88f667`, bersih); repo Vite kanonik FDS:
   `~/dev/saksi` (`fds-poc`, HEAD `010738a`).
 
@@ -165,13 +205,13 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 | Komponen / Fitur | Target | Status di kode | Tindakan yang dibutuhkan |
 |---|---|---|---|
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; snapshot server-only | Ganti adapter snapshot dengan Prisma setelah katalog domain diimpor |
-| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak | Paginasi/limit API untuk daftar besar |
+| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit` dan peta memakai `GET /api/packages/map`, detail paket dimuat lewat `GET /api/packages/[rup]` | Query peta yang dibatasi viewport; agregat saat ini masih menghitung seluruh hasil filter |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi tetap snapshot | Verifikasi rekonsiliasi `npm run db:verify`; pertahankan snapshot sebagai sumber tampilan |
 | **Scraper terjadwal** | Worker terpisah | `workers/ingest.mjs` + lock/retry/log/riwayat run; artefak systemd timer & GitHub Actions disediakan | Deployment cron dan approval merge |
-| **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review tersedia; submit end-to-end terverifikasi 8 Nov 2026 | Akses bukti, transisi status, retensi (`docs/REPORTS.md`) |
-| **Dokumentasi** | Selaras dengan kode | STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, DESIGN diperbarui 8 Nov 2026 | Jaga `AGENTS.md` tetap sinkron saat aturan produk berubah |
+| **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review, daftar publik `PUBLISHED`, dan aksi Publikasikan/Tolak dengan alasan + `ReportStatusEvent` tersedia; submit dan moderasi terverifikasi end-to-end 8–9 Nov 2026 | Akses bukti, kebijakan media publik, dan retensi (`docs/REPORTS.md`) |
+| **Dokumentasi** | Selaras dengan kode | STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, DESIGN diperbarui 9 Nov 2026; `/metode` menjelaskan sumber dan batas angka | Jaga `AGENTS.md` tetap sinkron saat aturan produk berubah |
 
 ---
 

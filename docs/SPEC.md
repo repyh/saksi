@@ -149,7 +149,7 @@ kerusakan di peta:
 | **FR-04** | **Sandingan data resmi vs kontrak** | Panel paket: pagu RUP, jadwal/bulan, sumber dana, metode; bila ada rekam LPSE/INAPROC — HPS, nilai kontrak, pelaksana (pemenang bila tender; penyedia bila bukan), selisih pagu, dan sumber transaksi. Badge sumber melekat pada angka. | Orisinalitas 20% |
 | **FR-05** | **Moderasi laporan & bukti warga** | Laporan warga (`SUBMITTED`) masuk antrean tinjauan dashboard; antrean saat ini **ringkasan baca-saja** (status, jenis kerusakan, waktu, wilayah kasar, paket rujukan) tanpa identitas pelapor, deskripsi, atau media. Melihat foto tersanitasi dan menetapkan `PUBLISHED`/`NEEDS_MORE_INFO`/`REJECTED`/`WITHDRAWN`/`ARCHIVED` belum diimplementasikan. | Civic Reporting |
 | **FR-06** | **Agregasi kecamatan** | Tiga belas poligon kecamatan diwarnai dengan kelas **kuantil** jumlah paket; tooltip menyebut jumlah paket, total pagu, dan (pada tampilan jenis) kelas pekerjaan. Klik wilayah → filter daftar paket. | Decision Support, Konten 20% |
-| **FR-07** | **Rekam jejak penyedia (berimbang)** | 633 penyedia unik dari LPSE/SPSE + Data INAPROC: 2.334 dari 2.552 paket (91,5%) punya rekam kontrak; 218 paket (Rp132,34 M, 16,3% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
+| **FR-07** | **Rekam jejak penyedia (berimbang)** | 633 entri penyedia unik pada manifest (630 setelah normalisasi nama gabungan) dari LPSE/SPSE + Data INAPROC: 2.334 dari 2.552 paket (91,5%) punya rekam kontrak; 218 paket (Rp132,34 M, 16,3% pagu) belum. Halaman penyedia: jumlah paket, nilai, tahun, kategori; tanpa skor gabungan. Rasio kontrak/pagu median 0,99. | Orisinalitas, Akuntabilitas |
 
 ---
 
@@ -164,7 +164,7 @@ kerusakan di peta:
    (`<kecamatan>/<kelurahan>/rw-<n>`) dan paket terpilih (`rup-<kode>/<slug>`) agar bisa dibagikan.
 3. **`/laporan` dan `/laporan/paket/:rup` — Lapor & tautkan paket.** 4 langkah seperti FR-03; membuka
    dari paket mengisi paket rujukan lebih dulu.
-4. **`/penyedia` dan `/penyedia/:slug` — Rekam jejak penyedia.** Daftar 633 penyedia dengan
+4. **`/penyedia` dan `/penyedia/:slug` — Rekam jejak penyedia.** Daftar 633 entri penyedia (630 nama setelah normalisasi) dengan
    pengurutan nilai/paket/nama/tahun; halaman penyedia memuat paket yang tercatat.
 5. **`/dashboard` — Akun, laporan saya, antrean tinjauan.** Perlu login; memuat profil, riwayat
    laporan, moderasi (sesuai izin), dan undangan.

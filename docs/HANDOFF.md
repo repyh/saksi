@@ -1,11 +1,11 @@
 # SAKSI — Developer Handoff
 
-**Updated:** 8 November 2026
+**Updated:** 9 November 2026
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `fix/parser-jl-road-prefix` (P1: prefiks ruas `Jl.`/`Jl` di parser snapshot)
-**Base:** `master` pasca-P0 (`e53cb79`); P0 branches merged: `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`, `feat/report-prototype-badge`, `test/report-e2e-supabase`
+**Branch:** `master` (kanonik). P1 poin 10–15 sudah di-merge dan di-push; branch fitur sudah diarsipkan.
+**Base:** `master` di `9bd8ef9` + lima commit P1 (`ddb9d04`, `1b5a955`, `55256c9`, `b806bfa`, `21b4024`).
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 
@@ -15,7 +15,7 @@ SAKSI makes public road-work package records easier to inspect by connecting the
 
 Location anchor, after enriching from RUP details: **1,612 RW (63.2%)**, **517 kelurahan (20.3%)**, **79 kecamatan (3.1%)**, **344 without any locus (13.5%)** — so 2,208 packages (86.5%) carry a derived location. Coverage touches 87 of 104 kelurahan, 585 of 1,020 RW, in 13 kecamatan.
 
-Vendor records: **2,334 of 2,552 packages (91.5%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **1,603 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 218 packages (Rp132.34 billion, 16.3% of pagu) have no public record; 633 unique suppliers; median contract/pagu ratio 0.99.
+Vendor records: **2,334 of 2,552 packages (91.5%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **1,603 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 218 packages (Rp132.34 billion, 16.3% of pagu) have no public record; 633 manifest supplier entries (630 names after valid combined-name normalization); median contract/pagu ratio 0.99.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -24,15 +24,21 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | Route | Purpose | Current behavior |
 |---|---|---|
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
-| `/project` | Peta Pekerjaan | Full-viewport map and package list with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (2,208 of 2,552). Selecting a package opens the right detail panel with the LPSE winner/contract block. |
+| `/project` | Peta Pekerjaan | Full-viewport map and **paginated** package register with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (2,208 of 2,552). The map receives a compact aggregate; selecting a package opens the right detail panel with the LPSE winner/contract block. |
 | `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
+| `/metode` | Methodology | Indonesian methodology page: source and retrieval dates, pipeline and worker, RW anchor rationale, snapshot figures, two vendor layers, the 218-package limit, no precise coordinates, what is not claimed, and how the snapshot is refreshed. Figures come from the manifest/snapshot/contract index. |
 | `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
+| `/laporan/publik` | Published reports | Public list of `PUBLISHED` reports filtered by region/package/kecamatan/kelurahan. Shows damage type, coarse size, area, dates, and package reference only. |
 | `/penyedia`, `/penyedia/[slug]` | Supplier register | Suppliers with at least one road package, joined to RUP; every figure carries its denominator, never a composite score. |
-| `/api/packages` | Package search API | Validates filter/search parameters and returns an `ApiResult` response. |
+| `GET /api/packages` | Package search API | Validates filter/search parameters, supports `page`/`limit` (50 default, 300 max), and returns an `ApiResult` response with counts and pagination metadata. |
+| `GET /api/packages/map` | Map aggregate API | Returns compact per-kecamatan/kelurahan/RW counts, budgets, work counts, and a sample RUP; the map no longer downloads every matching package. |
+| `GET /api/packages/[rup]` | Package detail API | Returns one package (including its contract record) for the selected detail panel. |
 | `POST /api/reports` | Report submission | Bounded multipart with an `Idempotency-Key`; validates the RW area and optional RUP, stores sanitised WebP in the private bucket, and returns an opaque receipt code. |
 | `GET /api/reports/mine` | Account report history | Session-authenticated; returns only the current account's receipt, status, damage type, coarse area, and optional package reference. |
-| `GET /api/reports/review` | Staff review queue | Requires `reports.read_queue`; paginated, read-only summaries without reporter identity, private text, or media. |
+| `GET /api/reports/review` | Staff review queue | Requires `reports.read_queue`; paginated summaries without reporter identity, private text, or media; includes the opaque public code needed for a moderation action. |
+| `PATCH /api/reports/review/[publicCode]` | Moderation action | Requires `reports.change_status` (and `reports.read_deidentified`); accepts `PUBLISHED` or `REJECTED` plus a mandatory reason and appends a `ReportStatusEvent`. |
+| `GET /api/reports/public` | Published report API | Public, `PUBLISHED` only; never returns reporter identity, description, location hint, precise location, or media. |
 
 There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
 
@@ -41,7 +47,9 @@ There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be 
 ```text
 Next.js server page ─┐
                      ├─> package service ─> repository interface ─> checked-in snapshot + LPSE/realisasi snapshots
-Browser filters ─> GET /api/packages ─────┘
+Browser filters ─> GET /api/packages (page/limit) ─┘
+Browser map ─────> GET /api/packages/map (agregat ringkas)
+Package select ──> GET /api/packages/[rup] (detail sesuai permintaan)
 ```
 
 - `src/app/**` owns routes, server-rendered page entry points, and HTTP route handlers.
@@ -93,12 +101,12 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 
 ## Known gaps and next implementation decisions
 
-1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, authenticated history, and the read-only review queue are implemented. The submit route was verified end to end on 8 November 2026 (receipt, account history, review queue, Postgres rows, private WebP, cleanup). Moderation, retention cleanup, and public queries are unimplemented (`docs/REPORTS.md`).
+1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, authenticated history, the review queue, public `PUBLISHED` queries, and Publish/Reject moderation with reasons are implemented. Submission and moderation were verified end to end on 8–9 November 2026 with cleanup. Evidence review, public-photo policy, and retention cleanup remain unimplemented (`docs/REPORTS.md`).
 2. **Spatial/package domain model:** review and deploy the model, import source-provenanced package and area catalogs, then replace the snapshot adapter with repository queries. Keep package DTOs stable.
 3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
-4. **Map scale:** the API and map currently pass all filtered rows; the list shows the first 120. Introduce paginated list and viewport-bounded map queries when scale requires it.
+4. **Map scale:** the register is paginated (`page`/`limit`) and the map reads a compact aggregate, so the browser no longer downloads all 2,552 rows. The aggregate still covers the full filtered set; the next step is viewport-bounded aggregate queries.
 5. **Header metrics and provenance badges:** landing/audit counters now come from `src/server/packages/audit-metrics.ts` (snapshot + boundary GeoJSON). `SIMULASI PROTOTIPE` marks `/laporan`; `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel. SIRUP/Bina Marga badges are still missing.
-6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 8 November 2026.
+6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 9 November 2026, including `/metode` and the canonical-branch policy.
 
 ## MapLibre migration verification (7 November 2026)
 
@@ -142,8 +150,23 @@ bucket) is backed up at `~/.config/saksi/env.local.jdgu-20261108`.
 The append-only status-event trigger had to be disabled and re-enabled inside the cleanup transaction;
 it is enabled (`tgenabled = O`). No snapshot, GeoJSON, or schema migration was changed by this check.
 
+## P1 verification (9 November 2026)
+
+All five work branches were rebased onto the latest `master` and merged with fast-forward. `master`
+passes `npm run lint` (0 findings) and `env -u DATABASE_URL npm run build` (success).
+
+| Point | Evidence |
+|---|---|
+| 10 — `/metode` | Chromium headless render at 1440 px; DOM contains 2.552, 2.208, 86,5%, 344, 1.612, 2.334, 633, 218, 87/104, 585/1.020, 7%, and 54,8%; nav marks **METODE** active. |
+| 11 — public reports | 33 E2E checks against the configured database: unpublished hidden, anonymous status change `401`, publish with `reports.change_status` succeeds, public API/page omit description/hint/media/identity, reject works, three ordered `ReportStatusEvent` rows, cleanup restored 0 reports/0 events/0 links and re-enabled the append-only trigger. |
+| 12 — pagination | Baseline captured before the change for 15 filter combinations. After the change, `totalCount`, `filteredCount`, `withContractCount`, districts, village options, and every RW/kelurahan/kecamatan count/budget/work-count/sample-RUP match exactly; all pages reconstruct the full filtered set. Browser shows **Muat 50 paket lagi**. |
+| 13 — vendor names | `bun test` 16 pass / 0 fail; real RUP 55981404 splits into `CV. BUMI SALAKA` + `CV. ZARMINA FAIQA` with `nilai_kontrak` unchanged at Rp128.010.000; 1.603 realization contracts reconcile with 0 difference; unique supplier names 633 → 630 after valid combined-name normalization. |
+| 14 — copy | No user-facing "desa" remains in the report flow; search/help/error copy uses kelurahan/RW. |
+| 15 — branches | Merged local and remote branches deleted; `fds`, `origin/fds-poc`, `feat/map-layer`, `test/report-e2e-supabase`, `openchamber/logo-saksi`, and merged branches checked out in separate worktrees were retained. |
+
 ## Working rules
 
+- **`master` is the canonical branch.** Branch from the latest `master`, rebase before merging, and merge with fast-forward. Do not keep merged branches whose worktrees are clean.
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
 - Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
 - Format numbers for Indonesian readers (`2.552`, `91,5%`, `Rp813,13 Miliar`). Attach source, date, coverage, and methodology to public claims.

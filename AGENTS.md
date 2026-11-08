@@ -24,7 +24,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Jangkauan wilayah: **87 kelurahan dari 104 · 585 RW dari 1.020 · 13 kecamatan**.
 - Rekam penyedia (realisasi 6 Nov 2026): **2.334 dari 2.552 paket (91,5%)** punya nama penyedia — 731
   dari LPSE/SPSE, 1.603 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44,
-  **50.836** baris). **218** paket tanpa rekam publik (Rp132,34 M, 16,3% pagu); **633** penyedia unik.
+  **50.836** baris). **218** paket tanpa rekam publik (Rp132,34 M, 16,3% pagu); **633** entri penyedia
+  unik pada manifest (630 setelah normalisasi nama gabungan).
 - Snapshot paket: `data/saksi_kota_tangerang_2025_2026.json` (dibaca server-only).
 - Snapshot kontrak: `data/lpse_kota_tangerang_2025_2026.json` + `data/realisasi_kota_tangerang.json`.
 - Batas wilayah: `public/data/rw.geojson` (1.020 poligon RW), `public/data/kel.geojson` (104),
