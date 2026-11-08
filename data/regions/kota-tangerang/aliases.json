@@ -1,0 +1,11 @@
+{
+  "level": "kelurahan",
+  "catatan": "Setiap alias harus menunjuk tepat satu kelurahan resmi. Divalidasi saat build: build gagal bila target tidak ada, ambigu, bertabrakan dengan nama resmi, atau dua alias menunjuk target yang sama.",
+  "aliases": [
+    { "dari": "Nusajaya", "ke": "Nusa Jaya" },
+    { "dari": "Neroktog", "ke": "Nerogtog" },
+    { "dari": "Karangsari", "ke": "Karang Sari" },
+    { "dari": "Batu Jaya", "ke": "Batujaya" },
+    { "dari": "Mekasari", "ke": "Mekarsari" }
+  ]
+}

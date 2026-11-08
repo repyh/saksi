@@ -1,0 +1,33 @@
+{
+  "id": "kota-tangerang",
+  "label": "Kota Tangerang",
+  "instansi": "D44",
+  "tahun": [2025, 2026],
+  "metadata": {
+    "snapshot": "5 Nov 2026",
+    "sumber": "data.inaproc.id/rup"
+  },
+  "sumber": {
+    "rup": "data/rup_kota_tangerang_2025_2026.json",
+    "detail": "data/rup_detail_kota_tangerang.json"
+  },
+  "keluaran": "data/saksi_kota_tangerang_2025_2026.json",
+  "batas": {
+    "kelurahan": {
+      "berkas": "public/data/kel.geojson",
+      "nama": "wadmkd",
+      "kecamatan": "wadmkc"
+    },
+    "lingkungan": {
+      "berkas": "public/data/rw.geojson",
+      "nama": "wadmkd",
+      "kecamatan": "wadmkc",
+      "nomor": "rw",
+      "label": "RW"
+    }
+  },
+  "lokasi": {
+    "token_lingkungan": ["RW"],
+    "penanda_kelurahan": ["kel", "kelurahan"]
+  }
+}

@@ -1,13 +1,11 @@
-// Bangun snapshot paket jalan SAKSI dari ekspor RUP data.inaproc.id (sumber utama sejak 5 Nov 2026).
-// Masukan : data/rup_kota_tangerang_2025_2026.json (28.699 baris D44), data/rup_detail_kota_tangerang.json,
-//           public/data/kel.geojson (104), public/data/rw.geojson (1.020)
-// Keluaran: data/saksi_kota_tangerang_2025_2026.json
-// Aturan  : tidak ada koordinat pekerjaan; lokasi hanya poligon RW/kelurahan/kecamatan.
-import { readFile, writeFile } from "node:fs/promises";
+// Bangun snapshot paket jalan SAKSI dari ekspor RUP data.inaproc.id.
+// Konfigurasi daerah ada di data/regions/<id>/region.json + aliases.json; skrip ini tidak
+// menyimpan path, kode instansi, properti batas, token lokasi, atau alias khas satu daerah.
+// Pemakaian: node scripts/build-snapshot.mjs [--region <id>]   (bawaan: kota-tangerang)
+// Aturan  : tidak ada koordinat pekerjaan; lokasi hanya poligon lingkungan/kelurahan/kecamatan.
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
-
-const AKAR = process.cwd();
-const baca = async (rel) => JSON.parse(await readFile(path.join(AKAR, rel), "utf8"));
+import { AKAR, bacaJson, judul, muatRegion, norm } from "./lib/region.mjs";
 
 const VERB =
   "(pekerjaan|peningkatan|rekonstruksi|pembangunan|pemeliharaan|rehabilitasi|penataan|pengaspalan|pengerasan|pembetonan|pemasangan|lanjutan|normalisasi|perbaikan|pelebaran)";
@@ -19,84 +17,27 @@ const RE_FISIK = new RegExp(`${VERB}[^|]{0,40}${OBJ}|${OBJ}[^|]{0,25}${VERB}`, "
 // (mis. "... Signage di Jl. Mayjen Sutoyo") tidak dihitung sebagai objek pekerjaan.
 const RE_OBJ_JL = new RegExp(`\\b${VERB}\\s+\\bjl\\b\\.?`, "i");
 const RE_BUKAN = new RegExp(BUKAN, "i");
-// "RW O7" menulis huruf O untuk nol; hanya diterima di token RW dan tetap harus diikuti angka.
-const RE_RW = /\bRW\.?\s*[0o]*(\d{1,3})\b/i;
-const RE_KEL_MARK = /\b(kel\.?|kelurahan)\s*([A-Za-z][\w'\- ]{2,28})/i;
-// Varian ejaan kelurahan yang terbukti hanya menunjuk satu kelurahan resmi di Kota Tangerang.
-// Kunci = bentuk ternormalisasi `norm`, nilai = nama resmi di public/data/kel.geojson.
-// Jangan menambah pencocokan fuzzy: setiap alias harus lulus validasi di bawah.
-const ALIAS_KELURAHAN = new Map([
-  ["nusajaya", "Nusa Jaya"],
-  ["neroktog", "Nerogtog"],
-  ["karangsari", "Karang Sari"],
-  ["batu jaya", "Batujaya"],
-  ["mekasari", "Mekarsari"],
-]);
-
-const norm = (nilai) =>
-  String(nilai ?? "")
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/\b(jl|jalan|gang|gg|komp|komplek|kp|kampung)\.?\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const judul = (teks) => teks.toLowerCase().replace(/\b\w/g, (h) => h.toUpperCase());
 
 const namaSatker = (teks) => judul(String(teks ?? "").split(" - ")[0].trim());
 
 async function main() {
-  const rup = (await baca("data/rup_kota_tangerang_2025_2026.json")).item ?? [];
+  const argv = process.argv.slice(2);
+  const indeksRegion = argv.indexOf("--region");
+  const regionId =
+    indeksRegion >= 0 && argv[indeksRegion + 1] ? argv[indeksRegion + 1] : "kota-tangerang";
+  const region = await muatRegion(regionId);
+  const { kelurahanResmi, unitLingkungan, aliasKelurahan, reLingkungan, reKelurahan } = region;
+
+  const rup = (await bacaJson(region.sumber.rup)).item ?? [];
   // Detail RUP opsional: tanpa berkas ini `bulan` dan anchor kecamatan tidak terisi.
   // Jalankan `npm run data:rup-detail` (atau `data:rup-detail-tambal`) lebih dulu bila perlu.
   let detail = new Map();
   try {
     detail = new Map(
-      ((await baca("data/rup_detail_kota_tangerang.json")).item ?? []).map((d) => [String(d.kode_rup), d]),
+      ((await bacaJson(region.sumber.detail)).item ?? []).map((d) => [String(d.kode_rup), d]),
     );
   } catch {
-    console.warn("peringatan: data/rup_detail_kota_tangerang.json tidak ada — `bulan` akan kosong");
-  }
-  const kel = await baca("public/data/kel.geojson");
-  const rw = await baca("public/data/rw.geojson");
-
-  const kelurahanResmi = new Map();
-  for (const f of kel.features) {
-    const nama = String(f.properties?.wadmkd ?? "").trim();
-    if (!nama) continue;
-    kelurahanResmi.set(norm(nama), {
-      nama,
-      kecamatan: judul(String(f.properties?.wadmkc ?? "").trim()),
-    });
-  }
-
-  // Validasi alias: target harus kelurahan resmi, kuncinya tidak boleh nama resmi,
-  // dan tidak ada dua alias yang menunjuk kelurahan resmi yang sama.
-  const aliasKelurahan = new Map();
-  const targetAlias = new Set();
-  for (const [alias, resmi] of ALIAS_KELURAHAN) {
-    const kunci = norm(resmi);
-    const target = kelurahanResmi.get(kunci);
-    if (!target) throw new Error(`alias "${alias}" menunjuk "${resmi}" yang bukan kelurahan resmi`);
-    if (kelurahanResmi.has(alias)) {
-      throw new Error(`alias "${alias}" bertabrakan dengan nama kelurahan resmi`);
-    }
-    if (targetAlias.has(target.nama)) {
-      throw new Error(`dua alias menunjuk kelurahan yang sama: "${resmi}"`);
-    }
-    targetAlias.add(target.nama);
-    aliasKelurahan.set(alias, target);
-  }
-
-  const unitRw = new Map();
-  for (const f of rw.features) {
-    const kelurahan = String(f.properties?.wadmkd ?? "").trim();
-    const nomor = String(f.properties?.rw ?? "").trim();
-    if (!kelurahan || !nomor) continue;
-    unitRw.set(`${norm(kelurahan)}|${nomor}`, {
-      kecamatan: judul(String(f.properties?.wadmkc ?? "").trim()),
-    });
+    console.warn(`peringatan: ${region.sumber.detail} tidak ada — \`bulan\` akan kosong`);
   }
 
   const kecamatanResmi = new Set([...kelurahanResmi.values()].map((k) => norm(k.kecamatan)));
@@ -135,10 +76,10 @@ async function main() {
       }
     }
     if (!kelurahan) {
-      const tanda = nama.match(RE_KEL_MARK);
-      if (tanda && kelurahanResmi.has(norm(tanda[2]))) kelurahan = kelurahanResmi.get(norm(tanda[2]));
+      const tanda = nama.match(reKelurahan);
+      if (tanda && kelurahanResmi.has(norm(tanda[1]))) kelurahan = kelurahanResmi.get(norm(tanda[1]));
     }
-    const cocokRw = nama.match(RE_RW);
+    const cocokRw = nama.match(reLingkungan);
     const nomorRw = cocokRw ? String(Number(cocokRw[1])) : null;
 
     const kode = String(r.kode_rup);
@@ -147,10 +88,10 @@ async function main() {
     let kecamatan = null;
     let unitId = null;
 
-    if (kelurahan && nomorRw && unitRw.has(`${norm(kelurahan.nama)}|${nomorRw}`)) {
+    if (kelurahan && nomorRw && unitLingkungan.has(`${norm(kelurahan.nama)}|${nomorRw}`)) {
       presisi = "RW";
       unitId = `${norm(kelurahan.nama)}|${nomorRw}`;
-      kecamatan = unitRw.get(unitId).kecamatan;
+      kecamatan = unitLingkungan.get(unitId).kecamatan;
     } else if (kelurahan) {
       presisi = "Kelurahan";
       unitId = `${norm(kelurahan.nama)}|*`;
@@ -199,8 +140,8 @@ async function main() {
   // Tahun terbaru dulu, lalu pagu terbesar: paket yang paling lengkap datanya tampil lebih dulu.
   paket.sort((a, b) => b.tahun - a.tahun || b.pagu - a.pagu || a.kode_rup.localeCompare(b.kode_rup));
   await writeFile(
-    path.join(AKAR, "data", "saksi_kota_tangerang_2025_2026.json"),
-    JSON.stringify({ snapshot: "5 Nov 2026", sumber: "data.inaproc.id/rup", paket }),
+    path.resolve(AKAR, region.keluaran),
+    JSON.stringify({ snapshot: region.metadata.snapshot, sumber: region.metadata.sumber, paket }),
   );
 
   const hitung = (kunci) =>
@@ -210,6 +151,10 @@ async function main() {
     }, {});
   const pagu = paket.reduce((total, item) => total + item.pagu, 0);
 
+  console.log(`region            : ${region.label} (${region.id}, ${region.instansi})`);
+  console.log(
+    `batas             : ${region.jumlahKelurahan} kelurahan · ${region.jumlahUnitLingkungan} ${region.batas.lingkungan.label}`,
+  );
   console.log(`RUP dibaca        : ${rup.length}`);
   console.log(`ditolak (non-fisik): ${ditolakBukanFisik}`);
   console.log(`ditolak (objek lain): ${ditolakObjek}`);
@@ -223,6 +168,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(error?.name === "RegionError" ? `region: ${error.message}` : error);
   process.exitCode = 1;
 });
