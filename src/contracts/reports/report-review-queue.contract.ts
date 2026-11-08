@@ -8,6 +8,7 @@ export const reportReviewQueueQuerySchema = z.object({
 });
 
 export const reportReviewQueueItemSchema = z.object({
+  publicCode: z.string(),
   status: z.enum(reportStatuses),
   damageType: z.enum(reportDamageTypes),
   submittedAt: z.string().datetime(),

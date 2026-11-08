@@ -1,0 +1,138 @@
+import "server-only";
+import type { Prisma } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/server/api/shared/api-error";
+import type {
+  PublicReportsQuery,
+  PublicReportsResponse,
+  ReportStatusChangeInput,
+} from "@/contracts/reports/public-report.contract";
+
+const PUBLIC_SELECT = {
+  publicCode: true,
+  damageType: true,
+  coarseSize: true,
+  areaNameSnapshot: true,
+  districtNameSnapshot: true,
+  submittedAt: true,
+  area: { select: { regionId: true } },
+  packageLink: {
+    select: {
+      rupSnapshot: true,
+      packageNameSnapshot: true,
+      roadPackage: { select: { regionId: true } },
+    },
+  },
+  statusEvents: {
+    where: { toStatus: "PUBLISHED" as const },
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    select: { createdAt: true },
+  },
+} satisfies Prisma.ReportSelect;
+
+const EDITABLE_STATUSES = new Set(["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO", "PUBLISHED"]);
+
+function publicWhere(query: PublicReportsQuery): Prisma.ReportWhereInput {
+  const where: Prisma.ReportWhereInput = { status: "PUBLISHED" };
+
+  if (query.region) {
+    where.OR = [
+      { area: { regionId: query.region } },
+      { packageLink: { roadPackage: { regionId: query.region } } },
+    ];
+  }
+  if (query.package) {
+    where.packageLink = { rupSnapshot: query.package };
+  }
+  if (query.district) {
+    where.districtNameSnapshot = { equals: query.district, mode: "insensitive" };
+  }
+  if (query.village) {
+    where.areaNameSnapshot = { startsWith: query.village, mode: "insensitive" };
+  }
+
+  return where;
+}
+
+/** Daftar laporan yang sudah disetujui moderator; tidak pernah memuat data privat. */
+export async function listPublishedReports(query: PublicReportsQuery): Promise<PublicReportsResponse> {
+  const where = publicWhere(query);
+  const [rows, total] = await Promise.all([
+    prisma.report.findMany({
+      where,
+      orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+      select: PUBLIC_SELECT,
+    }),
+    prisma.report.count({ where }),
+  ]);
+
+  return {
+    reports: rows.map((report) => ({
+      publicCode: report.publicCode,
+      damageType: report.damageType,
+      coarseSize: report.coarseSize,
+      areaName: report.areaNameSnapshot,
+      districtName: report.districtNameSnapshot,
+      submittedAt: report.submittedAt.toISOString(),
+      publishedAt: report.statusEvents[0]?.createdAt.toISOString() ?? null,
+      package: report.packageLink
+        ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
+        : null,
+    })),
+    total,
+    page: query.page,
+    limit: query.limit,
+    totalPages: Math.max(1, Math.ceil(total / query.limit)),
+  };
+}
+
+/** Publikasikan atau tolak satu laporan, dengan alasan dan riwayat status. */
+export async function changeReportStatus(input: {
+  publicCode: string;
+  actorUserId: string;
+  change: ReportStatusChangeInput;
+}) {
+  return prisma.$transaction(async (transaction) => {
+    const report = await transaction.report.findUnique({
+      where: { publicCode: input.publicCode },
+      select: { id: true, status: true },
+    });
+    if (!report) {
+      throw new ApiError(404, "REPORT_NOT_FOUND", "Laporan tidak ditemukan.");
+    }
+    if (report.status === input.change.status) {
+      throw new ApiError(409, "REPORT_STATUS_UNCHANGED", "Laporan sudah berada pada status itu.");
+    }
+    if (!EDITABLE_STATUSES.has(report.status)) {
+      throw new ApiError(409, "INVALID_STATUS_TRANSITION", "Status laporan ini tidak dapat diubah dari antrean.");
+    }
+
+    const updated = await transaction.report.updateMany({
+      where: { id: report.id, status: report.status },
+      data: { status: input.change.status },
+    });
+    if (updated.count !== 1) {
+      throw new ApiError(409, "REPORT_STATUS_CONFLICT", "Status laporan berubah. Muat ulang antrean.");
+    }
+
+    const event = await transaction.reportStatusEvent.create({
+      data: {
+        reportId: report.id,
+        actorUserId: input.actorUserId,
+        fromStatus: report.status,
+        toStatus: input.change.status,
+        reason: input.change.reason,
+      },
+      select: { createdAt: true },
+    });
+
+    return {
+      publicCode: input.publicCode,
+      status: input.change.status,
+      publishedAt: input.change.status === "PUBLISHED" ? event.createdAt.toISOString() : null,
+    };
+  });
+}

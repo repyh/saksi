@@ -17,6 +17,12 @@ import { listRegions } from "@/server/regions/region-registry";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { MyReportsResponse } from "@/contracts/reports/report-history.contract";
 import { reportReviewQueueQuerySchema, type ReportReviewQueueResponse } from "@/contracts/reports/report-review-queue.contract";
+import {
+  publicReportsQuerySchema,
+  reportStatusChangeSchema,
+  type PublicReportsResponse,
+} from "@/contracts/reports/public-report.contract";
+import { changeReportStatus, listPublishedReports } from "@/server/reports/public-report.repository";
 import { requireRequestPermission } from "@/server/authorization/authority";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -88,6 +94,7 @@ export class ReportsApi extends ApiController {
           take: 31,
           select: {
             id: true,
+            publicCode: true,
             status: true,
             damageType: true,
             submittedAt: true,
@@ -104,6 +111,7 @@ export class ReportsApi extends ApiController {
 
       return {
         reports: page.map((report) => ({
+          publicCode: report.publicCode,
           status: report.status,
           damageType: report.damageType,
           submittedAt: report.submittedAt.toISOString(),
@@ -121,6 +129,63 @@ export class ReportsApi extends ApiController {
       message: "Antrean laporan belum dapat dimuat. Coba lagi nanti.",
     }, 200, (error) => isReportDatabaseUnavailable(error)
       ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan antrean laporan belum siap.")
+      : undefined));
+  }
+
+  listPublic(request: Request): Promise<Response> {
+    return this.withPublicCache(this.respond(async (): Promise<PublicReportsResponse> => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "REPORTS_UNAVAILABLE", "Laporan publik belum tersedia.");
+      }
+
+      const url = new URL(request.url);
+      const parsedQuery = publicReportsQuerySchema.safeParse({
+        region: url.searchParams.get("region")?.trim() || undefined,
+        package: url.searchParams.get("paket")?.trim() || undefined,
+        district: url.searchParams.get("kecamatan")?.trim() || undefined,
+        village: url.searchParams.get("kelurahan")?.trim() || undefined,
+        page: url.searchParams.get("page") ?? undefined,
+        limit: url.searchParams.get("limit") ?? undefined,
+      });
+      if (!parsedQuery.success) {
+        throw new ApiError(400, "INVALID_PUBLIC_REPORT_QUERY", "Filter laporan publik tidak valid.");
+      }
+
+      return listPublishedReports(parsedQuery.data);
+    }, {
+      code: "PUBLIC_REPORTS_UNAVAILABLE",
+      message: "Laporan publik belum dapat dimuat. Coba lagi nanti.",
+    }, 200, (error) => isReportDatabaseUnavailable(error)
+      ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan laporan publik belum siap.")
+      : undefined));
+  }
+
+  changeStatus(request: Request, publicCode: string): Promise<Response> {
+    return this.withPrivateNoStore(this.respond(async () => {
+      const user = await requireRequestPermission(request.headers, "reports.change_status");
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "REPORTS_UNAVAILABLE", "Moderasi laporan belum tersedia.");
+      }
+      if (!/^[A-Za-z0-9_-]{10,64}$/.test(publicCode)) {
+        throw new ApiError(404, "REPORT_NOT_FOUND", "Laporan tidak ditemukan.");
+      }
+
+      const body = await request.json().catch(() => null);
+      const parsedBody = reportStatusChangeSchema.safeParse(body);
+      if (!parsedBody.success) {
+        throw new ApiError(400, "INVALID_STATUS_CHANGE", "Status dan alasan moderasi wajib diisi dengan benar.");
+      }
+
+      return changeReportStatus({
+        publicCode,
+        actorUserId: user.id,
+        change: parsedBody.data,
+      });
+    }, {
+      code: "REPORT_STATUS_UPDATE_FAILED",
+      message: "Status laporan belum dapat diubah. Coba lagi nanti.",
+    }, 200, (error) => isReportDatabaseUnavailable(error)
+      ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan moderasi laporan belum siap.")
       : undefined));
   }
 
@@ -279,6 +344,13 @@ export class ReportsApi extends ApiController {
     const result = await response;
     const headers = new Headers(result.headers);
     headers.set("Cache-Control", "private, no-store");
+    return new Response(result.body, { status: result.status, statusText: result.statusText, headers });
+  }
+
+  private async withPublicCache(response: Promise<Response>): Promise<Response> {
+    const result = await response;
+    const headers = new Headers(result.headers);
+    headers.set("Cache-Control", "public, max-age=60");
     return new Response(result.body, { status: result.status, statusText: result.statusText, headers });
   }
 }

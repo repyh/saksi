@@ -28,6 +28,8 @@ const statusLabels: Record<ReportReviewQueueItem["status"], string> = {
   ARCHIVED: "Diarsipkan",
 };
 
+const EDITABLE_STATUSES = new Set(["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO"]);
+
 const statusOptions = [
   { value: "active", label: "Perlu ditinjau" },
   { value: "all", label: "Semua status" },
@@ -77,6 +79,10 @@ export function ReportReviewQueue({ active }: { active: boolean }) {
   const [loadedRequestKey, setLoadedRequestKey] = useState("");
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [action, setAction] = useState<{ report: ReportReviewQueueItem; status: "PUBLISHED" | "REJECTED" } | null>(null);
+  const [reason, setReason] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [isActing, setIsActing] = useState(false);
   const requestKey = `${status}:${refreshKey}`;
   const isLoading = active && loadedRequestKey !== requestKey && !error;
 
@@ -124,13 +130,40 @@ export function ReportReviewQueue({ active }: { active: boolean }) {
     }
   }
 
+  async function submitAction() {
+    if (!action || reason.trim().length < 3) return;
+    setIsActing(true);
+    setActionError("");
+    try {
+      const response = await fetch(`/api/reports/review/${encodeURIComponent(action.report.publicCode)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ status: action.status, reason: reason.trim() }),
+      });
+      const result = await response.json() as ApiResult<unknown>;
+      if (!response.ok || result.error) {
+        throw new Error(result.error?.message ?? "Status laporan belum dapat diubah.");
+      }
+      setAction(null);
+      setReason("");
+      refresh();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : "Status laporan belum dapat diubah.");
+    } finally {
+      setIsActing(false);
+    }
+  }
+
   return (
     <section className="mt-4" aria-label="Antrean review laporan">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
         <div>
           <p className="text-sm text-muted-foreground">{total} laporan</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Antrean menampilkan ringkasan laporan. Bukti foto dan keputusan moderasi belum tersedia di bagian ini.
+            Antrean menampilkan ringkasan laporan tanpa identitas pelapor, deskripsi, petunjuk lokasi, atau foto.
+            Moderator dengan izin ubah status dapat mempublikasikan atau menolak laporan beserta alasannya.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -192,7 +225,7 @@ export function ReportReviewQueue({ active }: { active: boolean }) {
             {reports.map((report, index) => {
               const area = [report.areaName, report.districtName].filter(Boolean).join(" · ");
               return (
-                <li key={`${report.submittedAt}-${index}`} className="border border-border bg-white px-4 py-4 sm:px-5">
+                <li key={report.publicCode || `${report.submittedAt}-${index}`} className="border border-border bg-white px-4 py-4 sm:px-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="font-heading text-base font-bold leading-6">{damageLabels[report.damageType]}</h3>
@@ -213,6 +246,74 @@ export function ReportReviewQueue({ active }: { active: boolean }) {
                       <p className="text-sm text-muted-foreground">Tidak ditautkan ke paket</p>
                     )}
                   </div>
+                  {EDITABLE_STATUSES.has(report.status) ? (
+                    <div className="mt-3 flex flex-wrap gap-2 border-t border-border/70 pt-3">
+                      {report.status !== "PUBLISHED" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAction({ report, status: "PUBLISHED" });
+                            setReason("");
+                            setActionError("");
+                          }}
+                          className="inline-flex min-h-9 items-center bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          Publikasikan
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAction({ report, status: "REJECTED" });
+                          setReason("");
+                          setActionError("");
+                        }}
+                        className="inline-flex min-h-9 items-center border border-destructive px-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
+                      >
+                        {report.status === "PUBLISHED" ? "Tarik dari publikasi" : "Tolak"}
+                      </button>
+                    </div>
+                  ) : null}
+                  {action?.report.publicCode === report.publicCode ? (
+                    <form
+                      className="mt-3 border border-border bg-muted/20 p-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void submitAction();
+                      }}
+                    >
+                      <p className="text-sm font-semibold text-foreground">
+                        {action.status === "PUBLISHED" ? "Publikasikan laporan ini" : "Tolak laporan ini"}
+                      </p>
+                      <label className="mt-2 block text-xs font-semibold text-muted-foreground">
+                        Alasan moderasi (wajib, minimal 3 karakter)
+                        <textarea
+                          value={reason}
+                          onChange={(event) => setReason(event.target.value)}
+                          rows={2}
+                          maxLength={1000}
+                          className="mt-1 w-full border border-input bg-white px-2 py-1.5 text-sm font-normal text-foreground"
+                        />
+                      </label>
+                      {actionError ? <p role="alert" className="mt-2 text-xs font-semibold text-destructive">{actionError}</p> : null}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="submit"
+                          disabled={reason.trim().length < 3 || isActing}
+                          className="inline-flex min-h-9 items-center bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                        >
+                          {isActing ? "Menyimpan…" : "Simpan keputusan"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAction(null)}
+                          className="inline-flex min-h-9 items-center border border-border px-3 text-xs font-bold text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
                 </li>
               );
             })}

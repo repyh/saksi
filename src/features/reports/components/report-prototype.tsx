@@ -325,10 +325,15 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                   Laporan masuk antrean tinjauan internal dan tidak langsung dipublikasikan.
                 </p>
               </div>
-              <Link href="/project" className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                <FiArrowLeft aria-hidden="true" />
-                Kembali ke peta
-              </Link>
+              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                <Link href="/project" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                  <FiArrowLeft aria-hidden="true" />
+                  Kembali ke peta
+                </Link>
+                <Link href="/laporan/publik" className="inline-flex min-h-9 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                  Lihat laporan publik
+                </Link>
+              </div>
             </div>
 
             <nav aria-label="Tahap laporan" className="mt-8 border-b border-border py-4">
