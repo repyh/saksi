@@ -37,6 +37,12 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
     href: "/penyedia",
     variant: "ghost",
   },
+  {
+    id: "metode",
+    label: "Metode",
+    href: "/metode",
+    variant: "ghost",
+  },
 ];
 
 export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavActionsProps) {
