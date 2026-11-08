@@ -4,8 +4,8 @@
 
 **Repository:** `repyh/saksi`
 
-**Branch:** `test/report-e2e-supabase` (active)
-**`master`:** `3179ff7` (audit metrics + documentation + report badge already merged)
+**Branch:** `master` (P0 review fixes merged 8 November 2026)
+**P0 branches merged:** `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`, `feat/report-prototype-badge`, `test/report-e2e-supabase`
 
 This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
 

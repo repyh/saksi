@@ -119,11 +119,10 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 
 - Repo kerja: `~/dev/saksi-web` (remote `repyh/saksi`); worktree P0:
   `.../worktrees/p0-review-fixes`.
-- **Branch aktif saat pembaruan: `test/report-e2e-supabase`** — verifikasi submit laporan end-to-end
-  ke Supabase dan pencatatan hasilnya.
-- **`master` = `3179ff7`** — memuat migrasi peta MapLibre, metrik audit dari snapshot
-  (`fix/audit-metrics-snapshot`), penyelarasan dokumen (`docs/snapshot-status-alignment`), dan badge
-  alur lapor (`feat/report-prototype-badge`), semuanya sudah di-merge.
+- **Branch aktif: `master`** — seluruh P0 review sudah di-merge 8 November 2026:
+  `fix/audit-metrics-snapshot`, `docs/snapshot-status-alignment`,
+  `feat/report-prototype-badge`, `test/report-e2e-supabase`.
+- **Basis peta:** migrasi MapLibre sudah ada di `master` sebelum P0.
 - **`feat/map-layer`** — eksperimen pemilih basemap (OSM/Positron/Satelit) yang **tidak dipakai**;
   basemap tunggal produk kini OpenFreeMap Positron.
 - Repo arsip FDS: `~/Hermes/wia-webcomp-2026` (HEAD `c88f667`, bersih); repo Vite kanonik FDS:
