@@ -19,8 +19,19 @@ const RE_FISIK = new RegExp(`${VERB}[^|]{0,40}${OBJ}|${OBJ}[^|]{0,25}${VERB}`, "
 // (mis. "... Signage di Jl. Mayjen Sutoyo") tidak dihitung sebagai objek pekerjaan.
 const RE_OBJ_JL = new RegExp(`\\b${VERB}\\s+\\bjl\\b\\.?`, "i");
 const RE_BUKAN = new RegExp(BUKAN, "i");
-const RE_RW = /\bRW\.?\s*0*(\d{1,3})\b/i;
+// "RW O7" menulis huruf O untuk nol; hanya diterima di token RW dan tetap harus diikuti angka.
+const RE_RW = /\bRW\.?\s*[0o]*(\d{1,3})\b/i;
 const RE_KEL_MARK = /\b(kel\.?|kelurahan)\s*([A-Za-z][\w'\- ]{2,28})/i;
+// Varian ejaan kelurahan yang terbukti hanya menunjuk satu kelurahan resmi di Kota Tangerang.
+// Kunci = bentuk ternormalisasi `norm`, nilai = nama resmi di public/data/kel.geojson.
+// Jangan menambah pencocokan fuzzy: setiap alias harus lulus validasi di bawah.
+const ALIAS_KELURAHAN = new Map([
+  ["nusajaya", "Nusa Jaya"],
+  ["neroktog", "Nerogtog"],
+  ["karangsari", "Karang Sari"],
+  ["batu jaya", "Batujaya"],
+  ["mekasari", "Mekarsari"],
+]);
 
 const norm = (nilai) =>
   String(nilai ?? "")
@@ -60,6 +71,24 @@ async function main() {
     });
   }
 
+  // Validasi alias: target harus kelurahan resmi, kuncinya tidak boleh nama resmi,
+  // dan tidak ada dua alias yang menunjuk kelurahan resmi yang sama.
+  const aliasKelurahan = new Map();
+  const targetAlias = new Set();
+  for (const [alias, resmi] of ALIAS_KELURAHAN) {
+    const kunci = norm(resmi);
+    const target = kelurahanResmi.get(kunci);
+    if (!target) throw new Error(`alias "${alias}" menunjuk "${resmi}" yang bukan kelurahan resmi`);
+    if (kelurahanResmi.has(alias)) {
+      throw new Error(`alias "${alias}" bertabrakan dengan nama kelurahan resmi`);
+    }
+    if (targetAlias.has(target.nama)) {
+      throw new Error(`dua alias menunjuk kelurahan yang sama: "${resmi}"`);
+    }
+    targetAlias.add(target.nama);
+    aliasKelurahan.set(alias, target);
+  }
+
   const unitRw = new Map();
   for (const f of rw.features) {
     const kelurahan = String(f.properties?.wadmkd ?? "").trim();
@@ -75,6 +104,7 @@ async function main() {
   const paket = [];
   let ditolakObjek = 0;
   let ditolakBukanFisik = 0;
+  const aliasDipakai = new Map();
 
   for (const r of rup) {
     const nama = String(r.paket ?? "").replace(/&#x27;/g, "'");
@@ -93,6 +123,15 @@ async function main() {
       if (teks.includes(` ${kunci} `)) {
         kelurahan = isi;
         break;
+      }
+    }
+    if (!kelurahan) {
+      for (const [alias, isi] of aliasKelurahan) {
+        if (teks.includes(` ${alias} `)) {
+          kelurahan = isi;
+          aliasDipakai.set(alias, (aliasDipakai.get(alias) ?? 0) + 1);
+          break;
+        }
       }
     }
     if (!kelurahan) {
@@ -180,6 +219,7 @@ async function main() {
   console.log(`presisi           : ${JSON.stringify(hitung("presisi_peta"))}`);
   console.log(`punya bulan       : ${paket.filter((item) => item.bulan).length}`);
   console.log(`kecamatan terisi  : ${paket.filter((item) => item.kecamatan_resmi).length}`);
+  console.log(`alias kelurahan   : ${JSON.stringify(Object.fromEntries(aliasDipakai))}`);
 }
 
 main().catch((error) => {
