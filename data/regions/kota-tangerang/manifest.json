@@ -1,0 +1,98 @@
+{
+  "region": "kota-tangerang",
+  "label": "Kota Tangerang",
+  "instansi": "D44",
+  "tahun": [
+    2025,
+    2026
+  ],
+  "dibuat": "2026-11-08T14:18:09.818Z",
+  "sumber": {
+    "rup": "data/rup_kota_tangerang_2025_2026.json",
+    "detail": "data/rup_detail_kota_tangerang.json",
+    "realisasi": "data/realisasi_kota_tangerang.json"
+  },
+  "lpse": {
+    "base": "https://spse.inaproc.id/tangerangkota",
+    "direktori": "data/lpse",
+    "keluaran": "data/lpse_kota_tangerang_2025_2026.json"
+  },
+  "berkas": {
+    "data/regions/kota-tangerang/region.json": {
+      "berkas": "data/regions/kota-tangerang/region.json",
+      "byte": 1205,
+      "sha256": "fbd5ec3853fba0da266747e97fb153661942106f12f342d650d3174429be31fb"
+    },
+    "data/regions/kota-tangerang/aliases.json": {
+      "berkas": "data/regions/kota-tangerang/aliases.json",
+      "byte": 912,
+      "sha256": "7fd80c8d290d239599615d289956f68ac02d24452b54334ca930d4799974dcda"
+    },
+    "data/rup_kota_tangerang_2025_2026.json": {
+      "berkas": "data/rup_kota_tangerang_2025_2026.json",
+      "byte": 9621080,
+      "sha256": "e35448d077cadd47d54d5a02b4f1fa2154d41699c96bd9ab2c3b2200340008ce"
+    },
+    "data/rup_detail_kota_tangerang.json": {
+      "berkas": "data/rup_detail_kota_tangerang.json",
+      "byte": 1344770,
+      "sha256": "37db65d8610f291db190ba020f91e2af64890aa392597c91e66e8c6e4c277685"
+    },
+    "data/realisasi_kota_tangerang.json": {
+      "berkas": "data/realisasi_kota_tangerang.json",
+      "byte": 20385511,
+      "sha256": "fb0baf6bc7a810fce72f64351c39f0040bc0e33edf0c9c99a4507b6fa9db73cc"
+    },
+    "data/lpse_kota_tangerang_2025_2026.json": {
+      "berkas": "data/lpse_kota_tangerang_2025_2026.json",
+      "byte": 1152592,
+      "sha256": "39d56d0b33c839aec0f1ba0dd3d08d67e2c9c4be5c6b396e783bebada66a67e1"
+    },
+    "data/saksi_kota_tangerang_2025_2026.json": {
+      "berkas": "data/saksi_kota_tangerang_2025_2026.json",
+      "byte": 1103207,
+      "sha256": "dc3dc604e1b6d37f5611733e3a263c878704464d87b3a1564fad1d7393bdd145"
+    },
+    "public/data/kel.geojson": {
+      "berkas": "public/data/kel.geojson",
+      "byte": 195768,
+      "sha256": "cb30ec54281bde16e6c6591facd5639e90fce71b1b3b4d3193788c18c0abd47f"
+    },
+    "public/data/rw.geojson": {
+      "berkas": "public/data/rw.geojson",
+      "byte": 829903,
+      "sha256": "c839b2e007ff01b1b70f17f205b968921a5cce85eb71a8f695c0fa0112d743b3"
+    },
+    "public/data/kec.geojson": {
+      "berkas": "public/data/kec.geojson",
+      "byte": 343669,
+      "sha256": "d9100dad5e1f3859fb2ddf060a85c2d1a665b41dbb79f55fbc6ba20734dbc8fd"
+    }
+  },
+  "metrik": {
+    "paket": 2552,
+    "pagu": 813127177758,
+    "per_tahun": {
+      "2025": 1592,
+      "2026": 960
+    },
+    "presisi": {
+      "Kabupaten": 344,
+      "Kelurahan": 517,
+      "RW": 1612,
+      "Kecamatan": 79
+    },
+    "berlokus": 2208,
+    "kelurahan_tersentuh": 87,
+    "unit_lingkungan_tersentuh": 585,
+    "kecamatan_tersentuh": 13,
+    "penyedia": {
+      "lpse": 731,
+      "realisasi": 1603,
+      "tanpa_rekam": 218,
+      "tanpa_rekam_pagu": 132343800219,
+      "unik": 633
+    }
+  },
+  "masalah": []
+}

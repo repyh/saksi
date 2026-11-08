@@ -6,6 +6,7 @@ export async function fetchRoadPackages(
   signal: AbortSignal,
 ): Promise<RoadPackageSearchData> {
   const params = new URLSearchParams();
+  if (filters.region) params.set("region", filters.region);
   if (filters.year) params.set("year", filters.year);
   if (filters.district) params.set("district", filters.district);
   for (const desa of filters.villages ?? []) params.append("desa", desa);

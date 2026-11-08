@@ -3,11 +3,12 @@ import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { listVendors, searchRoadPackages } from "@/server/packages/service";
+import { resolveRegionId } from "@/server/regions/region-registry";
 
 export const metadata: Metadata = {
   title: "Penyedia & Kontrak Jalan — SAKSI",
   description:
-    "Rekam jejak penyedia paket jalan Kota Tangerang dari LPSE/SPSE dan Data INAPROC, disandingkan dengan paket RUP.",
+    "Rekam jejak penyedia paket jalan dari LPSE/SPSE dan Data INAPROC, disandingkan dengan paket RUP.",
 };
 
 const KATEGORI_LABEL: Record<string, string> = {
@@ -18,13 +19,14 @@ const KATEGORI_LABEL: Record<string, string> = {
 };
 
 interface PenyediaPageProps {
-  searchParams: Promise<{ q?: string; urut?: string; arah?: string }>;
+  searchParams: Promise<{ q?: string; urut?: string; arah?: string; region?: string | string[] }>;
 }
 
 export default async function PenyediaPage({ searchParams }: PenyediaPageProps) {
-  const { q, urut, arah } = await searchParams;
+  const { q, urut, arah, region } = await searchParams;
+  const regionId = resolveRegionId(region);
   const query = (q ?? "").trim();
-  const vendor = await listVendors(query || undefined);
+  const vendor = await listVendors(query || undefined, regionId);
   const sortBy = urut === "paket" || urut === "nama" || urut === "tahun" ? urut : "nilai";
   const direction = arah === "asc" ? "asc" : "desc";
   vendor.sort((a, b) => {
@@ -38,7 +40,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
     if (compared !== 0) return direction === "asc" ? compared : -compared;
     return a.nama.localeCompare(b.nama, "id");
   });
-  const ringkas = await searchRoadPackages();
+  const ringkas = await searchRoadPackages({ region: regionId });
   const totalPaket = vendor.reduce((n, item) => n + item.paket, 0);
   const totalNilai = vendor.reduce((n, item) => n + item.nilai, 0);
   const tampil = vendor.slice(0, 60);
@@ -85,6 +87,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
           </dl>
 
           <form action="/penyedia" method="get" className="mt-6 flex max-w-md items-center gap-2">
+            <input type="hidden" name="region" value={regionId} />
             <input type="hidden" name="urut" value={sortBy} />
             <input type="hidden" name="arah" value={direction} />
             <label className="relative flex-1">
@@ -158,7 +161,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
                 {tampil.map((item) => (
                   <tr key={item.slug} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
                     <td className="px-3 py-2.5 font-semibold leading-snug">
-                      <Link href={`/penyedia/${item.slug}`} className="text-primary underline-offset-2 hover:underline">
+                      <Link href={`/penyedia/${item.slug}?region=${encodeURIComponent(regionId)}`} className="text-primary underline-offset-2 hover:underline">
                         {item.nama}
                       </Link>
                     </td>

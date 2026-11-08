@@ -25,7 +25,16 @@
       "kecamatan": "wadmkc",
       "nomor": "rw",
       "label": "RW"
-    }
+    },
+    "kecamatan": {
+      "berkas": "public/data/kec.geojson",
+      "nama": "wadmkc"
+    },
+    "pusat": [
+      106.63,
+      -6.178
+    ],
+    "zoom": 11
   },
   "lokasi": {
     "token_lingkungan": ["RW"],

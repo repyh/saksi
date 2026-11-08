@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { FiArrowLeft, FiArrowRight, FiExternalLink } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { getVendor } from "@/server/packages/service";
+import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
 
 interface PenyediaDetailPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ region?: string | string[] }>;
 }
 
 const KATEGORI_LABEL: Record<string, string> = {
@@ -16,20 +18,22 @@ const KATEGORI_LABEL: Record<string, string> = {
   SEMUA: "Campuran",
 };
 
-export async function generateMetadata({ params }: PenyediaDetailPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await getVendor(slug);
+export async function generateMetadata({ params, searchParams }: PenyediaDetailPageProps): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const regionId = resolveRegionId(query.region);
+  const data = await getVendor(slug, regionId);
   if (!data) return { title: "Penyedia tidak ditemukan — SAKSI" };
 
   return {
     title: `${data.summary.nama} — Penyedia SAKSI`,
-    description: `Rekam kontrak ${data.summary.nama} pada paket jalan Kota Tangerang dari LPSE dan Data INAPROC.`,
+    description: `Rekam kontrak ${data.summary.nama} pada paket jalan ${getRegion(regionId).label} dari LPSE dan Data INAPROC.`,
   };
 }
 
-export default async function PenyediaDetailPage({ params }: PenyediaDetailPageProps) {
-  const { slug } = await params;
-  const data = await getVendor(slug);
+export default async function PenyediaDetailPage({ params, searchParams }: PenyediaDetailPageProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const regionId = resolveRegionId(query.region);
+  const data = await getVendor(slug, regionId);
   if (!data) notFound();
 
   const { summary, items, totalNilai } = data;
@@ -38,7 +42,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
     <main className="min-h-screen bg-white text-foreground">
       <section className="border-b border-border bg-muted/20">
         <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          <Link href="/penyedia" className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
+          <Link href={`/penyedia?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
             <FiArrowLeft aria-hidden="true" className="size-3.5" /> Semua penyedia
           </Link>
 
@@ -97,7 +101,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
                       <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">
                         RUP {item.kode_rup} · TA {item.tahun}
                       </span>
-                      <Link href={`/laporan/paket/${item.kode_rup}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
+                      <Link href={`/laporan/paket/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
                       <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">
@@ -130,7 +134,7 @@ export default async function PenyediaDetailPage({ params }: PenyediaDetailPageP
         )}
 
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Link href="/project" className="inline-flex items-center gap-1.5 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">
+          <Link href={`/project?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">
             Lihat di peta audit <FiArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
           <p className="font-sans text-[11px] text-muted-foreground">

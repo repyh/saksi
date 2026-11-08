@@ -87,9 +87,9 @@ operasional dan jasa konsultansi, dan **membatasi pada pekerjaan jalan**:
 | Paket jalan, jembatan & drainase | **2.552** |
 | Pagu | **Rp813,13 Miliar** |
 | Paket TA 2025 / TA 2026 | 1.592 / 960 |
-| Kelurahan tersentuh | **86 dari 104** · 13 kecamatan |
-| RW tersentuh | 584 dari 1.020 |
-| Anchor lokasi turunan (RW/kelurahan/kecamatan) | **2.206 (86,4%)** |
+| Kelurahan tersentuh | **87 dari 104** · 13 kecamatan |
+| RW tersentuh | 585 dari 1.020 |
+| Anchor lokasi turunan (RW/kelurahan/kecamatan) | **2.208 (86,5%)** |
 | Penyedia bernama (LPSE/SPSE + Data INAPROC) | 2.334 (91,5%) · 633 penyedia unik |
 | Tanpa rekam publik | 218 paket (Rp132,34 M, 16,3% pagu) |
 | Rasio kontrak/pagu median | 0,99 |
@@ -103,10 +103,10 @@ kampung, persis jenis pekerjaan yang paling sering dikeluhkan warga.
 
 | Tingkat anchor | Paket | Arti di peta |
 |---|---:|---|
-| RW | 1.609 (63,0%) | nama paket menyebut RW → masuk poligon RW resmi |
-| Kelurahan | 514 (20,1%) | hanya kelurahan disebut → poligon kelurahan |
-| Kecamatan | 83 (3,3%) | hanya kecamatan disebut → poligon kecamatan |
-| Tanpa lokus | 346 (13,6%) | tidak menyebut tempat → **tidak masuk peta**, hanya di tabel |
+| RW | 1.612 (63,2%) | nama paket menyebut RW → masuk poligon RW resmi |
+| Kelurahan | 517 (20,3%) | hanya kelurahan disebut → poligon kelurahan |
+| Kecamatan | 79 (3,1%) | hanya kecamatan disebut → poligon kecamatan |
+| Tanpa lokus | 344 (13,5%) | tidak menyebut tempat → **tidak masuk peta**, hanya di tabel |
 
 **Tidak ada pin, titik, atau jitter per paket** — karena tidak ada koordinat pekerjaan di sumber mana
 pun. Peta adalah koroplet batas wilayah resmi (ArcGIS Kota Tangerang) dengan segmented control di peta
@@ -125,7 +125,7 @@ bukan sebaran yang dangkal di lima domain.
 
 ## 5. Dampak — Siapa Berubah Perilakunya
 
-**Pengguna utama:** warga di 86 kelurahan yang punya paket jalan 2025–2026, dan **dinas teknis
+**Pengguna utama:** warga di 87 kelurahan yang punya paket jalan 2025–2026, dan **dinas teknis
 pengelola jalan** serta **Inspektorat** sebagai pihak yang bisa bertindak.
 
 | Siapa | Perubahan yang diharapkan |
@@ -135,7 +135,7 @@ pengelola jalan** serta **Inspektorat** sebagai pihak yang bisa bertindak.
 | Inspektorat / DPRD | punya sampel lapangan yang bisa diuji, bukan hanya laporan berjenjang |
 | Penyedia jasa yang jujur | rekam jejak terbuka membuat pekerjaan di bawah spesifikasi kehilangan keunggulan biaya |
 
-**Yang bisa diklaim, bukan dijanjikan:** 2.552 paket jalan bisa dicari per kelurahan/RW; 2.206 (86,4%)
+**Yang bisa diklaim, bukan dijanjikan:** 2.552 paket jalan bisa dicari per kelurahan/RW; 2.208 (86,5%)
 punya anchor lokasi di poligon resmi; setiap laporan warga terikat ke satu nomor RUP; dan setiap paket
 yang dilaporkan rusak dalam masa pemeliharaan masuk daftar tagih.
 
@@ -150,7 +150,7 @@ mengatakan laporan itu tidak ada.
 
 1. **Bahasa indikator "Diduga", bukan tuduhan.** Status tertinggi *"Diduga Tidak Sesuai — Perlu
    Tinjauan Lapangan"*; tidak ada label korupsi atau fiktif.
-2. **Tidak memaksa titik.** 346 paket (13,6%) tanpa penanda tempat tidak dipetakan, dan tidak ada
+2. **Tidak memaksa titik.** 344 paket (13,5%) tanpa penanda tempat tidak dipetakan, dan tidak ada
    pin per paket yang dikarang: peta hanya menjumlahkan paket ke poligon wilayah resmi.
 3. **IRI hanya mencakup jalan nasional** (8,6% jaringan), sedangkan paket kita mayoritas jalan kota.
    Komparasi IRI hanya berlaku bila paket berimpit dengan ruas nasional; selebihnya

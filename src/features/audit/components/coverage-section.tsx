@@ -22,6 +22,8 @@ function LocationMark({ kind }: { kind: "rw" | "kelurahan" | "kecamatan" | "none
 
 export function CoverageSection({ metrics }: CoverageSectionProps) {
   const {
+    regionName,
+    environmentLabel,
     snapshotDate,
     snapshotSource,
     totalPackages,
@@ -38,15 +40,15 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
   const locations = [
     {
       kind: "rw" as const,
-      label: "RW",
+      label: environmentLabel,
       count: spatial.rwPackages,
-      description: "Nomor RW pada paket cocok dengan batas wilayah.",
+      description: `Nomor ${environmentLabel} pada paket cocok dengan batas wilayah.`,
     },
     {
       kind: "kelurahan" as const,
       label: "Kelurahan",
       count: spatial.kelurahanPackages,
-      description: "Nama kelurahan cocok, tanpa kecocokan RW.",
+      description: `Nama kelurahan cocok, tanpa kecocokan ${environmentLabel}.`,
     },
     {
       kind: "kecamatan" as const,
@@ -103,11 +105,11 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
               <p className="font-heading text-4xl leading-[1.05] font-extrabold tracking-[-0.04em] text-foreground sm:text-5xl">
                 {coveredRw.toLocaleString("id-ID")}<span className="ml-1 text-2xl font-bold text-muted-foreground sm:text-3xl">/ {totalRw.toLocaleString("id-ID")}</span>
               </p>
-              <p className="mt-2 text-base font-semibold leading-6 text-foreground">RW tersentuh paket</p>
-              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredRw} dari ${totalRw} RW tersentuh paket`}>
+              <p className="mt-2 text-base font-semibold leading-6 text-foreground">{environmentLabel} tersentuh paket</p>
+              <div className="mt-4 h-2 w-full bg-muted" role="img" aria-label={`${coveredRw} dari ${totalRw} ${environmentLabel} tersentuh paket`}>
                 <div className="h-full bg-primary" style={{ width: `${rwRatio}%` }} />
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">Dari batas RW resmi kota</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Dari batas {environmentLabel} resmi</p>
             </div>
           </div>
 
@@ -138,7 +140,7 @@ export function CoverageSection({ metrics }: CoverageSectionProps) {
               })}
           </ul>
             <figcaption className="pt-3 text-xs leading-5 text-muted-foreground">
-              Snapshot {snapshotDate} · {snapshotSource} · Batas wilayah ArcGIS Kota Tangerang.
+              Snapshot {snapshotDate} · {snapshotSource} · Batas wilayah resmi {regionName}.
               Peta menampilkan batas administrasi, bukan titik lokasi pekerjaan.
             </figcaption>
           </figure>

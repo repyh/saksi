@@ -5,10 +5,11 @@ import MapDashboard from "@/features/map/map-dashboard";
 import { addressForPackage, districtSlug, parseReportSegments, type ReportViewMode } from "@/features/map/report-routes";
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { searchRoadPackages } from "@/server/packages/service";
+import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
 
 export const metadata: Metadata = {
   title: "Peta Pekerjaan — SAKSI",
-  description: "Peta paket pekerjaan jalan Kota Tangerang.",
+  description: "Peta paket pekerjaan jalan per kabupaten/kota.",
 };
 
 interface LaporanPageProps {
@@ -30,11 +31,12 @@ export default function LaporanPage(props: LaporanPageProps) {
 
 async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const [{ segments = [] }, query] = await Promise.all([params, searchParams]);
-  const initialData = await searchRoadPackages({ locatedOnly: true });
+  const regionId = resolveRegionId(query.region);
+  const initialData = await searchRoadPackages({ region: regionId, locatedOnly: true });
   const selection = parseReportSegments(segments);
   const selectedPackage = selection.rupCode
     ? initialData.items.find((item) => item.kode_rup === selection.rupCode) ??
-      (await searchRoadPackages({ query: selection.rupCode })).items.find(
+      (await searchRoadPackages({ region: regionId, query: selection.rupCode })).items.find(
         (item) => item.kode_rup === selection.rupCode,
       ) ??
       null
@@ -65,6 +67,8 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
     <main aria-label="Peta pekerjaan" className="min-h-[calc(100dvh-4rem)] w-full lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
       <MapDashboard
         initialData={initialData}
+        regionId={regionId}
+        availableRegions={listRegions()}
         showIntro={false}
         fillViewport
         addressRouting

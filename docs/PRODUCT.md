@@ -17,7 +17,7 @@ build lolos tanpa `DATABASE_URL`. Bukti foto laporan disimpan di Supabase Storag
 
 ## Users
 
-- **Warga di 86 dari 104 kelurahan Kota Tangerang** yang tinggal di wilayah paket jalan 2025–2026.
+- **Warga di 87 dari 104 kelurahan Kota Tangerang** yang tinggal di wilayah paket jalan 2025–2026.
   Situasi: jalan di depan rumah berlubang/retak/genangan, mereka ingin tahu apakah ruas itu baru
   dibangun, dengan uang berapa, dan bagaimana membuat keluhannya punya konsekuensi. Pekerjaan utama:
   menemukan paket yang membangun wilayah itu, lalu mengirim laporan berfoto yang menempel pada nomor
@@ -55,7 +55,7 @@ memakai poligon wilayah resmi dan batasannya dinyatakan terbuka, bukan disembuny
   melapor dari jalan, sering satu tangan, sinyal lambat.
 - **Data:** ekspor RUP `data.inaproc.id` (28.699 baris D44) + detail RUP + realisasi, snapshot 5 November 2026. Filter dijalankan di
   server lewat route `/api/packages` (tahun anggaran, kecamatan, kelurahan, jenis pekerjaan, status
-  rekam kontrak, pencarian teks); default "Hanya paket berlokasi" menampilkan 2.206 dari 2.552 paket.
+  rekam kontrak, pencarian teks); default "Hanya paket berlokasi" menampilkan 2.208 dari 2.552 paket.
   Angka akan bergeser bila `data.inaproc.id` menambah paket; dokumen baru wajib menyebut tanggal snapshot.
 - **Tanpa akun:** identitas pelapor tidak diminta; draf disimpan di perangkat (IndexedDB), laporan
   terkirim disimpan di server dengan foto di Supabase Storage, dan akun hanya perlu untuk melihat
@@ -75,12 +75,12 @@ panel detail dengan penyedia, nilai kontrak, dan tautan sumber; halaman rekam pe
 1. Produk = **jalan** saja. Tidak ada filter 5 sektor di UI.
 2. Tanpa NLP/LLM di ekstraksi lokasi; tanpa computer vision; **tanpa input luas cm²**.
 3. **Jangan memaksa titik.** Tidak ada pin/jitter per paket: peta hanya koroplet poligon wilayah.
-   346 paket (13,6%) tanpa lokus hanya tampil di tabel dengan label `Lokasi umum · Kota Tangerang`.
+   344 paket (13,5%) tanpa lokus hanya tampil di tabel dengan label `Lokasi umum · Kota Tangerang`.
 4. Bahasa indikator selalu **"Diduga Tidak Sesuai"** — tidak pernah korupsi, fiktif, atau tuduhan.
 5. Penyedia disebut nama asli tetapi berimbang: tanpa skor gabungan, selalu dengan penyebut; 218 paket
    tanpa rekam publik ditandai apa adanya, bukan ditebak.
 6. Privasi: blur wajah & plat + hapus EXIF **di browser sebelum** data disimpan.
-7. Format angka Indonesia: `2.552`, `86,4%`, `Rp813,13 Miliar`.
+7. Format angka Indonesia: `2.552`, `86,5%`, `Rp813,13 Miliar`.
 8. Label sumber data persis: `Data resmi (LPSE)` dan `Data resmi (INAPROC)`; tidak ada badge yang
    mengklaim presisi titik.
 9. Stack terkunci: Next.js App Router + React 19 + Tailwind v4 + shadcn/base-ui; peta hanya MapLibre

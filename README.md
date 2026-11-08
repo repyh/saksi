@@ -20,7 +20,7 @@ review, not proof of wrongdoing or a guarantee of government action.
   OpenStreetMap + OpenFreeMap and switches for CARTO and Esri style hosts.
 - Filters for budget year, kecamatan (select) → kelurahan (checkbox, all selected by default), work
   type, contract record status (LPSE), and a free-text search (area, road, RUP code, or vendor name).
-  The map shows only packages with a derived location by default; the 346 packages whose only
+  The map shows only packages with a derived location by default; the 344 packages whose only
   location is "Kota Tangerang" stay hidden until **Hanya paket berlokasi** is unchecked.
 - Package detail pages and a report flow (`/laporan`, `/laporan/paket/[rup]`) that starts from a
   package and ranks candidate packages by RW → kelurahan → landmark, without inventing a score.
@@ -52,9 +52,9 @@ review, not proof of wrongdoing or a guarantee of government action.
 | Packages (road, bridge, drainage) | **2,552** |
 | Budget | **Rp813.13 bn** |
 | Fiscal years | 2025: 1,592 · 2026: 960 |
-| Kelurahan touched | **86 of 104** · 13 kecamatan |
-| RW touched | **584 of 1,020** |
-| Location anchor | RW 1,609 · kelurahan 514 · kecamatan 83 · none 346 |
+| Kelurahan touched | **87 of 104** · 13 kecamatan |
+| RW touched | **585 of 1,020** |
+| Location anchor | RW 1,612 · kelurahan 517 · kecamatan 79 · none 344 |
 | Vendor record | **2,334** with a public record · 218 without · 633 unique suppliers |
 
 Snapshot date **5 November 2026**. Sources: RUP export `data.inaproc.id/rup` (`idKldi=D44`, 28,699

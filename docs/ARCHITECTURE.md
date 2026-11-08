@@ -56,13 +56,15 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 
 ### Package search
 
-- `src/app/page.tsx` is a Server Component. It calls `searchRoadPackages()` and passes the initial result to the interactive map dashboard.
+- `src/app/page.tsx` is a Server Component. It resolves `?region=` (default `kota-tangerang`), calls `searchRoadPackages({ region })`, and passes the initial result to the interactive map dashboard.
 - `src/features/map/map-dashboard.tsx` owns only filter and selection state, plus rendering the list and map.
-- Changes to year, district, work type, or search text call `GET /api/packages`.
+- Changes to region, year, district, work type, or search text call `GET /api/packages?region=<id>`.
 - `src/app/api/packages/route.ts` delegates `GET` to `src/server/api/packages/packages.api.ts`. `PackagesApi` validates query parameters, calls the package use case, and returns the shared `ApiResult<T>` envelope through shared HTTP response handling.
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
-- `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_kota_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
-- Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`.
+- `src/server/packages/snapshot-repository.ts` implements that interface per region; it reads the snapshot path from `data/regions/<id>/region.json`, keeps only the road sector, and is marked server-only.
+- `src/server/regions/region-registry.ts` discovers region configs from `data/regions/*/region.json` and exposes the region summary used by the API, audit metrics, and map (boundary URLs, GeoJSON property names, centre, environment label).
+- Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`; region DTOs live in `src/contracts/regions/region.contract.ts`.
+- `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
 - `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, and the read-only staff review queue. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
 The endpoint returns all matching package rows because the current map and list operate on the same set; the list displays at most 120 rows while the map renders the matching coordinates. This establishes the boundary but is not yet a payload or map-rendering optimization. The next scale step is separate list pagination from a compact map-feature query, ideally bounded by map viewport.

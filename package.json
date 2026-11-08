@@ -25,7 +25,9 @@
     "data:enrich": "node scripts/enrich-rup.mjs",
     "data:kecamatan": "node scripts/kecamatan.mjs",
     "data:snapshot": "node scripts/build-snapshot.mjs",
-    "data:rup-detail-tambal": "node scripts/rup-detail-tambal.mjs"
+    "data:rup-detail-tambal": "node scripts/rup-detail-tambal.mjs",
+    "region:check": "node scripts/check-region.mjs",
+    "region:ingest": "node scripts/ingest.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

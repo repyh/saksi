@@ -1,3 +1,5 @@
+import type { RegionSummary } from "@/contracts/regions/region.contract";
+
 export type RoadPrecisionType =
   | "RW"
   | "Kelurahan"
@@ -81,6 +83,8 @@ export interface RoadMapUnit {
 }
 
 export interface RoadPackageSearchFilters {
+  /** Region (kabupaten/kota); bawaan region aktif di server. */
+  region?: string;
   year?: "2025" | "2026";
   district?: string;
   /** Kelurahan terpilih; hanya dikirim bila bukan "semua kelurahan di kecamatan itu". */
@@ -93,6 +97,7 @@ export interface RoadPackageSearchFilters {
 }
 
 export interface RoadPackageSearchData {
+  region: RegionSummary;
   items: RoadPackageItem[];
   districts: string[];
   /** Kelurahan per kecamatan, untuk pemilih checkbox di UI. */

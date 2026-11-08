@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiArrowLeft, FiArrowRight, FiChevronDown, FiExternalLink, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import type {
   RoadPackageSearchData,
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
+import type { RegionOption } from "@/contracts/regions/region.contract";
 
 const MapCanvas = dynamic(() => import("./map-canvas"), {
   ssr: false,
@@ -79,6 +81,8 @@ function currentAddressUrl() {
 
 interface MapDashboardProps {
   initialData: RoadPackageSearchData;
+  regionId: string;
+  availableRegions: RegionOption[];
   showIntro?: boolean;
   fillViewport?: boolean;
   addressRouting?: boolean;
@@ -93,7 +97,8 @@ interface MapDashboardProps {
   };
 }
 
-export default function MapDashboard({ initialData, showIntro = true, fillViewport = false, addressRouting = false, initialRouteState }: MapDashboardProps) {
+export default function MapDashboard({ initialData, regionId, availableRegions, showIntro = true, fillViewport = false, addressRouting = false, initialRouteState }: MapDashboardProps) {
+  const router = useRouter();
   const [packageData, setPackageData] = useState<RoadPackageSearchData | null>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -170,6 +175,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
 
       fetchRoadPackages(
         {
+          region: regionId,
           year: selectedYear === "SEMUA" ? undefined : selectedYear,
           district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
           villages: selectedVillages ?? undefined,
@@ -207,7 +213,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [addressRouting, queryString, searchQuery, selectedContract, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedYear]);
+  }, [addressRouting, queryString, regionId, searchQuery, selectedContract, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedYear]);
 
   const districts = useMemo(() => packageData?.districts ?? [], [packageData]);
   const villagesByDistrict = useMemo(() => packageData?.villagesByDistrict ?? {}, [packageData]);
@@ -350,12 +356,37 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
     return () => window.removeEventListener("popstate", restoreFromLocation);
   }, [addressRouting, districts, initialData.items]);
 
+  const activeRegion = initialData.region;
+  const regionLabel = activeRegion.label;
+  const environmentLabel = activeRegion.environmentLabel;
+
+  const pindahRegion = (id: string) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("region", id);
+    router.push(`${addressRouting ? "/project" : "/"}?${params.toString()}`);
+  };
+
   return (
     <>
       {showIntro && <MapIntroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />}
       <section aria-label="Jelajahi paket jalan" className={fillViewport ? "min-h-[calc(100dvh-4rem)] bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
       <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
+          {availableRegions.length > 1 && (
+            <div className="flex items-center gap-3 border-b border-border bg-muted/20 px-3 py-2">
+              <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Wilayah kerja</span>
+              <Select value={regionId} onValueChange={(value) => value && pindahRegion(value)}>
+                <SelectTrigger aria-label="Pilih wilayah kerja" className="h-7 w-56 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
+                  <SelectValue>{regionLabel}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRegions.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2">
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
@@ -550,7 +581,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                         </p>
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, RW ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? "Lokasi umum · Kota Tangerang"} · {pkg.bulan ?? "jadwal belum tersedia"}</p>
+                        <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, ${environmentLabel} ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? `Lokasi umum · ${regionLabel}`} · {pkg.bulan ?? "jadwal belum tersedia"}</p>
                         <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat <FiArrowRight aria-hidden="true" /></Button>
                       </div>
                     </article>
@@ -587,6 +618,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
             <div className={`relative order-2 border-b border-border lg:order-2 lg:border-b-0 ${selectedPackage ? "lg:col-span-6" : "lg:col-span-9"} ${fillViewport ? "h-[580px] lg:h-full lg:min-h-0" : ""}`}>
               <MapCanvas
                 packages={filteredPackages}
+                region={activeRegion}
                 selectedPackage={selectedPackage}
                 selectedRegion={selectedRegion}
                 onSelectRegion={selectRegion}
@@ -621,7 +653,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                         <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-sans text-xs">
                           <li>
                             <button type="button" onClick={() => { setSelectedDistrict("SEMUA"); setSelectedRegion(null); setSearchQuery(""); updateSelectedPackage(null); writeReportPath("/project"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                              Kota Tangerang
+                              {regionLabel}
                             </button>
                           </li>
                           {selectedPackage.kecamatan_resmi && <>
@@ -655,7 +687,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             )}
                             {selectedPackage.presisi_peta === "RW" && selectedPackage.rw && <>
                               <li aria-hidden="true" className="text-muted-foreground">/</li>
-                              <li aria-current="location" className="font-semibold text-foreground">RW {selectedPackage.rw}</li>
+                              <li aria-current="location" className="font-semibold text-foreground">{environmentLabel} {selectedPackage.rw}</li>
                             </>}
                           </>}
                           {!selectedPackage.kecamatan_resmi && !selectedPackage.desa_resmi && <li aria-current="location" className="font-semibold text-foreground">Lokasi umum</li>}
@@ -703,7 +735,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                                   <ul className="space-y-1">
                                     {penyediaPanel.slice(0, tampilSemuaPenyedia ? undefined : 2).map((baris) => (
                                       <li key={baris.nama} className="flex items-baseline justify-between gap-2">
-                                        <Link href={`/penyedia/${slugPenyedia(baris.nama)}`} className="font-semibold text-primary underline-offset-2 hover:underline">
+                                        <Link href={`/penyedia/${slugPenyedia(baris.nama)}?region=${encodeURIComponent(regionId)}`} className="font-semibold text-primary underline-offset-2 hover:underline">
                                           {baris.nama}
                                         </Link>
                                         {baris.nilai ? (
@@ -810,7 +842,7 @@ export default function MapDashboard({ initialData, showIntro = true, fillViewpo
                             </tbody>
                           </table>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-3 py-2">
-                            <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.penyedia)}`} className="font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
+                            <Link href={`/penyedia/${slugPenyedia(selectedPackage.kontrak.penyedia)}?region=${encodeURIComponent(regionId)}`} className="font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline">
                               Rekam jejak penyedia
                             </Link>
                             {selectedPackage.kontrak.url ? (

@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    "/**": ["./data/**/*.json", "./public/data/**/*.geojson"],
+  },
   turbopack: {
     root: process.cwd(),
     rules: {

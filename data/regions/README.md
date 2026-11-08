@@ -66,6 +66,23 @@ memakai nama (`ke`) karena batas Kota Tangerang belum memuat kode kelurahan; bil
 menyediakan kode wilayah, perluas skema agar target memakai kode supaya nama kembar antar kabupaten
 tidak saling bertabrakan.
 
+## Ingest & gerbang kualitas
+
+```bash
+npm run region:ingest -- --region kota-tangerang            # tarik, bangun, cek, manifest
+npm run region:ingest -- --semua --dry-run                  # lihat rencana semua region
+npm run region:check -- --region kota-tangerang             # gate saja
+npm run region:check -- --region kota-tangerang --manifest  # gate + manifest provenance
+```
+
+`region:ingest` menjalankan satu job per region (satu kode instansi/kldi), berurutan, dengan jeda
+`--jeda <ms>` (bawaan 1500 ms) di antara perintah. `--tanpa-lpse` melewati tahap SPSE. Setiap job
+berakhir dengan `check-region --manifest` yang menulis `data/regions/<id>/manifest.json` berisi
+checksum sumber, batas wilayah, dan metrik snapshot. Bila gate gagal, job berhenti dengan exit non-zero.
+
+Gerbang memeriksa: kode RUP unik, sektor, objek jalan, tidak ada `lat`/`lon`, konsistensi
+`presisi_peta`/`unit_id`/`rw`/kelurahan/kecamatan, kelurahan resmi, dan cakupan penyedia.
+
 ## Region berikutnya
 
 Sebelum menambah region, pastikan sumber RUP, detail, dan batas wilayahnya tersedia. Wilayah yang

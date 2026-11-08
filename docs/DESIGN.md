@@ -65,7 +65,7 @@ Sistem warna menggunakan *architectural color-blocking* **Putih (`#FFFFFF`), Kun
 ## 3. Tipografi Resmi: Raleway & Open Sans (Google Fonts)
 
 Diambil dari `next/font/google` di `src/app/layout.tsx`:
-- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp813,13 Miliar`, `2.552`, `86,4%`).
+- **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (`Rp813,13 Miliar`, `2.552`, `86,5%`).
 - **Open Sans (`--font-sans`):** Digunakan untuk teks body, tabel data, navigasi, dan metadata teknis.
 
 ---
@@ -87,7 +87,7 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 > 3. **Dilarang memakai Emoji sebagai ikon fitur:** `✨`, `🚀`, `🎯`, `⚡`, `🔥`, `💡`.
 > 4. **Dilarang memakai font acak di luar Raleway & Open Sans.**
 > 5. **Dilarang membuat kartu rounded dengan border-kiri berwarna tebal** (*AI dashboard tile*).
-> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`2.552`, `Rp813,13 Miliar`, `86,4%`, `86` kelurahan).
+> 6. **Dilarang mengarang metrik palsu:** Gunakan angka riil dataset (`2.552`, `Rp813,13 Miliar`, `86,5%`, `86` kelurahan).
 > 7. **Dilarang menulis over-exposition / filler copy:** Jangan mengulang angka yang sudah tampil di kartu sebelahnya atau menjelaskan cara kerja dasar peta ("geser dan perbesar untuk menjelajahi").
 >
 > ### 2. Soft Tells (P1 — Hindari Pola Template)

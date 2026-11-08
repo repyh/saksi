@@ -6,9 +6,14 @@ import type {
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
+import {
+  DEFAULT_REGION_ID,
+  getRegion,
+  regionSummary,
+} from "@/server/regions/region-registry";
 import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
 import type { RoadPackageRepository } from "./repository";
-import { snapshotRoadPackageRepository } from "./snapshot-repository";
+import { createSnapshotRoadPackageRepository } from "./snapshot-repository";
 
 function matchesQuery(item: RoadPackageItem, query: string): boolean {
   const searchableText = [
@@ -27,9 +32,12 @@ function matchesQuery(item: RoadPackageItem, query: string): boolean {
 
 export async function searchRoadPackages(
   filters: RoadPackageSearchFilters = {},
-  repository: RoadPackageRepository = snapshotRoadPackageRepository,
+  repository?: RoadPackageRepository,
 ): Promise<RoadPackageSearchData> {
-  const allPackages = await repository.listRoadPackages();
+  const regionId = filters.region ?? DEFAULT_REGION_ID;
+  const region = getRegion(regionId);
+  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
+  const allPackages = await paketRepository.listRoadPackages();
   const districts = Array.from(
     new Set(allPackages.flatMap((item) => (item.kecamatan_resmi ? [item.kecamatan_resmi] : []))),
   ).sort((a, b) => a.localeCompare(b, "id"));
@@ -74,6 +82,7 @@ export async function searchRoadPackages(
   ).size;
 
   return {
+    region: regionSummary(region),
     items,
     districts,
     villagesByDistrict,
@@ -84,12 +93,15 @@ export async function searchRoadPackages(
   };
 }
 
-/** Ringkasan penyedia dari rekam kontrak LPSE + Data INAPROC, dibatasi ke paket jalan. */
-export async function listVendors(query?: string): Promise<VendorSummary[]> {
+/** Ringkasan penyedia dari rekam kontrak LPSE + Data INAPROC, dibatasi ke paket jalan region. */
+export async function listVendors(
+  query?: string,
+  regionId: string = DEFAULT_REGION_ID,
+): Promise<VendorSummary[]> {
   const cari = query?.trim().toLocaleLowerCase("id-ID");
-  const paket = await searchRoadPackages();
+  const paket = await searchRoadPackages({ region: regionId });
   const rupJalan = new Set(paket.items.map((item) => String(item.kode_rup)));
-  const semua = ringkasanPenyedia(rupJalan);
+  const semua = ringkasanPenyedia(regionId, rupJalan);
 
   const kategori = new Map<string, Set<string>>();
   for (const item of paket.items) {
@@ -111,13 +123,13 @@ export async function listVendors(query?: string): Promise<VendorSummary[]> {
     }));
 }
 
-export async function getVendor(slug: string) {
-  const semua = await listVendors();
+export async function getVendor(slug: string, regionId: string = DEFAULT_REGION_ID) {
+  const semua = await listVendors(undefined, regionId);
   const summary = semua.find((vendor) => vendor.slug === slug);
   if (!summary) return null;
 
-  const daftarRup = new Set(rupMilikPenyedia(slug).map(String));
-  const paket = await searchRoadPackages();
+  const daftarRup = new Set(rupMilikPenyedia(regionId, slug).map(String));
+  const paket = await searchRoadPackages({ region: regionId });
   const items = paket.items
     .filter((item) => daftarRup.has(String(item.kode_rup)))
     .sort((a, b) => (b.kontrak?.nilai_kontrak ?? 0) - (a.kontrak?.nilai_kontrak ?? 0));

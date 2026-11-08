@@ -4,6 +4,7 @@ import type {
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
 import { ApiError } from "@/server/api/shared/api-error";
+import { getRegionOrNull } from "@/server/regions/region-registry";
 
 const WORK_CATEGORIES = new Set<RoadWorkCategory>([
   "SEMUA",
@@ -13,6 +14,7 @@ const WORK_CATEGORIES = new Set<RoadWorkCategory>([
 ]);
 
 export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
+  const region = url.searchParams.get("region")?.trim() || undefined;
   const year = url.searchParams.get("year")?.trim() || undefined;
   const district = url.searchParams.get("district")?.trim() || undefined;
   const work = url.searchParams.get("work")?.trim() || undefined;
@@ -25,6 +27,9 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   const lokasi = url.searchParams.get("lokasi")?.trim() || undefined;
   const query = url.searchParams.get("q")?.trim() || undefined;
 
+  if (region && !getRegionOrNull(region)) {
+    throw new ApiError(400, "INVALID_QUERY", "Region tidak dikenal.");
+  }
   if (year && year !== "2025" && year !== "2026") {
     throw new ApiError(400, "INVALID_QUERY", "Tahun anggaran harus 2025 atau 2026.");
   }
@@ -48,6 +53,7 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   }
 
   return {
+    region,
     year: year as RoadPackageSearchFilters["year"],
     district,
     villages: desa.length ? desa : undefined,

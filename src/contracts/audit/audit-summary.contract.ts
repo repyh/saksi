@@ -7,6 +7,8 @@ export interface AuditSpatialBreakdown {
 
 export interface AuditSummaryMetrics {
   regionName: string;
+  /** Label unit lingkungan terhalus: "RW", "Dusun", "Banjar", … */
+  environmentLabel: string;
   /** Human-readable snapshot date, e.g. "5 November 2026". */
   snapshotDate: string;
   /** Snapshot source as recorded in the dataset manifest. */

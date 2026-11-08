@@ -7,12 +7,16 @@ import type {
 } from "@/contracts/audit/audit-summary.contract";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageRepository } from "./repository";
-import { snapshotMeta, snapshotRoadPackageRepository } from "./snapshot-repository";
+import {
+  getRegion,
+  DEFAULT_REGION_ID,
+  regionSummary,
+  type RegionConfig,
+} from "@/server/regions/region-registry";
+import { createSnapshotRoadPackageRepository, snapshotMeta } from "./snapshot-repository";
 
 interface BoundaryFeatureCollection {
-  features?: Array<{
-    properties?: { wadmkc?: string; wadmkd?: string; rw?: string };
-  }>;
+  features?: Array<{ properties?: Record<string, unknown> }>;
 }
 
 const MONTHS: Record<string, string> = {
@@ -60,39 +64,60 @@ function formatSnapshotDate(value: string) {
   return monthName ? `${day} ${monthName} ${year}` : value;
 }
 
-let boundariesPromise: Promise<{
+const AKAR = process.cwd();
+
+function bacaBatas(berkas: string): BoundaryFeatureCollection {
+  return JSON.parse(
+    readFileSync(path.resolve(AKAR, berkas), "utf8"),
+  ) as BoundaryFeatureCollection;
+}
+
+interface BoundaryIndex {
   rwKeys: Set<string>;
   totalKelurahan: number;
   totalRw: number;
   totalDistricts: number;
-}> | undefined;
+}
 
-function readBoundaries() {
-  boundariesPromise ??= (async () => {
-    const read = (file: string) =>
-      JSON.parse(
-        readFileSync(path.join(process.cwd(), "public", "data", file), "utf8"),
-      ) as BoundaryFeatureCollection;
-    const [rw, kelurahan, kecamatan] = [read("rw.geojson"), read("kel.geojson"), read("kec.geojson")];
-    const rwKeys = new Set<string>();
-    for (const feature of rw.features ?? []) {
-      const village = feature.properties?.wadmkd;
-      const code = feature.properties?.rw;
-      if (village && code) rwKeys.add(`${normalizeName(village)}|${normalizeRw(code)}`);
+const boundaryCache = new Map<string, BoundaryIndex>();
+
+function readBoundaries(region: RegionConfig): BoundaryIndex {
+  const tersimpan = boundaryCache.get(region.id);
+  if (tersimpan) return tersimpan;
+
+  const kelurahan = bacaBatas(region.batas.kelurahan.berkas);
+  const lingkungan = region.batas.lingkungan
+    ? bacaBatas(region.batas.lingkungan.berkas)
+    : null;
+
+  const kelurahanNames = new Set<string>();
+  const districtNames = new Set<string>();
+  for (const feature of kelurahan.features ?? []) {
+    const village = feature.properties?.[region.batas.kelurahan.nama];
+    const district = feature.properties?.[region.batas.kelurahan.kecamatan];
+    if (typeof village === "string" && village.trim()) kelurahanNames.add(normalizeName(village));
+    if (typeof district === "string" && district.trim()) districtNames.add(normalizeName(district));
+  }
+
+  const rwKeys = new Set<string>();
+  if (lingkungan && region.batas.lingkungan) {
+    for (const feature of lingkungan.features ?? []) {
+      const village = feature.properties?.[region.batas.lingkungan.nama];
+      const code = feature.properties?.[region.batas.lingkungan.nomor];
+      if (typeof village === "string" && village && typeof code === "string" && code) {
+        rwKeys.add(`${normalizeName(village)}|${normalizeRw(code)}`);
+      }
     }
-    const kelurahanNames = new Set(
-      (kelurahan.features ?? [])
-        .map((feature) => normalizeName(feature.properties?.wadmkd))
-        .filter(Boolean),
-    );
-    return {
-      rwKeys,
-      totalKelurahan: kelurahanNames.size,
-      totalRw: rw.features?.length ?? 0,
-      totalDistricts: kecamatan.features?.length ?? 0,
-    };
-  })();
-  return boundariesPromise;
+  }
+
+  const index: BoundaryIndex = {
+    rwKeys,
+    totalKelurahan: kelurahanNames.size,
+    totalRw: lingkungan?.features?.length ?? 0,
+    totalDistricts: districtNames.size,
+  };
+  boundaryCache.set(region.id, index);
+  return index;
 }
 
 function spatialBreakdown(packages: RoadPackageItem[]): AuditSpatialBreakdown {
@@ -109,9 +134,16 @@ function spatialBreakdown(packages: RoadPackageItem[]): AuditSpatialBreakdown {
  * administrative boundaries. Never hard-code these figures in the UI.
  */
 export async function buildAuditSummaryMetrics(
-  repository: RoadPackageRepository = snapshotRoadPackageRepository,
+  regionId: string = DEFAULT_REGION_ID,
+  repository?: RoadPackageRepository,
 ): Promise<AuditSummaryMetrics> {
-  const [packages, boundaries] = await Promise.all([repository.listRoadPackages(), readBoundaries()]);
+  const region = getRegion(regionId);
+  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
+  const [packages, boundaries] = await Promise.all([
+    paketRepository.listRoadPackages(),
+    Promise.resolve(readBoundaries(region)),
+  ]);
+  const meta = snapshotMeta(regionId);
 
   const years = Array.from(new Set(packages.map((item) => item.tahun))).sort((a, b) => a - b);
   const packagesByYear = {
@@ -134,9 +166,10 @@ export async function buildAuditSummaryMetrics(
   }
 
   return {
-    regionName: "Kota Tangerang",
-    snapshotDate: formatSnapshotDate(snapshotMeta.snapshot),
-    snapshotSource: snapshotMeta.sumber,
+    regionName: region.label,
+    environmentLabel: regionSummary(region).environmentLabel,
+    snapshotDate: formatSnapshotDate(meta.snapshot),
+    snapshotSource: meta.sumber,
     fiscalYears: [years[0] ?? 2025, years.at(-1) ?? 2026],
     totalPackages: packages.length,
     packagesByYear,

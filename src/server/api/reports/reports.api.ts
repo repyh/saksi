@@ -12,7 +12,9 @@ import { persistSubmittedReport } from "@/server/reports/report.repository";
 import { enforceReportSubmissionRateLimit } from "@/server/reports/report-rate-limit";
 import { removePrivateReportImage, assertPrivateReportBucketReady } from "@/server/storage/supabase-storage.client";
 import { uploadController } from "@/server/uploads/upload.controller";
-import { snapshotRoadPackageRepository } from "@/server/packages/snapshot-repository";
+import { createSnapshotRoadPackageRepository } from "@/server/packages/snapshot-repository";
+import { listRegions } from "@/server/regions/region-registry";
+import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { MyReportsResponse } from "@/contracts/reports/report-history.contract";
 import { reportReviewQueueQuerySchema, type ReportReviewQueueResponse } from "@/contracts/reports/report-review-queue.contract";
 import { requireRequestPermission } from "@/server/authorization/authority";
@@ -186,10 +188,15 @@ export class ReportsApi extends ApiController {
           throw new ApiError(422, "UNKNOWN_REPORT_AREA", "Wilayah laporan tidak ditemukan pada data batas yang tersedia.");
         }
 
-        const packageRows = submission.packageRup ? await snapshotRoadPackageRepository.listRoadPackages() : [];
-        const packageItem = submission.packageRup
-          ? packageRows.find((item) => item.kode_rup === submission.packageRup) ?? null
-          : null;
+        // Kode RUP unik lintas region; cari di semua region yang terdaftar tanpa menyimpan region di laporan.
+        let packageItem: RoadPackageItem | null = null;
+        if (submission.packageRup) {
+          for (const region of listRegions()) {
+            const rows = await createSnapshotRoadPackageRepository(region.id).listRoadPackages();
+            packageItem = rows.find((item) => item.kode_rup === submission.packageRup) ?? null;
+            if (packageItem) break;
+          }
+        }
         if (submission.packageRup && !packageItem) {
           throw new ApiError(422, "UNKNOWN_PACKAGE_REFERENCE", "Nomor RUP tidak ditemukan pada daftar paket yang tersedia.");
         }

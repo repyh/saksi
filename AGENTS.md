@@ -20,8 +20,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 
 - Studi kasus: **Kota Tangerang** (`idKldi=D44`, BPS `3671`), TA 2025–2026.
 - Angka kunci (snapshot **5 Nov 2026**, sumber RUP `data.inaproc.id`): **2.552 paket jalan · Rp813,13 M
-  · 1.609 anchor RW · 514 kelurahan · 83 kecamatan · 346 tanpa lokus**.
-- Jangkauan wilayah: **86 kelurahan dari 104 · 584 RW dari 1.020 · 13 kecamatan**.
+  · 1.612 anchor RW · 517 kelurahan · 79 kecamatan · 344 tanpa lokus**.
+- Jangkauan wilayah: **87 kelurahan dari 104 · 585 RW dari 1.020 · 13 kecamatan**.
 - Rekam penyedia (realisasi 6 Nov 2026): **2.334 dari 2.552 paket (91,5%)** punya nama penyedia — 731
   dari LPSE/SPSE, 1.603 sisanya dari **Data INAPROC realisasi** (ekspor CSV seluruh satker D44,
   **50.836** baris). **218** paket tanpa rekam publik (Rp132,34 M, 16,3% pagu); **633** penyedia unik.
@@ -41,7 +41,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    jenis pekerjaan (permukaan/drainase/jembatan). Lokasi paket **selalu** diturunkan ke **RW** (nomor
    RW di nama paket) atau kelurahan — bukan nama ruas: uji 31 Okt hanya 7% paket menyebut ruas yang
    bisa dicocokkan, sementara 54,8% menyebut RW. **Default peta hanya menampilkan paket berlokus**
-   (kecamatan/kelurahan/RW); 346 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
+   (kecamatan/kelurahan/RW); 344 paket presisi kabupaten baru muncul kalau "Hanya paket berlokasi"
    dimatikan. Filter wilayah bertingkat: **kecamatan** (pilih satu) → **kelurahan** (checkbox, semua
    terpilih saat kecamatan dipilih; **nol kelurahan bukan berarti semua** — tampilkan peringatan merah,
    tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat lewat **segmented control**
@@ -56,7 +56,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.
 5. **Peta tidak boleh berpura-pura presisi.** Tidak ada marker/dot per paket. Peta memakai koroplet
    batas RW (zoom ≥ 12) dan kelurahan (zoom jauh); paket terpilih menyorot batas wilayahnya. Ikon
-   agregat tidak boleh berbentuk pin yang terbaca sebagai lokasi pekerjaan. Paket tanpa anchor (346)
+   agregat tidak boleh berbentuk pin yang terbaca sebagai lokasi pekerjaan. Paket tanpa anchor (344)
    hanya tampil di tabel dengan label `Kota Tangerang (umum)`.
 6. **Bahasa indikator "Diduga Tidak Sesuai"**, tidak pernah "korupsi", "fiktif", atau tuduhan.
 7. **Penyedia disebut nama asli** (data publik) tetapi **berimbang**: tanpa skor gabungan, selalu
@@ -74,7 +74,7 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 10. **Privasi**: EXIF dihapus di browser dan wajah/plat nomor diperiksa sebelum data disimpan/diunggah.
 11. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
     database (auth, simpan laporan) hanya aktif bila env itu ada.
-12. **Format angka Indonesia**: `2.552`, `86,4%`, `Rp813,13 Miliar`.
+12. **Format angka Indonesia**: `2.552`, `86,5%`, `Rp813,13 Miliar`.
 
 ## Konvensi repo
 
@@ -90,7 +90,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 - Data kontrak/penyedia punya perintah sendiri: `npm run lpse:list` → `lpse:detail` → `lpse:match`
   (SPSE) dan `npm run data:realisasi` (Data INAPROC, ekspor CSV penuh; `--mode table` untuk cadangan
   per satker), plus `npm run data:rup` / `data:rup-detail` / `data:rup-detail-tambal` untuk RUP dan
-  `npm run data:snapshot` untuk merakit snapshot. Jalankan
+  `npm run data:snapshot` untuk merakit snapshot, `npm run region:check` untuk gerbang kualitas, dan
+  `npm run region:ingest -- --region <id>` untuk satu job penarikan penuh. Jalankan
   berurutan, jangan mengarang angka. Detail endpoint, header, dan batasannya ada di
   `docs/LPSE-PEMENANG.md` dan `docs/RUP-DATA-INAPROC.md`.
 - **Tautan bukti penyedia:** paket dengan rekam LPSE memakai URL SPSE aslinya; paket lain memakai
