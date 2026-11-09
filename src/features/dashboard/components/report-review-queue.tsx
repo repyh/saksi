@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { FiFileText, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiCheck, FiFileText, FiRefreshCw, FiX } from "react-icons/fi";
 import type { ApiResult } from "@/contracts/shared/api.contract";
 import {
   reportReviewDetailSchema,
@@ -266,7 +266,7 @@ export function ReportReviewQueue({ active, canViewDetails, canViewEvidence, can
 
   return (
     <section className="mt-4" aria-label="Antrean review laporan">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-wrap items-end justify-between gap-4 pb-4">
         <div>
           <p className="text-sm text-muted-foreground">{total} laporan</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -395,13 +395,17 @@ export function ReportReviewQueue({ active, canViewDetails, canViewEvidence, can
                           {report.status !== "PUBLISHED" && <button
                             type="button"
                             onClick={() => { setAction({ report, status: "PUBLISHED" }); setReason(""); setActionError(""); }}
-                            className="inline-flex min-h-9 items-center bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          >Publikasikan</button>}
+                            aria-label={`Publikasikan laporan ${damageLabels[report.damageType]}`}
+                            title="Publikasikan"
+                            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          ><FiCheck aria-hidden="true" className="size-3.5" /></button>}
                           <button
                             type="button"
                             onClick={() => { setAction({ report, status: "REJECTED" }); setReason(""); setActionError(""); }}
-                            className="inline-flex min-h-9 items-center border border-destructive px-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
-                          >{report.status === "PUBLISHED" ? "Tarik" : "Tolak"}</button>
+                            aria-label={`${report.status === "PUBLISHED" ? "Tarik publikasi" : "Tolak laporan"} ${damageLabels[report.damageType]}`}
+                            title={report.status === "PUBLISHED" ? "Tarik publikasi" : "Tolak"}
+                            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-destructive text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
+                          ><FiX aria-hidden="true" className="size-3.5" /></button>
                         </>
                       )}
                     </div>

@@ -77,7 +77,6 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
     document.documentElement.style.overflow = "hidden";
 
     return () => {
-      if (dialog?.open) dialog.close();
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousRootOverflow;
     };
