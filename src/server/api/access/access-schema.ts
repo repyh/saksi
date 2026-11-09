@@ -5,7 +5,7 @@ export const createRegistrationInviteSchema = z.object({
   email: z.email().max(254),
   expiresInDays: z.number().int().min(1).max(30).default(7),
   reason: z.string().trim().min(8).max(500),
-  permissionPresetCode: z.enum(["analyst", "moderator", "admin"]).nullable().default(null),
+  permissionPresetCode: z.enum(["moderator", "admin"]).nullable().default(null),
   permissionCodes: z.array(z.string().min(1).max(100)).max(24).default([]),
 }).superRefine((value, context) => {
   if (value.permissionPresetCode && value.permissionCodes.length > 0) {

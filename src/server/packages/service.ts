@@ -9,6 +9,7 @@ import type {
 } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageDetail } from "@/contracts/packages/road-package-detail.contract";
 import { areaKeyForPackage, type RoadAreaLevel } from "@/contracts/packages/area-key";
+import { selectBudgetDecile } from "@/contracts/packages/budget-decile";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
 import {
   DEFAULT_REGION_ID,
@@ -67,8 +68,16 @@ async function buildPackageContext(
   const villages = filters.villages?.filter(Boolean) ?? [];
   const villagesTerpilih = villages.length ? new Set(villages) : null;
 
-  const filtered = allPackages.filter((item) => {
+  if (filters.budgetDecile !== undefined && !filters.year) {
+    throw new RangeError("Tahun anggaran wajib dipilih untuk filter desil.");
+  }
+  const cohort = filters.budgetDecile === undefined
+    ? allPackages
+    : selectBudgetDecile(allPackages, filters.year!, filters.budgetDecile);
+
+  const filtered = cohort.filter((item) => {
     if (filters.year && String(item.tahun) !== filters.year) return false;
+    if (filters.generalOnly && item.kecamatan_resmi) return false;
     if (filters.district && item.kecamatan_resmi !== filters.district) return false;
     if (villagesTerpilih && (!item.desa_resmi || !villagesTerpilih.has(item.desa_resmi))) return false;
     if (filters.locatedOnly && item.presisi_peta === "Kabupaten") return false;
@@ -211,6 +220,13 @@ export async function getRoadPackage(
   const paketRepository = repository ?? createRoadPackageRepository(regionId);
   const rows = await paketRepository.listRoadPackages();
   return rows.find((item) => item.kode_rup === rup) ?? null;
+}
+
+/** Seluruh paket jalan untuk direktori server-rendered dan pencarian lokal halaman. */
+export async function listRoadPackages(
+  regionId: string = DEFAULT_REGION_ID,
+): Promise<RoadPackageItem[]> {
+  return createRoadPackageRepository(regionId).listRoadPackages();
 }
 
 /**

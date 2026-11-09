@@ -6,12 +6,12 @@ import { FiExternalLink } from "react-icons/fi";
 
 export function SiteFooter() {
   const pathname = usePathname();
-  if (pathname === "/login" || pathname === "/project" || pathname.startsWith("/project/") || pathname === "/laporan" || pathname.startsWith("/laporan/")) return null;
+  if (pathname === "/login" || pathname === "/peta-pekerjaan" || pathname.startsWith("/peta-pekerjaan/") || pathname === "/laporan" || pathname.startsWith("/laporan/")) return null;
 
   return (
     <footer className="border-t-4 border-secondary bg-foreground text-white">
       <div className="w-full px-4 pt-8 pb-5 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_minmax(180px,auto)] sm:gap-10 lg:gap-16">
+        <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_minmax(150px,auto)_minmax(180px,auto)] sm:gap-10 lg:gap-16">
           <div className="max-w-xl">
             <Link
               href="/"
@@ -51,6 +51,22 @@ export function SiteFooter() {
                 <a href="https://gisportal.binamarga.pu.go.id/" target="_blank" rel="noreferrer" className="inline-flex min-h-8 items-center font-medium underline decoration-white/25 underline-offset-4 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   GIS Bina Marga <FiExternalLink aria-hidden="true" className="ml-2 size-3.5" />
                 </a>
+              </li>
+            </ul>
+          </nav>
+
+          <nav aria-label="Legal">
+            <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-white">Legal</h2>
+            <ul className="mt-2 space-y-1 text-sm leading-5 text-white/75">
+              <li>
+                <Link href="/kebijakan-privasi" className="inline-flex min-h-8 items-center font-medium underline decoration-white/25 underline-offset-4 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  Kebijakan Privasi
+                </Link>
+              </li>
+              <li>
+                <Link href="/syarat-ketentuan" className="inline-flex min-h-8 items-center font-medium underline decoration-white/25 underline-offset-4 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  Syarat &amp; Ketentuan
+                </Link>
               </li>
             </ul>
           </nav>

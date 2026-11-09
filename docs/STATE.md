@@ -55,7 +55,7 @@ nomor RW dan **20,6%** kelurahan.
 3. **Surat orisinalitas bermaterai Rp10.000** — belum dibuat.
 4. **Video pitching ≤5 menit di YouTube publik** — belum dibuat.
 5. **Dua layar hidup** — sudah ada:
-   - **Landing + peta audit (`/`, `/project`):** koroplet tiga tingkat lewat segmented control,
+   - **Landing + peta audit (`/`, `/peta-pekerjaan`):** koroplet tiga tingkat lewat segmented control,
      filter tahun → kecamatan → kelurahan, jenis pekerjaan, rekam kontrak LPSE, pencarian, dan
      register paket + panel pelaksana/kontrak.
    - **Alur lapor (`/laporan`, `/laporan/paket/[rup]`):** 4 langkah; submit memakai API dengan
@@ -140,7 +140,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   `source.ts` → `database-repository.ts` (Prisma) atau `snapshot-repository.ts` (cadangan) +
   `lpse-repository.ts` (server-only + type guard runtime).
 - **Region:** `src/server/regions/region-registry.ts` membaca `data/regions/*/region.json`; endpoint
-  `GET /api/packages?region=<id>` memilih snapshot, kontrak, batas, dan label. Halaman `/`, `/project`,
+  `GET /api/packages?region=<id>` memilih snapshot, kontrak, batas, dan label. Halaman `/`,
+  `/peta-pekerjaan`, `/project`, `/project/[rup]`,
   `/penyedia`, `/penyedia/[slug]`, dan `/laporan/paket/[rup]` meneruskan `?region=`. Pemilih wilayah
   hanya muncul bila ada lebih dari satu region; peta membaca URL batas + nama properti dari region.
 - **Gerbang & ingest:** `npm run region:check -- --region <id>` memvalidasi snapshot; `--manifest`
@@ -157,14 +158,23 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 - `/laporan/publik` + `GET /api/reports/public` — daftar laporan **PUBLISHED** per region/paket/
   kecamatan/kelurahan; hanya jenis kerusakan, ukuran kasar, wilayah, tanggal, dan tautan paket.
   Tidak memuat identitas pelapor, deskripsi, petunjuk lokasi, lokasi presisi, atau foto.
-- `/paket/[rup]` — halaman bacaan detail paket (Server Component, `?region=`). Memuat ringkasan,
+- `/` — eksplorasi anggaran: `buildBudgetExplorer()` (`src/server/packages/budget-explorer.ts`)
+  membagi paket per tahun → dekade pagu (D1–D10) → jenis pekerjaan, dengan tautan peta yang membawa
+  `tahun`, `kelompok`, `jenis`, dan `lokasi`; `BudgetExplorer` menampilkan chart konsentrasi, median,
+  dan rentang pagu tiap dekade. Endpoint peta menerima `kelompok` lewat
+  `selectBudgetDecile()` (`src/contracts/packages/budget-decile.ts`).
+- `/kebijakan-privasi` dan `/syarat-ketentuan` — halaman legal dari Markdown di
+  `src/content/legal/*.md` lewat `src/components/markdown/markdown-renderer.tsx`.
+- `/project` — direktori paket jalan (Server Component, `?region=`): pencarian teks, filter tahun
+  dan jenis pekerjaan, pengurutan, dan paginasi 50 baris; setiap baris menaut ke detail paket.
+  `/project/[rup]` — halaman bacaan detail paket (Server Component, `?region=`). Memuat ringkasan,
   rencana pengadaan dari `data/rup_detail_*.json` (jadwal pemilihan & kontrak, uraian, volume,
   spesifikasi, MAK), lokasi sebagai batas wilayah + badge presisi, realisasi/kontrak dari
   `buildPenyediaPanel`, dan maksimal 20 laporan `PUBLISHED` paket itu. Rincian RUP dibaca repository
   server-only `src/server/packages/rup-detail-repository.ts`; 918 paket tanpa entri tetap dirender
   dengan label "Belum tersedia dari RUP". `lokasi_raw` tidak pernah ditampilkan. Tanpa peta/titik;
   tombol "Lihat di peta" memakai `routeForPackage()`. Panel peta diringkas dan menaut ke halaman ini.
-- `PATCH /api/reports/review/[publicCode]` — aksi staf **Publikasikan** / **Tolak** dengan
+- `PATCH /api/reports/review/[reportId]` — aksi staf **Publikasikan** / **Tolak** dengan
   `reports.change_status`, alasan wajib, dan `ReportStatusEvent` append-only. Antrean review di
   Dashboard menampilkan tombol aksi dan formulir alasan. Diuji end-to-end 9 November 2026 dengan
   satu laporan uji; baris uji, sesi, dan event dibersihkan setelahnya.
@@ -185,6 +195,7 @@ fast-forward setelah rebase, lalu di-push ke `origin/master`.
 | 13 | `fix/vendor-name-normalization` | `1b5a955` — normalisasi nama penyedia gabungan |
 | 14 | `fix/report-copy-terminology` | `55256c9` — copy kelurahan/RW di alur lapor |
 | 15 | `chore/branch-archive-canonical` | commit dokumentasi ini — kanonik branch dan arsip |
+| — | `feat/retire-removed-permissions-and-dashboard-fixes` | merge ke `master` 10 Nov 2026: izin lama diarsipkan lewat migrasi `20261109170000_retire_removed_permissions`, dashboard/analitik anggaran, direktori `/project`, detail `/project/[rup]`, halaman legal, dan sitemap |
 
 Setelah pengarsipan, branch yang dipertahankan:
 
@@ -221,7 +232,8 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]` | Cache/precompute agregat; saat ini dihitung per permintaan |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak, halaman penyedia, dan halaman detail paket; `SIMULASI PROTOTIPE` di alur lapor dan laporan warga pada detail paket; badge presisi lokasi ada di detail paket | Badge SIRUP/Bina Marga belum |
-| **Halaman detail paket** | Rencana, lokasi, kontrak, laporan | Selesai: `/paket/[rup]` membaca item dari repository aktif (Prisma/Supabase atau snapshot) dan rincian RUP dari `data/rup_detail_*.json` server-only, memakai `routeForPackage()`, dan menampilkan kontrak lengkap serta laporan `PUBLISHED`; panel peta diringkas dengan tombol "Buka detail" | Penambalan detail untuk 918 paket tanpa entri RUP di luar cakupan |
+| **Halaman detail paket** | Rencana, lokasi, kontrak, laporan | Selesai: `/project/[rup]` membaca item dari repository aktif (Prisma/Supabase atau snapshot) dan rincian RUP dari `data/rup_detail_*.json` server-only, memakai `routeForPackage()`, dan menampilkan kontrak lengkap serta laporan `PUBLISHED`; `/paket/[rup]` menjadi redirect permanen ke sana | Penambalan detail untuk 918 paket tanpa entri RUP di luar cakupan |
+| **Direktori paket** | Daftar paket yang bisa ditelusuri tanpa peta | Selesai: `/project` membaca `listRoadPackages()` dari repository aktif, memfilter tahun/jenis/teks di server, dan berpaginasi 50 baris | Pindahkan filter ke SQL bila jumlah region bertambah |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi membaca katalog itu lewat Prisma, dengan snapshot sebagai cadangan | Jalankan `npm run db:verify` setiap selesai ingest; pertahankan kontrak API |
 | **Scraper terjadwal** | Worker terpisah | `workers/ingest.mjs` + lock/retry/log/riwayat run; penjadwal di dalam Next (`src/instrumentation.ts`), artefak systemd timer, dan GitHub Actions tersedia | Deployment cron dan approval merge |
 | **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review, daftar publik `PUBLISHED`, dan aksi Publikasikan/Tolak dengan alasan + `ReportStatusEvent` tersedia; submit dan moderasi terverifikasi end-to-end 8–9 Nov 2026 | Akses bukti, kebijakan media publik, dan retensi (`docs/REPORTS.md`) |

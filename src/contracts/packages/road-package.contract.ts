@@ -99,6 +99,10 @@ export interface RoadPackageSearchFilters {
   /** Region (kabupaten/kota); bawaan region aktif di server. */
   region?: string;
   year?: "2025" | "2026";
+  /** Peringkat pagu 1–10 di antara seluruh paket jalan pada tahun terpilih. */
+  budgetDecile?: number;
+  /** Batasi pada paket tanpa kecamatan terpetakan, untuk kelompok lokasi umum. */
+  generalOnly?: boolean;
   district?: string;
   /** Kelurahan terpilih; hanya dikirim bila bukan "semua kelurahan di kecamatan itu". */
   villages?: string[];

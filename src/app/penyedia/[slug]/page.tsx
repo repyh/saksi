@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft, FiArrowRight, FiExternalLink } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
+import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { getVendor } from "@/server/packages/service";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
 
@@ -39,9 +40,8 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
   const { summary, items, totalNilai } = data;
 
   return (
-    <main className="min-h-screen bg-white text-foreground">
-      <section className="border-b border-border bg-muted/20">
-        <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <CatalogPageShell variant="detail" header={
+      <>
           <Link href={`/penyedia?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
             <FiArrowLeft aria-hidden="true" className="size-3.5" /> Semua penyedia
           </Link>
@@ -72,10 +72,8 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
             nilai, dan tahun. Tidak ada skor kinerja atau peringkat kualitas di SAKSI — nama penyedia
             ditampilkan sebagai fakta kontrak yang bisa diperiksa di LPSE/SPSE atau Data INAPROC.
           </p>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      </>
+    }>
         <h2 className="font-heading text-lg font-bold tracking-tight">Paket yang dikontrakkan</h2>
 
         {items.length === 0 ? (
@@ -101,7 +99,7 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
                       <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">
                         RUP {item.kode_rup} · TA {item.tahun}
                       </span>
-                      <Link href={`/paket/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
+                      <Link href={`/project/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
                       <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">
@@ -134,14 +132,13 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
         )}
 
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Link href={`/project?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">
+          <Link href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">
             Lihat di peta audit <FiArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
           <p className="font-sans text-[11px] text-muted-foreground">
             NPWP hanya ada pada rekam LPSE dan disamarkan di sana; penyedia dibedakan lewat nama.
           </p>
         </div>
-      </section>
-    </main>
+    </CatalogPageShell>
   );
 }

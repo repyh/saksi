@@ -13,6 +13,10 @@ export interface ReportRouteSelection extends ReportAddress {
 }
 
 export interface ReportFilters {
+  budgetDecile?: number;
+  generalOnly?: boolean;
+  region?: string;
+  locatedOnly?: boolean;
   year: "SEMUA" | "2025" | "2026";
   work: RoadWorkCategory;
   view: ReportViewMode;
@@ -40,7 +44,7 @@ export function routeForAddress(address: ReportAddress) {
   else if (address.villageSlug || address.rwSlug) segments.push("lokasi-umum");
   if (address.villageSlug) segments.push(address.villageSlug);
   if (address.rwSlug) segments.push(`rw-${addressSlug(address.rwSlug.replace(/^rw-?/i, ""))}`);
-  return segments.length === 1 && !address.districtSlug ? "/project" : `/project/${segments.join("/")}`;
+  return segments.length === 1 && !address.districtSlug ? "/peta-pekerjaan" : `/peta-pekerjaan/${segments.join("/")}`;
 }
 
 export function routeForPackage(item: RoadPackageItem) {
@@ -62,7 +66,7 @@ export function routeForPackage(item: RoadPackageItem) {
   }
 
   segments.push(`rup-${item.kode_rup}`, addressSlug(item.nama) || "paket");
-  return `/project/${segments.join("/")}`;
+  return `/peta-pekerjaan/${segments.join("/")}`;
 }
 
 export function addressForPackage(item: RoadPackageItem): ReportAddress | null {
@@ -106,7 +110,7 @@ export function parseReportSegments(segments: string[] = []): ReportRouteSelecti
 }
 
 export function routeForSelection(selection: ReportRouteSelection) {
-  if (selection.rupCode) return `/project/${[
+  if (selection.rupCode) return `/peta-pekerjaan/${[
     "kota-tangerang",
     ...(selection.districtSlug ? [selection.districtSlug] : ["lokasi-umum"]),
     ...(selection.villageSlug ? [selection.villageSlug] : []),
@@ -119,6 +123,10 @@ export function routeForSelection(selection: ReportRouteSelection) {
 export function routeForFilters(pathname: string, filters: ReportFilters) {
   const url = new URL(pathname, "https://saksi.invalid");
   url.search = "";
+  if (filters.region) url.searchParams.set("region", filters.region);
+  if (filters.generalOnly) url.searchParams.set("umum", "1");
+  if (filters.budgetDecile && filters.year !== "SEMUA") url.searchParams.set("kelompok", String(filters.budgetDecile));
+  if (filters.locatedOnly === false) url.searchParams.set("lokasi", "0");
   if (filters.year !== "SEMUA") url.searchParams.set("tahun", filters.year);
   if (filters.work !== "SEMUA") url.searchParams.set("jenis", filters.work.toLocaleLowerCase("id-ID"));
   if (filters.view !== "packages") url.searchParams.set("tampilan", filters.view);

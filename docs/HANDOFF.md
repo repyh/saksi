@@ -24,8 +24,10 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | Route | Purpose | Current behavior |
 |---|---|---|
 | `/` | Home and audit overview | Landing page, source/context sections, and the interactive road-package map. Hero search passes its query to the map search. |
-| `/project` | Peta Pekerjaan | Full-viewport map and **paginated** package register with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (2,208 of 2,552). The map receives a compact aggregate; selecting a package opens the right detail panel with the LPSE winner/contract block. |
-| `/project/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
+| `/peta-pekerjaan` | Peta Pekerjaan | Full-viewport map and **paginated** package register with **year → kecamatan → kelurahan (checkbox)**, work-type, contract-record, and map-view filters; "Hanya paket berlokasi" is **on by default** (2,208 of 2,552). The map receives a compact aggregate; selecting a package opens the right detail panel with the LPSE winner/contract block. |
+| `/peta-pekerjaan/kota-tangerang/...` | Address/package selection | Address hierarchy is reflected in the URL; query parameters preserve year, work type, contract filter, map view, and search. |
+| `/project` | Package directory | Server-rendered table of road packages with search, year and work-type filters, sorting, and 50-row pagination; each row opens the package detail page. |
+| `/project/[rup]` | Package detail | Reading page: RUP plan, location at the supported precision, LPSE/INAPROC contract record, and up to 20 `PUBLISHED` citizen reports. Never draws a pin. `/paket/[rup]` permanently redirects here. |
 | `/metode` | Methodology | Indonesian methodology page: source and retrieval dates, pipeline and worker, RW anchor rationale, snapshot figures, two vendor layers, the 218-package limit, no precise coordinates, what is not claimed, and how the snapshot is refreshed. Figures come from the manifest/snapshot/contract index. |
 | `/laporan/` | Laporkan Jalan | Four-step report flow: photo, damage, location/package, and submission receipt. Requires a deployed report migration and private Supabase bucket to submit. |
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
@@ -37,7 +39,7 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | `POST /api/reports` | Report submission | Bounded multipart with an `Idempotency-Key`; validates the RW area and optional RUP, stores sanitised WebP in the private bucket, and returns an opaque receipt code. |
 | `GET /api/reports/mine` | Account report history | Session-authenticated; returns only the current account's receipt, status, damage type, coarse area, and optional package reference. |
 | `GET /api/reports/review` | Staff review queue | Requires `reports.read_queue`; paginated summaries without reporter identity, private text, or media; includes the opaque public code needed for a moderation action. |
-| `PATCH /api/reports/review/[publicCode]` | Moderation action | Requires `reports.change_status` (and `reports.read_deidentified`); accepts `PUBLISHED` or `REJECTED` plus a mandatory reason and appends a `ReportStatusEvent`. |
+| `PATCH /api/reports/review/[reportId]` | Moderation action | Requires `reports.change_status` (and `reports.read_deidentified`); accepts `PUBLISHED` or `REJECTED` plus a mandatory reason and appends a `ReportStatusEvent`. |
 | `GET /api/reports/public` | Published report API | Public, `PUBLISHED` only; never returns reporter identity, description, location hint, precise location, or media. |
 
 There is intentionally no reset-filter button on Peta Pekerjaan. Filters can be returned to their defaults through their existing selections; search text can be cleared in the input.
@@ -65,7 +67,7 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 ## Important implementation details
 
 - `src/features/map/report-routes.ts` defines address slugs, package paths, filter query parameters, and parsing. Update parsing and generation together when changing route shape.
-- `/project` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
+- `/peta-pekerjaan` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
 - Kelurahan selection is **tri-state**: `null` = all kelurahan of the chosen kecamatan, an array = explicit subset, and an **empty array is invalid** — the picker stays open with a red warning, the list shows the empty message, and no request is sent. Never treat "none selected" as "all".
 - `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching packages are passed to the map.
 - `src/features/map/map-canvas.tsx` owns MapLibre rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom, and switching level does not change the current zoom either.
@@ -120,14 +122,14 @@ behaviour without it.
 | Koroplet tiga tingkat | Klik **Kecamatan / Kelurahan / RW** di segmented control | `aria-pressed` berpindah; hanya layer tingkat aktif `visible`; zoom tidak berubah |
 | Tooltip wilayah | Arahkan kursor ke poligon | Popup memuat nama wilayah, jumlah paket/pagu, dan “Batas wilayah, bukan titik pekerjaan” |
 | Klik wilayah | Klik poligon kecamatan | URL berubah ke rute wilayah/paket, panel detail terbuka |
-| Klik area kosong | Klik di luar poligon | URL kembali `/project`, panel detail tertutup |
+| Klik area kosong | Klik di luar poligon | URL kembali `/peta-pekerjaan`, panel detail tertutup |
 | Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | 13 ikon agregat di kecamatan, 585 di RW; tidak ada marker per paket |
-| fitBounds awal | Muat `/project` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
+| fitBounds awal | Muat `/peta-pekerjaan` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
 | flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 11,5 (kelurahan) / ≤ 15 (RW) |
 | Legenda & overlay | Periksa tiga mode tampilan | Teks legenda dan peringatan sesuai mode; legenda wilayah terpilih muncul |
 | Atribusi | Periksa kontrol atribusi | `© OpenStreetMap © OpenFreeMap` tampil |
 | Tanpa marker per paket / pemilih basemap | Mode jumlah paket; cari kontrol basemap | 0 marker; tidak ada kontrol pemilih basemap |
-| Mount/unmount berulang | Bolak-balik `/` ↔ `/project` tiga kali | Selalu 1 canvas dan 1 instance peta; tanpa error halaman |
+| Mount/unmount berulang | Bolak-balik `/` ↔ `/peta-pekerjaan` tiga kali | Selalu 1 canvas dan 1 instance peta; tanpa error halaman |
 | Basemap vector | Periksa request dan style | Request `styles/positron`; source `openmaptiles` bertipe `vector`; override `NEXT_PUBLIC_BASEMAP_URL` ke `styles/liberty` juga dihormati |
 
 ## Report submission verification (8 November 2026)

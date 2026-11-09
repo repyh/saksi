@@ -158,7 +158,7 @@ kerusakan di peta:
 ### Daftar layar
 1. **`/` — Beranda & peta audit jalan.** Metrik: **2.552 paket jalan · Rp813,13 M · 87 kelurahan ·
    2.208 (86,5%) berlokus**. Hero + pencarian, diikuti peta dan panel detail paket.
-2. **`/project` dan `/project/kota-tangerang/…` — Peta pekerjaan.** Peta koroplet tiga
+2. **`/peta-pekerjaan` dan `/peta-pekerjaan/kota-tangerang/…` — Peta pekerjaan.** Peta koroplet tiga
    tingkat dengan *segmented control* Kecamatan / Kelurahan / RW; filter tahun, kecamatan, kelurahan,
    jenis, kontrak, pencarian; register paket di samping peta. Segmen URL menyimpan wilayah
    (`<kecamatan>/<kelurahan>/rw-<n>`) dan paket terpilih (`rup-<kode>/<slug>`) agar bisa dibagikan.
@@ -172,7 +172,7 @@ kerusakan di peta:
 
 ### Cakupan FDS (1 November 2026)
 Screenshot wajib: **landing page + minimal satu halaman fitur**. Yang dibangun lebih dulu:
-**peta audit jalan (`/` + `/project`)** dan **alur lapor (`/laporan`)** — peta untuk kekuatan tema,
+**peta audit jalan (`/` + `/peta-pekerjaan`)** dan **alur lapor (`/laporan`)** — peta untuk kekuatan tema,
 alur lapor untuk "inti proyek = sistem pelaporan masyarakat" versi dosen.
 
 ### Aturan tampilan

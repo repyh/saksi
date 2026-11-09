@@ -41,6 +41,12 @@ export async function removePrivateReportImage(path: string) {
   if (error) throw new ApiError(503, "REPORT_STORAGE_CLEANUP_FAILED", "Pembersihan foto sementara belum berhasil.");
 }
 
+export async function downloadPrivateReportImage(path: string) {
+  const { data, error } = await getClient().storage.from(getReportBucketName()).download(path);
+  if (error || !data) throw new ApiError(503, "REPORT_STORAGE_READ_FAILED", "Foto laporan belum dapat dibuka.");
+  return Buffer.from(await data.arrayBuffer());
+}
+
 export async function ensurePrivateReportBucket() {
   const storage = getClient().storage;
   const bucket = getReportBucketName();

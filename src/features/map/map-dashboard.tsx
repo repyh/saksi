@@ -20,9 +20,9 @@ import { formatRupiahFull } from "./road-types";
 import { MapIntroSection } from "./map-intro-section";
 import { MAP_SEARCH_EVENT } from "./map-search-events";
 import { fetchRoadPackage, fetchRoadPackageMap, fetchRoadPackages } from "./package-api";
-import { buildPenyediaPanel, labelPenyediaLain } from "./penyedia-panel";
 import { ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
 import { slugPenyedia } from "@/contracts/packages/vendor-slug";
+import { buildPenyediaPanel, labelPenyediaLain } from "./penyedia-panel";
 import {
   addressForPackage,
   addressSlug,
@@ -92,6 +92,9 @@ interface MapDashboardProps {
   fillViewport?: boolean;
   addressRouting?: boolean;
   initialRouteState?: {
+    budgetDecile?: number;
+    generalOnly?: boolean;
+    locatedOnly?: boolean;
     selectedDistrict?: string;
     selectedRegion?: ReportAddress | null;
     selectedPackage?: RoadPackageItem | null;
@@ -117,7 +120,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const [selectedVillages, setSelectedVillages] = useState<string[] | null>(null);
   const [openVillages, setOpenVillages] = useState(false);
   const villagesRef = useRef<HTMLDivElement | null>(null);
-  const [locatedOnly, setLocatedOnly] = useState(true);
+  const [locatedOnly, setLocatedOnly] = useState(initialRouteState?.locatedOnly ?? true);
+  const [budgetDecile, setBudgetDecile] = useState<number | undefined>(initialRouteState?.budgetDecile);
+  const [generalOnly, setGeneralOnly] = useState(initialRouteState?.generalOnly ?? false);
+  const activeDecile = selectedYear !== "SEMUA" ? budgetDecile : undefined;
 
   useEffect(() => {
     if (!openVillages) return;
@@ -161,6 +167,8 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
+    if (generalOnly) params.set("umum", "1");
+    if (activeDecile) params.set("kelompok", String(activeDecile));
     if (selectedYear !== "SEMUA") params.set("year", selectedYear);
     if (selectedDistrict !== "SEMUA") params.set("district", selectedDistrict);
     for (const desa of selectedVillages ?? []) params.append("desa", desa);
@@ -169,11 +177,13 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     if (selectedContract !== "SEMUA") params.set("kontrak", selectedContract);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
     return params.toString();
-  }, [selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, searchQuery]);
+  }, [generalOnly, activeDecile, selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, searchQuery]);
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
   const currentFilters = useMemo<RoadPackageSearchFilters>(() => ({
     region: regionId,
+    generalOnly,
+    budgetDecile: activeDecile,
     year: selectedYear === "SEMUA" ? undefined : selectedYear,
     district: selectedDistrict === "SEMUA" ? undefined : selectedDistrict,
     villages: selectedVillages ?? undefined,
@@ -181,7 +191,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     work: selectedWork,
     contract: selectedContract,
     query: searchQuery.trim() || undefined,
-  }), [locatedOnly, regionId, searchQuery, selectedContract, selectedDistrict, selectedVillages, selectedWork, selectedYear]);
+  }), [generalOnly, activeDecile, locatedOnly, regionId, searchQuery, selectedContract, selectedDistrict, selectedVillages, selectedWork, selectedYear]);
 
   useEffect(() => {
     if (selectedVillages !== null && selectedVillages.length === 0) return;
@@ -303,6 +313,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const writeReportPath = (path: string) => {
     if (!addressRouting) return;
     const nextUrl = routeForFilters(path, {
+      region: regionId,
+      generalOnly,
+    budgetDecile: activeDecile,
+      locatedOnly,
       year: selectedYear,
       work: selectedWork,
       view: mapView,
@@ -330,7 +344,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       setSelectedDistrict("SEMUA");
       setSelectedRegion(null);
       updateSelectedPackage(null);
-      writeReportPath("/project");
+      writeReportPath("/peta-pekerjaan");
       return;
     }
     const requestedDistrict = region.district ?? "";
@@ -340,6 +354,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       villageSlug: region.village ? addressSlug(region.village) : undefined,
       rwSlug: region.precision === "RW" && region.rw ? `rw-${addressSlug(region.rw.replace(/^rw-?/i, ""))}` : undefined,
     };
+    setGeneralOnly(false);
     setSelectedDistrict(matchedDistrict ?? "SEMUA");
     setSelectedRegion(address);
     updateSelectedPackage(null);
@@ -361,12 +376,16 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const closeSelectedPackage = () => {
     updateSelectedPackage(null);
     const address = selectedRegion ?? (selectedDistrict !== "SEMUA" ? { districtSlug: districtSlug(selectedDistrict) } : null);
-    writeReportPath(address ? routeForAddress(address) : "/project");
+    writeReportPath(address ? routeForAddress(address) : "/peta-pekerjaan");
   };
 
   useEffect(() => {
     if (!addressRouting) return;
     const url = routeForFilters(window.location.pathname, {
+      region: regionId,
+      generalOnly,
+    budgetDecile: activeDecile,
+      locatedOnly,
       year: selectedYear,
       work: selectedWork,
       view: mapView,
@@ -375,7 +394,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     if (`${window.location.pathname}${window.location.search}` !== url) {
       window.history.replaceState(null, "", url);
     }
-  }, [addressRouting, mapView, searchQuery, selectedWork, selectedYear]);
+  }, [generalOnly, activeDecile, addressRouting, locatedOnly, mapView, regionId, searchQuery, selectedWork, selectedYear]);
 
   useEffect(() => {
     if (!addressRouting) return;
@@ -390,6 +409,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       const year = params.get("tahun");
       const work = params.get("jenis")?.toLocaleUpperCase("id-ID");
       const view = params.get("tampilan");
+      const group = Number(params.get("kelompok"));
+      setBudgetDecile(Number.isInteger(group) && group >= 1 && group <= 10 && (year === "2025" || year === "2026") ? group : undefined);
+      setLocatedOnly(params.get("lokasi") !== "0");
+      setGeneralOnly(params.get("umum") === "1");
       setSelectedYear(year === "2025" || year === "2026" ? year : "SEMUA");
       setSelectedWork(WORK_OPTIONS.includes(work as RoadWorkCategory) ? work as RoadWorkCategory : "SEMUA");
       setMapView(view === "budget" || view === "work" ? view : "packages");
@@ -421,7 +444,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const pindahRegion = (id: string) => {
     const params = new URLSearchParams(window.location.search);
     params.set("region", id);
-    router.push(`${addressRouting ? "/project" : "/"}?${params.toString()}`);
+      router.push(`${addressRouting ? "/peta-pekerjaan" : "/"}?${params.toString()}`);
   };
 
   return (
@@ -430,6 +453,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       <section aria-label="Jelajahi paket jalan" className={fillViewport ? "min-h-[calc(100dvh-4rem)] bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
       <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
+          {(activeDecile || generalOnly) && <div role="status" className="flex flex-wrap items-center justify-between gap-2 bg-secondary/20 px-4 py-1.5 text-sm"><p><strong>{activeDecile ? `Kelompok D${activeDecile} · ${selectedYear}` : "Pilihan dari analisis"}{generalOnly ? " · Lokasi umum" : ""}</strong> · dari analisis konsentrasi pagu. {locatedOnly ? "Menampilkan paket berlokasi; paket lokasi umum tersedia lewat filter lokasi." : "Termasuk paket lokasi umum di daftar."}</p><button type="button" onClick={() => { setBudgetDecile(undefined); setGeneralOnly(false); }} className="min-h-9 font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">Lepas kelompok</button></div>}
           {availableRegions.length > 1 && (
             <div className="flex items-center gap-3 border-b border-border bg-muted/20 px-3 py-2">
               <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Wilayah kerja</span>
@@ -449,7 +473,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2">
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
-                <Select value={selectedYear} onValueChange={(val) => setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026")}>
+                <Select value={selectedYear} onValueChange={(val) => { setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026"); setBudgetDecile(undefined); }}>
                   <SelectTrigger aria-label="Tahun anggaran" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
                     <SelectValue>{selectedYear === "SEMUA" ? "Semua tahun" : selectedYear}</SelectValue>
                   </SelectTrigger>
@@ -466,11 +490,12 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                   const district = val ?? "SEMUA";
                   const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
                   setSelectedDistrict(district);
+                  setGeneralOnly(false);
                   setSelectedVillages(null);
                   setOpenVillages(false);
                   setSelectedRegion(address);
                   updateSelectedPackage(null);
-                  writeReportPath(address ? routeForAddress(address) : "/project");
+                  writeReportPath(address ? routeForAddress(address) : "/peta-pekerjaan");
                 }}>
                   <SelectTrigger aria-label="Pilih kecamatan" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
                     <SelectValue>{selectedDistrict === "SEMUA" ? "Semua kecamatan" : selectedDistrict}</SelectValue>
@@ -593,7 +618,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 <input
                   type="checkbox"
                   checked={locatedOnly}
-                  onChange={(event) => setLocatedOnly(event.target.checked)}
+                  onChange={(event) => { setLocatedOnly(event.target.checked); if (event.target.checked) setGeneralOnly(false); }}
                   className="size-3.5 accent-primary"
                 />
                 <span className="font-sans text-[11px]">Hanya paket berlokasi</span>
@@ -730,14 +755,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       <nav aria-label="Lokasi paket" className="min-w-0">
                         <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-sans text-xs">
                           <li>
-                            <button type="button" onClick={() => { setSelectedDistrict("SEMUA"); setSelectedRegion(null); setSearchQuery(""); updateSelectedPackage(null); writeReportPath("/project"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            <button type="button" onClick={() => { setSelectedDistrict("SEMUA"); setSelectedRegion(null); setSearchQuery(""); updateSelectedPackage(null); writeReportPath("/peta-pekerjaan"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                               {regionLabel}
                             </button>
                           </li>
                           {selectedPackage.kecamatan_resmi && <>
                             <li aria-hidden="true" className="text-muted-foreground">/</li>
                             <li>
-                              <button type="button" onClick={() => { const district = selectedPackage.kecamatan_resmi ?? "SEMUA"; const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) }; setSelectedDistrict(district); setSelectedRegion(address); setSearchQuery(""); updateSelectedPackage(null); writeReportPath(address ? routeForAddress(address) : "/project"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <button type="button" onClick={() => { const district = selectedPackage.kecamatan_resmi ?? "SEMUA"; const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) }; setSelectedDistrict(district); setSelectedRegion(address); setSearchQuery(""); updateSelectedPackage(null); writeReportPath(address ? routeForAddress(address) : "/peta-pekerjaan"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                 Kec. {selectedPackage.kecamatan_resmi}
                               </button>
                             </li>
@@ -808,11 +833,9 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
                       {selectedPackage.kontrak ? (
                         <div className="mt-4 border border-border">
-                          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
-                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{selectedPackage.kontrak.jenis === "tender" ? "Pemenang & kontrak" : "Penyedia & kontrak"}</p>
-                            <span className="shrink-0 border border-primary/30 bg-primary/5 px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">
-                              {selectedPackage.kontrak.sumber === "LPSE" ? "Data resmi (LPSE)" : "Data resmi (INAPROC)"}
-                            </span>
+                          <div className="flex items-center justify-between gap-2 bg-muted/20 px-3 py-2">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{selectedPackage.kontrak.jenis === "tender" ? "Pemenang tender" : "Penyedia"}</p>
+                            <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">Data resmi ({selectedPackage.kontrak.sumber === "LPSE" ? "LPSE" : "INAPROC"})</span>
                           </div>
                           <table className="w-full border-collapse font-sans text-sm">
                             <tbody>
@@ -835,7 +858,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                                   </ul>
                                   {labelPenyediaTersembunyi ? (
                                     <Link
-                                      href={`/paket/${selectedPackage.kode_rup}?region=${encodeURIComponent(regionId)}`}
+                                      href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
                                       className="mt-1 inline-block font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
                                     >
                                       {labelPenyediaTersembunyi}
@@ -858,28 +881,9 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                           </table>
                         </div>
                       ) : (
-                        <div className="mt-4 border border-dashed border-border bg-muted/10 p-3">
-                          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Tanpa rekam kontrak di LPSE</p>
-                          <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
-                            {(selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("e-purchasing")
-                              ? "Paket ini melalui e-purchasing (e-katalog), yang tidak menerbitkan nama penyedia di LPSE."
-                              : (selectedPackage.metode ?? "").toLocaleLowerCase("id-ID").includes("dikecualikan")
-                                ? "Paket dikecualikan dari prosedur pengadaan LPSE."
-                                : "Belum ada pencatatan tender atau pengadaan langsung yang cocok di LPSE untuk paket ini."}
-                          </p>
-                        </div>
-                      )}
-
-                      {selectedPackage.tahun === 2025 && (
-                        <div className="mt-4 bg-secondary p-3.5 text-foreground">
-                          <p className="font-heading text-xs font-extrabold uppercase tracking-[0.06em] text-primary">
-                            Dalam Jendela Pemeliharaan (≤ 12 Bulan)
-                          </p>
-                          <p className="mt-1 font-sans text-[13px] leading-relaxed text-foreground/90">
-                            Laporan kerusakan pada rentang ini menjadi dasar penagihan perbaikan
-                            sebelum retensi 5% dicairkan.
-                          </p>
-                        </div>
+                        <p className="mt-4 border border-dashed border-border bg-muted/10 p-3 font-sans text-[11px] leading-relaxed text-muted-foreground">
+                          Belum ditemukan rekam kontrak yang cocok pada LPSE/SPSE atau Data INAPROC.
+                        </p>
                       )}
                     </div>
                   </ScrollArea>
@@ -895,7 +899,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       <FiArrowRight className="size-4 text-secondary" aria-hidden="true" />
                     </Button>
                     <Button
-                      render={<Link href={`/paket/${selectedPackage.kode_rup}?region=${encodeURIComponent(regionId)}`} />}
+                      render={<Link href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
                       nativeButton={false}
                       variant="outline"
                       className="h-10 w-full rounded-xs border-border font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-primary hover:bg-primary/5"

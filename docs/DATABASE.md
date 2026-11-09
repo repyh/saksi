@@ -1,6 +1,7 @@
 # DATABASE — Model Data Ingestion Multi-Region
 
-Status: migrasi diterapkan 8 November 2026 pada database di `.env.local` (Postgres 17 + PostGIS).
+Status: seluruh 10 migrasi Prisma diterapkan ke database terkonfigurasi di `.env.local` pada 9 November 2026 (Postgres 17 + PostGIS); `npx prisma migrate status` menyatakan skema mutakhir.
+Sesudah migrasi, target ini berisi 2 `road_packages` dan 0 `administrative_areas`. Angka tersebut berbeda dari rekonsiliasi snapshot lengkap yang dicatat di bawah; jangan menganggap katalog target ini sudah terisi penuh.
 Skema kanonik ada di `prisma/schema.prisma`; dokumen ini menjelaskan ERD, kunci, foreign key,
 index, provenance, dan retensi. Worker tidak memakai Prisma Client (batch 50 ribu baris), tetapi
 memakai SQL parameterized pada kolom dan tabel yang sama.
@@ -73,6 +74,9 @@ erDiagram
 Tabel report/auth (`User`, `Session`, `Account`, `Verification`, `rateLimit`, `Permission`,
 `UserPermissionGrant`, `AuthorizationAuditEvent`, `RegistrationInvite`, `Report`,
 `ReportMedia`, `ReportPackageLink`, `ReportStatusEvent`, `ReportIdempotencyKey`) tidak berubah.
+Tabel `RetiredPermissionRecordArchive` ditambahkan untuk menyimpan snapshot izin, grant, dan undangan
+yang kodenya dipensiunkan. Tabel ini sengaja tidak memiliki FK agar arsip tetap ada setelah baris
+operasional dihapus.
 
 ## 3. Tabel Domain
 
@@ -158,12 +162,13 @@ Selain index primary/unique di atas:
 |---|---|---|
 | `20261108120000_ingestion_pipeline` | enum + 17 tabel + `region_id` pada `road_packages`/`administrative_areas` + index unik per region | aditif; backfill `kota-tangerang` lalu default dihapus |
 | `20261108130000_realization_rup_multi` | `realization_transactions.kode_rup` → `VARCHAR(256)` | aditif, untuk baris multi-RUP (`kode1;kode2`) |
+| `20261109170000_retire_removed_permissions` | Arsipkan, cabut jika masih efektif, lalu hapus 13 kode izin nonaktif dari tabel live dan snapshot undangan | data migration; audit event lama dipertahankan |
 
-Tidak ada migrasi lama yang diedit. Migrasi pertama mengganti index unik global (`road_packages.rup`,
-`administrative_areas.stable_key`) dengan index unik per region; tidak ada baris yang dihapus.
-Tabel kosong saat migrasi diterapkan (0 paket, 0 area), sehingga `ADD COLUMN NOT NULL` aman.
-Untuk database yang sudah berisi data, migrasi menyediakan default `kota-tangerang` sebelum
-default dihapus.
+Tidak ada migrasi lama yang diedit. Migrasi ingestion mengganti index unik global (`road_packages.rup`,
+`administrative_areas.stable_key`) dengan index unik per region tanpa menghapus baris. Pada target
+terkonfigurasi terdapat 2 paket dan 0 area sebelum migrasi; kolom baru untuk kedua paket diisi
+`region_id = kota-tangerang` sebelum default dihapus. Migrasi pensiun izin diterapkan setelah migrasi
+flatten grants dan kedua migrasi ingestion sebelumnya.
 
 Perintah:
 

@@ -238,6 +238,20 @@ model AuthorizationAuditEvent {
   @@index([action, createdAt])
 }
 
+// Retired permission records are archived before their live permission/grant rows are purged.
+// No foreign keys are intentional: this table preserves historical snapshots independently.
+model RetiredPermissionRecordArchive {
+  sourceTable      String
+  sourceId         String
+  permissionCode   String
+  recordSnapshot   Json
+  archivedAt       DateTime @default(now()) @db.Timestamp(3)
+  retirementReason String
+
+  @@id([sourceTable, sourceId, permissionCode])
+  @@index([permissionCode, archivedAt])
+}
+
 model RegistrationInvite {
   id                    String    @id @default(cuid())
   tokenHash             String    @unique

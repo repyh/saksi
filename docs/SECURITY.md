@@ -1,7 +1,7 @@
 # SAKSI Security
 
-**Last reviewed:** 8 November 2026
-**Status:** Security foundations exist in code. The permission-bit normalization migration is prepared in the working tree but has not been deployed. Existing Supabase state may still contain package-backed grants until that migration is applied. Protected business APIs are not yet broadly wired to the authorization authority. The report workflow was verified end to end on 8 November 2026 (submit, account history, review queue, private WebP, cleanup). Do not treat the current prototype as production-ready.
+**Last reviewed:** 9 November 2026
+**Status:** Security foundations exist in code. The permission-bit normalization migration and the retired-permission archive are applied to the configured database (9 November 2026). Protected business APIs are not yet broadly wired to the authorization authority, and moderation actions beyond Publish/Reject remain unimplemented. The report workflow has a confirmed end-to-end submission (8 November 2026). Do not treat the current prototype as production-ready.
 
 This document distinguishes controls that are implemented in the repository from controls that are only configured, proposed, or still missing. For permission-bit and preset semantics, see [AUTHORIZATION.md](./AUTHORIZATION.md). For server and data boundaries, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -76,7 +76,7 @@ Permission definitions, source-controlled presets, and direct permission assignm
 
 ### Important enforcement gap
 
-The authority and permission strategies exist. Invite issue/revoke operations now call the central authority, and the report review queue requires `reports.read_queue`; moderation actions and the remaining staff-administration endpoints are still unimplemented. A hidden button or a client-side check is not authorization. Every protected server operation must call the central authority and apply field/resource checks before loading or returning sensitive data.
+The authority and permission strategies exist. Invite issue/revoke operations now call the central authority, but report and other staff APIs remain unimplemented. A hidden button or a client-side check is not authorization. Every protected server operation must call the central authority and apply field/resource checks before loading or returning sensitive data.
 
 Audit event writes exist for permission changes, but the database does not enforce an append-only policy. Audit retention, access controls, operational review, and alerting remain to be defined.
 
@@ -86,15 +86,17 @@ Audit event writes exist for permission changes, but the database does not enfor
 - Package query values are validated at the HTTP boundary, and unexpected failures return a generic public error rather than internal exception details.
 - Shared API helpers standardize success and failure envelopes. `request-context.ts` currently defines a scaffold only; request IDs are not yet consistently passed into logs or audit records.
 - Better Auth's catch-all route is intentionally delegated directly to Better Auth so its authentication responses and cookies are not altered by the generic API wrapper.
-- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. `ReportsApi` accepts a bounded multipart submit operation with an idempotency key and serves the authenticated history plus the read-only review queue; moderation transitions and general staff-administration endpoints remain unimplemented.
+- `AccessApi` validates, authorizes, and audits invitation issuance and revocation. It returns the raw invite link once to the authorized inviter and excludes it from audit metadata. `ReportsApi` accepts a bounded multipart submit operation with an idempotency key and serves permission-gated report queue, de-identified detail, and private evidence reads. Moderation actions and general staff-administration endpoints remain unimplemented.
 
 ## 6. Reports and personal data
 
-The report form keeps unsent state in page memory; the IndexedDB helper remains unwired. The report migration and private `report-evidence` bucket are configured in Supabase. A browser-to-storage-to-database submission was verified on 8 November 2026 against a complete local Supabase environment; see [REPORTS.md](./REPORTS.md) for the checks and cleanup. Submission is account-optional, and exact reporter identity is not a prerequisite.
+The report form keeps unsent state in page memory; the IndexedDB helper remains unwired. The report migration and private `report-evidence` bucket are configured in Supabase. A browser-to-storage-to-database submission was verified end-to-end on 8 November 2026 (receipt, account history, review queue, database row, and private WebP object; test data removed). Submission is account-optional, and exact reporter identity is not a prerequisite. See [REPORTS.md](./REPORTS.md) for the schema and submission boundary.
 
 Photo selection runs through a local sanitizer for preview, then the user may submit the sanitized image. The Node API independently streams and bounds the multipart request, validates the decoded image format and pixel count, and re-encodes it to WebP at a maximum dimension of 1024 px and 5 MiB before upload to the private Supabase bucket. This removes embedded metadata but does not blur faces or plates; the interface asks reporters to check those manually. The service-role key is accessed only from server-only code. The browser never receives a Storage URL or database credential.
 
 `POST /api/reports` requires a UUID v4 `Idempotency-Key`. The server hashes the key and a canonical payload fingerprint (including the photo bytes); exact retries return the original receipt, while changed content under the same key receives 409. Processing claims have five-minute leases and completed keys expire after 24 hours. The report, media metadata, package link, initial status event, and completed idempotency record are written in one database transaction. If that transaction fails after Storage upload, the server attempts object deletion; cleanup failure is kept on the idempotency row for a later retry. A periodic orphan cleanup job is still needed for objects whose key is never retried.
+
+The report review queue requires `reports.read_queue`. Detail reads require both `reports.read_queue` and `reports.read_deidentified`, exclude reporter identity, free-text location hints, and exact coordinates, and create an audit event on successful access. Evidence reads require `reports.read_queue` and `reports.read_sensitive_evidence`; the server checks media retention/deletion state, audits the access, then streams bytes from the private bucket. The client receives neither a Supabase URL nor the stored object path. Queue, detail, and evidence responses use private no-store caching. These read permissions do not authorize report status changes or publication.
 
 CORS allows only exact origins listed in `CORS_ALLOWED_ORIGINS`, falling back to `BETTER_AUTH_URL`; wildcard origins are not used with credentials. The route rejects browser requests from other origins and answers preflight for POST. This is not a substitute for authentication or rate limiting. Submissions are limited to three per hour by an HMAC of the client IP in the existing database-backed rate-limit table. The hosting proxy must overwrite/sanitize forwarded-IP headers; without a trustworthy client IP, unrelated users may share a limit bucket. Ensure the report bucket remains private and has no public or client-readable Storage policies. Bucket setup is available through `bun run storage:reports:ensure`.
 
@@ -152,7 +154,7 @@ Before enabling staff operations or invite registration in production:
 4. Wire every protected route to the central authorization authority; add resource-level and field-level checks.
 5. Add rate limits to public endpoints based on their abuse and cost profile; configure trusted client-IP handling at the hosting proxy.
 6. Define audit-log access, retention, backups, and operational review. Ensure credentials and bearer tokens never enter logs.
-7. Report moderation, public text-only publication, and private-photo retention are implemented. Photos are never public; `npm run retention:reports` deletes them after 365 days (180 days after rejection/withdrawal/archive). Keep evidence review behind a separate permission and resolve the remaining abuse-control decisions in [REPORTS.md](./REPORTS.md). Report submission stays account-optional.
+7. Implement report submission only after the open privacy, moderation, retention, and abuse-control decisions in [REPORTS.md](./REPORTS.md) are resolved. Keep report submission account-optional.
 
 ## References
 

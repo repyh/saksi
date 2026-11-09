@@ -55,7 +55,7 @@ existing administrator (all report permissions) exercised the same HTTP routes t
 | Check | Result |
 |---|---|
 | Unpublished report | Hidden from `GET /api/reports/public` |
-| Anonymous `PATCH /api/reports/review/[publicCode]` | `401` |
+| Anonymous `PATCH /api/reports/review/[reportId]` | `401` |
 | Publish with `reports.change_status` | `200`, status `PUBLISHED` |
 | Public API | Damage type, coarse size, `Sukarasa, RW 5`, district, submitted/published dates, and package RUP returned; description, location hint, media, reporter, and area id absent |
 | Public page `/laporan/publik` | Renders damage/size labels, area, and package link; secret description and hint absent |

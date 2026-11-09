@@ -48,7 +48,10 @@ export class AccountApi {
       dashboardPermissions: {
         viewOwnPermissions: canViewOwnPermissions,
         manageAccounts: activePermissions.has("access.users.read"),
-        moderateReports: activePermissions.has("reports.read_queue"),
+        viewReportQueue: activePermissions.has("reports.read_queue"),
+        viewReportDetails: activePermissions.has("reports.read_deidentified"),
+        viewReportEvidence: activePermissions.has("reports.read_sensitive_evidence"),
+        changeReportStatus: activePermissions.has("reports.change_status"),
         inviteAccounts: activePermissions.has("access.users.invite"),
         editAccounts: activePermissions.has("access.users.edit"),
         applyPresets: activePermissions.has("access.presets.apply"),

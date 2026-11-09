@@ -17,6 +17,11 @@ const WORK_CATEGORIES = new Set<RoadWorkCategory>([
 export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   const region = url.searchParams.get("region")?.trim() || undefined;
   const year = url.searchParams.get("year")?.trim() || undefined;
+  const rawBudgetDecile = url.searchParams.get("kelompok");
+  const budgetDecileParam = rawBudgetDecile?.trim();
+  const budgetDecile = rawBudgetDecile === null ? undefined : Number(budgetDecileParam);
+  const rawGeneral = url.searchParams.get("umum");
+  const general = rawGeneral?.trim();
   const district = url.searchParams.get("district")?.trim() || undefined;
   const work = url.searchParams.get("work")?.trim() || undefined;
   const contract = url.searchParams.get("kontrak")?.trim() || undefined;
@@ -39,6 +44,18 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   }
   if (year && year !== "2025" && year !== "2026") {
     throw new ApiError(400, "INVALID_QUERY", "Tahun anggaran harus 2025 atau 2026.");
+  }
+  if (
+    rawBudgetDecile !== null &&
+    (!Number.isInteger(budgetDecile) || (budgetDecile as number) < 1 || (budgetDecile as number) > 10)
+  ) {
+    throw new ApiError(400, "INVALID_QUERY", "Kelompok anggaran harus bilangan bulat antara 1 dan 10.");
+  }
+  if (rawBudgetDecile !== null && !year) {
+    throw new ApiError(400, "INVALID_QUERY", "Tahun anggaran wajib dipilih untuk filter kelompok anggaran.");
+  }
+  if (rawGeneral !== null && general !== "0" && general !== "1") {
+    throw new ApiError(400, "INVALID_QUERY", "Filter lokasi umum harus 0 atau 1.");
   }
   if (district && district.length > 100) {
     throw new ApiError(400, "INVALID_QUERY", "Nama kecamatan terlalu panjang.");
@@ -79,6 +96,8 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   return {
     region,
     year: year as RoadPackageSearchFilters["year"],
+    budgetDecile,
+    generalOnly: general === "1",
     district,
     villages: desa.length ? desa : undefined,
     locatedOnly: lokasi === "1",

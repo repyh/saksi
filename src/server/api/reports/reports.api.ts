@@ -10,7 +10,7 @@ import { claimReportIdempotency, setReportIdempotencyStagedPath } from "@/server
 import { findReportAreaSnapshot } from "@/server/reports/report-area-catalog";
 import { persistSubmittedReport } from "@/server/reports/report.repository";
 import { enforceReportSubmissionRateLimit } from "@/server/reports/report-rate-limit";
-import { removePrivateReportImage, assertPrivateReportBucketReady } from "@/server/storage/supabase-storage.client";
+import { removePrivateReportImage, assertPrivateReportBucketReady, downloadPrivateReportImage } from "@/server/storage/supabase-storage.client";
 import { uploadController } from "@/server/uploads/upload.controller";
 import { createRoadPackageRepository } from "@/server/packages/source";
 import { listRegions } from "@/server/regions/region-registry";
@@ -23,7 +23,8 @@ import {
   type PublicReportsResponse,
 } from "@/contracts/reports/public-report.contract";
 import { changeReportStatus, listPublishedReports } from "@/server/reports/public-report.repository";
-import { requireRequestPermission } from "@/server/authorization/authority";
+import { requirePermission, requireRequestPermission, AuthorizationError } from "@/server/authorization/authority";
+import { apiFailure } from "@/server/api/shared/api-response";
 import type { Prisma } from "@/generated/prisma/client";
 
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -52,13 +53,14 @@ export class ReportsApi extends ApiController {
       const url = new URL(request.url);
       const parsedQuery = reportReviewQueueQuerySchema.safeParse({
         status: url.searchParams.get("status") ?? undefined,
+        order: url.searchParams.get("order") ?? undefined,
         cursor: url.searchParams.get("cursor") ?? undefined,
       });
       if (!parsedQuery.success) {
         throw new ApiError(400, "INVALID_REVIEW_QUERY", "Filter antrean laporan tidak valid.");
       }
 
-      const { status, cursor } = parsedQuery.data;
+      const { status, order, cursor } = parsedQuery.data;
       const statusWhere: Prisma.ReportWhereInput = status === "active"
         ? { status: { in: ["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO"] } }
         : status === "all"
@@ -78,11 +80,12 @@ export class ReportsApi extends ApiController {
         throw new ApiError(400, "INVALID_REVIEW_CURSOR", "Posisi antrean sudah tidak tersedia. Muat ulang antrean.");
       }
 
+      const isAscending = order === "submittedAt_asc";
       const cursorWhere: Prisma.ReportWhereInput = cursorReport
         ? {
           OR: [
-            { submittedAt: { lt: cursorReport.submittedAt } },
-            { submittedAt: cursorReport.submittedAt, id: { lt: cursorReport.id } },
+            { submittedAt: { [isAscending ? "gt" : "lt"]: cursorReport.submittedAt } },
+            { submittedAt: cursorReport.submittedAt, id: { [isAscending ? "gt" : "lt"]: cursorReport.id } },
           ],
         }
         : {};
@@ -90,7 +93,7 @@ export class ReportsApi extends ApiController {
       const [rows, total] = await Promise.all([
         prisma.report.findMany({
           where,
-          orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+          orderBy: [{ submittedAt: isAscending ? "asc" : "desc" }, { id: isAscending ? "asc" : "desc" }],
           take: 31,
           select: {
             id: true,
@@ -112,6 +115,7 @@ export class ReportsApi extends ApiController {
       return {
         reports: page.map((report) => ({
           publicCode: report.publicCode,
+          id: report.id,
           status: report.status,
           damageType: report.damageType,
           submittedAt: report.submittedAt.toISOString(),
@@ -187,6 +191,124 @@ export class ReportsApi extends ApiController {
     }, 200, (error) => isReportDatabaseUnavailable(error)
       ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan moderasi laporan belum siap.")
       : undefined));
+  }
+
+  getReviewDetail(request: Request, reportId: string): Promise<Response> {
+    return this.withPrivateNoStore(this.respond(async () => {
+      const actor = await requireRequestPermission(request.headers, "reports.read_queue");
+      await requirePermission(actor.id, "reports.read_deidentified");
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "REPORTS_UNAVAILABLE", "Detail laporan belum tersedia.");
+      }
+      if (!UUID_PATTERN.test(reportId)) throw new ApiError(404, "REPORT_NOT_FOUND", "Laporan tidak ditemukan.");
+
+      const report = await prisma.report.findUnique({
+        where: { id: reportId },
+        select: {
+          id: true,
+          publicCode: true,
+          status: true,
+          damageType: true,
+          observedCauses: true,
+          coarseSize: true,
+          description: true,
+          submittedAt: true,
+          areaNameSnapshot: true,
+          districtNameSnapshot: true,
+          packageLink: { select: { rupSnapshot: true, packageNameSnapshot: true } },
+          media: { select: { id: true, deletedAt: true, retainedUntil: true } },
+        },
+      });
+      if (!report) throw new ApiError(404, "REPORT_NOT_FOUND", "Laporan tidak ditemukan.");
+
+      await prisma.authorizationAuditEvent.create({
+        data: {
+          actorUserId: actor.id,
+          action: "report.detail.read",
+          resourceType: "report",
+          resourceId: report.id,
+        },
+      });
+
+      const now = new Date();
+      const hasEvidence = Boolean(report.media && !report.media.deletedAt && (!report.media.retainedUntil || report.media.retainedUntil > now));
+      return {
+        publicCode: report.publicCode,
+        id: report.id,
+        status: report.status,
+        damageType: report.damageType,
+        observedCauses: report.observedCauses,
+        coarseSize: report.coarseSize,
+        description: report.description,
+        submittedAt: report.submittedAt.toISOString(),
+        areaName: report.areaNameSnapshot,
+        districtName: report.districtNameSnapshot,
+        package: report.packageLink
+          ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
+          : null,
+        hasEvidence,
+      };
+    }, {
+      code: "REPORT_REVIEW_DETAIL_UNAVAILABLE",
+      message: "Detail laporan belum dapat dimuat.",
+    }, 200, (error) => isReportDatabaseUnavailable(error)
+      ? new ApiError(503, "REPORT_DATABASE_UNAVAILABLE", "Layanan detail laporan belum siap.")
+      : undefined));
+  }
+
+  async getReviewEvidence(request: Request, reportId: string): Promise<Response> {
+    let response: Response;
+    try {
+      const actor = await requireRequestPermission(request.headers, "reports.read_queue");
+      await requirePermission(actor.id, "reports.read_sensitive_evidence");
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "REPORTS_UNAVAILABLE", "Foto laporan belum tersedia.");
+      }
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        throw new ApiError(503, "REPORT_STORAGE_UNAVAILABLE", "Penyimpanan foto laporan belum dikonfigurasi.");
+      }
+      if (!UUID_PATTERN.test(reportId)) throw new ApiError(404, "REPORT_NOT_FOUND", "Laporan tidak ditemukan.");
+
+      await assertPrivateReportBucketReady();
+
+      const report = await prisma.report.findUnique({
+        where: { id: reportId },
+        select: { id: true, media: { select: { id: true, objectPath: true, deletedAt: true, retainedUntil: true } } },
+      });
+      const media = report?.media;
+      const now = new Date();
+      if (!report || !media || media.deletedAt || (media.retainedUntil && media.retainedUntil <= now)) {
+        throw new ApiError(404, "REPORT_EVIDENCE_NOT_FOUND", "Foto laporan tidak tersedia.");
+      }
+
+      await prisma.authorizationAuditEvent.create({
+        data: {
+          actorUserId: actor.id,
+          action: "report.evidence.read",
+          resourceType: "report",
+          resourceId: report.id,
+          metadata: { mediaId: media.id },
+        },
+      });
+
+      const bytes = await downloadPrivateReportImage(media.objectPath);
+      response = new Response(bytes, {
+        headers: {
+          "Content-Type": "image/webp",
+          "Content-Length": String(bytes.byteLength),
+          "Content-Disposition": 'inline; filename="report-evidence.webp"',
+          "X-Content-Type-Options": "nosniff",
+          "Cross-Origin-Resource-Policy": "same-origin",
+          "Content-Security-Policy": "default-src 'none'; sandbox",
+        },
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationError) response = apiFailure(error.code, error.message, error.status);
+      else if (error instanceof ApiError) response = apiFailure(error.code, error.message, error.status);
+      else if (isReportDatabaseUnavailable(error)) response = apiFailure("REPORT_DATABASE_UNAVAILABLE", "Layanan foto laporan belum siap.", 503);
+      else response = apiFailure("REPORT_EVIDENCE_UNAVAILABLE", "Foto laporan belum dapat dibuka.", 500);
+    }
+    return this.withPrivateNoStore(Promise.resolve(response));
   }
 
   listMine(request: Request): Promise<Response> {
