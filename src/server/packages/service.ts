@@ -7,6 +7,7 @@ import type {
   RoadPackageSearchFilters,
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
+import type { RoadPackageDetail } from "@/contracts/packages/road-package-detail.contract";
 import { areaKeyForPackage, type RoadAreaLevel } from "@/contracts/packages/area-key";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
 import {
@@ -17,6 +18,9 @@ import {
 import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
 import { visibleAreaKeys } from "./area-visibility";
 import type { RoadPackageRepository } from "./repository";
+import { emptyPlanDetail } from "./rup-detail";
+import { bacaRupDetail } from "./rup-detail-repository";
+import { snapshotMeta } from "./snapshot-repository";
 import { createRoadPackageRepository } from "./source";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -207,6 +211,26 @@ export async function getRoadPackage(
   const paketRepository = repository ?? createRoadPackageRepository(regionId);
   const rows = await paketRepository.listRoadPackages();
   return rows.find((item) => item.kode_rup === rup) ?? null;
+}
+
+/**
+ * Detail satu paket untuk halaman bacaan: item snapshot + rincian rencana RUP
+ * + metadata region/snapshot. `null` bila kode RUP tidak ada di region ini.
+ */
+export async function getRoadPackageDetail(
+  rup: string,
+  regionId: string = DEFAULT_REGION_ID,
+  repository?: RoadPackageRepository,
+): Promise<RoadPackageDetail | null> {
+  const item = await getRoadPackage(rup, regionId, repository);
+  if (!item) return null;
+
+  return {
+    item,
+    plan: bacaRupDetail(rup, regionId) ?? emptyPlanDetail(),
+    region: regionSummary(getRegion(regionId)),
+    snapshot: await snapshotMeta(regionId),
+  };
 }
 
 /** Ringkasan penyedia dari rekam kontrak LPSE + Data INAPROC, dibatasi ke paket jalan region. */

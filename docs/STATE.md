@@ -157,6 +157,13 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 - `/laporan/publik` + `GET /api/reports/public` — daftar laporan **PUBLISHED** per region/paket/
   kecamatan/kelurahan; hanya jenis kerusakan, ukuran kasar, wilayah, tanggal, dan tautan paket.
   Tidak memuat identitas pelapor, deskripsi, petunjuk lokasi, lokasi presisi, atau foto.
+- `/paket/[rup]` — halaman bacaan detail paket (Server Component, `?region=`). Memuat ringkasan,
+  rencana pengadaan dari `data/rup_detail_*.json` (jadwal pemilihan & kontrak, uraian, volume,
+  spesifikasi, MAK), lokasi sebagai batas wilayah + badge presisi, realisasi/kontrak dari
+  `buildPenyediaPanel`, dan maksimal 20 laporan `PUBLISHED` paket itu. Rincian RUP dibaca repository
+  server-only `src/server/packages/rup-detail-repository.ts`; 918 paket tanpa entri tetap dirender
+  dengan label "Belum tersedia dari RUP". `lokasi_raw` tidak pernah ditampilkan. Tanpa peta/titik;
+  tombol "Lihat di peta" memakai `routeForPackage()`. Panel peta diringkas dan menaut ke halaman ini.
 - `PATCH /api/reports/review/[publicCode]` — aksi staf **Publikasikan** / **Tolak** dengan
   `reports.change_status`, alasan wajib, dan `ReportStatusEvent` append-only. Antrean review di
   Dashboard menampilkan tombol aksi dan formulir alasan. Diuji end-to-end 9 November 2026 dengan
@@ -213,7 +220,8 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; repository Prisma saat `DATABASE_URL` diisi, snapshot sebagai cadangan | Pindahkan filter dan agregat peta ke SQL/PostGIS |
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]` | Cache/precompute agregat; saat ini dihitung per permintaan |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
-| **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
+| **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak, halaman penyedia, dan halaman detail paket; `SIMULASI PROTOTIPE` di alur lapor dan laporan warga pada detail paket; badge presisi lokasi ada di detail paket | Badge SIRUP/Bina Marga belum |
+| **Halaman detail paket** | Rencana, lokasi, kontrak, laporan | Selesai: `/paket/[rup]` membaca item dari repository aktif (Prisma/Supabase atau snapshot) dan rincian RUP dari `data/rup_detail_*.json` server-only, memakai `routeForPackage()`, dan menampilkan kontrak lengkap serta laporan `PUBLISHED`; panel peta diringkas dengan tombol "Buka detail" | Penambalan detail untuk 918 paket tanpa entri RUP di luar cakupan |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi membaca katalog itu lewat Prisma, dengan snapshot sebagai cadangan | Jalankan `npm run db:verify` setiap selesai ingest; pertahankan kontrak API |
 | **Scraper terjadwal** | Worker terpisah | `workers/ingest.mjs` + lock/retry/log/riwayat run; penjadwal di dalam Next (`src/instrumentation.ts`), artefak systemd timer, dan GitHub Actions tersedia | Deployment cron dan approval merge |
 | **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review, daftar publik `PUBLISHED`, dan aksi Publikasikan/Tolak dengan alasan + `ReportStatusEvent` tersedia; submit dan moderasi terverifikasi end-to-end 8–9 Nov 2026 | Akses bukti, kebijakan media publik, dan retensi (`docs/REPORTS.md`) |
