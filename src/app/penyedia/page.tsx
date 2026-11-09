@@ -6,6 +6,8 @@ import { CatalogPageShell } from "@/features/packages/components/catalog-page-sh
 import { listVendors, searchRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Penyedia & Kontrak Jalan — SAKSI",
   description:

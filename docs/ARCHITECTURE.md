@@ -71,7 +71,41 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
 - `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, the staff review queue, public published-report queries, and Publish/Reject moderation. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
-The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The package list and contract index are cached per server process; the aggregate is recomputed per request. Moving filtering into SQL and precomputing the aggregate are the next scale steps.
+The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`.
+
+#### Catalog cache and revalidation
+
+The catalog read path is cached with Next's built-in Data Cache, not with a process-lifetime `Map`:
+
+- `src/server/packages/catalog-cache.ts` wraps package rows (`catalog-road-package-bases`), the road-only contract map (`catalog-contracts-per-rup`), the vendor register (`catalog-vendors`), and snapshot metadata (`catalog-snapshot-meta`) in `unstable_cache` with `revalidate: 300` and the tag `catalog`.
+- Package rows and contracts are two entries because Next refuses a single Data Cache entry above 2 MB. `listRoadPackagesCached()` combines them per request; the same helper feeds the register, detail pages, map aggregate, vendor pages, the landing builders, `/metode`, and the package APIs.
+- `cache()` from React deduplicates those loaders within one request. `generateMetadata` and the page on `/paket/[rup]` and `/penyedia/[slug]` therefore read one detail object, `searchRoadPackages` and `aggregateRoadPackages` share one filtered context on `/peta-pekerjaan`, and the two landing builders share one package read.
+- The active source (`database` or `snapshot`) is part of every cache key. A build performed without `DATABASE_URL` therefore cannot serve snapshot entries to a runtime process that reads the database.
+- `/paket`, `/penyedia`, `/penyedia/[slug]`, `/peta-pekerjaan`, `/metode`, and `/` export `revalidate = 300`. Every one of those routes reads `searchParams` for region/filters, so Next keeps the route itself dynamic; the effective cross-request cache is the Data Cache above, not a cached page shell. Route-level ISR would require giving up server-side query filters, which would change behavior.
+- `/paket/[rup]` and `/laporan/publik` deliberately have no route revalidate and never wrap `listPublishedReports()` in a catalog cache. Reports remain a direct database read on every request, so a newly published report is visible on the next request. The catalog portion of those pages is still cached.
+- `getIndeksKontrak()` keeps an in-process promise/map cache for CPU work, but the cached package/contract/vendor entries above are the authoritative cross-request layer. On a new instance the maps are rebuilt from the Data Cache entries or, on a cache miss, from one database read; correctness does not depend on process lifetime.
+- `scripts/profile-pages.mjs` (`npm run profile`) measures the cache in production mode with sequential p50/p95, optional 8-request parallel batches, optional warm-up, an optional separate cold-start pass, and HTML/JSON dumps for before/after comparison. It discovers the test RUP and vendor slug from the region files, so it runs with or without `DATABASE_URL`.
+
+Refresh remains time-based (`revalidate: 300`) plus the `catalog` tag for future on-demand invalidation after ingestion. Moving filtering and map aggregation into SQL/PostGIS is still the next scale step; the aggregate is recomputed from cached rows per request.
+
+Measured with `next build` + `next start`, `DATABASE_URL` active, 3 warm-up requests and 7 samples per URL on the same machine (`npm run profile`):
+
+| URL | Baseline p50 | After p50 | Target p50 |
+|---|---:|---:|---:|
+| `/paket` | 1.137 ms | 45 ms | ≤100 ms |
+| `/penyedia` | 2.123 ms | 38 ms | ≤100 ms |
+| `/api/packages` | 1.923 ms | 16 ms | ≤100 ms |
+| `/api/packages/map` | 1.628 ms | 22 ms | ≤100 ms |
+| `/api/packages/[rup]` | 1.678 ms | 21 ms | ≤100 ms |
+| `/paket/[rup]` | 1.949 ms | 259 ms | ≤300 ms |
+| `/penyedia/[slug]` | 3.738 ms | 21 ms | ≤300 ms |
+| `/peta-pekerjaan` (full body) | 3.161 ms | 51 ms | ≤300 ms |
+| `/laporan/publik` | 1.445 ms | 253 ms | ≤300 ms |
+| `/metode` | 1.823 ms | 12 ms | ≤300 ms |
+| `/` (full body) | 2.100 ms | 55 ms | ≤300 ms |
+
+The 8-request parallel p95 was 411 ms against the 1.000 ms target. The remaining 253–259 ms on `/paket/[rup]` and `/laporan/publik` is the fresh published-report query, not catalog cost, and is intentionally not cached. The first-request cold sequence (same run, no warm-up) was 3.398 s for `/paket`, 1.826 s for `/penyedia`, 419 ms for `/paket/[rup]`, 102 ms for `/peta-pekerjaan`, 279 ms for `/laporan/publik`, 1.894 s for `/metode`, 1.948 s for `/`, and 3.116 s for `/api/packages`; cold start is reported separately and is not a gate. Snapshot mode (no `DATABASE_URL`) also passed every p50 target; its warm p50 was 17–82 ms for pages and 15–31 ms for APIs, with parallel p95 275 ms.
+
 
 ### Database and authentication
 
@@ -140,9 +174,9 @@ The contract types are shared across the UI and route. Query parameters are vali
 ## Proposed evolution
 
 1. **Database-backed BFF (done):** All package, contract, vendor, and audit-metric access goes through the server repository and API contract. Prisma is the primary adapter; the snapshot is the fallback when `DATABASE_URL` is unset.
-2. **Spatial queries:** Move package filtering and map aggregation into PostGIS so the register no longer loads the full region catalog per request, and decide whether report area lookup should read `administrative_areas` instead of the boundary GeoJSON.
+2. **Spatial queries:** Move package filtering and map aggregation into PostGIS so the register no longer filters the full region catalog per request. Catalog reads are already cached by `src/server/packages/catalog-cache.ts`; filtering and aggregation remain in-process for now.
 3. **Independent ingestion:** Add the two scheduled workers and an ingestion boundary with restricted credentials, idempotency, validation, and run history.
 4. **Reports:** Apply the report migration, create the private bucket, then complete privacy, moderation, abuse-control, and retention decisions in [REPORTS.md](./REPORTS.md) before enabling public report access or publication.
-5. **Scale map queries:** Separate paginated register results from minimal map features, query spatial features by viewport (implemented with `bbox`), and cache or precompute the aggregate.
+5. **Scale map queries:** Separate paginated register results from minimal map features, query spatial features by viewport (implemented with `bbox`), and precompute the aggregate. The current cache removes the repeated database read but still computes the aggregate from cached rows per request.
 
 Each stage should be independently deployable and should not require UI components to know which repository implementation supplies the data.

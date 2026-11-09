@@ -1,6 +1,8 @@
 import "server-only";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { prisma } from "@/lib/prisma";
 import {
@@ -9,10 +11,15 @@ import {
   regionSummary,
   type RegionConfig,
 } from "@/server/regions/region-registry";
+import { listRoadPackagesCached } from "./catalog-cache";
+import {
+  CATALOG_CACHE_TAGS,
+  CATALOG_REVALIDATE_SECONDS,
+  CATALOG_SOURCE,
+} from "./catalog-cache-config";
 import { isDatabaseEnabled } from "./data-source";
 import { getLpseMeta } from "./lpse-repository";
 import { snapshotMeta } from "./snapshot-repository";
-import { createRoadPackageRepository } from "./source";
 
 /**
  * Angka metodologi diturunkan dari manifest region, snapshot aktif, dan meta LPSE/realisasi.
@@ -272,7 +279,7 @@ const UJI_ANCHOR: MetodologiUjiAnchor = {
   sumber: "docs/STATE.md",
 };
 
-export async function buildMetodologi(
+export async function susunMetodologi(
   regionId: string = DEFAULT_REGION_ID,
 ): Promise<MetodologiData> {
   const region = getRegion(regionId);
@@ -468,7 +475,7 @@ export async function buildMetodologi(
 
     // Silang periksa manifest dengan snapshot aktif agar manifest basi tidak lolos diam-diam.
     try {
-      const paketSnapshot = await createRoadPackageRepository(regionId).listRoadPackages();
+      const paketSnapshot = await listRoadPackagesCached(regionId);
       if (paketSnapshot.length !== metrik.paket) {
         catatan.push(
           `Snapshot aktif memuat ${idInt.format(paketSnapshot.length)} paket, manifest memuat ${idInt.format(metrik.paket)}; jalankan ulang region:check dan data:snapshot.`,
@@ -534,4 +541,21 @@ export async function buildMetodologi(
     penyedia,
     ujiAnchor: UJI_ANCHOR,
   };
+}
+
+const loadMetodologi = unstable_cache(
+  susunMetodologi,
+  ["catalog-methodology", CATALOG_SOURCE],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
+);
+
+const metodologiForRequest = cache(
+  async (regionId: string): Promise<MetodologiData> => loadMetodologi(regionId),
+);
+
+/** Halaman /metode seluruhnya turunan manifest + katalog; cache lintas request. */
+export function buildMetodologi(
+  regionId: string = DEFAULT_REGION_ID,
+): Promise<MetodologiData> {
+  return metodologiForRequest(regionId);
 }

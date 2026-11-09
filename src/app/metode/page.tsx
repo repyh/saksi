@@ -5,6 +5,8 @@ import Link from "next/link";
 import { buildMetodologi } from "@/server/packages/methodology";
 import { resolveRegionId } from "@/server/regions/region-registry";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Metode Data SAKSI: Paket Jalan Tangerang",
   description:

@@ -8,6 +8,8 @@ import { CatalogPageShell } from "@/features/packages/components/catalog-page-sh
 import { listRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Paket Jalan — SAKSI",
   description: "Direktori paket pekerjaan jalan dengan rincian RUP, wilayah, pagu, dan rekam kontrak.",

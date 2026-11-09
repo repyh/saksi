@@ -1,6 +1,8 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import type {
   AuditSpatialBreakdown,
   AuditSummaryMetrics,
@@ -13,8 +15,12 @@ import {
   regionSummary,
   type RegionConfig,
 } from "@/server/regions/region-registry";
-import { snapshotMeta } from "./snapshot-repository";
-import { createRoadPackageRepository } from "./source";
+import { listRoadPackagesCached, snapshotMetaCached } from "./catalog-cache";
+import {
+  CATALOG_CACHE_TAGS,
+  CATALOG_REVALIDATE_SECONDS,
+  CATALOG_SOURCE,
+} from "./catalog-cache-config";
 
 interface BoundaryFeatureCollection {
   features?: Array<{ properties?: Record<string, unknown> }>;
@@ -134,16 +140,15 @@ function spatialBreakdown(packages: RoadPackageItem[]): AuditSpatialBreakdown {
  * Audit/landing headline metrics derived from the active snapshot and checked-in
  * administrative boundaries. Never hard-code these figures in the UI.
  */
-export async function buildAuditSummaryMetrics(
+export async function susunAuditSummaryMetrics(
   regionId: string = DEFAULT_REGION_ID,
   repository?: RoadPackageRepository,
 ): Promise<AuditSummaryMetrics> {
   const region = getRegion(regionId);
-  const paketRepository = repository ?? createRoadPackageRepository(regionId);
   const [packages, boundaries, meta] = await Promise.all([
-    paketRepository.listRoadPackages(),
+    repository ? repository.listRoadPackages() : listRoadPackagesCached(regionId),
     Promise.resolve(readBoundaries(region)),
-    snapshotMeta(regionId),
+    snapshotMetaCached(regionId),
   ]);
 
   const years = Array.from(new Set(packages.map((item) => item.tahun))).sort((a, b) => a - b);
@@ -188,4 +193,28 @@ export async function buildAuditSummaryMetrics(
     )}%`,
     spatial,
   };
+}
+
+const loadAuditSummaryMetrics = unstable_cache(
+  susunAuditSummaryMetrics,
+  ["catalog-audit-metrics", CATALOG_SOURCE],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
+);
+
+const auditSummaryMetricsForRequest = cache(
+  async (regionId: string): Promise<AuditSummaryMetrics> =>
+    loadAuditSummaryMetrics(regionId),
+);
+
+/**
+ * Metrik landing: cache Data Cache lintas request + `cache()` per request.
+ * `repository` eksplisit (mis. uji) melewati cache agar perilaku lama tetap tersedia.
+ */
+export function buildAuditSummaryMetrics(
+  regionId: string = DEFAULT_REGION_ID,
+  repository?: RoadPackageRepository,
+): Promise<AuditSummaryMetrics> {
+  return repository
+    ? susunAuditSummaryMetrics(regionId, repository)
+    : auditSummaryMetricsForRequest(regionId);
 }

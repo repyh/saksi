@@ -90,24 +90,29 @@ function isRoadPackageItem(value: unknown): value is RoadPackageItem {
 export function createSnapshotRoadPackageRepository(
   regionId: string = DEFAULT_REGION_ID,
 ): RoadPackageRepository {
-  return {
-    async listRoadPackages() {
-      const region = getRegion(regionId);
-      const packageRows = bacaSnapshot(regionId).paket;
-      if (!Array.isArray(packageRows)) {
-        throw new Error(`Snapshot paket ${region.label} memiliki format yang tidak sah.`);
-      }
+  function bacaPaket(): RoadPackageItem[] {
+    const region = getRegion(regionId);
+    const packageRows = bacaSnapshot(regionId).paket;
+    if (!Array.isArray(packageRows)) {
+      throw new Error(`Snapshot paket ${region.label} memiliki format yang tidak sah.`);
+    }
+    return (packageRows as unknown[]).filter(
+      (item): item is RoadPackageItem =>
+        isRoadPackageItem(item) && item.sektor === ROAD_SECTOR,
+    );
+  }
 
+  return {
+    async listRoadPackageBases() {
+      return bacaPaket().map((item) => ({ ...item, kontrak: null }));
+    },
+
+    async listRoadPackages() {
       const indeks = await getIndeksKontrak(regionId);
-      return (packageRows as unknown[])
-        .filter(
-          (item): item is RoadPackageItem =>
-            isRoadPackageItem(item) && item.sektor === ROAD_SECTOR,
-        )
-        .map((item) => ({
-          ...item,
-          kontrak: indeks.kontrakPerRup.get(String(item.kode_rup)) ?? null,
-        }));
+      return bacaPaket().map((item) => ({
+        ...item,
+        kontrak: indeks.kontrakPerRup.get(String(item.kode_rup)) ?? null,
+      }));
     },
   };
 }

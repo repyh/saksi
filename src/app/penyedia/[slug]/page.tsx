@@ -7,6 +7,8 @@ import { CatalogPageShell } from "@/features/packages/components/catalog-page-sh
 import { getVendor } from "@/server/packages/service";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
 
+export const revalidate = 300;
+
 interface PenyediaDetailPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ region?: string | string[] }>;

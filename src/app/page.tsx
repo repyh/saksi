@@ -6,6 +6,8 @@ import { resolveRegionId } from "@/server/regions/region-registry";
 import { buildBudgetExplorer } from "@/server/packages/budget-explorer";
 import { BudgetExplorer } from "@/features/audit/components/budget-explorer";
 
+export const revalidate = 300;
+
 interface HomeProps {
   searchParams: Promise<{ region?: string | string[] }>;
 }

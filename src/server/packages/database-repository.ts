@@ -1,5 +1,6 @@
 import "server-only";
 import type {
+  RoadPackageContract,
   RoadPackageItem,
   RoadPrecisionType,
 } from "@/contracts/packages/road-package.contract";
@@ -41,66 +42,87 @@ function monthFor(value: string | null, year: number): string | null {
   return value && value.slice(-4) === String(year) ? value : null;
 }
 
+async function muatBaris(regionId: string) {
+  return prisma.roadPackage.findMany({
+    where: { regionId },
+    select: {
+      rup: true,
+      year: true,
+      name: true,
+      agencyName: true,
+      budget: true,
+      method: true,
+      locationPrecision: true,
+      officialDistrict: true,
+      officialVillage: true,
+      rwCode: true,
+      microLocation: true,
+      rupPackage: {
+        select: {
+          sumberDana: true,
+          detail: { select: { jadwalPemilihanMulai: true } },
+        },
+      },
+    },
+  });
+}
+
+type BarisPaket = Awaited<ReturnType<typeof muatBaris>>[number];
+
+function petakanBaris(
+  row: BarisPaket,
+  kontrak: RoadPackageContract | null,
+): RoadPackageItem {
+  const precision = PRECISION[row.locationPrecision] ?? "Kabupaten";
+  return {
+    kode_rup: row.rup,
+    tahun: row.year,
+    satker: row.agencyName,
+    nama: row.name,
+    pagu: Number(row.budget),
+    metode: row.method || null,
+    sumber: row.rupPackage?.sumberDana ?? null,
+    bulan: monthFor(row.rupPackage?.detail?.jadwalPemilihanMulai ?? null, row.year),
+    sektor: ROAD_SECTOR,
+    lokasi_mikro: row.microLocation,
+    desa_resmi: row.officialVillage,
+    rw: row.rwCode,
+    unit_id: unitIdFor(row.officialVillage, row.rwCode, precision),
+    kecamatan_resmi: row.officialDistrict,
+    lat: null,
+    lon: null,
+    presisi_peta: precision,
+    kontrak,
+  };
+}
+
+function urutkan(packages: RoadPackageItem[]): RoadPackageItem[] {
+  return packages.sort(
+    (a, b) =>
+      b.tahun - a.tahun ||
+      b.pagu - a.pagu ||
+      (a.kode_rup < b.kode_rup ? -1 : a.kode_rup > b.kode_rup ? 1 : 0),
+  );
+}
+
 export function createDatabaseRoadPackageRepository(
   regionId: string = DEFAULT_REGION_ID,
 ): RoadPackageRepository {
   return {
+    async listRoadPackageBases() {
+      const rows = await muatBaris(regionId);
+      return urutkan(rows.map((row) => petakanBaris(row, null)));
+    },
+
     async listRoadPackages() {
       const [rows, indeks] = await Promise.all([
-        prisma.roadPackage.findMany({
-          where: { regionId },
-          select: {
-            rup: true,
-            year: true,
-            name: true,
-            agencyName: true,
-            budget: true,
-            method: true,
-            locationPrecision: true,
-            officialDistrict: true,
-            officialVillage: true,
-            rwCode: true,
-            microLocation: true,
-            rupPackage: {
-              select: {
-                sumberDana: true,
-                detail: { select: { jadwalPemilihanMulai: true } },
-              },
-            },
-          },
-        }),
+        muatBaris(regionId),
         getIndeksKontrak(regionId),
       ]);
-
-      const packages = rows.map((row): RoadPackageItem => {
-        const precision = PRECISION[row.locationPrecision] ?? "Kabupaten";
-        return {
-          kode_rup: row.rup,
-          tahun: row.year,
-          satker: row.agencyName,
-          nama: row.name,
-          pagu: Number(row.budget),
-          metode: row.method || null,
-          sumber: row.rupPackage?.sumberDana ?? null,
-          bulan: monthFor(row.rupPackage?.detail?.jadwalPemilihanMulai ?? null, row.year),
-          sektor: ROAD_SECTOR,
-          lokasi_mikro: row.microLocation,
-          desa_resmi: row.officialVillage,
-          rw: row.rwCode,
-          unit_id: unitIdFor(row.officialVillage, row.rwCode, precision),
-          kecamatan_resmi: row.officialDistrict,
-          lat: null,
-          lon: null,
-          presisi_peta: precision,
-          kontrak: indeks.kontrakPerRup.get(String(row.rup)) ?? null,
-        };
-      });
-
-      return packages.sort(
-        (a, b) =>
-          b.tahun - a.tahun ||
-          b.pagu - a.pagu ||
-          (a.kode_rup < b.kode_rup ? -1 : a.kode_rup > b.kode_rup ? 1 : 0),
+      return urutkan(
+        rows.map((row) =>
+          petakanBaris(row, indeks.kontrakPerRup.get(String(row.rup)) ?? null),
+        ),
       );
     },
   };

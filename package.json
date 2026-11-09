@@ -27,6 +27,7 @@
     "lpse:match": "node scripts/lpse.mjs match",
     "prebuild": "prisma generate && node scripts/copy-maplibre-worker.mjs",
     "predev": "prisma generate && node scripts/copy-maplibre-worker.mjs",
+    "profile": "node scripts/profile-pages.mjs",
     "region:check": "node scripts/check-region.mjs",
     "region:ingest": "node scripts/ingest.mjs",
     "retention:reports": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs",

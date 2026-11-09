@@ -13,6 +13,7 @@ import {
   type RegionConfig,
 } from "@/server/regions/region-registry";
 import { prisma } from "@/lib/prisma";
+import { CATALOG_REVALIDATE_SECONDS } from "./catalog-cache-config";
 import { isDatabaseEnabled } from "./data-source";
 
 export { slugPenyedia };
@@ -394,8 +395,11 @@ function angka(value: string | number | null | undefined): number {
   return Number(value ?? 0);
 }
 
-async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
-  const region = getRegion(regionId);
+async function muatBarisKontrakDatabase(regionId: string): Promise<{
+  lpseRows: LpseRow[];
+  realisasiRows: RealisasiRow[];
+  meta: MetaDb | undefined;
+}> {
   const [lpseDb, realisasiDb, metaDb] = await Promise.all([
     prisma.$queryRaw<BarisLpseDb[]>`
       SELECT kode_rup AS "kodeRup", jenis_lpse AS "jenisLpse", method AS "metode",
@@ -433,7 +437,6 @@ async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
     `,
   ]);
 
-  const meta = metaDb[0];
   const lpseRows: LpseRow[] = lpseDb.map((baris) => ({
     kode_rup: baris.kodeRup,
     jenis_lpse: baris.jenisLpse === "lelang" ? "lelang" : "nontender",
@@ -455,6 +458,13 @@ async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
     penyedia: baris.penyediaRaw,
     nilai: angka(baris.nilai),
   }));
+
+  return { lpseRows, realisasiRows, meta: metaDb[0] };
+}
+
+async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
+  const region = getRegion(regionId);
+  const { lpseRows, realisasiRows, meta } = await muatBarisKontrakDatabase(regionId);
 
   const totalPagu = angka(meta?.totalPagu);
   const paguTercocok = angka(meta?.paguTercocok);
@@ -495,15 +505,28 @@ async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
   return susunIndeks(data, realisasi);
 }
 
-const cache = new Map<string, Promise<IndeksKontrak>>();
+interface IndeksTersimpan {
+  at: number;
+  promise: Promise<IndeksKontrak>;
+}
 
+const cache = new Map<string, IndeksTersimpan>();
+
+/**
+ * Indeks kontrak per region. Map disimpan per proses untuk kerja CPU, tetapi
+ * kedaluwarsa mengikuti `revalidate` Data Cache katalog (5 menit) supaya proses
+ * panjang tidak menyajikan kontrak basi selamanya.
+ */
 export function getIndeksKontrak(regionId: string = DEFAULT_REGION_ID): Promise<IndeksKontrak> {
+  const sekarang = Date.now();
   const tersimpan = cache.get(regionId);
-  if (tersimpan) return tersimpan;
+  if (tersimpan && sekarang - tersimpan.at < CATALOG_REVALIDATE_SECONDS * 1000) {
+    return tersimpan.promise;
+  }
   const indeks = isDatabaseEnabled()
     ? buatIndeksDatabase(regionId)
     : Promise.resolve(buatIndeks(getRegion(regionId)));
-  cache.set(regionId, indeks);
+  cache.set(regionId, { at: sekarang, promise: indeks });
   indeks.catch(() => cache.delete(regionId));
   return indeks;
 }

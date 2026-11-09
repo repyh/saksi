@@ -7,6 +7,8 @@ import type { RoadWorkCategory } from "@/contracts/packages/road-package.contrac
 import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Peta Pekerjaan — SAKSI",
   description: "Peta paket pekerjaan jalan per kabupaten/kota.",

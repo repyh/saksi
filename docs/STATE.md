@@ -1,6 +1,6 @@
 # STATE — Kondisi Terkini Proyek SAKSI
 
-**Tanggal Pembaruan:** 9 November 2026
+**Tanggal Pembaruan:** 10 November 2026
 **Target Terdekat:** Penyisihan **11 November 2026** (proposal ≤30 halaman, surat orisinalitas, video ≤5 menit)
 **Final:** onsite **28 November 2026**
 **Kompetisi:** Web In Action (WIA) — MIA 2026 (KSM Multimedia UPN Veteran Jakarta)
@@ -222,6 +222,67 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 - Repo arsip FDS: `~/Hermes/wia-webcomp-2026` (HEAD `c88f667`, bersih); repo Vite kanonik FDS:
   `~/dev/saksi` (`fds-poc`, HEAD `010738a`).
 
+### 2.5 Cache Katalog & Performa (10 November 2026)
+
+Model cache sekarang memakai **Data Cache bawaan Next**, bukan `Map` selama proses hidup:
+
+- `src/server/packages/catalog-cache.ts` membungkus baris paket (`catalog-road-package-bases`),
+  peta kontrak khusus RUP jalan (`catalog-contracts-per-rup`), register penyedia
+  (`catalog-vendors`), dan metadata snapshot dengan `unstable_cache` + `revalidate: 300` + tag
+  `catalog`. Baris paket dan kontrak dipisah menjadi dua entri karena Next menolak satu entri
+  Data Cache di atas 2 MB; keduanya digabung per request.
+- `cache()` React mendeduplikasi loader dalam satu request: `generateMetadata` + page pada
+  `/paket/[rup]` dan `/penyedia/[slug]`, pasangan `searchRoadPackages` + `aggregateRoadPackages`
+  pada `/peta-pekerjaan`, dan dua builder di beranda tidak lagi membaca katalog dua kali.
+- Sumber aktif (`database`/`snapshot`) menjadi bagian kunci cache, sehingga entri snapshot yang
+  terbentuk saat build tanpa `DATABASE_URL` tidak pernah dipakai proses runtime ber-database.
+- `/paket`, `/penyedia`, `/penyedia/[slug]`, `/peta-pekerjaan`, `/metode`, dan `/` mengekspor
+  `revalidate = 300`; karena semuanya membaca `searchParams` untuk region/filter, Next tetap
+  merender rute secara dinamis. Cache lintas request yang bekerja adalah Data Cache di atas,
+  bukan shell halaman ISR. ISR tingkat rute akan menuntut filter query dipindahkan ke klien
+  (mengubah perilaku), jadi tidak dipakai.
+- `/paket/[rup]` dan `/laporan/publik` **tidak** memakai revalidate rute dan **tidak** membungkus
+  `listPublishedReports()` dengan cache katalog. Laporan warga tetap dibaca langsung dari database
+  setiap request; laporan yang baru terbit terlihat pada request berikutnya.
+- `getIndeksKontrak()` masih menyimpan Map per proses untuk kerja CPU, tetapi lapisan lintas
+  request yang menentukan adalah Data Cache di atas. Instance baru membangun ulang Map dari entri
+  cache atau satu pembacaan database; kebenaran data tidak bergantung pada umur proses.
+
+Angka `next build` + `next start`, `DATABASE_URL` aktif, 3 warm-up + 7 sampel, p50 (mesin ini):
+
+| URL | Sebelum | Sesudah | Target |
+|---|---:|---:|---:|
+| `/paket` | 1.137 ms | 45 ms | ≤100 ms |
+| `/penyedia` | 2.123 ms | 38 ms | ≤100 ms |
+| `/api/packages` | 1.923 ms | 16 ms | ≤100 ms |
+| `/api/packages/map` | 1.628 ms | 22 ms | ≤100 ms |
+| `/api/packages/[rup]` | 1.678 ms | 21 ms | ≤100 ms |
+| `/paket/[rup]` | 1.949 ms | 259 ms | ≤300 ms |
+| `/penyedia/[slug]` | 3.738 ms | 21 ms | ≤300 ms |
+| `/peta-pekerjaan` (isi penuh) | 3.161 ms | 51 ms | ≤300 ms |
+| `/laporan/publik` | 1.445 ms | 253 ms | ≤300 ms |
+| `/metode` | 1.823 ms | 12 ms | ≤300 ms |
+| `/` (isi penuh) | 2.100 ms | 55 ms | ≤300 ms |
+
+8 request paralel: p95 **411 ms** (target ≤1.000 ms). Sisa 253–259 ms pada `/paket/[rup]` dan
+`/laporan/publik` adalah query laporan `PUBLISHED` yang segar, bukan biaya katalog. Cold start
+diukur terpisah tanpa warm-up: `/paket` 3,398 dtk · `/penyedia` 1,826 dtk · `/paket/[rup]` 419 ms ·
+`/peta-pekerjaan` 102 ms · `/laporan/publik` 279 ms · `/metode` 1,894 dtk · `/` 1,948 dtk ·
+`/api/packages` 3,116 dtk; cold start bukan gerbang. Mode snapshot tanpa `DATABASE_URL` juga lulus
+semua target p50 (17–82 ms halaman, 15–31 ms API, paralel p95 275 ms).
+
+Paritas keluaran: HTML/JSON URL uji dibandingkan dengan build sebelum perubahan. JSON API
+(`/api/packages`, `/api/packages/map`, `/api/packages/[rup]`) identik setelah kunci objek diurutkan;
+teks `<body>` semua halaman identik, dan `<title>`/`description` pada `/paket/[rup]` identik (hanya
+posisi streaming metadata yang bergeser). Uji kesegaran laporan: satu baris `PUBLISHED` uji
+disisipkan, muncul pada request `/laporan/publik` dan `/paket/[rup]` berikutnya, lalu menghilang
+setelah dihapus; data uji sudah dibersihkan.
+
+Skrip bukti: `npm run profile` → `scripts/profile-pages.mjs` (sekuensial, `--parallel 8`,
+`--warmup`, `--cold`, `--json`, `--dump`; menemukan RUP dan slug penyedia dari berkas region,
+tidak menuntut `DATABASE_URL`).
+
+
 ---
 
 ## 3. Matriks Kesenjangan Implementasi (Gap Analysis)
@@ -229,7 +290,7 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 | Komponen / Fitur | Target | Status di kode | Tindakan yang dibutuhkan |
 |---|---|---|---|
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; repository Prisma saat `DATABASE_URL` diisi, snapshot sebagai cadangan | Pindahkan filter dan agregat peta ke SQL/PostGIS |
-| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]` | Cache/precompute agregat; saat ini dihitung per permintaan |
+| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]`. Sejak 10 Nov 2026 pembacaan katalog memakai Next Data Cache (`unstable_cache`, `revalidate: 300`) + dedupe `cache()` per request | Precompute agregat atau pindahkan filter/agregat ke SQL/PostGIS; agregat masih dihitung dari baris ter-cache per request |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak, halaman penyedia, dan halaman detail paket; `SIMULASI PROTOTIPE` di alur lapor dan laporan warga pada detail paket, bawaannya mati (`src/lib/flags.ts`, nyalakan dengan `NEXT_PUBLIC_SIMULATION_BADGE=1`); badge presisi lokasi ada di detail paket | Badge SIRUP/Bina Marga belum |
 | **Halaman detail paket** | Rencana, lokasi, kontrak, laporan | Selesai: `/paket/[rup]` membaca item dari repository aktif (Prisma/Supabase atau snapshot) dan rincian RUP dari `data/rup_detail_*.json` server-only, memakai `routeForPackage()`, dan menampilkan kontrak lengkap serta laporan `PUBLISHED` | Penambalan detail untuk 918 paket tanpa entri RUP di luar cakupan |
@@ -246,6 +307,9 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 - **Node:** v26.8.1 di mesin pengembangan; `.nvmrc` menunjuk 24. Lockfile belum dilacak git.
 - **Build:** `PASS` — `npm run build` sukses tanpa `DATABASE_URL`.
 - **Lint/Type:** `PASS` — `eslint .` dan `tsc --noEmit` tanpa temuan.
+- **Test:** `PASS` — `bun test` 32 lulus, 0 gagal (4 berkas).
+- **Profil produksi:** `PASS` — `npm run profile` pada `next start` ber-`DATABASE_URL`; p50 katalog
+  dan API berada di bawah target, 8 request paralel p95 411 ms. Rincian angka ada di §2.5.
 - **Database:** opsional untuk build. Tanpa `DATABASE_URL`, auth menjawab `503` dan data paket
   dibaca dari snapshot; dengan `DATABASE_URL`, paket, kontrak, penyedia, dan metrik dibaca dari
   katalog Supabase.

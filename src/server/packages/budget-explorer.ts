@@ -1,16 +1,23 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import type { BudgetExplorerNode } from "@/contracts/audit/budget-explorer.contract";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import { classifyRoadWork, ROAD_WORK_LABELS, ROAD_WORK_TYPES } from "@/contracts/packages/road-work";
 import { districtSlug, routeForAddress, routeForPackage } from "@/features/map/report-routes";
-import { createRoadPackageRepository } from "./source";
+import { listRoadPackagesCached } from "./catalog-cache";
+import {
+  CATALOG_CACHE_TAGS,
+  CATALOG_REVALIDATE_SECONDS,
+  CATALOG_SOURCE,
+} from "./catalog-cache-config";
 
 function summarize(label: string, rows: RoadPackageItem[]): BudgetExplorerNode {
   return { label, count: rows.length, locatedCount: rows.filter((row) => row.presisi_peta !== "Kabupaten").length, budget: rows.reduce((sum, row) => sum + row.pagu, 0) };
 }
 
-export async function buildBudgetExplorer(region: string): Promise<BudgetExplorerNode[]> {
-  const rows = await createRoadPackageRepository(region).listRoadPackages();
+export async function susunBudgetExplorer(region: string): Promise<BudgetExplorerNode[]> {
+  const rows = await listRoadPackagesCached(region);
   function mapLink(year: number, decile?: number, work?: string, district?: string) {
     const params = new URLSearchParams({ region, tahun: String(year) });
     if (decile) params.set("kelompok", String(decile));
@@ -60,4 +67,19 @@ export async function buildBudgetExplorer(region: string): Promise<BudgetExplore
       }),
     };
   });
+}
+
+const loadBudgetExplorer = unstable_cache(
+  susunBudgetExplorer,
+  ["catalog-budget-explorer", CATALOG_SOURCE],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
+);
+
+const budgetExplorerForRequest = cache(
+  async (region: string): Promise<BudgetExplorerNode[]> => loadBudgetExplorer(region),
+);
+
+/** Pohon eksplorasi anggaran landing; turunan murni katalog, aman di-cache. */
+export function buildBudgetExplorer(region: string): Promise<BudgetExplorerNode[]> {
+  return budgetExplorerForRequest(region);
 }
