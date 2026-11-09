@@ -92,6 +92,9 @@ export interface RoadMapUnit {
   lon: number;
 }
 
+/** Kotak batas peta [minLon, minLat, maxLon, maxLat]. */
+export type MapBounds = [number, number, number, number];
+
 export interface RoadPackageSearchFilters {
   /** Region (kabupaten/kota); bawaan region aktif di server. */
   region?: string;
@@ -108,6 +111,8 @@ export interface RoadPackageSearchFilters {
   page?: number;
   /** Jumlah baris register per halaman. */
   limit?: number;
+  /** Hanya untuk agregat peta: batasi ke wilayah yang beririsan dengan viewport. */
+  bbox?: MapBounds;
 }
 
 export interface RoadPackageSearchData {
@@ -145,4 +150,6 @@ export interface RoadPackageMapData {
   kec: Record<string, RoadAreaAggregate>;
   totalCount: number;
   filteredCount: number;
+  /** Viewport yang dipakai, `null` bila agregat mencakup seluruh hasil filter. */
+  bbox: MapBounds | null;
 }

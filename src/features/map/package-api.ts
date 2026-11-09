@@ -18,6 +18,7 @@ function packageQuery(filters: RoadPackageSearchFilters) {
   if (filters.query) params.set("q", filters.query);
   if (filters.page) params.set("page", String(filters.page));
   if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.bbox) params.set("bbox", filters.bbox.join(","));
   return params.toString();
 }
 

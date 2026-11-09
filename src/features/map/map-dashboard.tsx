@@ -35,6 +35,7 @@ import {
   type ReportViewMode,
 } from "./report-routes";
 import type {
+  MapBounds,
   RoadContractFilter,
   RoadPackageItem,
   RoadPackageMapData,
@@ -107,6 +108,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const router = useRouter();
   const [packageData, setPackageData] = useState<RoadPackageSearchData | null>(initialData);
   const [mapData, setMapData] = useState<RoadPackageMapData | null>(initialAggregate);
+  const [mapBbox, setMapBbox] = useState<MapBounds | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -192,13 +194,9 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       setIsLoading(true);
       setLoadError(null);
 
-      Promise.all([
-        fetchRoadPackages({ ...currentFilters, page: 1, limit: PAGE_SIZE }, controller.signal),
-        fetchRoadPackageMap(currentFilters, controller.signal),
-      ])
-        .then(([result, aggregate]) => {
+      fetchRoadPackages({ ...currentFilters, page: 1, limit: PAGE_SIZE }, controller.signal)
+        .then((result) => {
           setPackageData(result);
-          setMapData(aggregate);
           const selected = selectedPackageRef.current;
           if (addressRouting && selected && !result.items.some((item) => item.kode_rup === selected.kode_rup)) {
             updateSelectedPackage(null);
@@ -208,7 +206,6 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
         .catch((error: unknown) => {
           if (!controller.signal.aborted) {
             setPackageData(null);
-            setMapData(null);
             updateSelectedPackage(null);
             if (addressRouting) {
               window.history.replaceState(null, "", currentAddressUrl());
@@ -226,6 +223,29 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       controller.abort();
     };
   }, [addressRouting, currentFilters, queryString, searchQuery, selectedVillages]);
+
+  // Agregat peta dimuat terpisah agar perubahan viewport tidak memicu ulang register.
+  const mapQueryKey = `${queryString}|${mapBbox?.map((value) => value.toFixed(5)).join(",") ?? ""}`;
+  const lastMapQuery = useRef(addressRouting ? "" : mapQueryKey);
+  useEffect(() => {
+    if (selectedVillages !== null && selectedVillages.length === 0) return;
+    if (lastMapQuery.current === mapQueryKey) return;
+    lastMapQuery.current = mapQueryKey;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      fetchRoadPackageMap({ ...currentFilters, bbox: mapBbox ?? undefined }, controller.signal)
+        .then((aggregate) => setMapData(aggregate))
+        .catch(() => {
+          // Pertahankan agregat terakhir; daftar register punya pesan galat sendiri.
+        });
+    }, mapBbox ? 180 : 0);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [currentFilters, mapBbox, mapQueryKey, selectedVillages]);
 
   const districts = useMemo(() => packageData?.districts ?? [], [packageData]);
   const villagesByDistrict = useMemo(() => packageData?.villagesByDistrict ?? {}, [packageData]);
@@ -254,10 +274,11 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       kec: {},
       totalCount,
       filteredCount: 0,
+      bbox: mapBbox,
     };
     if (kelurahanKosong) return kosong;
     return mapData ?? { ...kosong, filteredCount };
-  }, [filteredCount, initialData.region, kelurahanKosong, mapData, totalCount]);
+  }, [filteredCount, initialData.region, kelurahanKosong, mapBbox, mapData, totalCount]);
 
   const loadMore = async () => {
     if (!packageData?.hasMore || isLoadingMore) return;
@@ -697,6 +718,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 selectedPackage={selectedPackage}
                 selectedRegion={selectedRegion}
                 onSelectRegion={selectRegion}
+                onViewportChange={setMapBbox}
                 viewMode={mapView}
                 mapHeightClassName={fillViewport ? "h-full min-h-0" : undefined}
               />

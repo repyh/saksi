@@ -1,7 +1,10 @@
 export type { SignInContract, SignUpContract } from "./auth/auth.contract";
 export type { DashboardAccount } from "./account/dashboard.contract";
 export type {
+  MapBounds,
+  RoadAreaAggregate,
   RoadPackageItem,
+  RoadPackageMapData,
   RoadMapUnit,
   RoadPackageSearchData,
   RoadPackageSearchFilters,

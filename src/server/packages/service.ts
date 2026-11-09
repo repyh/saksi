@@ -15,6 +15,7 @@ import {
   regionSummary,
 } from "@/server/regions/region-registry";
 import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
+import { visibleAreaKeys } from "./area-visibility";
 import type { RoadPackageRepository } from "./repository";
 import { createSnapshotRoadPackageRepository } from "./snapshot-repository";
 
@@ -165,11 +166,18 @@ export async function aggregateRoadPackages(
     kel: new Map(),
     kec: new Map(),
   };
+  const bbox = filters.bbox ?? null;
+  const visible: Record<RoadAreaLevel, Set<string> | null> = {
+    rw: visibleAreaKeys(context.region.id, "rw", bbox),
+    kel: visibleAreaKeys(context.region.id, "kel", bbox),
+    kec: visibleAreaKeys(context.region.id, "kec", bbox),
+  };
 
   for (const item of context.filtered) {
     for (const level of levels) {
       const key = areaKeyForPackage(item, level);
       if (!key) continue;
+      if (visible[level] && !visible[level].has(key)) continue;
       const aggregate = maps[level].get(key) ?? emptyAreaAggregate();
       aggregate.count += 1;
       aggregate.budget += item.pagu;
@@ -186,6 +194,7 @@ export async function aggregateRoadPackages(
     kec: Object.fromEntries(maps.kec),
     totalCount: context.allPackages.length,
     filteredCount: context.filtered.length,
+    bbox,
   };
 }
 

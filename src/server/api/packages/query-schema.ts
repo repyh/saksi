@@ -1,5 +1,6 @@
 import "server-only";
 import type {
+  MapBounds,
   RoadPackageSearchFilters,
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
@@ -28,8 +29,10 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   const query = url.searchParams.get("q")?.trim() || undefined;
   const pageParam = url.searchParams.get("page")?.trim() || undefined;
   const limitParam = url.searchParams.get("limit")?.trim() || undefined;
+  const bboxParam = url.searchParams.get("bbox")?.trim() || undefined;
   const page = pageParam ? Number(pageParam) : undefined;
   const limit = limitParam ? Number(limitParam) : undefined;
+  let bbox: MapBounds | undefined;
 
   if (region && !getRegionOrNull(region)) {
     throw new ApiError(400, "INVALID_QUERY", "Region tidak dikenal.");
@@ -61,6 +64,17 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   if (limitParam && (!Number.isInteger(limit) || (limit as number) < 1 || (limit as number) > 300)) {
     throw new ApiError(400, "INVALID_QUERY", "Limit harus bilangan bulat antara 1 dan 300.");
   }
+  if (bboxParam) {
+    const parts = bboxParam.split(",").map((value) => Number(value.trim()));
+    if (parts.length !== 4 || parts.some((value) => !Number.isFinite(value))) {
+      throw new ApiError(400, "INVALID_QUERY", "Bbox harus berisi empat angka: minLon,minLat,maxLon,maxLat.");
+    }
+    const [minLon, minLat, maxLon, maxLat] = parts;
+    if (minLon < -180 || maxLon > 180 || minLat < -90 || maxLat > 90 || minLon >= maxLon || minLat >= maxLat) {
+      throw new ApiError(400, "INVALID_QUERY", "Bbox berada di luar rentang koordinat yang sah.");
+    }
+    bbox = [minLon, minLat, maxLon, maxLat];
+  }
 
   return {
     region,
@@ -73,5 +87,6 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
     query,
     page,
     limit,
+    bbox,
   };
 }

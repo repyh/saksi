@@ -30,6 +30,8 @@ interface MapCanvasProps {
   selectedPackage: RoadPackageItem | null;
   selectedRegion: ReportAddress | null;
   onSelectRegion: (region: ClickedRegion | null, sampleRup: string | null) => void;
+  /** Kirim batas viewport agar agregat peta bisa dibatasi. */
+  onViewportChange?: (bbox: [number, number, number, number]) => void;
   viewMode: "packages" | "budget" | "work";
   mapHeightClassName?: string;
 }
@@ -477,6 +479,7 @@ export default function MapCanvas(props: MapCanvasProps) {
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const initialFitRef = useRef(false);
   const view: AreaView = props.viewMode;
+  const onViewportChange = props.onViewportChange;
   const areaStats = useMemo(() => toAreaStatsMaps(props.areaStats), [props.areaStats]);
   const bands = useMemo(
     () => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel), kec: budgetBands(areaStats.kec) }),
@@ -679,6 +682,12 @@ export default function MapCanvas(props: MapCanvasProps) {
     };
     map.on("click", handleMapClick);
 
+    const emitViewport = () => {
+      const bounds = map.getBounds();
+      onViewportChange?.([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
+    };
+    map.on("moveend", emitViewport);
+
     if (!initialFitRef.current) {
       const bounds = boundsOfCollection(boundaries.kel);
       if (bounds) {
@@ -689,6 +698,7 @@ export default function MapCanvas(props: MapCanvasProps) {
 
     return () => {
       map.off("click", handleMapClick);
+      map.off("moveend", emitViewport);
       for (const remove of handlers) remove();
       if (mapRef.current !== map) return;
       for (const level of precisions) {
@@ -699,7 +709,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         if (map.getSource(id)) map.removeSource(id);
       }
     };
-  }, [boundaries, fields, mapLoaded, precisions, props.region.environmentLabel]);
+  }, [boundaries, fields, mapLoaded, onViewportChange, precisions, props.region.environmentLabel]);
 
   useEffect(() => {
     const map = mapRef.current;
