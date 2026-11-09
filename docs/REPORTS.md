@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference — never identity, description, location hint, precise location, or photos. Evidence review is not implemented; public photo access is deliberately disabled. Report photos are retained for 365 days from submission (180 days after rejection/withdrawal/archive) and deleted by `npm run retention:reports`; the systemd timer artifact is in `deploy/systemd/`. The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
+**Status (5 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. Opening a row also requires `reports.read_deidentified` and returns a de-identified detail view. Private photo evidence is streamed through `/api/reports/review/[reportId]/evidence` only for staff with `reports.read_sensitive_evidence`; each successful evidence read is audited. Status changes, assignment, and internal notes are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured; an end-to-end submission from the UI still needs confirmation.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -8,7 +8,7 @@ This document defines the report domain model for the four-step **Laporkan Jalan
 
 The current form collects:
 
-- One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. The local object URL is a preview only; on submit, the sanitised WebP is uploaded to the private bucket as report evidence.
+- One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. It stays in browser memory for preview only.
 - One required damage category: pothole, crack, subsidence, standing water, blocked drainage, damaged bridge, or other.
 - Optional observed causes (multiple choices), coarse size, and a description of up to 500 characters.
 - An optional RW/kelurahan area, optionally determined from device location. Exact GPS coordinates are used to find the RW and then discarded.
@@ -21,47 +21,7 @@ Photo sanitation removes embedded metadata; face and plate redaction remains a m
 
 `prisma/schema.prisma` now includes `AdministrativeArea`, `RoadPackage`, `Report`, `ReportMedia`, `ReportPackageLink`, and `ReportStatusEvent`, plus the enums described below. The migration is `prisma/migrations/20261104150000_report_domain/migration.sql`. It creates an SRID 4326 PostGIS `MultiPolygon` column and GIST index, foreign keys, uniqueness constraints, and an append-only trigger for status events. Media metadata checks restrict records to sanitized WebP, dimensions up to 1024 px, and a maximum of 5 MiB.
 
-The API writes a package row on demand from the checked-in, server-only package snapshot when a RUP is selected. Area names are validated against the checked-in RW GeoJSON; until the area catalog is imported, the report stores validated area snapshots with a null area foreign key. The API, repository, photo sanitizer, and UI are implemented. On 4 November 2026, migrations `20261104130000_registration_invites` and `20261104150000_report_domain` were deployed to the configured Supabase project, and the report tables were verified as present. The private `report-evidence` bucket was also created and verified. On 8 November 2026 a complete submission transaction was verified end to end (below).
-
-## End-to-end verification (8 November 2026)
-
-A test administrator submitted one report through `POST /api/reports` with a real multipart JPEG, the
-UUID v4 idempotency key, area `tangerang|sukarasa|5`, `POTHOLE`, and a location hint. The run used the
-worktree `.env.local`, whose `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` belong to the same Supabase
-project that holds the report schema and the private bucket. The earlier copy pointed at a project
-with only a publishable key and no bucket; it is backed up at
-`~/.config/saksi/env.local.jdgu-20261108`.
-
-| Check | Result |
-|---|---|
-| Response | `201` with receipt `vS-rLb_Fx7oAPlJWNc0P2niByVAzv2EA` and `status: SUBMITTED` |
-| Retry with the same idempotency key | Same receipt; no second report |
-| `GET /api/reports/mine` | Returned the receipt, `SUBMITTED`, `POTHOLE`, `Sukarasa, RW 5`, `Tangerang` |
-| `GET /api/reports/review?status=active` | Returned the same report in the staff queue |
-| Postgres | `reports` + `report_media` + one status event + one completed idempotency row; media `image/webp` |
-| Private Storage | Object existed at `reports/<reportId>/<uuid>.webp`; downloaded as WebP with no EXIF |
-| Cleanup | Storage object removed; report, media, status event, idempotency row, test user, sessions, and grants deleted; baseline counts restored |
-
-The status-event table is append-only, so deleting the test report required temporarily disabling and
-re-enabling the `report_status_events_append_only` trigger inside the cleanup transaction. The trigger
-is enabled again.
-
-## Moderation and public projection verification (9 November 2026)
-
-One test report was inserted directly into the configured database with a package link, coarse area,
-damage type, coarse size, a secret description, and a secret location hint. A temporary session for the
-existing administrator (all report permissions) exercised the same HTTP routes the dashboard uses.
-
-| Check | Result |
-|---|---|
-| Unpublished report | Hidden from `GET /api/reports/public` |
-| Anonymous `PATCH /api/reports/review/[publicCode]` | `401` |
-| Publish with `reports.change_status` | `200`, status `PUBLISHED` |
-| Public API | Damage type, coarse size, `Sukarasa, RW 5`, district, submitted/published dates, and package RUP returned; description, location hint, media, reporter, and area id absent |
-| Public page `/laporan/publik` | Renders damage/size labels, area, and package link; secret description and hint absent |
-| Reject after publish | `200`; report disappears from the public API |
-| Database | Status `REJECTED`; three ordered events (`SUBMITTED`, `PUBLISHED`, `REJECTED`), each with a reason |
-| Cleanup | Events (trigger temporarily disabled and re-enabled), package link, report, and session deleted; 0 reports/0 events/0 links restored |
+The API writes a package row on demand from the checked-in, server-only package snapshot when a RUP is selected. Area names are validated against the checked-in RW GeoJSON; until the area catalog is imported, the report stores validated area snapshots with a null area foreign key. The API, repository, photo sanitizer, and UI are implemented. On 4 November 2026, migrations `20261104130000_registration_invites` and `20261104150000_report_domain` were deployed to the configured Supabase project, and the report tables were verified as present. The private `report-evidence` bucket was also created and verified. These checks confirm setup, not a full report submission transaction from the browser.
 
 ## Logical model
 
@@ -116,7 +76,7 @@ Stores metadata and a private object-storage reference, never image bytes in Pos
 | `mediaType` | string | Server-detected normalized type; v1 accepts sanitized WebP only. |
 | `byteSize`, `width`, `height` | integer | Server-measured values, not client claims. |
 | `sanitizerVersion` | string | Identifies the server sanitation pipeline. |
-| `createdAt`, `retainedUntil`, `deletedAt` | timestamps | `retainedUntil` is set to 365 days from submission; 180 days after rejection/withdrawal/archive. `deletedAt` marks a removed private object. |
+| `createdAt`, `retainedUntil`, `deletedAt` | timestamps | Retention period must be decided before upload is enabled. |
 
 V1 accepts at most one photo per report. Keep media in a separate table so a future increase does not change the report record. Store only the server-sanitized asset; discard the original. A client-sanitized image is still untrusted input and must be rechecked and re-encoded on the server.
 
@@ -178,7 +138,11 @@ The browser must not choose a class/function to execute, write to Postgres, or r
 
 `GET /api/reports/mine` requires a valid Better Auth session and queries only rows whose `reporterUserId` equals that session's user ID. It returns the reporter's opaque receipt code, workflow status, damage category, submission time, coarse area snapshot, and optional RUP/package-name snapshot. It never returns media paths, image data, exact coordinates, location hints, report descriptions, or internal moderation notes. Responses use `Cache-Control: private, no-store`. Anonymous submissions remain unlinked and do not appear in an account's history.
 
-`GET /api/reports/review` requires `reports.read_queue` through the central authorization authority. It supports active/all/single-status filters and keyset pagination. It returns only report status, damage category, submitted time, coarse area name, and optional package reference. It does not return reporter identity, description, observed causes, landmark hint, media path, or photo. The Dashboard review tab is read-only; status transitions, assignment, internal notes, and evidence access remain unimplemented and must use their distinct permission checks when added.
+`GET /api/reports/review` requires `reports.read_queue` through the central authorization authority. It supports active/all/single-status filters and keyset pagination. It returns only report status, damage category, submitted time, coarse area name, and optional package reference. It does not return reporter identity, description, observed causes, landmark hint, media path, or photo.
+
+`GET /api/reports/review/[reportId]` requires both `reports.read_queue` and `reports.read_deidentified`. It returns the report's category, selected causes and size, description, submission time, coarse area snapshot, and optional package reference. It deliberately excludes reporter identity, `locationHint`, exact coordinates, object paths, and image bytes. `hasEvidence` is only an availability indicator. Successful reads create an authorization audit event without copying report content into the event.
+
+`GET /api/reports/review/[reportId]/evidence` requires both `reports.read_queue` and `reports.read_sensitive_evidence`. It resolves the private object path from the database, confirms the media has not expired or been marked deleted, writes an authorization audit event, and streams the WebP bytes through the application. It never returns a Supabase URL or object path. Responses are private and non-cacheable. Detail and evidence reads are read-only; no status transition, assignment, internal note, redaction, or publication action is exposed by this slice.
 
 `Idempotency-Key` is required and must be a UUID v4. The database stores its SHA-256 hash, a canonical payload hash including the image bytes, and a five-minute processing lease. A matching retry returns the original receipt; a key reused with different content receives 409. Completed keys are retained for 24 hours. If storage succeeds but the report transaction fails, the server removes the staged object; failed cleanup leaves its private object path on the idempotency row for a later retry to clean up. There is not yet a scheduled orphan-cleanup job.
 
@@ -196,22 +160,15 @@ Anonymous submissions need rate limits that do not require a real-world identity
 - `REJECTED`, `WITHDRAWN`, and `ARCHIVED` are not public by default.
 - “Resolved” should not be a report status until there is separate, sourced evidence of repair; track that as a future outcome record.
 
-Staff review, sensitive media access, publishing, and export must be separate permissions routed through `src/server/authorization/authority.ts`. Public report queries should expose only approved fields and coarse locations. Never publish storage object paths or private moderation notes.
-
-## Photo and retention policy (decided 9 November 2026)
-
-- **Photos are never public in v1.** The public projection and `/laporan/publik` do not include media, storage paths, or signed URLs. Staff evidence review still requires a separate permission and is not implemented.
-- **Initial retention:** 365 days from submission. `persistSubmittedReport` writes `retainedUntil` for every media row. Override with `REPORT_MEDIA_RETENTION_DAYS`.
-- **Shortened retention:** a report whose latest status is `REJECTED`, `WITHDRAWN`, or `ARCHIVED` keeps its photo for at most 180 days from that status event. Override with `REPORT_MEDIA_REJECTED_RETENTION_DAYS`.
-- **Deletion:** `npm run retention:reports` removes expired objects from the private bucket and sets `deleted_at`. `npm run retention:reports:dry` prints candidates without deleting. The job is idempotent and safe to rerun.
-- **Schedule:** `deploy/systemd/saksi-report-retention.timer` runs daily at 03:15 Asia/Jakarta with a randomized delay. Use the same environment file as ingestion (`/etc/saksi/ingestion.env`) so the database and service-role credentials stay server-only.
-- **Audit:** report rows, status events, and moderation reasons remain after photo deletion; only the private object and its `deleted_at` marker change.
+Staff queue, de-identified detail, and sensitive media access are separate permission bits routed through `src/server/authorization/authority.ts`. Publishing and export remain disabled and require separate permissions when implemented. Public report queries should expose only approved fields and coarse locations. Never publish storage object paths or private moderation notes.
 
 ## Decisions still required before deployment or submission
 
-1. Account deletion and withdrawal behavior for report text (media retention is decided above).
-2. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
-3. Exact permission bits and source-controlled presets for evidence review and export (Publish/Reject already uses `reports.change_status`).
-4. Anonymous submission quotas beyond the current three-per-hour database-backed limit.
+1. Whether published photos are public, blurred, or available only to staff.
+2. Retention duration for media and report text, plus account deletion and withdrawal behavior.
+3. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
+4. Which fields are public after moderation, especially the free-text landmark and description.
+5. Exact permission bits and source-controlled presets for publication and export. Queue, detail, and evidence read permissions are now defined separately.
+6. Anonymous submission quotas and the short-lived signal used to enforce them.
 
-The application accepts private submissions, authenticated reporter history, a staff review queue, Publish/Reject moderation with reasons, a public text-only projection of `PUBLISHED` reports, and scheduled private-photo deletion. Evidence review and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.
+Until these decisions are made, do not enable public photo access or publication. The application accepts private submissions, authenticated reporter history, and permission-gated staff queue/detail/evidence reads. Moderation actions, retention cleanup, public queries, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.

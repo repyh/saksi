@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 function safeReturnTo(value: string | string[] | undefined): string {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
-    return "/project";
+    return "/peta-pekerjaan";
   }
   return value;
 }

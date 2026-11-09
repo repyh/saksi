@@ -326,7 +326,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <Link href="/project" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
                   <FiArrowLeft aria-hidden="true" />
                   Kembali ke peta
                 </Link>
@@ -370,7 +370,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
                   </button>
                 ) : (
-                  <Link href="/project" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                  <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                     Kembali ke peta <FiArrowRight aria-hidden="true" />
                   </Link>
                 )}

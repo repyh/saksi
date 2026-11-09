@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
+import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { listVendors, searchRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
 
@@ -52,9 +53,8 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
     : "0";
 
   return (
-    <main className="min-h-screen bg-white text-foreground">
-      <section className="border-b border-border bg-muted/20">
-        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+    <CatalogPageShell variant="directory" header={
+      <>
           <h1 className="font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
             Penyedia &amp; kontrak jalan
           </h1>
@@ -108,10 +108,8 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
               Cari
             </button>
           </form>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      </>
+    }>
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <h2 className="font-heading text-lg font-bold tracking-tight">
             {query ? `Hasil pencarian “${query}”` : "Penyedia dengan nilai kontrak terbesar"}
@@ -192,7 +190,6 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
             varian penulisan (<em>CV</em>, <em>cv.</em>, <em>PT</em>) belum dinormalisasi sepenuhnya.
           </p>
         </div>
-      </section>
-    </main>
+    </CatalogPageShell>
   );
 }

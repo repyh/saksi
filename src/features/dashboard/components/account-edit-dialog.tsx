@@ -18,6 +18,8 @@ const permissionGroups = [
   ...group,
   permissions: PERMISSION_CATALOG.filter(({ code }) => code.startsWith(group.prefix) && assignableCodes.has(code)),
 }));
+const permissionGroupsWithOptions = permissionGroups.filter(({ permissions }) => permissions.length > 0);
+const activeCatalogCodes = new Set<string>(PERMISSION_CATALOG.map(({ code }) => code));
 
 function formatDate(value: string | null) {
   if (!value) return "Tidak kedaluwarsa";
@@ -249,7 +251,7 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
 
             <TabsContent value="access" className="m-0">
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <div><h3 className="font-heading text-lg font-bold">Izin aktif</h3><p className="mt-1 text-sm text-muted-foreground">{new Set(grants.map(({ permissionCode }) => permissionCode)).size} izin · {grants.length} pemberian aktif</p></div>
+                <div><h3 className="font-heading text-lg font-bold">Izin aktif</h3><p className="mt-1 text-sm text-muted-foreground">{new Set(grants.filter(({ permissionCode }) => activeCatalogCodes.has(permissionCode)).map(({ permissionCode }) => permissionCode)).size} izin · {grants.filter(({ permissionCode }) => activeCatalogCodes.has(permissionCode)).length} pemberian aktif</p></div>
                 <p className="text-xs text-muted-foreground">Berlaku umum; batas per paket belum tersedia.</p>
               </div>
               {account.isCurrentUser && <p className="mt-4 bg-muted/50 px-3 py-2.5 text-xs leading-5 text-muted-foreground">Izin akun sendiri tidak dapat diubah dari panel ini.</p>}
@@ -261,7 +263,7 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
                       {grants.map((grant) => (
                         <div key={grant.id} className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                           <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="text-sm font-bold">{grant.permissionCode}</p>{grant.sensitive && <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-amber-800">Sensitif</span>}</div>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="text-sm font-bold">{grant.permissionCode}</p>{activeCatalogCodes.has(grant.permissionCode) ? grant.sensitive && <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-amber-800">Sensitif</span> : <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Nonaktif</span>}</div>
                             <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{grant.description}</p>
                             <p className="mt-1 text-[11px] leading-4 text-muted-foreground">Diberikan oleh {grant.grantedByName} · {formatDate(grant.grantedAt)} · berakhir {formatDate(grant.expiresAt)}{grant.reason ? ` · ${grant.reason}` : ""}</p>
                           </div>
@@ -286,7 +288,7 @@ export function AccountEditDialog({ account, canEdit, canAssignPermissions, onCl
                     <form onSubmit={(event) => void grantSelectedPermissions(event)} className="mt-6 grid gap-4">
                       <div className="flex items-center gap-2"><FiPlus aria-hidden="true" className="size-4 text-primary" /><h4 className="font-heading text-base font-bold">Berikan izin</h4></div>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {permissionGroups.map((group) => (
+                        {permissionGroupsWithOptions.map((group) => (
                           <fieldset key={group.prefix} className="min-w-0">
                             <legend className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{group.label}</legend>
                             <div className="grid gap-1.5">

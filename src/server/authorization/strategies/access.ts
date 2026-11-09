@@ -19,10 +19,8 @@ const accessPermissions = [
   "access.permissions.read_own",
   "access.users.edit",
   "access.users.invite",
-  "access.users.disable",
   "access.presets.apply",
   "access.permissions.assign",
-  "access.audit.read",
 ] as const satisfies readonly PermissionCode[];
 
 export const accessAuthorizationStrategy: AuthorizationStrategy = {

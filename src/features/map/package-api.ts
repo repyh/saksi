@@ -10,6 +10,8 @@ function packageQuery(filters: RoadPackageSearchFilters) {
   const params = new URLSearchParams();
   if (filters.region) params.set("region", filters.region);
   if (filters.year) params.set("year", filters.year);
+  if (filters.budgetDecile !== undefined) params.set("kelompok", String(filters.budgetDecile));
+  if (filters.generalOnly) params.set("umum", "1");
   if (filters.district) params.set("district", filters.district);
   for (const desa of filters.villages ?? []) params.append("desa", desa);
   if (filters.locatedOnly) params.set("lokasi", "1");

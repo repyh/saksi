@@ -153,7 +153,7 @@ function MyReports({ active }: { active: boolean }) {
 
 const workspaces = [
   {
-    href: "/project",
+    href: "/peta-pekerjaan",
     title: "Peta pekerjaan",
     description: "Telusuri paket jalan, anggaran, dan wilayah pekerjaan.",
     Icon: FiMap,
@@ -176,7 +176,10 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("workspace");
   const hasAccountManagementAccess = account.dashboardPermissions.manageAccounts;
-  const hasReportModerationAccess = account.dashboardPermissions.moderateReports;
+  const canViewReportQueue = account.dashboardPermissions.viewReportQueue;
+  const canViewReportDetails = account.dashboardPermissions.viewReportDetails;
+  const canViewReportEvidence = account.dashboardPermissions.viewReportEvidence;
+  const canChangeReportStatus = account.dashboardPermissions.changeReportStatus;
   const [name, setName] = useState(account.name);
   const [email, setEmail] = useState(account.email);
   const [editingField, setEditingField] = useState<"name" | "email" | null>(null);
@@ -281,7 +284,7 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
           <TabsTrigger value="account" className="h-12 shrink-0 rounded-none border-b-[3px] border-transparent bg-transparent px-4 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[active]:border-secondary data-[active]:bg-transparent data-[active]:text-primary">
             Akun Saya
           </TabsTrigger>
-          {hasReportModerationAccess && (
+          {canViewReportQueue && (
             <TabsTrigger value="report-moderation" className="h-12 shrink-0 cursor-pointer rounded-none border-b-[3px] border-transparent bg-orange-50 px-4 text-xs text-orange-800 transition-colors hover:bg-orange-100 hover:text-orange-900 data-[active]:border-orange-600 data-[active]:bg-orange-50 data-[active]:text-orange-900">
               Review Laporan
             </TabsTrigger>
@@ -479,10 +482,10 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
           </TabsContent>
         )}
 
-        {hasReportModerationAccess && (
+        {canViewReportQueue && (
           <TabsContent value="report-moderation" className="m-0">
             <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Review Laporan</h2>
-            <ReportReviewQueue active={activeTab === "report-moderation"} />
+            <ReportReviewQueue active={activeTab === "report-moderation"} canViewDetails={canViewReportDetails} canViewEvidence={canViewReportEvidence} canChangeStatus={canChangeReportStatus} />
           </TabsContent>
         )}
       </section>

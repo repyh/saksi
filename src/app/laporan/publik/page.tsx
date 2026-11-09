@@ -83,7 +83,7 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
             <Link href="/laporan" className="font-semibold text-primary underline-offset-4 hover:underline">
               Buat laporan baru
             </Link>
-            <Link href={`/project?region=${encodeURIComponent(regionId)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
               Kembali ke peta
             </Link>
           </div>
@@ -180,7 +180,7 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                         <dd className="mt-0.5 text-foreground">
                           {report.package ? (
                             <Link
-                              href={`/project?region=${encodeURIComponent(regionId)}&q=${encodeURIComponent(report.package.rup)}`}
+                              href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}&q=${encodeURIComponent(report.package.rup)}`}
                               className="font-semibold text-primary underline-offset-4 hover:underline"
                             >
                               RUP {report.package.rup}

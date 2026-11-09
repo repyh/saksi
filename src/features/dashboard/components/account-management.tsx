@@ -19,14 +19,16 @@ const permissionGroups = [
 ].map((group) => ({
   ...group,
   permissions: PERMISSION_CATALOG.filter(({ code }) => code.startsWith(group.prefix) && grantablePermissionCodes.has(code)),
-}));
+})).filter(({ permissions }) => permissions.length > 0);
+
+const activeCatalogCodes = new Set<string>(PERMISSION_CATALOG.map(({ code }) => code));
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeZone: "Asia/Jakarta" }).format(new Date(value));
 }
 
 function permissionSummary(permissionCodes: string[]) {
-  const codes = new Set(permissionCodes);
+  const codes = new Set(permissionCodes.filter((code) => activeCatalogCodes.has(code)));
   const matchingPresets = PERMISSION_PRESETS.filter((preset) =>
     preset.permissions.length === codes.size && preset.permissions.every((code) => codes.has(code)),
   );
@@ -282,7 +284,7 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
                       </div>
                     )}
                     {canApplyPresets && (!canAssignPermissions || inviteAccessMode === "preset") && (
-                      <label className="grid gap-1.5 text-xs font-bold">Paket izin<select value={invitePermissionPreset} onChange={(event) => { setInvitePermissionPreset(event.target.value); setInviteAccessMode(event.target.value ? "preset" : "none"); }} className="h-10 cursor-pointer border border-input bg-white px-3 text-sm font-normal"><option value="">Tanpa paket izin</option><option value="analyst">Analyst · akses analitik</option><option value="moderator">Moderator · tinjau laporan</option><option value="admin">Admin · seluruh izin</option></select></label>
+                      <label className="grid gap-1.5 text-xs font-bold">Paket izin<select value={invitePermissionPreset} onChange={(event) => { setInvitePermissionPreset(event.target.value); setInviteAccessMode(event.target.value ? "preset" : "none"); }} className="h-10 cursor-pointer border border-input bg-white px-3 text-sm font-normal"><option value="">Tanpa paket izin</option><option value="moderator">Moderator · lihat antrean laporan</option><option value="admin">Admin · seluruh izin aktif</option></select></label>
                     )}
                     {canAssignPermissions && (!canApplyPresets || inviteAccessMode === "permissions") && (
                       <div className="max-h-56 overflow-y-auto border border-border bg-white p-3">

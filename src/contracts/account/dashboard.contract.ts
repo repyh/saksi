@@ -9,7 +9,10 @@ export type DashboardAccount = {
   dashboardPermissions: {
     viewOwnPermissions: boolean;
     manageAccounts: boolean;
-    moderateReports: boolean;
+    viewReportQueue: boolean;
+    viewReportDetails: boolean;
+    viewReportEvidence: boolean;
+    changeReportStatus: boolean;
     inviteAccounts: boolean;
     editAccounts: boolean;
     applyPresets: boolean;

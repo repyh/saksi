@@ -9,15 +9,15 @@ SAKSI uses one repository with two deployment boundaries:
 1. **Web application:** Next.js App Router provides the user interface, server-rendered initial data, API routes, authentication, and application use cases.
 2. **Scraper workers:** Government-site and public social-source collectors run as separately deployed scheduled processes. They do not run in the user's browser or as part of a web request.
 
-The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because MapLibre GL JS requires browser interaction.
+The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because Leaflet requires browser interaction.
 
-This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines the ingestion, package, administrative-area, and report persistence models; migrations are deployed, and the Kota Tangerang catalog is populated by `workers/ingest.mjs`, but package search still reads the snapshot.
+This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines package, administrative-area, and report persistence models; the database migrations are deployed, but package/area catalogs are not populated and package search does not yet query those tables.
 
 ## System context
 
 ```mermaid
 flowchart LR
-  Browser["Browser<br/>UI, filters, MapLibre"] -->|"GET /api/packages"| Routes["Next.js route handlers"]
+  Browser["Browser<br/>UI, filters, Leaflet"] -->|"GET /api/packages"| Routes["Next.js route handlers"]
   Page["Next.js server page"] --> UseCases["Package use cases"]
   Routes --> UseCases
   UseCases --> Repository["Road package repository"]
@@ -41,7 +41,7 @@ The dotted Supabase package-search path is planned. The current package search d
 | `src/server/**` (outside `api/`) | Use cases, domain filtering, repository interfaces and implementations | HTTP transport concerns, React components or browser APIs |
 | `src/contracts/**` | Shared request/response and domain DTO types | Runtime secrets or persistence logic |
 | `prisma/**` | Database schema and migrations | Scraper schedules or UI behavior |
-| `workers/**` | Source adapters, schedules, parsing, normalization, validation, ingestion, run history | Browser UI, public web request handling |
+| `workers/**` | Source adapters, schedules, parsing, normalization, validation, ingestion | Browser UI, public web request handling |
 
 Allowed dependency direction:
 
@@ -56,24 +56,22 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 
 ### Package search
 
-- `src/app/page.tsx` is a Server Component. It resolves `?region=` (default `kota-tangerang`), calls `searchRoadPackages({ region })`, and passes the initial result to the interactive map dashboard.
+- `src/app/page.tsx` is a Server Component. It calls `searchRoadPackages()` and passes the initial result to the interactive map dashboard.
 - `src/features/map/map-dashboard.tsx` owns only filter and selection state, plus rendering the list and map.
-- Changes to region, year, district, work type, or search text call `GET /api/packages?region=<id>`.
+- Changes to year, district, work type, or search text call `GET /api/packages`.
 - `src/app/api/packages/route.ts` delegates `GET` to `src/server/api/packages/packages.api.ts`. `PackagesApi` validates query parameters, calls the package use case, and returns the shared `ApiResult<T>` envelope through shared HTTP response handling.
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
-- `src/server/packages/snapshot-repository.ts` implements that interface per region; it reads the snapshot path from `data/regions/<id>/region.json`, keeps only the road sector, and is marked server-only.
-- `src/server/regions/region-registry.ts` discovers region configs from `data/regions/*/region.json` and exposes the region summary used by the API, audit metrics, and map (boundary URLs, GeoJSON property names, centre, environment label).
-- Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`; region DTOs live in `src/contracts/regions/region.contract.ts`.
-- `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
-- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, the staff review queue, public published-report queries, and Publish/Reject moderation. Better Auth's catch-all route continues to delegate directly to Better Auth.
+- `src/server/packages/snapshot-repository.ts` implements that interface from `data/saksi_tangerang_2025_2026.json`. It keeps only the road sector and is marked server-only.
+- Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`.
+- `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` remains a scaffold. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
-The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The aggregate is recomputed per request from the snapshot; caching or precomputation is the next scale step.
+The endpoint returns all matching package rows because the current map and list operate on the same set; the list displays at most 120 rows while the map renders the matching coordinates. This establishes the boundary but is not yet a payload or map-rendering optimization. The next scale step is separate list pagination from a compact map-feature query, ideally bounded by map viewport.
 
 ### Database and authentication
 
 - Supabase is the managed PostgreSQL host. PostGIS is enabled in the `extensions` schema.
-- Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation. The multi-region ingestion worker uses parameterized `pg` SQL for large batches against the same schema.
-- The Prisma schema defines Better Auth, authorization, registration-invitation, ingestion provenance, road-package, administrative-area, and report tables. The migrations are deployed; the Kota Tangerang RUP, detail, contract, realization, and boundary catalogs are populated. Official measurement series remain undefined.
+- Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation.
+- The Prisma schema defines Better Auth, authorization, registration-invitation, road-package, administrative-area, and report tables. The migrations are deployed; provenance fields exist on package/area models, while ingestion-run records and official measurement series remain undefined.
 - Browser code must not connect directly to Postgres or receive database credentials or a Supabase service-role key.
 - Use Prisma for ordinary reads/writes. Put complex spatial operations behind named repository methods and parameterized SQL; do not spread raw GIS SQL across route handlers or UI code.
 
@@ -87,15 +85,18 @@ Better Auth applies a database-backed IP rate limit to email/password sign-in an
 
 ### Reports
 
-The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries. `GET /api/reports/review` requires `reports.read_queue` and returns a paginated staff queue without reporter identity, private text, or media references. `GET /api/reports/public` exposes only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference; it never returns reporter identity, description, location hint, precise location, or media. `PATCH /api/reports/review/[publicCode]` requires `reports.change_status` (and `reports.read_deidentified`), accepts `PUBLISHED` or `REJECTED` with a mandatory reason, and appends a `ReportStatusEvent`. Submission and moderation were verified end to end on 8–9 November 2026; see [REPORTS.md](./REPORTS.md). Evidence review, public-photo policy, and retention cleanup remain unimplemented. Faces and plates require a manual reporter check.
+The report form keeps state in the page until submission. Local image sanitation is used for preview; on submit, `POST /api/reports` rechecks the multipart image, re-encodes it server-side, stores it in the private `report-evidence` Supabase Storage bucket, and transactionally persists the report, media metadata, package reference, status event, and idempotency result. The API supports an exact-origin CORS allowlist. `GET /api/reports/mine` uses the Better Auth session to return only the signed-in user's coarse report summaries. `GET /api/reports/review` requires `reports.read_queue` and returns a paginated queue without reporter identity, private text, or media references. Opening a row additionally requires `reports.read_deidentified` and returns limited report details. Private photo evidence is served by the application at `/api/reports/review/[reportId]/evidence` only with `reports.read_sensitive_evidence`, and each successful read is audited. Status changes, assignment, internal notes, and publication remain unimplemented. The migration and bucket are configured in Supabase; an end-to-end submission from the browser remains unconfirmed. Retention cleanup and public report queries are not implemented. Faces and plates require a manual reporter check. See [REPORTS.md](./REPORTS.md) for setup and remaining decisions.
 
-### Ingestion worker
+### Scrapers
 
-`workers/ingest.mjs` is the standalone government-data worker for one region. It runs RUP → detail → realization → LPSE → normalize → validate → database upsert → snapshot rebuild → `region:check`. It supports `--region`, `--dry-run`, `--sources`, `--refresh`, a database lock, retries with backoff, rate-limited source commands, structured JSON logs, run history, and atomic failure behavior: the normalized batch is one transaction, and the snapshot is only published after the temporary snapshot passes the gate. See [INGESTION.md](./INGESTION.md).
+Neither scraper is implemented in this repository. They are planned as separate deployments with independent schedules, credentials, logs, retries, and failure alerts. A worker should:
 
-The worker preserves every source row as a checksummed artifact plus `raw_records`, including rows that do not match a RUP, package, or boundary. It does not replace the application repository: package search still reads the checked-in snapshot.
+1. Fetch only the source data it is permitted to access.
+2. Preserve source URL, retrieval time, source period, checksum, and parser version.
+3. Normalize and validate a complete batch before applying it.
+4. Upsert idempotently and record a run outcome, including rejected records.
 
-A social-source scraper is not implemented. Do not treat an X post as an official record or as proof of an allegation. Decide and document the permitted access method for X before implementing that worker.
+The government-site and social-source pipelines should remain separate adapters because their rate limits, formats, provenance, and failure modes differ. Do not treat an X post as an official record or as proof of an allegation. Decide and document the permitted access method for X before implementing that worker.
 
 ## API contract
 
@@ -105,22 +106,12 @@ Optional query parameters:
 
 | Parameter | Accepted values | Meaning |
 |---|---|---|
-| `region` | Region id, default `kota-tangerang` | Snapshot and boundary configuration |
 | `year` | `2025`, `2026` | Fiscal year |
 | `district` | Kecamatan name, up to 100 characters | Exact kecamatan filter |
-| `desa` | Repeatable kelurahan names, up to 60 | Kelurahan subset inside the chosen kecamatan |
 | `work` | `SEMUA`, `PERMUKAAN`, `DRAINASE`, `JEMBATAN` | Work classification |
-| `kontrak` | `ADA`, `TANPA` | Contract-record presence |
-| `lokasi` | `0`, `1` | `1` hides packages without a derived area |
 | `q` | Up to 120 characters | Search package name, RUP, village, or district |
-| `page` | Integer 1–10,000, default 1 | Register page |
-| `limit` | Integer 1–300, default 50 | Register rows per page |
 
 Successful responses use `{ "data": ..., "error": null }`. Invalid filters return HTTP 400 with `INVALID_QUERY`; unavailable package data returns HTTP 500 with a generic message. Internal exception details are not sent to the browser.
-
-`GET /api/packages/map` accepts the same filters (page/limit are ignored) and returns compact per-RW/kelurahan/kecamatan counts, budgets, work counts, and a sample RUP. `GET /api/packages/[rup]` returns one package including its contract record, or 404 `PACKAGE_NOT_FOUND`.
-
-`GET /api/reports/public` accepts `region`, `paket`, `kecamatan`, `kelurahan`, `page`, and `limit`; it returns only `PUBLISHED` reports. `PATCH /api/reports/review/[publicCode]` accepts `{ status: "PUBLISHED" | "REJECTED", reason: string }`, requires `reports.change_status`, and appends a `ReportStatusEvent`.
 
 The contract types are shared across the UI and route. Query parameters are validated at the HTTP boundary; TypeScript types alone do not validate user input.
 
@@ -139,6 +130,6 @@ The contract types are shared across the UI and route. Query parameters are vali
 2. **Supabase domain model:** Review and deploy the checked-in PostGIS/report-domain migration to the intended Supabase project, import source-aware package and boundary catalogs, then migrate the repository from the snapshot adapter to Prisma/PostGIS. Keep the contract stable where possible.
 3. **Independent ingestion:** Add the two scheduled workers and an ingestion boundary with restricted credentials, idempotency, validation, and run history.
 4. **Reports:** Apply the report migration, create the private bucket, then complete privacy, moderation, abuse-control, and retention decisions in [REPORTS.md](./REPORTS.md) before enabling public report access or publication.
-5. **Scale map queries:** Separate paginated register results from minimal map features, query spatial features by viewport (implemented with `bbox`), and cache or precompute the aggregate.
+5. **Scale map queries:** Separate paginated register results from minimal map features and query spatial features by viewport.
 
 Each stage should be independently deployable and should not require UI components to know which repository implementation supplies the data.

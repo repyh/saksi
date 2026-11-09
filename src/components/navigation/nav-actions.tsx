@@ -22,13 +22,13 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
   {
     id: "peta-pekerjaan",
     label: "Peta Pekerjaan",
-    href: "/project",
+    href: "/peta-pekerjaan",
     variant: "ghost",
   },
   {
-    id: "laporkan-jalan",
-    label: "Laporkan Jalan",
-    href: "/laporan/",
+    id: "paket-jalan",
+    label: "Paket Jalan",
+    href: "/project",
     variant: "ghost",
   },
   {
@@ -41,6 +41,12 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
     id: "metode",
     label: "Metode",
     href: "/metode",
+    variant: "ghost",
+  },
+  {
+    id: "laporkan-jalan",
+    label: "Laporkan Jalan",
+    href: "/laporan/",
     variant: "ghost",
   },
 ];
@@ -84,6 +90,25 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
                 session
                   ? "border-secondary bg-secondary text-secondary-foreground hover:bg-[#f2cf00]"
                   : "border-white/80 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              )}
+            >
+              {item.label}
+            </Button>
+          );
+        }
+
+        if (item.id === "laporkan-jalan") {
+          return (
+            <Button
+              key={item.id}
+              render={<Link href={item.href} aria-current={isActive ? "page" : undefined} />}
+              nativeButton={false}
+              variant="ghost"
+              className={cn(
+                "my-auto h-9 rounded-sm border px-3 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-white transition-colors focus-visible:ring-white sm:px-4 sm:text-[11px]",
+                isActive
+                  ? "border-secondary bg-white/15 text-secondary"
+                  : "border-white/70 bg-white/5 hover:bg-white/15 hover:text-white"
               )}
             >
               {item.label}

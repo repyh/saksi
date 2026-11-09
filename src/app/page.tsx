@@ -1,9 +1,10 @@
 import { AuditHeader } from "@/features/audit/components/audit-header";
 import { PackageJourneySection } from "@/features/audit/components/package-journey-section";
-import MapDashboard from "@/features/map/map-dashboard";
+import { PackageSearchSection } from "@/features/audit/components/package-search-section";
 import { buildAuditSummaryMetrics } from "@/server/packages/audit-metrics";
-import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
-import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
+import { resolveRegionId } from "@/server/regions/region-registry";
+import { buildBudgetExplorer } from "@/server/packages/budget-explorer";
+import { BudgetExplorer } from "@/features/audit/components/budget-explorer";
 
 interface HomeProps {
   searchParams: Promise<{ region?: string | string[] }>;
@@ -12,22 +13,14 @@ interface HomeProps {
 export default async function Home({ searchParams }: HomeProps) {
   const query = await searchParams;
   const regionId = resolveRegionId(query.region);
-  const [initialPackages, initialAggregate, metrics] = await Promise.all([
-    searchRoadPackages({ region: regionId, locatedOnly: true }),
-    aggregateRoadPackages({ region: regionId, locatedOnly: true }),
-    buildAuditSummaryMetrics(regionId),
-  ]);
+  const [metrics, explorer] = await Promise.all([buildAuditSummaryMetrics(regionId), buildBudgetExplorer(regionId)]);
 
   return (
     <main className="min-h-screen bg-white text-foreground">
       <AuditHeader metrics={metrics} />
+      <BudgetExplorer region={regionId} data={explorer} snapshot={metrics.snapshotDate} source={metrics.snapshotSource} />
       <PackageJourneySection />
-      <MapDashboard
-        initialData={initialPackages}
-        initialAggregate={initialAggregate}
-        regionId={regionId}
-        availableRegions={listRegions()}
-      />
+      <PackageSearchSection />
     </main>
   );
 }
