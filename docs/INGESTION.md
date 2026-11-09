@@ -110,11 +110,47 @@ SELECT step, status, attempt, record_count, error_message
 FROM ingestion_run_steps WHERE run_id='<uuid>' ORDER BY created_at;
 ```
 
-## 5. Cron Eksternal
+## 5. Penjadwalan
 
-Dua artefak disediakan; **tidak ada deployment yang dilakukan dari repo ini**.
+Tiga cara disediakan; **pilih satu**. Semua memanggil worker yang sama, dan lock DB tetap menjadi
+lapisan terakhir anti-tumpang-tindih. **Tidak ada deployment yang dilakukan dari repo ini**.
 
-### 5.1 systemd timer
+### 5.1 Penjadwal di dalam Next (tanpa systemd)
+
+`src/instrumentation.ts` memanggil `mulaiPenjadwal()` sekali saat server Next siap. Penjadwal
+memeriksa jam setempat setiap 20 detik, lalu men-spawn CLI yang sama dengan timer systemd sebagai
+proses terpisah, sehingga pekerjaan berat tidak menahan event loop web. Tidak ada unit systemd,
+daemon cron, atau proses tambahan: cukup `npm run build` lalu `npm start`. `next dev` tidak
+menjadwalkan apa pun, dan `next build` dilewati lewat `NEXT_PHASE` sehingga build tetap berjalan
+tanpa `DATABASE_URL`.
+
+| Env | Bawaan | Arti |
+|---|---|---|
+| `INGEST_SCHEDULER` | aktif saat `NODE_ENV=production` | `0` mematikan seluruh penjadwal; `1` memaksa aktif |
+| `INGEST_SCHEDULER_TZ` | `Asia/Jakarta` | zona waktu jadwal |
+| `INGEST_SCHEDULER_INGEST` | `02:30` | jam ingestion; `off` untuk mematikan |
+| `INGEST_SCHEDULER_RETENTION` | `03:15` | jam retensi foto laporan; `off` untuk mematikan |
+| `INGEST_SCHEDULER_REGION` | `kota-tangerang` | direktori `data/regions/<id>` |
+| `INGEST_SCHEDULER_REFRESH` | `0` | `1` menambahkan `--refresh` (tarik sumber sebelum impor) |
+| `INGEST_SCHEDULER_CATCHUP` | `1` | `0` mematikan catch-up saat boot |
+
+Catch-up adalah pengganti `Persistent=true`: 30 detik setelah boot, penjadwal membandingkan
+`dibuat` di `data/regions/<id>/manifest.json` dengan jadwal terakhir. Bila manifest lebih tua dari
+jadwal itu (toleransi 15 menit), ingestion dijalankan sekali. Hanya ingestion, bukan retensi.
+Manifest hanya ditulis ulang setelah run sukses, jadi kegagalan dicoba lagi pada boot berikutnya.
+
+Batasan:
+
+- **Satu instance.** Beberapa instance aman dari tumpang tindih karena `ingestion_locks` (run kedua
+  `SKIPPED`, exit 75), tetapi snapshot ditulis di host tempat worker berjalan.
+- **Bukan untuk serverless.** Butuh proses Node panjang dan filesystem tulis (`data/`,
+  `public/data/`).
+- **Jangan aktif bersamaan** dengan timer systemd atau GitHub Actions. Lock mencegah tumpang tindih,
+  tetapi run kedua hanya tercatat `SKIPPED`.
+- Penjadwal tidak mematikan child saat server berhenti; lock DB yang mengatur sisa run.
+- Log penjadwal berprefix `[jadwal]`; stdout/stderr child diwariskan ke log server.
+
+### 5.2 systemd timer
 
 - `deploy/systemd/saksi-ingestion.service`
 - `deploy/systemd/saksi-ingestion.timer` — `02:30 Asia/Jakarta`, `Persistent=true`,
@@ -143,7 +179,7 @@ DIRECT_URL=postgresql://...
 Worker memuat `.env.local` hanya bila `DATABASE_URL` dan `DIRECT_URL` sama-sama kosong; env host
 selalu menang.
 
-### 5.2 GitHub Actions
+### 5.3 GitHub Actions
 
 `.github/workflows/ingestion.yml`:
 
