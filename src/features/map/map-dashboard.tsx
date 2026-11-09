@@ -837,6 +837,8 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                                         </Link>
                                         {baris.nilai ? (
                                           <span className="shrink-0 font-sans text-[11px] tabular-nums text-muted-foreground">{formatRupiahFull(baris.nilai)}</span>
+                                        ) : baris.nilaiBersama ? (
+                                          <span className="shrink-0 font-sans text-[10px] italic text-muted-foreground" title="Nilai transaksi dicatat bersama untuk beberapa penyedia dan tidak dibagi.">nilai bersama</span>
                                         ) : null}
                                       </li>
                                     ))}

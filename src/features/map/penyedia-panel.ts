@@ -3,6 +3,8 @@ import type { RoadPackageContract } from "@/contracts/packages/road-package.cont
 export interface PenyediaPanelBaris {
   nama: string;
   nilai: number;
+  /** true bila penyedia ikut dalam transaksi yang dicatat untuk beberapa penyedia. */
+  nilaiBersama: boolean;
 }
 
 export interface PenyediaPanel {
@@ -34,8 +36,8 @@ export function buildPenyediaPanel(
   const perPaket = kontrak.paketRealisasi ?? [];
   if (!perPaket.length) {
     const baris: PenyediaPanelBaris[] = [
-      { nama: kontrak.penyedia, nilai: kontrak.nilai_kontrak ?? 0 },
-      ...(kontrak.penyediaLain ?? []).map((nama) => ({ nama, nilai: 0 })),
+      { nama: kontrak.penyedia, nilai: kontrak.nilai_kontrak ?? 0, nilaiBersama: false },
+      ...(kontrak.penyediaLain ?? []).map((nama) => ({ nama, nilai: 0, nilaiBersama: true })),
     ];
     return {
       baris,
@@ -59,8 +61,9 @@ export function buildPenyediaPanel(
     const kunciUtama = kunci(paket.penyedia);
     for (const nama of namaSemua) {
       const k = kunci(nama);
-      const entri = agregat.get(k) ?? { nama, nilai: 0 };
+      const entri = agregat.get(k) ?? { nama, nilai: 0, nilaiBersama: false };
       if (k === kunciUtama) entri.nilai += paket.nilai;
+      else entri.nilaiBersama = true;
       agregat.set(k, entri);
     }
   }

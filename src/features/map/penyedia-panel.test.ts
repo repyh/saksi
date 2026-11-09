@@ -78,8 +78,8 @@ test("penyedia bersama tampil dengan nilai 0 tanpa membagi nilai transaksi", () 
   );
 
   expect(panel.baris).toEqual([
-    { nama: "CV. SATU", nilai: 100 },
-    { nama: "CV. DUA", nilai: 0 },
+    { nama: "CV. SATU", nilai: 100, nilaiBersama: false },
+    { nama: "CV. DUA", nilai: 0, nilaiBersama: true },
   ]);
   expect(panel.total).toBe(100);
   expect(panel.adaPenyediaBersama).toBe(true);
@@ -110,9 +110,41 @@ test("nilai penyedia yang sama di beberapa paket dijumlahkan, bukan diduplikasi"
     }),
   );
 
-  expect(panel.baris).toEqual([{ nama: "CV. SATU", nilai: 150 }]);
+  expect(panel.baris).toEqual([{ nama: "CV. SATU", nilai: 150, nilaiBersama: false }]);
   expect(panel.total).toBe(150);
   expect(panel.adaPenyediaBersama).toBe(false);
+});
+
+test("penyedia yang juga menjadi penyedia utama tetap menjumlahkan nilainya", () => {
+  const panel = buildPenyediaPanel(
+    kontrak({
+      penyedia: "CV. SATU",
+      nilai_kontrak: 150,
+      paketRealisasi: [
+        {
+          kodePaket: "paket-1",
+          penyedia: "CV. SATU",
+          penyediaSemua: ["CV. SATU", "CV. DUA"],
+          nilai: 100,
+          sumber: null,
+        },
+        {
+          kodePaket: "paket-2",
+          penyedia: "CV. DUA",
+          penyediaSemua: ["CV. DUA"],
+          nilai: 50,
+          sumber: null,
+        },
+      ],
+    }),
+  );
+
+  expect(panel.baris).toEqual([
+    { nama: "CV. SATU", nilai: 100, nilaiBersama: false },
+    { nama: "CV. DUA", nilai: 50, nilaiBersama: true },
+  ]);
+  expect(panel.total).toBe(150);
+  expect(panel.adaPenyediaBersama).toBe(true);
 });
 
 test("tanpa rincian paket, panel memakai nilai kontrak dan penyedia lain bernilai 0", () => {
@@ -125,8 +157,8 @@ test("tanpa rincian paket, panel memakai nilai kontrak dan penyedia lain bernila
   );
 
   expect(panel.baris).toEqual([
-    { nama: "PT. UTAMA", nilai: 90 },
-    { nama: "CV. MITRA", nilai: 0 },
+    { nama: "PT. UTAMA", nilai: 90, nilaiBersama: false },
+    { nama: "CV. MITRA", nilai: 0, nilaiBersama: true },
   ]);
   expect(panel.total).toBe(90);
   expect(panel.adaPenyediaBersama).toBe(true);

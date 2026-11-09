@@ -102,6 +102,8 @@ export interface MetodologiPenyedia {
   tanpaRekamPaguTampil: string;
   tanpaRekamPaguPersen: string;
   unik: number;
+  /** Nama unik setelah normalisasi nama gabungan; dipakai register penyedia. */
+  unikKontrak: number;
 }
 
 export interface MetodologiUjiAnchor {
@@ -411,6 +413,7 @@ export async function buildMetodologi(
       tanpaRekamPaguTampil: formatRupiahFull(metrik.penyedia.tanpa_rekam_pagu),
       tanpaRekamPaguPersen: persen(metrik.penyedia.tanpa_rekam_pagu, metrik.pagu),
       unik: metrik.penyedia.unik,
+      unikKontrak: metrik.penyedia.unik,
     };
 
     if (lpse.kontrakTotal && lpse.kontrakTotal !== punyaRekam) {
@@ -438,6 +441,23 @@ export async function buildMetodologi(
         catatan.push(
           `Rincian presisi snapshot dan manifest berbeda pada: ${bedaPresisi.join(", ")}.`,
         );
+      }
+
+      const namaPenyedia = new Set<string>();
+      for (const item of paketSnapshot) {
+        if (!item.kontrak) continue;
+        for (const nama of [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])]) {
+          const bersih = nama.trim();
+          if (bersih) namaPenyedia.add(bersih.toLocaleUpperCase("id-ID"));
+        }
+      }
+      if (penyedia) {
+        penyedia = { ...penyedia, unikKontrak: namaPenyedia.size };
+        if (namaPenyedia.size !== penyedia.unik) {
+          catatan.push(
+            `Manifest mencatat ${idInt.format(penyedia.unik)} entri penyedia; setelah normalisasi nama gabungan, register menampilkan ${idInt.format(namaPenyedia.size)} nama unik.`,
+          );
+        }
       }
     } catch {
       catatan.push("Snapshot paket tidak dapat dibaca untuk silang periksa manifest.");

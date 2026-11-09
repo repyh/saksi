@@ -390,8 +390,13 @@ export default async function MetodePage({ searchParams }: MetodePageProps) {
                   Penyedia unik
                 </dt>
                 <dd className="mt-1 font-heading text-2xl font-extrabold tabular-nums text-primary">
-                  {penyedia.unik.toLocaleString("id-ID")}
+                  {penyedia.unikKontrak.toLocaleString("id-ID")}
                 </dd>
+                {penyedia.unikKontrak !== penyedia.unik ? (
+                  <p className="mt-1 font-sans text-[10px] leading-snug text-muted-foreground">
+                    Manifest: {penyedia.unik.toLocaleString("id-ID")} entri
+                  </p>
+                ) : null}
               </div>
               <div className="p-4">
                 <dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
@@ -412,9 +417,9 @@ export default async function MetodePage({ searchParams }: MetodePageProps) {
               pelanggaran; itu batas cakupan data yang ditampilkan terbuka.
             </p>
             <p className="mt-2 max-w-3xl font-sans text-sm leading-relaxed text-muted-foreground">
-              Angka penyedia unik mengikuti manifest. Nama gabungan yang memuat beberapa badan usaha
-              dengan prefiks yang valid dinormalkan menjadi nama penyusunnya di panel paket dan daftar
-              penyedia, sehingga jumlah nama dapat sedikit berbeda tanpa mengubah total nilai paket.
+              Angka utama adalah nama penyedia unik setelah normalisasi nama gabungan yang valid;
+              manifest mencatat entri mentahnya. Nama gabungan dipecah hanya bila setiap bagian
+              berprefiks badan usaha yang sah, dan total nilai paket tidak berubah.
             </p>
           </div>
         </section>
