@@ -7,6 +7,7 @@ import { fetchRoadPackages } from "@/features/map/package-api";
 import { localFileIntakeController } from "@/features/uploads/lib/local-file-intake.controller";
 import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib/report-photo.handler";
 import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
+import { simulationBadgeEnabled } from "@/lib/flags";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
@@ -313,10 +314,12 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
           <div className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
               <div className="max-w-2xl">
-                <span className="inline-flex items-center gap-1.5 bg-secondary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-secondary-foreground">
-                  <FiAlertTriangle aria-hidden="true" className="size-3.5" />
-                  SIMULASI PROTOTIPE
-                </span>
+                {simulationBadgeEnabled() ? (
+                  <span className="inline-flex items-center gap-1.5 bg-secondary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-secondary-foreground">
+                    <FiAlertTriangle aria-hidden="true" className="size-3.5" />
+                    SIMULASI PROTOTIPE
+                  </span>
+                ) : null}
                 <h1 className="mt-3 font-heading text-3xl font-bold leading-tight tracking-[-0.03em] text-foreground sm:text-4xl">
                   Laporkan kerusakan jalan
                 </h1>

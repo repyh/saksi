@@ -70,8 +70,9 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 9. **Badge wajib**: `SIMULASI PROTOTIPE` (amber) untuk laporan warga; `DATA RESMI (LPSE)` atau
    `DATA RESMI (INAPROC)` sesuai sumber kontrak; `DATA RESMI (SIRUP / BINA MARGA)` untuk data asli
    lain; plus badge sumber lokasi (`RW 04` / `Kelurahan` / `Kecamatan`). Badge kontrak dan lokasi
-   sudah ada (2 Nov 2026); `SIMULASI PROTOTIPE` terpasang di alur lapor (8 Nov 2026); badge SIRUP/Bina
-   Marga belum.
+   sudah ada (2 Nov 2026); `SIMULASI PROTOTIPE` terpasang di alur lapor (8 Nov 2026) dan **bawaannya
+   mati** sejak 10 Nov 2026 — nyalakan lagi dengan `NEXT_PUBLIC_SIMULATION_BADGE=1` lalu build ulang;
+   badge SIRUP/Bina Marga belum.
 10. **Privasi**: EXIF dihapus di browser dan wajah/plat nomor diperiksa sebelum data disimpan/diunggah.
 11. **Build harus jalan tanpa database.** `next build` tidak boleh menuntut `DATABASE_URL`; fitur
     database (auth, simpan laporan) hanya aktif bila env itu ada.

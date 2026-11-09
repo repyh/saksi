@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import type { PublicReportsResponse } from "@/contracts/reports/public-report.contract";
+import { simulationBadgeEnabled } from "@/lib/flags";
 
 const DAMAGE_LABELS: Record<string, string> = {
   POTHOLE: "Lubang",
@@ -34,13 +35,15 @@ export function PackageReportsSection({
   regionId: string;
   rup: string;
 }) {
+  const showSimulationBadge = simulationBadgeEnabled();
+
   return (
     <section aria-labelledby="laporan-warga" className="border-t border-border pt-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="laporan-warga" className="font-heading text-lg font-bold tracking-tight">
           Laporan warga
         </h2>
-        <Badge variant="simulation">SIMULASI PROTOTIPE</Badge>
+        {showSimulationBadge ? <Badge variant="simulation">SIMULASI PROTOTIPE</Badge> : null}
       </div>
 
       {!reports ? (
