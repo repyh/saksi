@@ -201,8 +201,8 @@ Staff review, sensitive media access, publishing, and export must be separate pe
 ## Photo and retention policy (decided 9 November 2026)
 
 - **Photos are never public in v1.** The public projection and `/laporan/publik` do not include media, storage paths, or signed URLs. Staff evidence review still requires a separate permission and is not implemented.
-- **Initial retention:** 365 days from submission. `persistSubmittedReport` writes `retainedUntil` for every media row.
-- **Shortened retention:** a report whose latest status is `REJECTED`, `WITHDRAWN`, or `ARCHIVED` keeps its photo for at most 180 days from that status event.
+- **Initial retention:** 365 days from submission. `persistSubmittedReport` writes `retainedUntil` for every media row. Override with `REPORT_MEDIA_RETENTION_DAYS`.
+- **Shortened retention:** a report whose latest status is `REJECTED`, `WITHDRAWN`, or `ARCHIVED` keeps its photo for at most 180 days from that status event. Override with `REPORT_MEDIA_REJECTED_RETENTION_DAYS`.
 - **Deletion:** `npm run retention:reports` removes expired objects from the private bucket and sets `deleted_at`. `npm run retention:reports:dry` prints candidates without deleting. The job is idempotent and safe to rerun.
 - **Schedule:** `deploy/systemd/saksi-report-retention.timer` runs daily at 03:15 Asia/Jakarta with a randomized delay. Use the same environment file as ingestion (`/etc/saksi/ingestion.env`) so the database and service-role credentials stay server-only.
 - **Audit:** report rows, status events, and moderation reasons remain after photo deletion; only the private object and its `deleted_at` marker change.
