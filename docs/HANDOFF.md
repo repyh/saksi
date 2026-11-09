@@ -32,7 +32,7 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | `/laporan/publik` | Published reports | Public list of `PUBLISHED` reports filtered by region/package/kecamatan/kelurahan. Shows damage type, coarse size, area, dates, and package reference only. |
 | `/penyedia`, `/penyedia/[slug]` | Supplier register | Suppliers with at least one road package, joined to RUP; every figure carries its denominator, never a composite score. |
 | `GET /api/packages` | Package search API | Validates filter/search parameters, supports `page`/`limit` (50 default, 300 max), and returns an `ApiResult` response with counts and pagination metadata. |
-| `GET /api/packages/map` | Map aggregate API | Returns compact per-kecamatan/kelurahan/RW counts, budgets, work counts, and a sample RUP; the map no longer downloads every matching package. |
+| `GET /api/packages/map` | Map aggregate API | Returns compact per-kecamatan/kelurahan/RW counts, budgets, work counts, and a sample RUP for areas intersecting the optional `bbox`; the map no longer downloads every matching package. |
 | `GET /api/packages/[rup]` | Package detail API | Returns one package (including its contract record) for the selected detail panel. |
 | `POST /api/reports` | Report submission | Bounded multipart with an `Idempotency-Key`; validates the RW area and optional RUP, stores sanitised WebP in the private bucket, and returns an opaque receipt code. |
 | `GET /api/reports/mine` | Account report history | Session-authenticated; returns only the current account's receipt, status, damage type, coarse area, and optional package reference. |
@@ -101,10 +101,10 @@ Database commands exist (`db:generate`, `db:migrate`, `db:deploy`, `db:status`).
 
 ## Known gaps and next implementation decisions
 
-1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, authenticated history, the review queue, public `PUBLISHED` queries, and Publish/Reject moderation with reasons are implemented. Submission and moderation were verified end to end on 8–9 November 2026 with cleanup. Evidence review, public-photo policy, and retention cleanup remain unimplemented (`docs/REPORTS.md`).
+1. **Report persistence:** models, migration, `POST /api/reports`, idempotency, CORS, private `report-evidence` bucket, authenticated history, the review queue, public `PUBLISHED` queries, Publish/Reject moderation with reasons, and private-photo retention are implemented. Photos are never public; retention is 365 days from submission and 180 days after rejection/withdrawal/archive (`npm run retention:reports`, systemd timer artifact). Submission and moderation were verified end to end on 8–9 November 2026 with cleanup; retention SQL was verified with a dry run. Evidence review remains unimplemented (`docs/REPORTS.md`).
 2. **Spatial/package domain model:** review and deploy the model, import source-provenanced package and area catalogs, then replace the snapshot adapter with repository queries. Keep package DTOs stable.
 3. **Scrapers:** government and official/public social collectors need separate adapters, schedules, provenance, validation, idempotent ingestion, run history, retries, and restricted credentials. Social posts are not official records.
-4. **Map scale:** the register is paginated (`page`/`limit`) and the map reads a compact aggregate, so the browser no longer downloads all 2,552 rows. The aggregate still covers the full filtered set; the next step is viewport-bounded aggregate queries.
+4. **Map scale:** the register is paginated (`page`/`limit`) and the map reads a viewport-bounded aggregate (`bbox`), so the browser no longer downloads all 2,552 rows. The next step is caching or precomputing the aggregate; it is currently recomputed per request.
 5. **Header metrics and provenance badges:** landing/audit counters now come from `src/server/packages/audit-metrics.ts` (snapshot + boundary GeoJSON). `SIMULASI PROTOTIPE` marks `/laporan`; `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel. SIRUP/Bina Marga badges are still missing.
 6. **Documentation:** STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, and DESIGN were reconciled on 9 November 2026, including `/metode` and the canonical-branch policy.
 

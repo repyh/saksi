@@ -114,8 +114,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   pelaksana & kontrak.
 - `src/features/map/map-canvas.tsx` — koroplet tiga tingkat dengan segmented control
   **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom), legenda mengikuti tingkat, agregasi
-  kecamatan memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map`, bukan
-  seluruh baris paket; klik wilayah memuat detail paket contoh lewat `GET /api/packages/[rup]`.
+  kecamatan memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map` yang
+  dibatasi `bbox` viewport, bukan seluruh baris paket; klik wilayah memuat detail paket contoh lewat
+  `GET /api/packages/[rup]`.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
   membuka **`https://data.inaproc.id/realisasi?kode=<kode paket>`**. Penting: parameter itu memakai
   **kode paket realisasi** (kode tender / kode e-katalog), **bukan** kode RUP — RUP hanya dipakai untuk
@@ -123,7 +124,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   Relasi RUP↔paket dan ketersediaan halaman detail dianalisis di `docs/RELASI-RUP-REALISASI.md`.
 - RUP dengan **lebih dari satu paket realisasi** (relasi 1–N, hanya e-purchasing/pengadaan langsung)
   ditampilkan eksplisit: badge "· N paket" di daftar; baris **Penyedia** di panel memuat semua penyedia
-  beserta total nilainya (baris pertama dua nama, sisanya di balik "+N penyedia lainnya"); baris
+  beserta total nilainya (baris pertama dua nama, sisanya di balik "+N penyedia lainnya"); penyedia
+  yang berbagi transaksi bertanda **nilai bersama** dan tidak diberi nilai hasil pembagian. Baris
   **Paket realisasi** membuka rincian per penyedia (jumlah paket + total), dan tiap paket menampilkan
   kode paket (tautan ke Data INAPROC) serta nilai realisasinya. Tidak ada baris "Penyedia lain" terpisah
   dan label "Selisih pagu" tetap apa adanya (pembanding = total realisasi RUP). Relasi M–N tidak muncul di cakupan ini
@@ -205,7 +207,7 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 | Komponen / Fitur | Target | Status di kode | Tindakan yang dibutuhkan |
 |---|---|---|---|
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; snapshot server-only | Ganti adapter snapshot dengan Prisma setelah katalog domain diimpor |
-| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit` dan peta memakai `GET /api/packages/map`, detail paket dimuat lewat `GET /api/packages/[rup]` | Query peta yang dibatasi viewport; agregat saat ini masih menghitung seluruh hasil filter |
+| **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]` | Cache/precompute agregat; saat ini dihitung per permintaan |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
 | **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi tetap snapshot | Verifikasi rekonsiliasi `npm run db:verify`; pertahankan snapshot sebagai sumber tampilan |

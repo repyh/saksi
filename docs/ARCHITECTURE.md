@@ -67,7 +67,7 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
 - `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, the staff review queue, public published-report queries, and Publish/Reject moderation. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
-The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The aggregate still covers the full filtered set; viewport-bounded aggregate queries are the next scale step.
+The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The aggregate is recomputed per request from the snapshot; caching or precomputation is the next scale step.
 
 ### Database and authentication
 
@@ -139,6 +139,6 @@ The contract types are shared across the UI and route. Query parameters are vali
 2. **Supabase domain model:** Review and deploy the checked-in PostGIS/report-domain migration to the intended Supabase project, import source-aware package and boundary catalogs, then migrate the repository from the snapshot adapter to Prisma/PostGIS. Keep the contract stable where possible.
 3. **Independent ingestion:** Add the two scheduled workers and an ingestion boundary with restricted credentials, idempotency, validation, and run history.
 4. **Reports:** Apply the report migration, create the private bucket, then complete privacy, moderation, abuse-control, and retention decisions in [REPORTS.md](./REPORTS.md) before enabling public report access or publication.
-5. **Scale map queries:** Separate paginated register results from minimal map features and query spatial features by viewport.
+5. **Scale map queries:** Separate paginated register results from minimal map features, query spatial features by viewport (implemented with `bbox`), and cache or precompute the aggregate.
 
 Each stage should be independently deployable and should not require UI components to know which repository implementation supplies the data.

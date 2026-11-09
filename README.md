@@ -20,8 +20,9 @@ review, not proof of wrongdoing or a guarantee of government action.
   package anchored inside them, including RW- and kelurahan-precision packages, and use their own
   quantile class breaks so 13 polygons do not all land in one colour.
 - The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum). The map reads a separate
-  compact aggregate endpoint (`/api/packages/map`) instead of the full 2,552 rows; a selected package
-  is fetched on demand from `/api/packages/[rup]`. Filtered counts, district/village options, and the
+  compact aggregate endpoint (`/api/packages/map`) instead of the full 2,552 rows and sends its current
+  viewport (`bbox`), so only areas intersecting the visible map are aggregated. A selected package is
+  fetched on demand from `/api/packages/[rup]`. Filtered counts, district/village options, and the
   choropleth values are unchanged from the previous full-row aggregation.
 - Basemap comes from a single `NEXT_PUBLIC_BASEMAP_URL`, which holds a **vector style JSON URL**
   (default `https://tiles.openfreemap.org/styles/positron`, OpenFreeMap Positron). Attribution is
@@ -41,7 +42,9 @@ review, not proof of wrongdoing or a guarantee of government action.
   and names a vendor for **2,334 of 2,552** road packages (91.5%); the remaining **218** have no
   public record. The manifest holds **633** unique supplier entries; valid combined names such as
   `CV. BUMI SALAKA, CV. ZARMINA FAIQA` are normalized into their constituent vendors, so the
-  supplier register shows **630** distinct names without changing any package total.
+  supplier register shows **630** distinct names without changing any package total. A vendor that
+  shares a jointly recorded transaction is labelled **nilai bersama** instead of receiving an invented
+  split.
 - Landing and audit figures are derived from the active snapshot and the checked-in boundary
   GeoJSON in `src/server/packages/audit-metrics.ts`; the UI holds no headline constants.
 - Package data is read by a server-only repository. The first render is a Next.js Server Component;
@@ -107,8 +110,8 @@ hard-coded UI value. Include the retrieval date, period, coverage, and limits on
 
 - Prisma domain models and a repository backed by Postgres/PostGIS instead of the JSON snapshot
 - Scheduled scraper workers for government and social sources, with provenance and run history
-- Viewport-aware map queries (the register is now paginated and the map reads a compact aggregate,
-  but the aggregate still covers the full filtered set rather than only the current viewport)
+- Cache or precompute the viewport-bounded map aggregate; the current endpoint recomputes it per
+  request from the checked-in snapshot
 - Provenance badges beyond the report flow: `SIMULASI PROTOTIPE` now marks `/laporan`, while the
   `DATA RESMI (LPSE/INAPROC)` labels exist in the contract panel; SIRUP/Bina Marga badges are not shown
 - Evidence review, media access policy, and retention cleanup (`docs/REPORTS.md`)
