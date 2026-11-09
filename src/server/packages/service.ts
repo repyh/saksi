@@ -17,7 +17,7 @@ import {
 import { ringkasanPenyedia, rupMilikPenyedia, slugPenyedia } from "./lpse-repository";
 import { visibleAreaKeys } from "./area-visibility";
 import type { RoadPackageRepository } from "./repository";
-import { createSnapshotRoadPackageRepository } from "./snapshot-repository";
+import { createRoadPackageRepository } from "./source";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 300;
@@ -54,7 +54,7 @@ async function buildPackageContext(
 ): Promise<PackageContext> {
   const regionId = filters.region ?? DEFAULT_REGION_ID;
   const region = getRegion(regionId);
-  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
+  const paketRepository = repository ?? createRoadPackageRepository(regionId);
   const allPackages = await paketRepository.listRoadPackages();
   const districts = Array.from(
     new Set(allPackages.flatMap((item) => (item.kecamatan_resmi ? [item.kecamatan_resmi] : []))),
@@ -204,7 +204,7 @@ export async function getRoadPackage(
   regionId: string = DEFAULT_REGION_ID,
   repository?: RoadPackageRepository,
 ): Promise<RoadPackageItem | null> {
-  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
+  const paketRepository = repository ?? createRoadPackageRepository(regionId);
   const rows = await paketRepository.listRoadPackages();
   return rows.find((item) => item.kode_rup === rup) ?? null;
 }
@@ -215,9 +215,9 @@ export async function listVendors(
   regionId: string = DEFAULT_REGION_ID,
 ): Promise<VendorSummary[]> {
   const cari = query?.trim().toLocaleLowerCase("id-ID");
-  const semuaPaket = await createSnapshotRoadPackageRepository(regionId).listRoadPackages();
+  const semuaPaket = await createRoadPackageRepository(regionId).listRoadPackages();
   const rupJalan = new Set(semuaPaket.map((item) => String(item.kode_rup)));
-  const semua = ringkasanPenyedia(regionId, rupJalan);
+  const semua = await ringkasanPenyedia(regionId, rupJalan);
 
   const kategori = new Map<string, Set<string>>();
   for (const item of semuaPaket) {
@@ -244,8 +244,8 @@ export async function getVendor(slug: string, regionId: string = DEFAULT_REGION_
   const summary = semua.find((vendor) => vendor.slug === slug);
   if (!summary) return null;
 
-  const daftarRup = new Set(rupMilikPenyedia(regionId, slug).map(String));
-  const items = (await createSnapshotRoadPackageRepository(regionId).listRoadPackages())
+  const daftarRup = new Set((await rupMilikPenyedia(regionId, slug)).map(String));
+  const items = (await createRoadPackageRepository(regionId).listRoadPackages())
     .filter((item) => daftarRup.has(String(item.kode_rup)))
     .sort((a, b) => (b.kontrak?.nilai_kontrak ?? 0) - (a.kontrak?.nilai_kontrak ?? 0));
 

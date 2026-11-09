@@ -1,6 +1,6 @@
 # SAKSI Architecture
 
-**Status:** The frontend/backend boundary is implemented for road-package search. The current data adapter reads the checked-in Tangerang snapshot; Supabase domain queries and scraper workers remain the next implementation stages.
+**Status:** The frontend/backend boundary is implemented for road-package search. Package search, contracts, vendors, and audit metrics now read the Supabase catalog through Prisma; the checked-in snapshot remains the no-database fallback. Scraper workers and remaining provenance pages are the next implementation stages.
 
 ## Decision
 
@@ -11,7 +11,7 @@ SAKSI uses one repository with two deployment boundaries:
 
 The Next.js server is the web app's backend-for-frontend (BFF). The browser calls application APIs for interactive queries. Only server modules may access Prisma, database credentials, or ingestion interfaces. The map remains a client-side component because MapLibre GL JS requires browser interaction.
 
-This decision supersedes the older FDS instruction to load the JSON directly from the browser. The checked-in snapshot remains the current package source. Prisma defines the ingestion, package, administrative-area, and report persistence models; migrations are deployed, and the Kota Tangerang catalog is populated by `workers/ingest.mjs`, but package search still reads the snapshot.
+This decision supersedes the older FDS instruction to load the JSON directly from the browser. Prisma defines the ingestion, package, administrative-area, and report persistence models; migrations are deployed, and the Kota Tangerang catalog is populated by `workers/ingest.mjs`. When `DATABASE_URL` is set, package search and contract/vendor reads use that catalog; without it, the repository falls back to the checked-in snapshot so `next build` and database-less environments keep working.
 
 ## System context
 
@@ -21,15 +21,15 @@ flowchart LR
   Page["Next.js server page"] --> UseCases["Package use cases"]
   Routes --> UseCases
   UseCases --> Repository["Road package repository"]
-  Repository --> Snapshot["Checked-in data snapshot<br/>current adapter"]
-  Repository -. "future adapter" .-> Prisma["Prisma repositories"]
+  Repository --> Prisma["Prisma repository<br/>primary adapter"]
+  Repository -. "no DATABASE_URL" .-> Snapshot["Checked-in data snapshot<br/>fallback adapter"]
   Prisma --> Postgres["Supabase Postgres + PostGIS"]
   GovWorker["Government scraper<br/>separate scheduled deployment"] --> Ingest["Validated ingestion boundary"]
   SocialWorker["Social-source scraper<br/>separate scheduled deployment"] --> Ingest
   Ingest --> Postgres
 ```
 
-The dotted Supabase package-search path is planned. The current package search does not query Supabase. Prisma and Better Auth are present, and PostGIS is enabled. Authentication, authorization, registration-invitation, and report migrations have been deployed to the configured Supabase project; package and administrative-area catalogs are not yet populated.
+Prisma, Better Auth, and PostGIS are present. Authentication, authorization, registration-invitation, and report migrations have been deployed to the configured Supabase project, and the Kota Tangerang package, RUP, contract, realization, and administrative-area catalogs are populated. The application queries the package catalog when `DATABASE_URL` is set and otherwise falls back to the snapshot adapter.
 
 ## Boundaries and ownership
 
@@ -61,18 +61,19 @@ Client components must never import from `src/server` or `src/lib/prisma`. Serve
 - Changes to region, year, district, work type, or search text call `GET /api/packages?region=<id>`.
 - `src/app/api/packages/route.ts` delegates `GET` to `src/server/api/packages/packages.api.ts`. `PackagesApi` validates query parameters, calls the package use case, and returns the shared `ApiResult<T>` envelope through shared HTTP response handling.
 - `src/server/packages/service.ts` owns filtering and result counts. It depends on `RoadPackageRepository`, not on a UI component or Prisma directly.
-- `src/server/packages/snapshot-repository.ts` implements that interface per region; it reads the snapshot path from `data/regions/<id>/region.json`, keeps only the road sector, and is marked server-only.
+- `src/server/packages/source.ts` selects the repository per region: `database-repository.ts` queries Prisma when `DATABASE_URL` is set, while `snapshot-repository.ts` reads `data/regions/<id>/region.json` as the fallback. Both are server-only.
+- `src/server/packages/lpse-repository.ts` builds the contract and vendor index from `lpse_contracts` and `realization_transactions` in database mode, and from the checked-in LPSE/realization JSON in fallback mode.
 - `src/server/regions/region-registry.ts` discovers region configs from `data/regions/*/region.json` and exposes the region summary used by the API, audit metrics, and map (boundary URLs, GeoJSON property names, centre, environment label).
 - Shared package DTOs live in `src/contracts/packages/road-package.contract.ts`; region DTOs live in `src/contracts/regions/region.contract.ts`.
 - `scripts/check-region.mjs` is the per-region quality gate (structure, road object, anchor consistency, provider coverage) and writes an optional provenance manifest. `scripts/ingest.mjs` runs one job per region with a delay between commands.
 - `src/server/api/shared/` contains transport errors, response helpers, and the request-context shape. Each domain API owns its endpoint policy. `AccessApi` handles invite issuance and revocation; `ReportsApi` implements submission, account history, the staff review queue, public published-report queries, and Publish/Reject moderation. Better Auth's catch-all route continues to delegate directly to Better Auth.
 
-The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The aggregate is recomputed per request from the snapshot; caching or precomputation is the next scale step.
+The register is paginated (`page`/`limit`, 50 rows by default, 300 maximum) and the map reads a separate compact aggregate endpoint (`GET /api/packages/map`) bounded by the current viewport (`bbox`), so the browser no longer downloads every matching row. A selected package is fetched on demand from `GET /api/packages/[rup]`. The package list and contract index are cached per server process; the aggregate is recomputed per request. Moving filtering into SQL and precomputing the aggregate are the next scale steps.
 
 ### Database and authentication
 
 - Supabase is the managed PostgreSQL host. PostGIS is enabled in the `extensions` schema.
-- Prisma is the intended ORM and is currently used by Better Auth and the authorization foundation. The multi-region ingestion worker uses parameterized `pg` SQL for large batches against the same schema.
+- Prisma is the application ORM and is used by Better Auth, the authorization foundation, reports, and the database-backed package/contract repositories. The multi-region ingestion worker uses parameterized `pg` SQL for large batches against the same schema.
 - The Prisma schema defines Better Auth, authorization, registration-invitation, ingestion provenance, road-package, administrative-area, and report tables. The migrations are deployed; the Kota Tangerang RUP, detail, contract, realization, and boundary catalogs are populated. Official measurement series remain undefined.
 - Browser code must not connect directly to Postgres or receive database credentials or a Supabase service-role key.
 - Use Prisma for ordinary reads/writes. Put complex spatial operations behind named repository methods and parameterized SQL; do not spread raw GIS SQL across route handlers or UI code.
@@ -93,7 +94,7 @@ The report form keeps state in the page until submission. Local image sanitation
 
 `workers/ingest.mjs` is the standalone government-data worker for one region. It runs RUP → detail → realization → LPSE → normalize → validate → database upsert → snapshot rebuild → `region:check`. It supports `--region`, `--dry-run`, `--sources`, `--refresh`, a database lock, retries with backoff, rate-limited source commands, structured JSON logs, run history, and atomic failure behavior: the normalized batch is one transaction, and the snapshot is only published after the temporary snapshot passes the gate. See [INGESTION.md](./INGESTION.md).
 
-The worker preserves every source row as a checksummed artifact plus `raw_records`, including rows that do not match a RUP, package, or boundary. It does not replace the application repository: package search still reads the checked-in snapshot.
+The worker preserves every source row as a checksummed artifact plus `raw_records`, including rows that do not match a RUP, package, or boundary. It populates the same catalog the application repository reads; the snapshot it publishes remains the fallback and the provenance artifact.
 
 A social-source scraper is not implemented. Do not treat an X post as an official record or as proof of an allegation. Decide and document the permitted access method for X before implementing that worker.
 
@@ -135,8 +136,8 @@ The contract types are shared across the UI and route. Query parameters are vali
 
 ## Proposed evolution
 
-1. **Now — snapshot-backed BFF:** Keep the existing dataset unchanged; all package access goes through the server repository and API contract.
-2. **Supabase domain model:** Review and deploy the checked-in PostGIS/report-domain migration to the intended Supabase project, import source-aware package and boundary catalogs, then migrate the repository from the snapshot adapter to Prisma/PostGIS. Keep the contract stable where possible.
+1. **Database-backed BFF (done):** All package, contract, vendor, and audit-metric access goes through the server repository and API contract. Prisma is the primary adapter; the snapshot is the fallback when `DATABASE_URL` is unset.
+2. **Spatial queries:** Move package filtering and map aggregation into PostGIS so the register no longer loads the full region catalog per request, and decide whether report area lookup should read `administrative_areas` instead of the boundary GeoJSON.
 3. **Independent ingestion:** Add the two scheduled workers and an ingestion boundary with restricted credentials, idempotency, validation, and run history.
 4. **Reports:** Apply the report migration, create the private bucket, then complete privacy, moderation, abuse-control, and retention decisions in [REPORTS.md](./REPORTS.md) before enabling public report access or publication.
 5. **Scale map queries:** Separate paginated register results from minimal map features, query spatial features by viewport (implemented with `bbox`), and cache or precompute the aggregate.

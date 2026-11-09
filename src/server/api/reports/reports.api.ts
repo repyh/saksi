@@ -12,7 +12,7 @@ import { persistSubmittedReport } from "@/server/reports/report.repository";
 import { enforceReportSubmissionRateLimit } from "@/server/reports/report-rate-limit";
 import { removePrivateReportImage, assertPrivateReportBucketReady } from "@/server/storage/supabase-storage.client";
 import { uploadController } from "@/server/uploads/upload.controller";
-import { createSnapshotRoadPackageRepository } from "@/server/packages/snapshot-repository";
+import { createRoadPackageRepository } from "@/server/packages/source";
 import { listRegions } from "@/server/regions/region-registry";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { MyReportsResponse } from "@/contracts/reports/report-history.contract";
@@ -257,7 +257,7 @@ export class ReportsApi extends ApiController {
         let packageItem: RoadPackageItem | null = null;
         if (submission.packageRup) {
           for (const region of listRegions()) {
-            const rows = await createSnapshotRoadPackageRepository(region.id).listRoadPackages();
+            const rows = await createRoadPackageRepository(region.id).listRoadPackages();
             packageItem = rows.find((item) => item.kode_rup === submission.packageRup) ?? null;
             if (packageItem) break;
           }

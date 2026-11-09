@@ -13,7 +13,8 @@ import {
   regionSummary,
   type RegionConfig,
 } from "@/server/regions/region-registry";
-import { createSnapshotRoadPackageRepository, snapshotMeta } from "./snapshot-repository";
+import { snapshotMeta } from "./snapshot-repository";
+import { createRoadPackageRepository } from "./source";
 
 interface BoundaryFeatureCollection {
   features?: Array<{ properties?: Record<string, unknown> }>;
@@ -138,12 +139,12 @@ export async function buildAuditSummaryMetrics(
   repository?: RoadPackageRepository,
 ): Promise<AuditSummaryMetrics> {
   const region = getRegion(regionId);
-  const paketRepository = repository ?? createSnapshotRoadPackageRepository(regionId);
-  const [packages, boundaries] = await Promise.all([
+  const paketRepository = repository ?? createRoadPackageRepository(regionId);
+  const [packages, boundaries, meta] = await Promise.all([
     paketRepository.listRoadPackages(),
     Promise.resolve(readBoundaries(region)),
+    snapshotMeta(regionId),
   ]);
-  const meta = snapshotMeta(regionId);
 
   const years = Array.from(new Set(packages.map((item) => item.tahun))).sort((a, b) => a - b);
   const packagesByYear = {

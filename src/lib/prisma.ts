@@ -10,8 +10,8 @@ function buatKlien(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error(
-      "DATABASE_URL belum diset. Fitur database (autentikasi, simpan laporan) belum aktif; " +
-        "data paket jalan tetap tersedia dari snapshot.",
+      "DATABASE_URL belum diset. Fitur database (autentikasi, simpan laporan, katalog paket) " +
+        "belum aktif; data paket jalan tetap tersedia dari snapshot.",
     );
   }
 

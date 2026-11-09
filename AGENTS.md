@@ -48,10 +48,10 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
    tetap buka dropdown, dan jangan kirim permintaan). Peta bertingkat lewat **segmented control**
    **Kecamatan / Kelurahan / RW** di atas peta (bukan mengikuti zoom); angka kecamatan menjumlahkan
    seluruh paket di dalamnya, termasuk presisi RW/kelurahan, dengan kelas kuantil.
-2. **Batas frontend/backend SAKSI.** Route Handlers menjadi BFF; browser tidak mengambil snapshot
-   paket langsung. Snapshot dibaca repository server-only dari `data/`. Supabase domain tables dan
-   scraper workers adalah tahap terpisah; jangan mengarang skema atau pipeline sebelum provenance,
-   presisi lokasi, validasi, dan kebijakan retensi ditentukan.
+2. **Batas frontend/backend SAKSI.** Route Handlers menjadi BFF; browser tidak mengambil data paket
+   langsung. Repository server-only membaca katalog Prisma/Supabase bila `DATABASE_URL` diisi, dan
+   memakai snapshot `data/` hanya sebagai cadangan tanpa database. Jangan mengarang skema atau
+   pipeline sebelum provenance, presisi lokasi, validasi, dan kebijakan retensi ditentukan.
 3. **Tanpa NLP/LLM di pipeline lokasi.** Sudah diuji dan ditolak.
 4. **Tanpa computer vision / pengukuran cm².** Ditolak user + dosen. Kerusakan dikategorikan
    **oleh pelapor** (`jenis_kerusakan`, `penyebab`, `ukuran_kasar`). Jangan menambahkan field luas.

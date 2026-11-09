@@ -80,8 +80,11 @@ nomor RW dan **20,6%** kelurahan.
 
 ### 2.2 Dataset Tersedia (`data/` dan `public/data/`)
 
+Berkas berikut tetap menjadi artefak provenance dan **fallback** repository. Bila `DATABASE_URL`
+diisi, tampilan membaca katalog Supabase; tanpa database, repository kembali ke berkas ini.
+
 - `data/saksi_kota_tangerang_2025_2026.json` — 2.552 paket jalan + anchor (`rw`, `unit_id`,
-  `presisi_peta`, `bulan`, `kecamatan_resmi`, `desa_resmi`); dibaca server-only.
+  `presisi_peta`, `bulan`, `kecamatan_resmi`, `desa_resmi`); cadangan server-only.
 - `data/lpse_kota_tangerang_2025_2026.json` — 731 paket dengan nama pelaksana dari SPSE (kolom sumber
   `pemenang`); 1.739 paket RUP punya pengumuman LPSE yang tercocokkan.
 - `data/realisasi_kota_tangerang.json` — 50.836 baris realisasi (37.278 TA2025 + 13.558 TA2026,
@@ -134,7 +137,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   Pegawai Dinas) **tidak** dihitung sebagai pelaksana — 43 paket swakelola tampil sebagai tanpa rekam
   kontrak, bukan dengan penyedia palsu.
 - `src/app/api/packages/route.ts` → `src/server/api/packages/*` → `src/server/packages/service.ts` →
-  `snapshot-repository.ts` + `lpse-repository.ts` (server-only + type guard runtime).
+  `source.ts` → `database-repository.ts` (Prisma) atau `snapshot-repository.ts` (cadangan) +
+  `lpse-repository.ts` (server-only + type guard runtime).
 - **Region:** `src/server/regions/region-registry.ts` membaca `data/regions/*/region.json`; endpoint
   `GET /api/packages?region=<id>` memilih snapshot, kontrak, batas, dan label. Halaman `/`, `/project`,
   `/penyedia`, `/penyedia/[slug]`, dan `/laporan/paket/[rup]` meneruskan `?region=`. Pemilih wilayah
@@ -206,11 +210,11 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 
 | Komponen / Fitur | Target | Status di kode | Tindakan yang dibutuhkan |
 |---|---|---|---|
-| **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; snapshot server-only | Ganti adapter snapshot dengan Prisma setelah katalog domain diimpor |
+| **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; repository Prisma saat `DATABASE_URL` diisi, snapshot sebagai cadangan | Pindahkan filter dan agregat peta ke SQL/PostGIS |
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]` | Cache/precompute agregat; saat ini dihitung per permintaan |
 | **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak & halaman penyedia; `SIMULASI PROTOTIPE` di alur lapor | Badge SIRUP/Bina Marga dan badge presisi lokasi belum |
-| **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi tetap snapshot | Verifikasi rekonsiliasi `npm run db:verify`; pertahankan snapshot sebagai sumber tampilan |
+| **Supabase/PostGIS domain** | Katalog paket, wilayah, laporan | Migrasi ingestion multi-region diterapkan; katalog Kota Tangerang (RUP, detail, kontrak, realisasi, batas) sudah diimpor lewat `workers/ingest.mjs`; repository aplikasi membaca katalog itu lewat Prisma, dengan snapshot sebagai cadangan | Jalankan `npm run db:verify` setiap selesai ingest; pertahankan kontrak API |
 | **Scraper terjadwal** | Worker terpisah | `workers/ingest.mjs` + lock/retry/log/riwayat run; artefak systemd timer & GitHub Actions disediakan | Deployment cron dan approval merge |
 | **Lapor jalan** | Submit bermoderasi + opsional akun | API, idempotensi, CORS, model Prisma, bucket privat, antrean review, daftar publik `PUBLISHED`, dan aksi Publikasikan/Tolak dengan alasan + `ReportStatusEvent` tersedia; submit dan moderasi terverifikasi end-to-end 8–9 Nov 2026 | Akses bukti, kebijakan media publik, dan retensi (`docs/REPORTS.md`) |
 | **Dokumentasi** | Selaras dengan kode | STATE, HANDOFF, README, CONCEPT, PRODUCT, SPEC, DESIGN diperbarui 9 Nov 2026; `/metode` menjelaskan sumber dan batas angka | Jaga `AGENTS.md` tetap sinkron saat aturan produk berubah |
@@ -222,8 +226,9 @@ Branch lokal dan remote yang sudah fully merged dan worktree-nya bersih dihapus:
 - **Node:** v26.8.1 di mesin pengembangan; `.nvmrc` menunjuk 24. Lockfile belum dilacak git.
 - **Build:** `PASS` — `npm run build` sukses tanpa `DATABASE_URL`.
 - **Lint/Type:** `PASS` — `eslint .` dan `tsc --noEmit` tanpa temuan.
-- **Database:** opsional. Tanpa `DATABASE_URL`, auth menjawab `503` dan data paket tetap penuh dari
-  snapshot.
+- **Database:** opsional untuk build. Tanpa `DATABASE_URL`, auth menjawab `503` dan data paket
+  dibaca dari snapshot; dengan `DATABASE_URL`, paket, kontrak, penyedia, dan metrik dibaca dari
+  katalog Supabase.
 - **Privasi:** kredensial lokal hanya di `.env.local` (diabaikan git). Migrasi liar
   `prisma/migrations/20261105085537_init` (berisi `DROP INDEX`) sudah dihapus 5 Nov 2026.
 

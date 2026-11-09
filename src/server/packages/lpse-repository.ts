@@ -12,6 +12,8 @@ import {
   getRegion,
   type RegionConfig,
 } from "@/server/regions/region-registry";
+import { prisma } from "@/lib/prisma";
+import { isDatabaseEnabled } from "./data-source";
 
 export { slugPenyedia };
 
@@ -198,6 +200,11 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
     item: real.item ?? [],
   };
 
+  return susunIndeks(data, realisasi);
+}
+
+/** Bangun indeks dari baris yang sudah ternormalisasi, baik dari berkas maupun database. */
+function susunIndeks(data: LpseSnapshot, realisasi: RealisasiSnapshot): IndeksKontrak {
   /** Indeks kode RUP → kontrak. LPSE lebih dulu; celahnya diisi Data INAPROC. */
   const kontrakPerRup = new Map<string, RoadPackageContract>();
 
@@ -344,28 +351,177 @@ function buatIndeks(region: RegionConfig): IndeksKontrak {
   };
 }
 
-const cache = new Map<string, IndeksKontrak>();
+interface BarisLpseDb {
+  kodeRup: string;
+  jenisLpse: string;
+  metode: string | null;
+  pemenangName: string | null;
+  npwpMasked: string | null;
+  hps: string | number | null;
+  nilaiKontrak: string | number | null;
+  tahun: number;
+  url: string | null;
+}
 
-export function getIndeksKontrak(regionId: string = DEFAULT_REGION_ID): IndeksKontrak {
+interface BarisRealisasiDb {
+  kodeRup: string;
+  kodePaket: string;
+  tahun: number;
+  metode: string | null;
+  sumberTransaksi: string | null;
+  penyediaRaw: string | null;
+  nilai: string | number | null;
+}
+
+interface MetaDb {
+  lpseSnapshot: Date | string | null;
+  realisasiSnapshot: Date | string | null;
+  totalPaket: number;
+  totalPagu: string | number;
+  paketTercocok: number;
+  denganPemenang: number;
+  nilaiKontrakTotal: string | number;
+  paguTercocok: string | number;
+}
+
+function tanggalSnapshot(value: Date | string | null | undefined): string {
+  if (!value) return "-";
+  const tanggal = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(tanggal.getTime()) ? String(value) : tanggal.toISOString().slice(0, 10);
+}
+
+function angka(value: string | number | null | undefined): number {
+  return Number(value ?? 0);
+}
+
+async function buatIndeksDatabase(regionId: string): Promise<IndeksKontrak> {
+  const region = getRegion(regionId);
+  const [lpseDb, realisasiDb, metaDb] = await Promise.all([
+    prisma.$queryRaw<BarisLpseDb[]>`
+      SELECT kode_rup AS "kodeRup", jenis_lpse AS "jenisLpse", method AS "metode",
+        pemenang_name AS "pemenangName", npwp_masked AS "npwpMasked", hps,
+        nilai_kontrak AS "nilaiKontrak", tahun, url
+      FROM lpse_contracts
+      WHERE region_id = ${regionId} AND pemenang_name IS NOT NULL
+    `,
+    prisma.$queryRaw<BarisRealisasiDb[]>`
+      SELECT t.kode_rup AS "kodeRup", t.kode_paket AS "kodePaket", t.tahun,
+        t.metode, t.sumber_transaksi AS "sumberTransaksi",
+        t.penyedia_raw AS "penyediaRaw", t.nilai
+      FROM realization_transactions t
+      JOIN road_packages rp ON rp.rup = t.kode_rup AND rp.region_id = t.region_id
+      WHERE t.region_id = ${regionId}
+        AND t.kode_rup IS NOT NULL
+        AND lower(coalesce(t.metode, '')) <> 'swakelola'
+        AND t.penyedia_raw !~* '^\\s*(dinas|pegawai|opd|pemerintah|badan|kantor|uptd|kecamatan|kelurahan|unsur)\\b'
+    `,
+    prisma.$queryRaw<MetaDb[]>`
+      SELECT
+        (SELECT max(source_retrieved_at) FROM lpse_contracts WHERE region_id = ${regionId}) AS "lpseSnapshot",
+        (SELECT max(last_seen_at) FROM realization_packages WHERE region_id = ${regionId}) AS "realisasiSnapshot",
+        (SELECT count(*)::int FROM road_packages WHERE region_id = ${regionId}) AS "totalPaket",
+        (SELECT COALESCE(sum(budget), 0)::text FROM road_packages WHERE region_id = ${regionId}) AS "totalPagu",
+        (SELECT count(DISTINCT road_package_id)::int FROM lpse_contracts WHERE region_id = ${regionId}) AS "paketTercocok",
+        (SELECT count(DISTINCT road_package_id)::int FROM lpse_contracts
+          WHERE region_id = ${regionId} AND pemenang_name IS NOT NULL) AS "denganPemenang",
+        (SELECT COALESCE(sum(nilai_kontrak), 0)::text FROM lpse_contracts
+          WHERE region_id = ${regionId} AND pemenang_name IS NOT NULL) AS "nilaiKontrakTotal",
+        (SELECT COALESCE(sum(rp.budget), 0)::text FROM road_packages rp
+          WHERE rp.region_id = ${regionId}
+            AND EXISTS (SELECT 1 FROM lpse_contracts lc
+              WHERE lc.road_package_id = rp.id)) AS "paguTercocok"
+    `,
+  ]);
+
+  const meta = metaDb[0];
+  const lpseRows: LpseRow[] = lpseDb.map((baris) => ({
+    kode_rup: baris.kodeRup,
+    jenis_lpse: baris.jenisLpse === "lelang" ? "lelang" : "nontender",
+    metode: baris.metode,
+    pemenang: baris.pemenangName,
+    npwp: baris.npwpMasked,
+    hps: baris.hps == null ? null : angka(baris.hps),
+    nilai_kontrak: baris.nilaiKontrak == null ? null : angka(baris.nilaiKontrak),
+    tahun: baris.tahun,
+    url: baris.url,
+  }));
+
+  const realisasiRows: RealisasiRow[] = realisasiDb.map((baris) => ({
+    kode_rup: baris.kodeRup,
+    kode_paket: baris.kodePaket,
+    tahun: baris.tahun,
+    metode: baris.metode,
+    sumber_transaksi: baris.sumberTransaksi,
+    penyedia: baris.penyediaRaw,
+    nilai: angka(baris.nilai),
+  }));
+
+  const totalPagu = angka(meta?.totalPagu);
+  const paguTercocok = angka(meta?.paguTercocok);
+  const totalPaket = meta?.totalPaket ?? 0;
+  const paketTercocok = meta?.paketTercocok ?? 0;
+
+  const perMetode: Record<string, number> = {};
+  for (const baris of realisasiRows) {
+    const kunci = baris.metode ?? "Tidak dicantumkan";
+    perMetode[kunci] = (perMetode[kunci] ?? 0) + 1;
+  }
+
+  const data: LpseSnapshot = {
+    ...KOSONG_LPSE,
+    snapshot: tanggalSnapshot(meta?.lpseSnapshot),
+    sumber: `${region.lpse?.base ?? "SPSE"} (SPSE)`,
+    paket_rup: totalPaket,
+    paket_tercocok: paketTercocok,
+    persen_tercocok: totalPaket ? Math.round((paketTercocok / totalPaket) * 1000) / 10 : 0,
+    pagu_rup_total: totalPagu,
+    pagu_tercocok: paguTercocok,
+    pagu_belum_tercocok: Math.max(0, totalPagu - paguTercocok),
+    dengan_pemenang: meta?.denganPemenang ?? 0,
+    nilai_kontrak_total: angka(meta?.nilaiKontrakTotal),
+    item: lpseRows,
+  };
+
+  const realisasi: RealisasiSnapshot = {
+    ...KOSONG_REALISASI,
+    snapshot: tanggalSnapshot(meta?.realisasiSnapshot),
+    sumber: "https://data.inaproc.id/realisasi — Data INAPROC",
+    jumlah_baris: realisasiRows.length,
+    jumlah_rup: new Set(realisasiRows.map((baris) => baris.kode_rup)).size,
+    per_metode: perMetode,
+    item: realisasiRows,
+  };
+
+  return susunIndeks(data, realisasi);
+}
+
+const cache = new Map<string, Promise<IndeksKontrak>>();
+
+export function getIndeksKontrak(regionId: string = DEFAULT_REGION_ID): Promise<IndeksKontrak> {
   const tersimpan = cache.get(regionId);
   if (tersimpan) return tersimpan;
-  const indeks = buatIndeks(getRegion(regionId));
+  const indeks = isDatabaseEnabled()
+    ? buatIndeksDatabase(regionId)
+    : Promise.resolve(buatIndeks(getRegion(regionId)));
   cache.set(regionId, indeks);
+  indeks.catch(() => cache.delete(regionId));
   return indeks;
 }
 
 export function getLpseMeta(regionId: string = DEFAULT_REGION_ID) {
-  return getIndeksKontrak(regionId).meta;
+  return getIndeksKontrak(regionId).then((indeks) => indeks.meta);
 }
 
 export function kontrakUntukRup(
   regionId: string,
   kodeRup: string,
-): RoadPackageContract | null {
-  return getIndeksKontrak(regionId).kontrakPerRup.get(String(kodeRup)) ?? null;
+): Promise<RoadPackageContract | null> {
+  return getIndeksKontrak(regionId).then(
+    (indeks) => indeks.kontrakPerRup.get(String(kodeRup)) ?? null,
+  );
 }
 
-export function daftarPenyedia(regionId: string = DEFAULT_REGION_ID): VendorSummary[] {
+export function daftarPenyedia(regionId: string = DEFAULT_REGION_ID): Promise<VendorSummary[]> {
   return ringkasanPenyedia(regionId, null);
 }
 
@@ -373,11 +529,11 @@ export function daftarPenyedia(regionId: string = DEFAULT_REGION_ID): VendorSumm
  * Ringkasan penyedia, dibatasi ke kode RUP yang diberikan (mis. hanya paket jalan).
  * `null` = semua RUP yang punya rekam kontrak.
  */
-export function ringkasanPenyedia(
+export async function ringkasanPenyedia(
   regionId: string,
   rupDiizinkan: Set<string> | null,
-): VendorSummary[] {
-  const { kontrakPerRup, realisasiPerRup } = getIndeksKontrak(regionId);
+): Promise<VendorSummary[]> {
+  const { kontrakPerRup, realisasiPerRup } = await getIndeksKontrak(regionId);
   const hasil = new Map<string, VendorSummary>();
 
   for (const [rup, kontrak] of kontrakPerRup) {
@@ -414,11 +570,11 @@ export function ringkasanPenyedia(
   );
 }
 
-export function rupMilikPenyedia(
+export async function rupMilikPenyedia(
   regionId: string,
   slug: string,
-): string[] {
-  for (const [kunci, daftarRup] of getIndeksKontrak(regionId).rupPerPenyedia) {
+): Promise<string[]> {
+  for (const [kunci, daftarRup] of (await getIndeksKontrak(regionId)).rupPerPenyedia) {
     if (slugPenyedia(kunci) === slug) return [...daftarRup];
   }
   return [];

@@ -2,13 +2,17 @@ import "server-only";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { formatRupiahFull } from "@/features/map/road-types";
+import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_REGION_ID,
   getRegion,
   regionSummary,
+  type RegionConfig,
 } from "@/server/regions/region-registry";
+import { isDatabaseEnabled } from "./data-source";
 import { getLpseMeta } from "./lpse-repository";
-import { createSnapshotRoadPackageRepository, snapshotMeta } from "./snapshot-repository";
+import { snapshotMeta } from "./snapshot-repository";
+import { createRoadPackageRepository } from "./source";
 
 /**
  * Angka metodologi diturunkan dari manifest region, snapshot aktif, dan meta LPSE/realisasi.
@@ -202,7 +206,47 @@ function rupiahMiliar(nilai: number): string {
   return `Rp${idDuaDesimal.format(nilai / 1_000_000_000)} Miliar`;
 }
 
-function bacaManifest(regionId: string): RegionManifest | null {
+/** Nama artefak ingestion untuk setiap berkas yang checksum-nya ditampilkan. */
+const ARTEFAK_BERKAS: Array<(region: RegionConfig) => [string | undefined, string]> = [
+  (region) => [region.sumber.rup, "rup"],
+  (region) => [region.sumber.detail, "detail"],
+  (region) => [region.sumber.realisasi, "realisasi"],
+  (region) => [region.lpse?.keluaran, "lpse-cocok"],
+  (region) => [region.batas.kelurahan.berkas, "batas-kelurahan"],
+  (region) => [region.batas.lingkungan?.berkas, "batas-rw"],
+  (region) => [region.batas.kecamatan?.berkas, "batas-kecamatan"],
+];
+
+async function bacaManifest(regionId: string): Promise<RegionManifest | null> {
+  if (isDatabaseEnabled()) {
+    const baris = await prisma.regionManifest.findFirst({
+      where: { regionId },
+      orderBy: { generatedAt: "desc" },
+      select: { generatedAt: true, metrics: true, checksums: true },
+    });
+    if (!baris) return null;
+
+    const region = getRegion(regionId);
+    const checksums = (baris.checksums ?? {}) as Record<string, string>;
+    const berkas: Record<string, ManifestBerkas> = {};
+    for (const pasangan of ARTEFAK_BERKAS) {
+      const [jalur, kunci] = pasangan(region);
+      const sha256 = checksums[kunci];
+      if (jalur && sha256) berkas[jalur] = { berkas: jalur, byte: 0, sha256 };
+    }
+
+    return {
+      region: region.id,
+      label: region.label,
+      instansi: region.instansi,
+      tahun: region.tahun,
+      dibuat: baris.generatedAt.toISOString(),
+      berkas,
+      metrik: (baris.metrics ?? undefined) as ManifestMetrik | undefined,
+      masalah: [],
+    };
+  }
+
   const berkas = path.resolve(process.cwd(), "data", "regions", regionId, "manifest.json");
   if (!existsSync(berkas)) return null;
   try {
@@ -233,15 +277,15 @@ export async function buildMetodologi(
 ): Promise<MetodologiData> {
   const region = getRegion(regionId);
   const ringkas = regionSummary(region);
-  const manifest = bacaManifest(regionId);
+  const manifest = await bacaManifest(regionId);
   const metrik = manifest?.metrik ?? null;
-  const meta = snapshotMeta(regionId);
-  const lpse = getLpseMeta(regionId);
+  const meta = await snapshotMeta(regionId);
+  const lpse = await getLpseMeta(regionId);
   const catatan: string[] = [];
 
   if (!manifest) {
     catatan.push(
-      `Manifest data/regions/${regionId}/manifest.json belum tersedia; angka turunan belum bisa ditampilkan.`,
+      `Manifest region ${regionId} belum tersedia; angka turunan belum bisa ditampilkan.`,
     );
   } else if (!metrik) {
     catatan.push("Manifest region belum memuat blok metrik; angka turunan belum bisa ditampilkan.");
@@ -424,7 +468,7 @@ export async function buildMetodologi(
 
     // Silang periksa manifest dengan snapshot aktif agar manifest basi tidak lolos diam-diam.
     try {
-      const paketSnapshot = await createSnapshotRoadPackageRepository(regionId).listRoadPackages();
+      const paketSnapshot = await createRoadPackageRepository(regionId).listRoadPackages();
       if (paketSnapshot.length !== metrik.paket) {
         catatan.push(
           `Snapshot aktif memuat ${idInt.format(paketSnapshot.length)} paket, manifest memuat ${idInt.format(metrik.paket)}; jalankan ulang region:check dan data:snapshot.`,
