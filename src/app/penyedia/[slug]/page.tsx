@@ -99,7 +99,7 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
                       <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">
                         RUP {item.kode_rup} · TA {item.tahun}
                       </span>
-                      <Link href={`/project/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
+                      <Link href={`/paket/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
                       <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">

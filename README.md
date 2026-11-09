@@ -47,7 +47,7 @@ Status terakhir ditinjau **9 November 2026**. “Tersedia” berarti implementas
 
 | Komponen | Status | Keterangan |
 |---|---|---|
-| Eksplorasi paket | **Tersedia** | Server Component, direktori `/project`, dan `GET /api/packages` memakai repository Prisma/Supabase dengan snapshot sebagai cadangan. |
+| Eksplorasi paket | **Tersedia** | Server Component, direktori `/paket`, detail `/paket/[rup]`, dan `GET /api/packages` memakai repository Prisma/Supabase dengan snapshot sebagai cadangan. |
 | Peta RW/kelurahan dan register | **Tersedia** | Filter, pencarian, tampilan agregat, pemilihan paket/wilayah. Register berpaginasi (`page`/`limit`); peta membaca agregat ringkas per `bbox` viewport dan detail paket dimuat saat dipilih. |
 | Rekam kontrak dan penyedia | **Tersedia** | LPSE/SPSE dan Data INAPROC digabung berdasarkan Kode RUP. |
 | API laporan dan penyimpanan privat | **Tersedia** | API, idempotensi, pembatasan laju, sanitasi ulang di server, model laporan, dan bucket privat tersedia; submit, antrean review, dan aksi Publikasikan/Tolak sudah diverifikasi end-to-end 8–9 November 2026. |

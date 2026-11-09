@@ -28,7 +28,7 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
   {
     id: "paket-jalan",
     label: "Paket Jalan",
-    href: "/project",
+    href: "/paket",
     variant: "ghost",
   },
   {

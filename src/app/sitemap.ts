@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/peta-pekerjaan",
     "/laporan",
     "/penyedia",
-    "/project",
+    "/paket",
     "/kebijakan-privasi",
     "/syarat-ketentuan",
   ];
@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: new URL(`/penyedia/${encodeURIComponent(vendor.slug)}`, origin).toString(),
     })),
     ...projects.map((project) => ({
-      url: new URL(`/project/${encodeURIComponent(project.kode_rup)}`, origin).toString(),
+      url: new URL(`/paket/${encodeURIComponent(project.kode_rup)}`, origin).toString(),
     })),
   ];
 }

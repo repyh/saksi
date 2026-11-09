@@ -858,7 +858,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                                   </ul>
                                   {labelPenyediaTersembunyi ? (
                                     <Link
-                                      href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
+                                      href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
                                       className="mt-1 inline-block font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
                                     >
                                       {labelPenyediaTersembunyi}
@@ -899,7 +899,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       <FiArrowRight className="size-4 text-secondary" aria-hidden="true" />
                     </Button>
                     <Button
-                      render={<Link href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
+                      render={<Link href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
                       nativeButton={false}
                       variant="outline"
                       className="h-10 w-full rounded-xs border-border font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-primary hover:bg-primary/5"

@@ -46,7 +46,7 @@ function hrefForPage(page: number, params: { region: string; query: string; year
   query.set("urut", params.sort);
   query.set("arah", params.direction);
   query.set("halaman", String(page));
-  return `/project?${query.toString()}`;
+  return `/paket?${query.toString()}`;
 }
 
 export default async function ProjectPage({ searchParams }: ProjectPageProps) {
@@ -129,7 +129,7 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
           </div>
         </dl>
 
-        <form action="/project" method="get" className="mt-6 grid max-w-4xl gap-2 sm:grid-cols-[minmax(15rem,1fr)_auto_auto_auto_auto] sm:items-center">
+        <form action="/paket" method="get" className="mt-6 grid max-w-4xl gap-2 sm:grid-cols-[minmax(15rem,1fr)_auto_auto_auto_auto] sm:items-center">
           <input type="hidden" name="region" value={regionId} />
           <input type="hidden" name="urut" value={sort} />
           <input type="hidden" name="arah" value={direction} />
@@ -157,7 +157,7 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
         </h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="font-sans text-[11px] text-muted-foreground">{totalProjects.toLocaleString("id-ID")} paket · menampilkan {visibleProjects.length}</p>
-          <form action="/project" method="get" className="flex items-center gap-1.5">
+          <form action="/paket" method="get" className="flex items-center gap-1.5">
             <input type="hidden" name="region" value={regionId} />
             {query && <input type="hidden" name="q" value={query} />}
             {year && <input type="hidden" name="tahun" value={year} />}
@@ -196,7 +196,7 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
                 <tr key={project.kode_rup} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
                   <td className="px-3 py-2.5 font-semibold leading-snug">
                     <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">RUP {project.kode_rup} · TA {project.tahun}</span>
-                    <Link href={`/project/${encodeURIComponent(project.kode_rup)}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block text-foreground underline-offset-2 hover:text-primary hover:underline">{project.nama}</Link>
+                    <Link href={`/paket/${encodeURIComponent(project.kode_rup)}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block text-foreground underline-offset-2 hover:text-primary hover:underline">{project.nama}</Link>
                     <span className="mt-0.5 block font-sans text-[10px] font-normal text-muted-foreground">{project.satker}</span>
                   </td>
                   <td className="px-3 py-2.5 text-[12px] leading-snug text-muted-foreground">
