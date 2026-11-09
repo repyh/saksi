@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference — never identity, description, location hint, precise location, or photos. Evidence review and public photo access are not implemented. The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
+**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference — never identity, description, location hint, precise location, or photos. Evidence review is not implemented; public photo access is deliberately disabled. Report photos are retained for 365 days from submission (180 days after rejection/withdrawal/archive) and deleted by `npm run retention:reports`; the systemd timer artifact is in `deploy/systemd/`. The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -116,7 +116,7 @@ Stores metadata and a private object-storage reference, never image bytes in Pos
 | `mediaType` | string | Server-detected normalized type; v1 accepts sanitized WebP only. |
 | `byteSize`, `width`, `height` | integer | Server-measured values, not client claims. |
 | `sanitizerVersion` | string | Identifies the server sanitation pipeline. |
-| `createdAt`, `retainedUntil`, `deletedAt` | timestamps | Retention period must be decided before upload is enabled. |
+| `createdAt`, `retainedUntil`, `deletedAt` | timestamps | `retainedUntil` is set to 365 days from submission; 180 days after rejection/withdrawal/archive. `deletedAt` marks a removed private object. |
 
 V1 accepts at most one photo per report. Keep media in a separate table so a future increase does not change the report record. Store only the server-sanitized asset; discard the original. A client-sanitized image is still untrusted input and must be rechecked and re-encoded on the server.
 
@@ -198,13 +198,20 @@ Anonymous submissions need rate limits that do not require a real-world identity
 
 Staff review, sensitive media access, publishing, and export must be separate permissions routed through `src/server/authorization/authority.ts`. Public report queries should expose only approved fields and coarse locations. Never publish storage object paths or private moderation notes.
 
+## Photo and retention policy (decided 9 November 2026)
+
+- **Photos are never public in v1.** The public projection and `/laporan/publik` do not include media, storage paths, or signed URLs. Staff evidence review still requires a separate permission and is not implemented.
+- **Initial retention:** 365 days from submission. `persistSubmittedReport` writes `retainedUntil` for every media row.
+- **Shortened retention:** a report whose latest status is `REJECTED`, `WITHDRAWN`, or `ARCHIVED` keeps its photo for at most 180 days from that status event.
+- **Deletion:** `npm run retention:reports` removes expired objects from the private bucket and sets `deleted_at`. `npm run retention:reports:dry` prints candidates without deleting. The job is idempotent and safe to rerun.
+- **Schedule:** `deploy/systemd/saksi-report-retention.timer` runs daily at 03:15 Asia/Jakarta with a randomized delay. Use the same environment file as ingestion (`/etc/saksi/ingestion.env`) so the database and service-role credentials stay server-only.
+- **Audit:** report rows, status events, and moderation reasons remain after photo deletion; only the private object and its `deleted_at` marker change.
+
 ## Decisions still required before deployment or submission
 
-1. Whether published photos are public, blurred, or available only to staff.
-2. Retention duration for media and report text, plus account deletion and withdrawal behavior.
-3. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
-4. Which fields are public after moderation, especially the free-text landmark and description.
-5. Exact permission bits and source-controlled presets for review, media viewing, publication, and export.
-6. Anonymous submission quotas and the short-lived signal used to enforce them.
+1. Account deletion and withdrawal behavior for report text (media retention is decided above).
+2. Whether a reporter receives only a one-time receipt code or can later retrieve a report; define protection against code guessing and leakage.
+3. Exact permission bits and source-controlled presets for evidence review and export (Publish/Reject already uses `reports.change_status`).
+4. Anonymous submission quotas beyond the current three-per-hour database-backed limit.
 
-Until these decisions are made, keep public photo access disabled. The application accepts private submissions, authenticated reporter history, a staff review queue, Publish/Reject moderation with reasons, and a public text-only projection of `PUBLISHED` reports. Evidence review, retention cleanup, and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.
+The application accepts private submissions, authenticated reporter history, a staff review queue, Publish/Reject moderation with reasons, a public text-only projection of `PUBLISHED` reports, and scheduled private-photo deletion. Evidence review and public receipt-code lookup are not implemented. See [SECURITY.md](./SECURITY.md) for security controls and [ARCHITECTURE.md](./ARCHITECTURE.md) for system boundaries.

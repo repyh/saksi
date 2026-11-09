@@ -1,0 +1,12 @@
+[Unit]
+Description=Jadwal harian retensi bukti laporan SAKSI (03:15 WIB)
+Documentation=file:/opt/saksi/docs/REPORTS.md
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Asia/Jakarta
+RandomizedDelaySec=300
+Persistent=true
+Unit=saksi-report-retention.service
+
+[Install]
+WantedBy=timers.target

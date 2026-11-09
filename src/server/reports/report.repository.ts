@@ -10,6 +10,8 @@ import type { StoredReportPhoto } from "@/server/uploads/purposes/report-photo.h
 const DEFAULT_REGION_ID = "kota-tangerang";
 const DATASET_VERSION = "kota-tangerang-2025-2026-2026-11-05";
 const DATASET_RETRIEVED_AT = new Date("2026-11-05T00:00:00.000Z");
+/** Foto laporan tidak pernah publik; retensi awal 365 hari sejak pengiriman. */
+const REPORT_MEDIA_RETENTION_DAYS = 365;
 
 function precisionCode(value: RoadPackageItem["presisi_peta"]) {
   return value.toLocaleUpperCase("en-US") as "RW" | "KELURAHAN" | "KECAMATAN" | "KABUPATEN";
@@ -91,6 +93,7 @@ export async function persistSubmittedReport(input: {
             width: input.photo.width,
             height: input.photo.height,
             sanitizerVersion: input.photo.sanitizerVersion,
+            retainedUntil: new Date(Date.now() + REPORT_MEDIA_RETENTION_DAYS * 24 * 60 * 60 * 1000),
           },
         },
         ...(input.packageItem && roadPackageId ? {

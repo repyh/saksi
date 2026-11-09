@@ -29,6 +29,8 @@
     "predev": "prisma generate && node scripts/copy-maplibre-worker.mjs",
     "region:check": "node scripts/check-region.mjs",
     "region:ingest": "node scripts/ingest.mjs",
+    "retention:reports": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs",
+    "retention:reports:dry": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs --dry-run",
     "start": "next start",
     "storage:reports:ensure": "bun scripts/ensure-report-storage.ts",
     "test": "bun test"

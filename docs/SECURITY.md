@@ -152,7 +152,7 @@ Before enabling staff operations or invite registration in production:
 4. Wire every protected route to the central authorization authority; add resource-level and field-level checks.
 5. Add rate limits to public endpoints based on their abuse and cost profile; configure trusted client-IP handling at the hosting proxy.
 6. Define audit-log access, retention, backups, and operational review. Ensure credentials and bearer tokens never enter logs.
-7. Implement report moderation and publication only after the open privacy, retention, and abuse-control decisions in [REPORTS.md](./REPORTS.md) are resolved. Report submission itself is already account-optional and must stay that way.
+7. Report moderation, public text-only publication, and private-photo retention are implemented. Photos are never public; `npm run retention:reports` deletes them after 365 days (180 days after rejection/withdrawal/archive). Keep evidence review behind a separate permission and resolve the remaining abuse-control decisions in [REPORTS.md](./REPORTS.md). Report submission stays account-optional.
 
 ## References
 

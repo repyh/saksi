@@ -1,0 +1,23 @@
+[Unit]
+Description=SAKSI report media retention
+Documentation=file:/opt/saksi/docs/REPORTS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=saksi
+Group=saksi
+WorkingDirectory=/opt/saksi
+EnvironmentFile=/etc/saksi/ingestion.env
+ExecStart=/usr/bin/node scripts/retention-reports.mjs
+TimeoutStartSec=600
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
