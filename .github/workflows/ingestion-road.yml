@@ -1,0 +1,83 @@
+name: SAKSI road network
+
+on:
+  schedule:
+    # 18:00 UTC tanggal 1 = 01:00 WIB tanggal 2, setiap bulan.
+    - cron: "0 18 1 * *"
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Region id (data/regions/<id>)"
+        required: false
+        default: kota-tangerang
+      skip_download:
+        description: "Lewati unduhan Overture; pakai snapshot yang sudah ada"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: road-network-${{ github.event.inputs.region || 'kota-tangerang' }}
+  cancel-in-progress: false
+
+jobs:
+  road:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      REGION: ${{ github.event.inputs.region || 'kota-tangerang' }}
+      SKIP_DOWNLOAD: ${{ github.event.inputs.skip_download || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.x"
+
+      - name: Pasang Overture CLI
+        run: |
+          uv tool install overturemaps
+          overturemaps --version
+          uv run --with shapely python3 -c "import shapely; print(shapely.__version__)"
+
+      - run: npm ci
+
+      - name: Terapkan migrasi
+        run: npx prisma migrate deploy
+
+      - name: Regenerasi snapshot Overture
+        if: ${{ github.event.inputs.skip_download != 'true' }}
+        run: npm run data:jalan -- --region "$REGION"
+
+      - name: Impor layer jalan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run ingest:worker -- --region "$REGION" --sources jalan --trigger cron 2>&1 | tee artifacts/road-ingestion.log
+
+      - name: Rekonsiliasi DB dengan manifest
+        run: npm run db:verify -- --region "$REGION" 2>&1 | tee artifacts/road-verify.log
+
+      - name: Simpan bukti
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: road-network-${{ env.REGION }}-${{ github.run_id }}
+          path: |
+            artifacts/road-ingestion.log
+            artifacts/road-verify.log
+            data/regions/${{ env.REGION }}/manifest.json
+            public/data/jalan.geojson
+          if-no-files-found: warn
+          retention-days: 30

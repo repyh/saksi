@@ -23,5 +23,5 @@ export default async function ReportPackagePage({ params, searchParams }: Report
   const initialPackage = data.items.find((item) => item.kode_rup === rup);
   if (!initialPackage) notFound();
 
-  return <ReportPrototype initialPackage={initialPackage} />;
+  return <ReportPrototype initialPackage={initialPackage} region={data.region} />;
 }

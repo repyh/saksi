@@ -82,6 +82,7 @@ export async function simpanRegion(client, { region, checksum }) {
     sumber: region.sumber,
     lpse: region.lpse,
     batas: region.batas,
+    jalan: region.jalan,
   });
   const { rows } = await client.query(
     `INSERT INTO regions (id, label, instansi, years, timezone, config, config_checksum, is_active, updated_at)
@@ -240,39 +241,48 @@ export async function simpanSegmenJalan(client, { regionId, segments, chunk = 20
     const params = [];
     const nilai = bagian
       .map((s) => {
+        const awal = params.length;
         params.push(
           regionId,
           s.source_object_id,
           s.name,
           s.number,
+          s.road_class,
+          s.surface,
           s.length_m,
           s.width_m,
           s.district_names,
           s.village_names,
           s.source_name,
           s.source_url,
+          s.source_release,
+          s.license,
           s.source_retrieved_at,
           s.dataset_version,
         );
-        const n = params.length;
         params.push(s.geometry);
-        return `($${n - 11},$${n - 10},$${n - 9},$${n - 8},$${n - 7},$${n - 6},
-          $${n - 5}::text[],$${n - 4}::text[],$${n - 3},$${n - 2},$${n - 1},$${n},
-          extensions.ST_SetSRID(extensions.ST_Force2D(extensions.ST_GeomFromGeoJSON($${n + 1})), 4326),
+        const p = (geser) => `$${awal + geser}`;
+        return `(${p(1)},${p(2)},${p(3)},${p(4)},${p(5)},${p(6)},${p(7)},${p(8)},
+          ${p(9)}::text[],${p(10)}::text[],${p(11)},${p(12)},${p(13)},${p(14)},
+          ${p(15)},${p(16)},
+          extensions.ST_SetSRID(extensions.ST_Force2D(extensions.ST_GeomFromGeoJSON(${p(17)})), 4326),
           true,CURRENT_TIMESTAMP)`;
       })
       .join(", ");
     await client.query(
       `INSERT INTO road_segments
-         (region_id, source_object_id, name, number, length_m, width_m,
-          district_names, village_names, source_name, source_url, source_retrieved_at,
-          dataset_version, geometry, is_active, updated_at)
+         (region_id, source_object_id, name, number, road_class, surface,
+          length_m, width_m, district_names, village_names, source_name, source_url,
+          source_release, license, source_retrieved_at, dataset_version,
+          geometry, is_active, updated_at)
        VALUES ${nilai}
        ON CONFLICT (region_id, source_object_id) DO UPDATE SET
-         name=EXCLUDED.name, number=EXCLUDED.number, length_m=EXCLUDED.length_m,
-         width_m=EXCLUDED.width_m, district_names=EXCLUDED.district_names,
-         village_names=EXCLUDED.village_names, source_name=EXCLUDED.source_name,
-         source_url=EXCLUDED.source_url, source_retrieved_at=EXCLUDED.source_retrieved_at,
+         name=EXCLUDED.name, number=EXCLUDED.number, road_class=EXCLUDED.road_class,
+         surface=EXCLUDED.surface, length_m=EXCLUDED.length_m, width_m=EXCLUDED.width_m,
+         district_names=EXCLUDED.district_names, village_names=EXCLUDED.village_names,
+         source_name=EXCLUDED.source_name, source_url=EXCLUDED.source_url,
+         source_release=EXCLUDED.source_release, license=EXCLUDED.license,
+         source_retrieved_at=EXCLUDED.source_retrieved_at,
          dataset_version=EXCLUDED.dataset_version, geometry=EXCLUDED.geometry,
          is_active=true, updated_at=CURRENT_TIMESTAMP`,
       params,

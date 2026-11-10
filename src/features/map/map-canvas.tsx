@@ -13,6 +13,7 @@ import { normalizeAreaKey } from "@/contracts/packages/area-key";
 import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from "@/contracts/packages/road-work";
 import { addressSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahFull } from "./road-types";
+import { BASEMAP_URL, attributionBasemap } from "./basemap";
 
 type BoundaryPrecision = "RW" | "Kelurahan" | "Kecamatan";
 
@@ -85,29 +86,9 @@ const PRECISION_STATS_KEY: Record<BoundaryPrecision, "rw" | "kel" | "kec"> = {
 
 const normalize = normalizeAreaKey;
 
-/** Satu variabel untuk peta dasar; nilai kini URL style JSON (vektor), default OpenFreeMap Positron. */
-const BASEMAP_URL =
-  process.env.NEXT_PUBLIC_BASEMAP_URL?.trim() || "https://tiles.openfreemap.org/styles/positron";
-
 // Turbopack tidak menurunkan URL worker dari import.meta.url paket; worker disalin
 // ke public/vendor oleh scripts/copy-maplibre-worker.mjs (predev/prebuild).
 maplibregl.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
-
-const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const OPENFREEMAP_ATTRIBUTION = '&copy; <a href="https://openfreemap.org/">OpenFreeMap</a>';
-
-function attributionBasemap(url: string) {
-  if (url.includes("openfreemap.org")) {
-    return `${OSM_ATTRIBUTION} ${OPENFREEMAP_ATTRIBUTION}`;
-  }
-  if (url.includes("cartocdn.com")) {
-    return `${OSM_ATTRIBUTION} &copy; <a href="https://carto.com/attributions">CARTO</a>`;
-  }
-  if (url.includes("arcgisonline.com")) {
-    return '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-  }
-  return OSM_ATTRIBUTION;
-}
 
 function escapeHtml(value: unknown) {
   return String(value ?? "").replace(/[&<>\"]/g, (character) => ({
@@ -414,18 +395,19 @@ const ROAD_SOURCE_ID = "saksi-jaringan-jalan";
 
 function roadTooltipHtml(layer: NonNullable<RegionSummary["roadLayer"]>, properties: BoundaryProperties) {
   const value = (kunci: string) => escapeHtml(properties[layer.fields[kunci as keyof typeof layer.fields]] ?? "");
-  const nomor = value("nomor");
+  const kelas = value("kelas");
   const panjang = value("panjang");
   const lebar = value("lebar");
   const kecamatan = value("kecamatan");
   const kelurahan = value("kelurahan");
   const detail = [
-    nomor ? `No. ruas ${nomor}` : null,
+    kelas ? `kelas ${kelas}` : null,
     panjang ? `${panjang} m` : null,
     lebar ? `lebar ${lebar} m` : null,
   ].filter(Boolean).join(" · ");
   const wilayah = [kelurahan, kecamatan ? `Kec. ${kecamatan}` : null].filter(Boolean).join(" · ");
-  return `<div style="line-height:1.45"><strong>${value("nama")}</strong>${detail ? `<br>${detail}` : ""}${wilayah ? `<br>${wilayah}` : ""}<br><span style="opacity:.7">${escapeHtml(layer.label)}${layer.sourceVersion ? ` ${escapeHtml(layer.sourceVersion)}` : ""} · referensi ruas, bukan lokasi paket</span></div>`;
+  const nama = value("nama") || "Ruas tanpa nama";
+  return `<div style="line-height:1.45"><strong>${nama}</strong>${detail ? `<br>${detail}` : ""}${wilayah ? `<br>${wilayah}` : ""}<br><span style="opacity:.7">${escapeHtml(layer.label)}${layer.sourceRelease ? ` ${escapeHtml(layer.sourceRelease)}` : ""} · referensi ruas, bukan lokasi paket</span></div>`;
 }
 
 function tooltipHtml(
@@ -518,13 +500,6 @@ export default function MapCanvas(props: MapCanvasProps) {
   useEffect(() => {
     latestRef.current = { areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion, roadLayer };
   }, [areaStats, bands, classes, props.onSelectRegion, props.selectedPackage, props.selectedRegion, precision, roadLayer, view]);
-
-  useEffect(() => {
-    if (!roadLayer) {
-      setRoadEnabled(false);
-      setRoadError(false);
-    }
-  }, [roadLayer]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -763,7 +738,6 @@ export default function MapCanvas(props: MapCanvasProps) {
 
     const controller = new AbortController();
     let cancelled = false;
-    setRoadError(false);
 
     fetch(layer.url, { signal: controller.signal })
       .then((response) => {
@@ -798,6 +772,7 @@ export default function MapCanvas(props: MapCanvasProps) {
             minzoom: 14,
             layout: {
               "text-field": ["coalesce", ["get", layer.fields.nama], ""],
+              "text-font": ["Noto Sans Regular"],
               "text-size": 10,
               "text-offset": [0, -0.9],
               "text-anchor": "bottom",
@@ -985,7 +960,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         {roadLayer ? (
           <button
             type="button"
-            onClick={() => setRoadEnabled((current) => !current)}
+            onClick={() => { setRoadError(false); setRoadEnabled((current) => !current); }}
             aria-pressed={roadEnabled}
             title={roadEnabled ? "Sembunyikan jaringan jalan" : "Tampilkan jaringan jalan sebagai referensi"}
             className={`border-l border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
@@ -1036,7 +1011,8 @@ export default function MapCanvas(props: MapCanvasProps) {
             <p>
               {roadEnabled ? "Garis abu-abu = " : "Tombol “Jaringan jalan” menampilkan "}
               {roadLayer.label}
-              {roadLayer.sourceVersion ? ` ${roadLayer.sourceVersion}` : ""} · {roadLayer.attribution}.
+              {roadLayer.sourceRelease ? ` ${roadLayer.sourceRelease}` : ""} · {roadLayer.attribution}
+              {roadLayer.license === "ODbL-1.0" ? " · lisensi ODbL-1.0" : ""}.
               {" "}Ruas hanya referensi, bukan lokasi atau penaut paket.
             </p>
           ) : null}

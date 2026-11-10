@@ -346,9 +346,20 @@ model RoadPackage {
 model RoadSegment {
   id                String                                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   regionId          String                                  @map("region_id") @db.VarChar(64)
+  /**
+   * GERS id Overture; bukan nomor ruas kota.
+   */
   sourceObjectId    String                                  @map("source_object_id") @db.VarChar(64)
-  name              String                                  @db.Text
+  /**
+   * `names.primary`; null bila Overture tidak memberi nama.
+   */
+  name              String?                                 @db.Text
+  /**
+   * Overture tidak menyediakan nomor ruas resmi.
+   */
   number            String?                                 @db.VarChar(80)
+  roadClass         String                                  @map("road_class") @db.VarChar(40)
+  surface           String?                                 @db.VarChar(40)
   lengthM           Decimal?                                @map("length_m") @db.Decimal(12, 2)
   widthM            Decimal?                                @map("width_m") @db.Decimal(8, 2)
   districtNames     String[]                                @default([]) @map("district_names")
@@ -356,6 +367,8 @@ model RoadSegment {
   geometry          Unsupported("geometry(Geometry, 4326)")
   sourceName        String                                  @map("source_name") @db.VarChar(120)
   sourceUrl         String?                                 @map("source_url") @db.Text
+  sourceRelease     String                                  @map("source_release") @db.VarChar(40)
+  license           String                                  @db.VarChar(40)
   sourceRetrievedAt DateTime                                @map("source_retrieved_at") @db.Timestamptz(6)
   datasetVersion    String                                  @map("dataset_version") @db.VarChar(120)
   isActive          Boolean                                 @default(true) @map("is_active")
@@ -366,6 +379,7 @@ model RoadSegment {
 
   @@unique([regionId, sourceObjectId])
   @@index([regionId, name])
+  @@index([regionId, roadClass])
   @@index([regionId, isActive])
   @@map("road_segments")
 }
@@ -390,7 +404,8 @@ model Report {
   roadSegmentId         String?                               @map("road_segment_id") @db.Uuid
   roadNameSnapshot      String?                               @map("road_name_snapshot") @db.Text
   roadNumberSnapshot    String?                               @map("road_number_snapshot") @db.VarChar(80)
-  roadSourceVersion     String?                               @map("road_source_version") @db.VarChar(120)
+  roadClassSnapshot     String?                               @map("road_class_snapshot") @db.VarChar(40)
+  roadSourceRelease     String?                               @map("road_source_release") @db.VarChar(40)
   locationSource        ReportLocationSource                  @default(UNKNOWN) @map("location_source")
   locationHint          String?                               @map("location_hint") @db.VarChar(180)
   submittedAt           DateTime                              @default(now()) @map("submitted_at") @db.Timestamptz(6)

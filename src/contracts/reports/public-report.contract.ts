@@ -26,9 +26,14 @@ export const publicReportItemSchema = z.object({
 export const publicReportDetailSchema = publicReportItemSchema.extend({
   rwCode: z.string().nullable(),
   road: z.object({
-    name: z.string(),
+    name: z.string().nullable(),
     number: z.string().nullable(),
+    roadClass: z.string().nullable(),
     sourceObjectId: z.string().nullable(),
+    geometry: z.object({
+      type: z.enum(["LineString", "MultiLineString"]),
+      coordinates: z.array(z.unknown()),
+    }).nullable(),
   }).nullable(),
   point: z.object({
     latitude: z.number(),

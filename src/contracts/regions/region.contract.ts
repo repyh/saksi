@@ -18,9 +18,9 @@ export interface RegionBoundaryFields {
 
 /** Properti layer GeoJSON jaringan jalan yang dipakai klien; `null` bila region tidak punya layer. */
 export interface RegionRoadLayerFields {
-  objectid: string;
+  id: string;
   nama: string;
-  nomor: string;
+  kelas: string;
   panjang: string;
   lebar: string;
   kecamatan: string;
@@ -31,7 +31,8 @@ export interface RegionRoadLayer {
   url: string;
   label: string;
   attribution: string;
-  sourceVersion: string | null;
+  license: string;
+  sourceRelease: string | null;
   fields: RegionRoadLayerFields;
 }
 

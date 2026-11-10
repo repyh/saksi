@@ -38,8 +38,13 @@ export const reportReviewDetailSchema = reportReviewQueueItemSchema.extend({
   }).nullable(),
   road: z.object({
     id: z.string(),
-    name: z.string(),
+    name: z.string().nullable(),
     number: z.string().nullable(),
+    roadClass: z.string().nullable(),
+    geometry: z.object({
+      type: z.enum(["LineString", "MultiLineString"]),
+      coordinates: z.array(z.unknown()),
+    }).nullable(),
   }).nullable(),
 });
 

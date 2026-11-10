@@ -236,10 +236,11 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
     const artJalan = artifactByKey.get(jalanSumber.key);
     for (const fitur of data.jalan?.baris ?? []) {
       const p = fitur?.properties ?? {};
-      const objectId = String(p.objectid ?? "").trim();
-      const nama = String(p.nama ?? p.namobj ?? "").trim();
+      const objectId = String(p.id ?? fitur?.id ?? "").trim();
+      const nama = String(p.nama ?? "").trim() || null;
+      const kelas = String(p.kelas ?? "").trim();
       const geometry = geometriGaris(fitur?.geometry);
-      if (!objectId || !nama || !geometry) {
+      if (!objectId || !kelas || !geometry) {
         jalanDitolak += 1;
         continue;
       }
@@ -256,16 +257,20 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
         region_id: region.id,
         source_object_id: objectId,
         name: nama,
-        number: p.nomor ? String(p.nomor).trim() || null : null,
+        number: null,
+        road_class: kelas,
+        surface: p.permukaan ? String(p.permukaan).trim() || null : null,
         length_m: angka(p.panjang),
         width_m: angka(p.lebar),
         district_names: daftar(p.kecamatan),
         village_names: daftar(p.kelurahan),
         geometry: JSON.stringify(geometry),
-        source_name: jalanSumber.name,
-        source_url: jalanSumber.endpoint ?? region.jalan?.layanan ?? null,
+        source_name: "Overture",
+        source_url: jalanSumber.endpoint ?? "https://overturemaps.org/",
+        source_release: region.jalan?.release ?? "terbaru",
+        license: region.jalan?.lisensi ?? "ODbL-1.0",
         source_retrieved_at: artJalan?.retrievedAt ?? sekarang,
-        dataset_version: region.jalan?.versi ?? region.metadata.snapshot,
+        dataset_version: region.jalan?.release ?? region.metadata.snapshot,
         is_active: true,
         updated_at: sekarang,
       });

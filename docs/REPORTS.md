@@ -1,6 +1,6 @@
 # Road damage reports
 
-**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, dates, and package reference — never identity, description, location hint, precise location, or photos. Evidence review is not implemented; public photo access is deliberately disabled. Report photos are retained for 365 days from submission (180 days after rejection/withdrawal/archive) and deleted by `npm run retention:reports`; the scheduler lives in `src/instrumentation.ts` (systemd timer remains an alternative). The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
+**Status (9 November 2026):** Prisma models, the report submission API, authenticated account history, and the `/laporan` submit interaction are implemented. Staff with `reports.read_queue` can view a paginated review queue at `/api/reports/review` and in Dashboard → Review Laporan. The queue omits report descriptions, location hints, media references, and reporter identity. Staff with `reports.change_status` can publish or reject a report with a mandatory reason; each change appends a `ReportStatusEvent`. `GET /api/reports/public` and `/laporan/publik` expose only `PUBLISHED` reports with damage type, coarse size, area, road name, dates, and package reference — never identity, description, location hint, or photos. Precise points are stored separately: they appear on the public detail page only with reporter consent and are otherwise visible only to staff with `reports.read_precise_location`. Evidence review is not implemented; public photo access is deliberately disabled. Report photos are retained for 365 days from submission (180 days after rejection/withdrawal/archive) and deleted by `npm run retention:reports`; the scheduler lives in `src/instrumentation.ts` (systemd timer remains an alternative). The report migration and private WebP-only `report-evidence` bucket are configured. Submission and moderation were verified end to end on 8–9 November 2026 (see the verification section below); the test account, report, and events were removed afterwards.
 
 This document defines the report domain model for the four-step **Laporkan Jalan** flow. The schema and migration establish the persistence foundation for source-aware packages, administrative areas, reports, media metadata, package references, and moderation history. They do not authorize server upload or publication; the open decisions below must be settled before those features ship.
 
@@ -11,7 +11,8 @@ The current form collects:
 - One road-damage photo. The browser checks its JPEG/PNG/WebP signature and re-encodes it locally as WebP, up to 1024 px. The local object URL is a preview only; on submit, the sanitised WebP is uploaded to the private bucket as report evidence.
 - One required damage category: pothole, crack, subsidence, standing water, blocked drainage, damaged bridge, or other.
 - Optional observed causes (multiple choices), coarse size, and a description of up to 500 characters.
-- An optional RW/kelurahan area, optionally determined from device location. Exact GPS coordinates are used to find the RW and then discarded.
+- A primary location: a precise map point from device GPS, a draggable pin, or Photon address search. The server validates the point against the region and derives RW → kelurahan → kecamatan with PostGIS. A manual RW/kelurahan area or package reference remains a fallback when no point is available.
+- An optional road segment from the Overture layer. The segment is an annotation only; a segment that does not intersect the point produces a warning, not a rejection.
 - An optional location landmark of up to 180 characters.
 - An optional RUP package reference. The current package candidate ranking is a UI aid, not proof of a contractual link.
 
@@ -97,12 +98,12 @@ The submitted report and its current workflow state.
 | `districtNameSnapshot` | nullable string | Preserve the displayed kecamatan. |
 | `rwCodeSnapshot` | nullable string | Preserve RW code where applicable. |
 | `areaDatasetVersion` | nullable string | Boundary dataset/version used to resolve the area. |
-| `locationSource` | enum | `MANUAL_AREA`, `DEVICE_RESOLVED_AREA`, `PACKAGE_REFERENCE_ONLY`, `UNKNOWN`. Never means exact GPS was saved. |
+| `locationSource` | enum | `MANUAL_AREA`, `DEVICE_RESOLVED_AREA`, `DEVICE_GEOLOCATION`, `MAP_PIN`, `ADDRESS_GEOCODE`, `PACKAGE_REFERENCE_ONLY`, `UNKNOWN`. Titik presisi disimpan terpisah di `locationPoint`. |
 | `locationHint` | nullable string, max 180 chars | Optional road/landmark text. Keep private until moderation; do not publish raw by default. |
 | `submittedAt` | timestamp | Submission time, separate from local draft timestamps. |
 | `createdAt`, `updatedAt` | timestamps | Database-managed. |
 
-Device coordinates are not part of this model. If a future product version supports a precise map pin, it needs a separate, explicit consent decision and a distinct sensitive-location permission.
+Device coordinates are stored in `locationPoint` together with `locationAccuracyM`, `publicLocationConsent`, and road snapshots (`roadNameSnapshot`, `roadNumberSnapshot`, `roadClassSnapshot`, `roadSourceRelease`). The point is always retained for authorized staff; `publicLocationConsent` only controls the public projection. See the section below for the access and consent rules.
 
 ### `ReportMedia`
 
@@ -206,6 +207,34 @@ Staff review, sensitive media access, publishing, and export must be separate pe
 - **Deletion:** `npm run retention:reports` removes expired objects from the private bucket and sets `deleted_at`. `npm run retention:reports:dry` prints candidates without deleting. The job is idempotent and safe to rerun.
 - **Schedule:** penjadwal di dalam Next menjalankan retensi 03:15 Asia/Jakarta (`INGEST_SCHEDULER_RETENTION`, lihat `docs/INGESTION.md`); alternatifnya `deploy/systemd/saksi-report-retention.timer`. Pakai env server yang sama dengan ingestion (`/etc/saksi/ingestion.env`) agar kredensial database dan service role tetap server-only.
 - **Audit:** report rows, status events, and moderation reasons remain after photo deletion; only the private object and its `deleted_at` marker change.
+
+## Precise location, consent, and road annotation (10 November 2026)
+
+- **Submission.** The report contract accepts `latitude`, `longitude`, `accuracyM`,
+  `publicLocationConsent`, `roadSegmentId`, and `locationSource`. `latitude` and `longitude` must be
+  sent together; point sources are `DEVICE_GEOLOCATION`, `MAP_PIN`, and `ADDRESS_GEOCODE`.
+- **Server validation.** `resolveReportLocation` rejects a point outside the region with
+  `REPORT_POINT_OUTSIDE_REGION`. It derives RW → kelurahan → kecamatan from
+  `administrative_areas` with PostGIS `ST_Contains`; the client cannot submit an internal `areaKey`
+  to override a point. If the point resolves only to a kelurahan or kecamatan, the report stores
+  that snapshot and no RW foreign key.
+- **Road segment.** `roadSegmentId` must belong to the same region and be active. The server stores
+  `roadNameSnapshot`, `roadNumberSnapshot`, `roadClassSnapshot`, and `roadSourceRelease`. A segment
+  that does not intersect the point is **not** rejected; the UI shows a warning and still allows
+  submission.
+- **Consent.** `publicLocationConsent` defaults to `true`, is pre-checked in the form with an
+  explicit privacy warning, and can be opted out before submission. It cannot be changed after
+  submission. The precise point is always stored; opt-out only removes it from the public projection.
+- **Public projection.** `/laporan/publik` cards never show a point. `/laporan/publik/[publicCode]`
+  shows the point only when consent is true and the report is `PUBLISHED`; it also shows the road
+  name/class and the full Overture layer with the selected segment highlighted. The public projection
+  never includes description, location hint, photo, reporter identity, or internal area id.
+- **Staff access.** `GET /api/reports/review/[reportId]` returns the point and road geometry only
+  for actors with `reports.read_precise_location`. Every response that includes a point writes
+  `report.precise_location.read` to `AuthorizationAuditEvent`. Without the permission, the API
+  returns `location: null`, `road: null`, and `preciseLocationAccess: false`.
+- **Retention.** Precise points follow the report record; they are not deleted by photo retention.
+  Removing or coarsening points requires a separate retention decision.
 
 ## Decisions still required before deployment or submission
 

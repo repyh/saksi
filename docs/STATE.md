@@ -98,6 +98,8 @@ diisi, tampilan membaca katalog Supabase; tanpa database, repository kembali ke 
   e-purchasing.
 - `public/data/rw.geojson`, `kel.geojson`, `kec.geojson` (dari ArcGIS kota, dibuat ulang lewat
   `npm run data:kecamatan`).
+- `public/data/jalan.geojson` (snapshot Overture transportation segment, ODbL-1.0; dibuat ulang
+  lewat `npm run data:jalan`). Ini layer referensi peta, bukan lokasi paket.
 - `data/regions/kota-tangerang/{region.json,aliases.json}` — konfigurasi daerah untuk snapshot dan
   pipeline penarikan (`rup.mjs`, `realisasi.mjs`, `lpse.mjs`): path sumber, kode instansi, tahun,
   properti batas, token lokasi, host SPSE, dan alias kelurahan. Region lain cukup menambah direktori
@@ -162,8 +164,12 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,
   baris Postgres, dan objek WebP privat; data uji dihapus.
 - `/laporan/publik` + `GET /api/reports/public` — daftar laporan **PUBLISHED** per region/paket/
-  kecamatan/kelurahan; hanya jenis kerusakan, ukuran kasar, wilayah, tanggal, dan tautan paket.
-  Tidak memuat identitas pelapor, deskripsi, petunjuk lokasi, lokasi presisi, atau foto.
+  kecamatan/kelurahan; hanya jenis kerusakan, ukuran kasar, wilayah, ruas, tanggal, dan tautan paket.
+  Tidak memuat identitas pelapor, deskripsi, petunjuk lokasi, lokasi presisi, atau foto. Kartu daftar
+  menaut ke `/laporan/publik/[publicCode]`; titik presisi hanya muncul di detail bila pelapor opt-in.
+- `/laporan/publik/[publicCode]` — detail `PUBLISHED` dengan peta Overture, ruas terpilih, dan titik
+  opsional; `robots: noindex`. `/api/reports/review/[reportId]` mengembalikan titik/ruas hanya untuk
+  `reports.read_precise_location` dan mencatat audit akses.
 - `/` — eksplorasi anggaran: `buildBudgetExplorer()` (`src/server/packages/budget-explorer.ts`)
   membagi paket per tahun → dekade pagu (D1–D10) → jenis pekerjaan, dengan tautan peta yang membawa
   `tahun`, `kelompok`, `jenis`, dan `lokasi`; `BudgetExplorer` menampilkan chart konsentrasi, median,
@@ -313,7 +319,7 @@ tidak menuntut `DATABASE_URL`).
 - **Node:** v26.8.1 di mesin pengembangan; `.nvmrc` menunjuk 24. Lockfile belum dilacak git.
 - **Build:** `PASS` — `npm run build` sukses tanpa `DATABASE_URL`.
 - **Lint/Type:** `PASS` — `eslint .` dan `tsc --noEmit` tanpa temuan.
-- **Test:** `PASS` — `bun test` 32 lulus, 0 gagal (4 berkas).
+- **Test:** `PASS` — `bun test` 41 lulus, 0 gagal (6 berkas).
 - **Profil produksi:** `PASS` — `npm run profile` pada `next start` ber-`DATABASE_URL`; p50 katalog
   dan API berada di bawah target, 8 request paralel p95 411 ms. Rincian angka ada di §2.5.
 - **Database:** opsional untuk build. Tanpa `DATABASE_URL`, auth menjawab `503` dan data paket
@@ -338,3 +344,24 @@ tidak menuntut `DATABASE_URL`).
    gabungan; istilah tetap "paket dengan laporan kerusakan dalam masa pemeliharaan".
 8. **Ditolak dan jangan dihidupkan lagi:** NLP ekstraksi lokasi, CV klasifikasi kerusakan,
    Google Places (larangan cache/store), nama ruas sebagai anchor.
+
+## 6. Layer Jalan Overture dan Lokasi Laporan (10 November 2026)
+
+- Sumber layer jalan adalah **Overture Maps transportation segment** (rilis dipin di
+  `data/regions/kota-tangerang/region.json`), bukan layer ArcGIS jalan. ArcGIS tetap dipakai untuk
+  batas administrasi. Lisensi ODbL-1.0 dan atribusi dijelaskan di `docs/DATA-LICENSE.md`.
+- Snapshot `public/data/jalan.geojson` dihasilkan `npm run data:jalan` (Overture CLI + clip Shapely),
+  lalu diimpor worker sebagai `ROAD_NETWORK` ke `road_segments`. Segmen yang hilang dinonaktifkan,
+  bukan dihapus.
+- Peta pekerjaan memiliki toggle **Jaringan jalan** yang mati secara bawaan. Ruas hanya referensi:
+  klik/hover menampilkan atribut, bukan tautan/filter paket.
+- Laporan warga memiliki titik presisi (GPS/pin/Photon), consent publik, dan anotasi ruas. Titik
+  wajib di dalam region; wilayah diturunkan server via PostGIS. Titik publik hanya tampil di detail
+  bila consent; staf dengan `reports.read_precise_location` melihat titik dan setiap akses diaudit.
+- Halaman `/laporan/publik/[publicCode]` menampilkan detail `PUBLISHED` dengan peta Overture dan
+  titik opsional, tanpa deskripsi/hint/foto/identitas/area id.
+- Angka segmen, coverage nama, rilis, dan checksum ada di `manifest.metrik.jalan` /
+  `npm run db:verify`; jangan menyalinnya ke dokumen.
+- Verifikasi terakhir: `npm run lint`, `npm run build` tanpa `DATABASE_URL`, `bun test`,
+  `prisma migrate deploy`, worker `--sources jalan` dua kali, `db:verify`, dan uji titik/consent
+  laporan. Rincian ada di `docs/INGESTION.md` dan `docs/REPORTS.md`.

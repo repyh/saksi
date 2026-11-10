@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import type { LineString, MultiLineString } from "geojson";
 import { FiCheck, FiFileText, FiRefreshCw, FiX } from "react-icons/fi";
+import type { RegionSummary } from "@/contracts/regions/region.contract";
+import ReportLocationMap from "@/features/reports/components/report-location-map";
 import type { ApiResult } from "@/contracts/shared/api.contract";
 import {
   reportReviewDetailSchema,
@@ -118,7 +121,8 @@ async function fetchReviewDetail(reportId: string, signal?: AbortSignal) {
   return parsed.data;
 }
 
-export function ReportReviewQueue({ active, canViewDetails, canViewEvidence, canChangeStatus }: {
+export function ReportReviewQueue({ region, active, canViewDetails, canViewEvidence, canChangeStatus }: {
+  region: RegionSummary;
   active: boolean;
   canViewDetails: boolean;
   canViewEvidence: boolean;
@@ -478,7 +482,33 @@ export function ReportReviewQueue({ active, canViewDetails, canViewEvidence, can
                       <div><dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Dikirim</dt><dd className="mt-1 text-sm">{formatDate(selectedDetail.submittedAt)}</dd></div>
                       <div><dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Wilayah</dt><dd className="mt-1 text-sm">{[selectedDetail.areaName, selectedDetail.districtName].filter(Boolean).join(" · ") || "Tidak dicantumkan"}</dd></div>
                       <div><dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Paket rujukan</dt><dd className="mt-1 text-sm">{selectedDetail.package ? `RUP ${selectedDetail.package.rup} · ${selectedDetail.package.name}` : "Tidak ditautkan"}</dd></div>
+                      <div><dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Titik publik</dt><dd className="mt-1 text-sm">{selectedDetail.publicLocationConsent ? "Pelapor mengizinkan" : "Pelapor menyembunyikan"}</dd></div>
                     </dl>
+                    <section aria-labelledby="report-review-location" className="grid gap-2 lg:col-span-2">
+                      <h4 id="report-review-location" className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Lokasi presisi</h4>
+                      {selectedDetail.preciseLocationAccess ? (
+                        selectedDetail.location || selectedDetail.road ? (
+                          <ReportLocationMap
+                            region={region}
+                            point={selectedDetail.location ? { ...selectedDetail.location, accuracyM: selectedDetail.location.accuracyM } : null}
+                            readOnly
+                            selectedRoad={selectedDetail.road?.geometry ? {
+                              id: selectedDetail.road.id,
+                              name: selectedDetail.road.name,
+                              geometry: selectedDetail.road.geometry as LineString | MultiLineString,
+                            } : null}
+                            label="Titik presisi laporan; hanya terlihat oleh staf berizin."
+                            className="h-[300px]"
+                          />
+                        ) : (
+                          <p className="bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">Laporan ini tidak memiliki titik koordinat atau ruas.</p>
+                        )
+                      ) : (
+                        <p className="bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
+                          Lokasi presisi tidak tersedia untuk akun ini. Minta izin <span className="font-mono">reports.read_precise_location</span> bila memang diperlukan.
+                        </p>
+                      )}
+                    </section>
                     <section aria-labelledby="report-review-observations" className="grid gap-2">
                       <h4 id="report-review-observations" className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Rincian laporan</h4>
                       <p className="text-sm leading-6"><span className="font-semibold">Ukuran kasar:</span> {selectedDetail.coarseSize ? sizeLabels[selectedDetail.coarseSize] : "Tidak dipilih"}</p>

@@ -76,6 +76,17 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
     database (auth, simpan laporan) hanya aktif bila env itu ada.
 12. **Format angka Indonesia**: ribuan bertitik, desimal berkoma, mis. `1.234`, `86,5%`, `Rp1,23 Miliar`.
     Nilai angkanya sendiri tidak ditulis di dokumen; lihat manifest region.
+13. **Titik laporan ≠ pin paket.** Laporan warga boleh punya titik koordinat presisi (GPS/pin/alamat)
+    dan ruas Overture sebagai anotasi. Paket pekerjaan tetap tidak punya titik/pin; peta paket tetap
+    koroplet batas wilayah. Jangan menautkan klik ruas ke paket atau filter paket.
+14. **Consent titik publik.** Titik presisi disimpan untuk staf, tetapi hanya tampil di halaman publik
+    bila pelapor memilih **Tampilkan titik ini di halaman publik** (pre-checked, dapat opt-out).
+    Opt-out tidak menghapus titik dari database; staf berizin tetap melihatnya.
+15. **Akses presisi.** Titik presisi dan geometri ruas laporan hanya dikembalikan ke aktor dengan
+    `reports.read_precise_location`; setiap akses titik dicatat di `AuthorizationAuditEvent`.
+16. **Lisensi layer jalan ODbL.** Layer jalan bersumber Overture/OSM dengan lisensi **ODbL-1.0**.
+    Atribusi `© OpenStreetMap contributors, Overture Maps Foundation (ODbL)` wajib di peta dan
+    dokumentasi; lihat `docs/DATA-LICENSE.md`. Jangan memakai layer ArcGIS jalan sebagai sumber.
 
 ## Konvensi repo
 
@@ -122,6 +133,7 @@ pemeriksaan yang menuntut Postgres di jalur build.
 | `docs/ARCHITECTURE.md` | batas frontend/backend, API, repository, database, worker, tahapan |
 | `docs/DATABASE.md` | ERD ingestion multi-region, kunci unik, FK, index, provenance, retensi |
 | `docs/INGESTION.md` | worker, lock/retry/log, riwayat run, penjadwal Next/systemd/GitHub Actions, runbook |
+| `docs/DATA-LICENSE.md` | lisensi ODbL layer Overture/OSM, atribusi, kewajiban distribusi |
 | `docs/PRODUCT.md` | produk, masalah, sasaran, dan batas interpretasi |
 | `docs/DESIGN.md` | sistem visual dan aturan antarmuka |
 | `docs/HANDOFF.md` | status operasional dan keputusan kerja |

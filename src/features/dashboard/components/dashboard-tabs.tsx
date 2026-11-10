@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiArrowUpRight, FiBriefcase, FiEdit2, FiFileText, FiLogOut, FiMap, FiRefreshCw, FiX } from "react-icons/fi";
 import type { DashboardAccount } from "@/contracts/account/dashboard.contract";
+import type { RegionSummary } from "@/contracts/regions/region.contract";
 import type { ApiResult } from "@/contracts/shared/api.contract";
 import { myReportsResponseSchema, type MyReportSummary, type MyReportsResponse } from "@/contracts/reports/report-history.contract";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -172,7 +173,7 @@ const workspaces = [
   },
 ];
 
-export function DashboardTabs({ account }: { account: DashboardAccount }) {
+export function DashboardTabs({ account, region }: { account: DashboardAccount; region: RegionSummary }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("workspace");
   const hasAccountManagementAccess = account.dashboardPermissions.manageAccounts;
@@ -485,7 +486,7 @@ export function DashboardTabs({ account }: { account: DashboardAccount }) {
         {canViewReportQueue && (
           <TabsContent value="report-moderation" className="m-0">
             <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Review Laporan</h2>
-            <ReportReviewQueue active={activeTab === "report-moderation"} canViewDetails={canViewReportDetails} canViewEvidence={canViewReportEvidence} canChangeStatus={canChangeReportStatus} />
+            <ReportReviewQueue region={region} active={activeTab === "report-moderation"} canViewDetails={canViewReportDetails} canViewEvidence={canViewReportEvidence} canChangeStatus={canChangeReportStatus} />
           </TabsContent>
         )}
       </section>

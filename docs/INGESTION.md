@@ -16,7 +16,7 @@ npm run db:verify -- --region kota-tangerang
 |---|---|
 | `--region <id>` | direktori `data/regions/<id>` (bawaan `kota-tangerang`) |
 | `--dry-run` | baca, normalisasi, validasi, gate ke snapshot sementara; tidak menulis DB/berkas/manifest |
-| `--sources rup,detail,realisasi,lpse,boundaries` | batasi modul yang diimpor/di-refresh |
+| `--sources rup,detail,realisasi,lpse,boundaries,jalan` | batasi modul yang diimpor/di-refresh |
 | `--refresh` | jalankan penarik sumber (`scripts/rup.mjs`, `realisasi.mjs`, `lpse.mjs`) sebelum impor |
 | `--trigger manual\|cron\|backfill` | label `ingestion_runs.trigger` |
 | `--simulate-failure <stage>` | uji jalur gagal: `fetch`, `normalize`, `validate`, `before-commit`, `after-commit`, `snapshot` |
@@ -37,6 +37,9 @@ npm run ingest:worker -- --region kota-tangerang --sources realisasi,lpse
 
 # Uji kegagalan sebelum commit: run tercatat FAILED, data aktif tidak berubah
 npm run ingest:worker -- --region kota-tangerang --simulate-failure before-commit
+
+# Hanya layer jaringan jalan; tidak menuntut berkas RUP/detail
+npm run ingest:worker -- --region kota-tangerang --sources jalan
 ```
 
 `--sources` membatasi modul yang ditulis. Untuk bootstrap penuh atau verifikasi rekonsiliasi,
@@ -66,7 +69,8 @@ worker. Setiap berkas menjadi satu artefak:
 - `data/realisasi_kota_tangerang.json` → `REALISASI`;
 - `data/lpse_kota_tangerang_2025_2026.json` → `LPSE` (kontrak tercocok);
 - `data/lpse/rows.json` + `details.jsonl` → `LPSE` (baris mentah, termasuk yang tidak cocok);
-- `public/data/{rw,kel,kec}.geojson` → `BOUNDARY`.
+- `public/data/{rw,kel,kec}.geojson` → `BOUNDARY`;
+- `public/data/jalan.geojson` → `ROAD_NETWORK` (Overture transportation segment, ODbL-1.0).
 
 Jumlah baris tiap artefak dicatat di `source_artifacts` dan direkap di
 `data/regions/<id>/manifest.json`; jangan menyalinnya ke dokumen. Berkas detail RUP harus mencakup
@@ -247,3 +251,85 @@ baris realisasi, batas, raw, duplikat, checksum snapshot, dan riwayat run.
   kebijakan retensi/penonaktifan eksplisit. Snapshot publik tetap menjadi sumber tampilan.
 - Run parsial (`--sources`) hanya untuk refresh/inspeksi, bukan untuk menilai rekonsiliasi penuh.
 - Deployment cron, secret produksi, dan merge/push tidak dilakukan di sesi ini.
+
+## 9. Layer Jaringan Jalan Overture
+
+Sumber `ROAD_NETWORK` memakai **Overture Maps transportation segment**, bukan layer ArcGIS jalan.
+Konfigurasi ada di `data/regions/<id>/region.json` pada kunci `jalan`.
+
+### Prasyarat
+
+```bash
+# salah satu jalur CLI; script mencoba overturemaps, lalu uvx, lalu pipx
+pip install overturemaps
+# atau
+uvx overturemaps --version
+# clip memakai Shapely di lingkungan sementara uv
+uv run --with shapely python3 --version
+```
+
+Rilis dipin di `jalan.release`; bila kosong, script memakai `overturemaps releases latest` dan
+mencatatnya di manifest. Rilis yang dipakai saat ini: **2026-10-21.0**.
+
+### Perintah
+
+```bash
+npm run data:jalan -- --region kota-tangerang
+npm run data:jalan -- --region kota-tangerang --check
+```
+
+Langkah script:
+
+1. hitung bbox dari `public/data/kec.geojson` (atau `jalan.bbox` bila diisi);
+2. unduh `--type=segment -f geojson` ke direktori sementara;
+3. buang `subtype != road`, kelas `unknown`/`steps`/pejalan kaki, dan duplikat GERS;
+4. petakan GERS id, `names.primary`, `class`, `road_surface`, `width_rules`, geometri;
+5. clip ke batas kecamatan dengan Shapely, sederhanakan, bulatkan koordinat;
+6. hitung panjang, spatial join kecamatan/kelurahan, tulis `public/data/jalan.geojson`;
+7. validasi GERS id unik, geometri garis, dan coverage nama.
+
+`widthM` hanya diisi bila `width_rules` berupa satu aturan numerik tanpa segmen bersyarat.
+`number` selalu `null` karena Overture tidak memiliki nomor ruas kota.
+
+### Worker dan jadwal
+
+```bash
+# impor layer saja; tidak memerlukan berkas RUP
+npm run ingest:worker -- --region kota-tangerang --sources jalan --trigger cron
+
+# rekonsiliasi
+npm run db:verify -- --region kota-tangerang
+```
+
+Worker menandai segmen yang hilang dari snapshot sebagai `is_active=false`; laporan lama tetap
+menunjuk segmen lama. Jadwal bulanan:
+
+- GitHub Actions: `.github/workflows/ingestion-road.yml` (tanggal 1 setiap bulan, 01:00 WIB);
+- systemd: `deploy/systemd/saksi-road.{service,timer}`.
+
+Keduanya menjalankan `npm run data:jalan` → worker `--sources jalan` → `db:verify`.
+
+### Runbook
+
+- **CLI tidak tersedia** → pasang `overturemaps` (pip/uv) atau hentikan run; jangan kembali ke
+  ArcGIS.
+- **Unduhan gagal/timeout** → ulangi; script memakai direktori sementara dan tidak menulis layer
+  parsial. Untuk pengembangan, `--input <geojson>` memakai unduhan lokal yang sudah ada.
+- **Segmen turun drastis** → periksa rilis Overture dan bbox; jangan menurunkan validasi.
+- **Checksum manifest berbeda** → jalankan `npm run region:check -- --region <id> --manifest`
+  lalu worker/impor ulang.
+
+## 10. Verifikasi Layer Overture (10 November 2026)
+
+Rilis yang dipakai `2026-10-21.0` (Overture CLI 2.1.0). Angka segmen, coverage nama, ukuran berkas,
+dan checksum **tidak ditulis di dokumen**; baca `data/regions/<id>/manifest.json`
+(`metrik.jalan`, `berkas["public/data/jalan.geojson"]`) atau jalankan
+`npm run db:verify -- --region <id>`.
+
+| Uji | Hasil |
+|---|---|
+| Unduhan + filter + clip | Snapshot tertulis dan lolos gate `region:check` |
+| Validasi | GERS id unik, geometri garis, kelas terisi, lisensi ODbL-1.0 |
+| Worker `--sources jalan` dua kali | `SUCCEEDED`; jumlah baris tetap sama (idempoten) |
+| `db:verify` | Segmen aktif, coverage nama, rilis/lisensi, dan checksum layer cocok |
+| Uji tanpa berkas RUP | `--sources jalan` tetap berjalan dan hanya menulis `ROAD_NETWORK` |

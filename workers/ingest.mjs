@@ -97,6 +97,7 @@ for (const g of GRUP_DIPILIH) {
     process.exit(2);
   }
 }
+const HANYA_JALAN = GRUP_DIPILIH.size === 1 && GRUP_DIPILIH.has("jalan");
 const mulai = new Date();
 const owner = `${os.hostname()}:${process.pid}:${createHash("sha1").update(`${Date.now()}${Math.random()}`).digest("hex").slice(0, 10)}`;
 let log = buatLog({ level: LOG_LEVEL, konteks: { region: REGION_ID, owner, dry_run: DRY } });
@@ -550,7 +551,7 @@ async function main() {
     konteks: { region: REGION_ID, owner, dry_run: DRY, pid: process.pid, git: gitCommit },
   });
 
-  const sumber = daftarSumber(region);
+  const sumber = daftarSumber(region).filter((s) => GRUP_DIPILIH.has(s.grup));
   if (REFRESH) {
     log.info("refresh sumber dimulai", { grup: [...GRUP_DIPILIH] });
     for (const s of sumber) {
@@ -562,14 +563,14 @@ async function main() {
   }
 
   const data = await bacaSemua(sumber);
-  if (!data.rup) throw new Error(`sumber RUP wajib tersedia untuk region ${REGION_ID}`);
+  if (!data.rup && !HANYA_JALAN) throw new Error(`sumber RUP wajib tersedia untuk region ${REGION_ID}`);
   simulasi("fetch");
 
   const hasil = normalisasi({ region, sumber, data, artifactByKey: new Map() });
   simulasi("normalize");
 
   const manifestAwal = bacaManifest(region);
-  const valid = validasi({ hasil, manifest: manifestAwal });
+  const valid = validasi({ hasil, manifest: manifestAwal, hanyaJalan: HANYA_JALAN });
   if (!valid.lulus) {
     throw Object.assign(
       new Error(`validasi gagal: ${valid.masalah.slice(0, 5).join("; ")}`),
@@ -579,18 +580,22 @@ async function main() {
   log.info("validasi lulus", { metrik: valid.metrik });
   simulasi("validate");
 
-  const snapshotTeks = serialisasiSnapshot(
-    { snapshot: region.metadata.snapshot, sumber: region.metadata.sumber },
-    hasil.paket,
-  );
-  const snapshotChecksum = sha256(snapshotTeks);
-  const tempSnapshot = path.join(os.tmpdir(), `saksi-${REGION_ID}-${process.pid}-${Date.now()}.json`);
-  await writeFile(tempSnapshot, snapshotTeks);
-  try {
-    jalankanGate(tempSnapshot);
-    simulasi("gate");
-  } finally {
-    await readFile(tempSnapshot).catch(() => {});
+  let snapshotTeks = null;
+  let snapshotChecksum = null;
+  if (!HANYA_JALAN) {
+    snapshotTeks = serialisasiSnapshot(
+      { snapshot: region.metadata.snapshot, sumber: region.metadata.sumber },
+      hasil.paket,
+    );
+    snapshotChecksum = sha256(snapshotTeks);
+    const tempSnapshot = path.join(os.tmpdir(), `saksi-${REGION_ID}-${process.pid}-${Date.now()}.json`);
+    await writeFile(tempSnapshot, snapshotTeks);
+    try {
+      jalankanGate(tempSnapshot);
+      simulasi("gate");
+    } finally {
+      await readFile(tempSnapshot).catch(() => {});
+    }
   }
 
   if (DRY) {
@@ -665,7 +670,7 @@ async function main() {
 
     // Normalisasi diulang dengan artifact id supaya provenance ikut tersimpan.
     const hasilDb = normalisasi({ region, sumber, data, artifactByKey });
-    const validDb = validasi({ hasil: hasilDb, manifest: manifestAwal });
+    const validDb = validasi({ hasil: hasilDb, manifest: manifestAwal, hanyaJalan: HANYA_JALAN });
     if (!validDb.lulus) {
       throw Object.assign(new Error(`validasi DB gagal: ${validDb.masalah.slice(0, 5).join("; ")}`), {
         code: "VALIDATION_FAILED",
@@ -682,26 +687,28 @@ async function main() {
       recordCount: ditulis.rup + ditulis.detail + ditulis.road + ditulis.area + ditulis.lpse + ditulis.realisasi + ditulis.jalan,
       metadata: ditulis,
     });
-    stats.tahap = "snapshot";
-    simulasi("after-commit");
-    const finalSnapshot = path.resolve(AKAR, region.keluaran);
-    const tmpFinal = `${finalSnapshot}.tmp-${process.pid}`;
-    await mkdir(path.dirname(finalSnapshot), { recursive: true });
-    await writeFile(tmpFinal, snapshotTeks);
-    await rename(tmpFinal, finalSnapshot);
-    simulasi("snapshot");
+    if (!HANYA_JALAN) {
+      stats.tahap = "snapshot";
+      simulasi("after-commit");
+      const finalSnapshot = path.resolve(AKAR, region.keluaran);
+      const tmpFinal = `${finalSnapshot}.tmp-${process.pid}`;
+      await mkdir(path.dirname(finalSnapshot), { recursive: true });
+      await writeFile(tmpFinal, snapshotTeks);
+      await rename(tmpFinal, finalSnapshot);
+      simulasi("snapshot");
 
-    await catatStep(client, { runId, step: "snapshot", status: "RUNNING" });
-    jalankanGate(path.resolve(AKAR, region.keluaran), { manifest: true });
-    await catatStep(client, {
-      runId,
-      step: "snapshot",
-      status: "SUCCEEDED",
-      checksum: snapshotChecksum,
-      recordCount: hasilDb.roadRows.length,
-    });
+      await catatStep(client, { runId, step: "snapshot", status: "RUNNING" });
+      jalankanGate(path.resolve(AKAR, region.keluaran), { manifest: true });
+      await catatStep(client, {
+        runId,
+        step: "snapshot",
+        status: "SUCCEEDED",
+        checksum: snapshotChecksum,
+        recordCount: hasilDb.roadRows.length,
+      });
+    }
 
-    const manifest = bacaManifest(region);
+    const manifest = HANYA_JALAN ? null : bacaManifest(region);
     stats = {
       tahap: "selesai",
       snapshot_checksum: snapshotChecksum,
@@ -709,19 +716,21 @@ async function main() {
       ditulis,
       artefak: [...artifactByKey.entries()].map(([k, v]) => ({ sumber: k, checksum: v.checksum })),
     };
-    await simpanManifest(client, {
-      regionId: REGION_ID,
-      runId,
-      region,
-      snapshotChecksum,
-      gatePassed: true,
-      metrics: manifest?.metrik ?? validDb.metrik,
-      checksums: Object.fromEntries(
-        [...artifactByKey.entries()].map(([k, v]) => [k, v.checksum]),
-      ),
-    });
+    if (!HANYA_JALAN) {
+      await simpanManifest(client, {
+        regionId: REGION_ID,
+        runId,
+        region,
+        snapshotChecksum,
+        gatePassed: true,
+        metrics: manifest?.metrik ?? validDb.metrik,
+        checksums: Object.fromEntries(
+          [...artifactByKey.entries()].map(([k, v]) => [k, v.checksum]),
+        ),
+      });
+    }
     await selesaikanRun(client, { runId, stats, startedAt: mulai });
-    log.info("run sukses", { run_id: runId, metrik: validDb.metrik, pagu: rupiah(validDb.metrik.pagu), ditulis });
+    log.info("run sukses", { run_id: runId, metrik: validDb.metrik, pagu: rupiah(validDb.metrik.pagu ?? 0), ditulis });
   } catch (error) {
     if (runId) {
       await catatStep(client, {

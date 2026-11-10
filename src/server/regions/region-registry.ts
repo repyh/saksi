@@ -33,21 +33,19 @@ export interface RegionConfig {
   lpse?: { base: string; direktori: string; keluaran: string };
   realisasi?: { satker_pu?: string };
   jalan?: {
-    layanan: string;
+    sumber: "overture";
+    release?: string;
+    tipe?: string;
+    subtype?: string;
+    /** Opsional; bila kosong dihitung dari batas kecamatan/kelurahan region. */
+    bbox?: [number, number, number, number];
     berkas: string;
-    versi?: string;
     label?: string;
-    sumber?: string;
     atribusi?: string;
     lisensi?: string;
-    fields: {
-      objectid: string;
-      nama: string;
-      nomor: string;
-      panjang: string;
-      lebar: string;
-      kecamatan: string;
-      kelurahan: string;
+    filter?: {
+      kelas_dipakai?: string[];
+      kelas_dibuang?: string[];
     };
     presisi?: number;
     simplify?: number;
@@ -134,10 +132,19 @@ export function regionSummary(region: RegionConfig): RegionSummary {
     roadLayer: region.jalan && jalanUrl
       ? {
         url: jalanUrl,
-        label: region.jalan.label ?? "Jaringan jalan",
-        attribution: region.jalan.atribusi ?? region.jalan.sumber ?? "Data publik",
-        sourceVersion: region.jalan.versi ?? null,
-        fields: region.jalan.fields,
+        label: region.jalan.label ?? "Jaringan jalan Overture",
+        attribution: region.jalan.atribusi ?? "© OpenStreetMap contributors, Overture Maps Foundation (ODbL)",
+        license: region.jalan.lisensi ?? "ODbL-1.0",
+        sourceRelease: region.jalan.release ?? null,
+        fields: {
+          id: "id",
+          nama: "nama",
+          kelas: "kelas",
+          panjang: "panjang",
+          lebar: "lebar",
+          kecamatan: "kecamatan",
+          kelurahan: "kelurahan",
+        },
       }
       : null,
     center: region.batas.pusat ?? [106.63, -6.178],

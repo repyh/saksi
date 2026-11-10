@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-10T05:05:52.308Z",
+  "dibuat": "2026-11-10T06:21:18.956Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -20,8 +20,8 @@
   "berkas": {
     "data/regions/kota-tangerang/region.json": {
       "berkas": "data/regions/kota-tangerang/region.json",
-      "byte": 1898,
-      "sha256": "380e96d7714818d78a77b899cabb2b153b35e69c1d1dd5e45d99e08272012443"
+      "byte": 2088,
+      "sha256": "8e7f3bc51c2b189e4dcfc6eed28ccccb0e4ee9660f2d3a03f9f5b09decfec83b"
     },
     "data/regions/kota-tangerang/aliases.json": {
       "berkas": "data/regions/kota-tangerang/aliases.json",
@@ -70,8 +70,8 @@
     },
     "public/data/jalan.geojson": {
       "berkas": "public/data/jalan.geojson",
-      "byte": 2291958,
-      "sha256": "ca0253e0554dfa454d74a99ec39835b5c3e40edb8f404e4b556fc619d5110457"
+      "byte": 18929604,
+      "sha256": "7249540f199d7d6026a04b25af8c22b206a93457c2604da148dd2a2c132b7a4f"
     }
   },
   "metrik": {
@@ -92,10 +92,13 @@
     "unit_lingkungan_tersentuh": 585,
     "kecamatan_tersentuh": 13,
     "jalan": {
-      "fitur": 6373,
+      "fitur": 59327,
+      "bernama": 23702,
+      "tanpa_nama": 35625,
       "berkas": "public/data/jalan.geojson",
-      "versi": "2024",
-      "label": "Jaringan jalan Kota Tangerang"
+      "rilis": "2026-10-21.0",
+      "lisensi": "ODbL-1.0",
+      "label": "Jaringan jalan Overture"
     },
     "penyedia": {
       "lpse": 1431,
@@ -112,7 +115,7 @@
       "batas_kecamatan": 13,
       "batas_kelurahan": 104,
       "batas_rw": 1020,
-      "jalan": 6373
+      "jalan": 59327
     }
   },
   "masalah": []

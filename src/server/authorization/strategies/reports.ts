@@ -5,6 +5,7 @@ const reportPermissions = [
   "reports.read_queue",
   "reports.read_deidentified",
   "reports.read_sensitive_evidence",
+  "reports.read_precise_location",
 ] as const satisfies readonly PermissionCode[];
 
 export const reportsAuthorizationStrategy: AuthorizationStrategy = {

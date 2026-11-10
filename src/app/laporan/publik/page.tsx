@@ -76,8 +76,9 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
           <h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Laporan publik</h1>
           <p className="mt-3 max-w-[68ch] text-sm leading-6 text-muted-foreground sm:text-base">
             Hanya laporan yang sudah disetujui moderator yang tampil di sini. Identitas pelapor, deskripsi,
-            petunjuk lokasi, lokasi presisi, dan foto tidak pernah ditampilkan. Laporan warga adalah sinyal
-            untuk ditinjau, bukan bukti pelanggaran.
+            petunjuk lokasi, dan foto tidak pernah ditampilkan. Titik presisi hanya tampil di halaman detail
+            bila pelapor secara eksplisit memilih menampilkannya. Laporan warga adalah sinyal untuk ditinjau,
+            bukan bukti pelanggaran.
           </p>
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
             <Link href="/laporan" className="font-semibold text-primary underline-offset-4 hover:underline">
@@ -156,7 +157,11 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                   <li key={report.publicCode} className="border border-border bg-white px-4 py-4 sm:px-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="font-heading text-lg font-bold leading-6">{DAMAGE_LABELS[report.damageType] ?? report.damageType}</h2>
+                        <h2 className="font-heading text-lg font-bold leading-6">
+                          <Link href={`/laporan/publik/${encodeURIComponent(report.publicCode)}`} className="underline-offset-4 hover:underline">
+                            {DAMAGE_LABELS[report.damageType] ?? report.damageType}
+                          </Link>
+                        </h2>
                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
                           Dikirim {formatDate(report.submittedAt)}
                           {report.publishedAt ? ` · disetujui ${formatDate(report.publishedAt)}` : ""}
@@ -166,7 +171,7 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                         Disetujui untuk ditampilkan
                       </span>
                     </div>
-                    <dl className="mt-4 grid gap-3 border-t border-border/70 pt-3 text-sm sm:grid-cols-3">
+                    <dl className="mt-4 grid gap-3 border-t border-border/70 pt-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                       <div>
                         <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Ukuran kasar</dt>
                         <dd className="mt-0.5 text-foreground">{report.coarseSize ? SIZE_LABELS[report.coarseSize] : "Tidak dicantumkan"}</dd>
@@ -174,6 +179,10 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                       <div>
                         <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Wilayah</dt>
                         <dd className="mt-0.5 text-foreground">{area || "Tidak dicantumkan"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Ruas</dt>
+                        <dd className="mt-0.5 text-foreground">{report.roadName ?? "Tidak dicantumkan"}</dd>
                       </div>
                       <div>
                         <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Paket rujukan</dt>
@@ -194,6 +203,9 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                     {report.package ? (
                       <p className="mt-2 truncate text-xs text-muted-foreground">{report.package.name}</p>
                     ) : null}
+                    <Link href={`/laporan/publik/${encodeURIComponent(report.publicCode)}`} className="mt-3 inline-flex text-xs font-semibold text-primary underline-offset-4 hover:underline">
+                      Lihat detail laporan →
+                    </Link>
                   </li>
                 );
               })}

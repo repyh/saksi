@@ -94,3 +94,23 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 > - **Jangan membungkus subjudul/metadata dalam chip/pill dekoratif.**
 > - **Jangan memajang deretan kartu KPI simetris 6-kolom dengan ukuran identik.**
 > - **Jangan menaruh ikon dekoratif di pojok kartu yang tidak bisa diklik.**
+
+## Layer Jaringan Jalan dan Titik Laporan (10 November 2026)
+
+- **Toggle layer mati secara bawaan.** Label tombol: **Jaringan jalan**. Muat GeoJSON hanya setelah
+  toggle dinyalakan; jangan memuat layer jalan pada render awal peta pekerjaan.
+- **Garis netral, bukan koroplet.** Warna `#6B7280` dengan opasitas ±0,62; lebar mengikuti `lebar`
+  (batas 0,7–3,2 px). Jangan memakai kuning/merah koroplet untuk ruas.
+- **Label hanya pada zoom dekat.** Nama ruas tampil pada zoom ≥14; label memakai halo putih tipis.
+- **Popup ruas** memuat nama, kelas, panjang, lebar, kecamatan/kelurahan bila tersedia, dan kalimat
+  “Referensi ruas, bukan lokasi paket”. Klik ruas tidak menautkan atau memfilter paket.
+- **Atribusi wajib:** `© OpenStreetMap contributors, Overture Maps Foundation (ODbL)` dan lisensi
+  `ODbL-1.0` di legenda/kontrol layer serta halaman detail publik.
+- **Marker laporan** memakai pin amber `#D97706` yang dapat digeser. Lingkaran akurasi GPS memakai
+  garis biru tipis `#0058A3` dengan isi 12% opasitas.
+- **Ruas terpilih** disorot casing putih + garis amber `#B45309` selebar 4 px, di atas layer jalan.
+- **Label konteks publik:** “Titik laporan warga, belum diverifikasi. Bukan lokasi paket.”
+- **Halaman publik** menampilkan seluruh layer jalan kota; kartu daftar publik tidak menampilkan
+  titik. Halaman detail publik memakai `robots: noindex`.
+- **Jangan berpura-pura presisi paket.** Layer jalan adalah referensi/anotasi; paket tetap ditampilkan
+  sebagai batas wilayah, bukan pin.

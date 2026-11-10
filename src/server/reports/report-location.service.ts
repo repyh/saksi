@@ -14,9 +14,10 @@ export type ReportPoint = {
 
 export type ReportRoadReference = {
   id: string;
-  name: string;
+  name: string | null;
   number: string | null;
-  sourceVersion: string;
+  roadClass: string;
+  sourceRelease: string;
 };
 
 export type ResolvedReportLocation = {
@@ -125,7 +126,7 @@ export async function resolveReportLocation(input: {
   if (input.roadSegmentId) {
     const segment = await prisma.roadSegment.findFirst({
       where: { id: input.roadSegmentId, regionId: input.regionId, isActive: true },
-      select: { id: true, name: true, number: true, datasetVersion: true },
+      select: { id: true, name: true, number: true, roadClass: true, sourceRelease: true },
     });
     if (!segment) {
       throw new ApiError(422, "UNKNOWN_ROAD_SEGMENT", "Ruas jalan yang dipilih tidak ditemukan pada data terbaru.");
@@ -134,7 +135,8 @@ export async function resolveReportLocation(input: {
       id: segment.id,
       name: segment.name,
       number: segment.number,
-      sourceVersion: segment.datasetVersion,
+      roadClass: segment.roadClass,
+      sourceRelease: segment.sourceRelease,
     };
   }
 

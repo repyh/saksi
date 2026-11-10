@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchRoadPackages } from "@/features/map/package-api";
@@ -9,8 +9,16 @@ import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib
 import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
 import { simulationBadgeEnabled } from "@/lib/flags";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
+import type { LineString, MultiLineString } from "geojson";
+import type { RegionSummary } from "@/contracts/regions/region.contract";
+import type { RoadSegment } from "@/contracts/reports/road-search.contract";
+import type { GeocodeResult } from "@/contracts/reports/geocode.contract";
+import { isPointNearRoad } from "@/contracts/reports/location";
 import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
+import { AddressSearch } from "./address-search";
+import { RoadSearch } from "./road-search";
+import ReportLocationMap, { type ReportMapFocus } from "./report-location-map";
 
 const STEPS = ["Foto", "Kerusakan", "Lokasi & paket", "Sukses"] as const;
 const DAMAGE_TYPES = [
@@ -58,6 +66,29 @@ type AreaOption = {
   rw: string;
   geometry: AreaGeometry;
 };
+
+type AdminArea = {
+  id: string;
+  level: "RW" | "KELURAHAN" | "KECAMATAN";
+  district: string;
+  village: string | null;
+  rw: string | null;
+  geometry: AreaGeometry;
+};
+
+type ReportPointState = { latitude: number; longitude: number; accuracyM: number | null };
+type ReportLocationSourceState =
+  | "MANUAL_AREA"
+  | "DEVICE_RESOLVED_AREA"
+  | "DEVICE_GEOLOCATION"
+  | "MAP_PIN"
+  | "ADDRESS_GEOCODE";
+
+function areaLabelOf(area: AdminArea) {
+  if (area.level === "RW" && area.village && area.rw) return `${area.village}, RW ${area.rw}`;
+  if (area.level === "KELURAHAN" && area.village) return area.village;
+  return `Kec. ${area.district}`;
+}
 
 function titleCase(value: string) {
   return value.toLocaleLowerCase("id-ID").replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase("id-ID"));
@@ -111,7 +142,13 @@ function formatBudget(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 }
 
-export default function ReportPrototype({ initialPackage = null }: { initialPackage?: RoadPackageItem | null }) {
+export default function ReportPrototype({
+  initialPackage = null,
+  region,
+}: {
+  initialPackage?: RoadPackageItem | null;
+  region: RegionSummary;
+}) {
   const [step, setStep] = useState(0);
   const [photo, setPhoto] = useState<LocalReportPhoto | null>(null);
   const [photoError, setPhotoError] = useState("");
@@ -121,60 +158,154 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
   const [coarseSize, setCoarseSize] = useState<string>("");
   const [description, setDescription] = useState("");
   const [areas, setAreas] = useState<AreaOption[]>([]);
+  const [adminAreas, setAdminAreas] = useState<AdminArea[]>([]);
   const [areaId, setAreaId] = useState("");
   const [landmark, setLandmark] = useState("");
   const [locationMessage, setLocationMessage] = useState("");
   const [locating, setLocating] = useState(false);
+  const [point, setPoint] = useState<ReportPointState | null>(null);
+  const derivedArea = useMemo<AdminArea | null>(() => {
+    if (!point || !adminAreas.length) return null;
+    const urutan: Array<AdminArea["level"]> = ["RW", "KELURAHAN", "KECAMATAN"];
+    for (const level of urutan) {
+      const match = adminAreas.find((area) => area.level === level && containsPoint(area.geometry, point.longitude, point.latitude));
+      if (match) return match;
+    }
+    return null;
+  }, [adminAreas, point]);
+  const pointMessage = point
+    ? adminAreas.length === 0
+      ? "Menentukan wilayah dari titik…"
+      : derivedArea
+        ? derivedArea.level === "RW"
+        ? `Titik berada di ${areaLabelOf(derivedArea)}; wilayah diturunkan otomatis dari pin.`
+        : derivedArea.level === "KELURAHAN"
+          ? `Titik di luar RW terpetakan; wilayah memakai Kelurahan ${derivedArea.village}, Kecamatan ${derivedArea.district}.`
+          : `Titik hanya dapat diturunkan sampai Kecamatan ${derivedArea.district}.`
+      : "Titik berada di luar wilayah Kota Tangerang. Geser pin ke dalam batas kota."
+    : "";
+  const displayLocationMessage = point ? pointMessage : locationMessage;
+  const [selectedRoad, setSelectedRoad] = useState<RoadSegment | null>(null);
+  const [publicLocationConsent, setPublicLocationConsent] = useState(true);
   const [candidates, setCandidates] = useState<RoadPackageItem[]>([]);
   const [candidateAreaId, setCandidateAreaId] = useState("");
   const [candidateError, setCandidateError] = useState<{ areaId: string; message: string } | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialPackage);
   const [packageSelectionSource, setPackageSelectionSource] = useState<"PACKAGE_PAGE" | "CANDIDATE_LIST" | null>(initialPackage ? "PACKAGE_PAGE" : null);
-  const [locationSource, setLocationSource] = useState<"MANUAL_AREA" | "DEVICE_RESOLVED_AREA">("MANUAL_AREA");
+  const [locationSource, setLocationSource] = useState<ReportLocationSourceState>("MANUAL_AREA");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [receiptCode, setReceiptCode] = useState("");
   const idempotencyKey = useRef<string | null>(null);
   const invalidateSubmissionKey = () => { idempotencyKey.current = null; };
   const selectedArea = areas.find((area) => area.id === areaId) ?? null;
-  const canAdvance = step === 0 ? photo !== null && !isProcessingPhoto : step === 1 ? damageType.length > 0 : step === 2 ? (selectedArea !== null || selectedPackage !== null) && !isSubmitting : false;
-  const currentCandidateError = selectedArea && candidateError?.areaId === selectedArea.id ? candidateError.message : "";
-  const candidatesLoading = Boolean(selectedArea && !currentCandidateError && candidateAreaId !== selectedArea.id);
-  const rankedCandidates = selectedArea && candidateAreaId === selectedArea.id
-    ? [...candidates].sort((a, b) => candidateOrder(a, selectedArea, landmark) - candidateOrder(b, selectedArea, landmark))
+  const candidateArea: AreaOption | null = selectedArea ?? (derivedArea
+    ? {
+      id: derivedArea.id,
+      district: derivedArea.district,
+      village: derivedArea.village ?? "",
+      rw: derivedArea.rw ?? "",
+      geometry: derivedArea.geometry,
+    }
+    : null);
+  const pointOutsideRegion = Boolean(point && adminAreas.length > 0 && !derivedArea);
+  const roadWarning = Boolean(point && selectedRoad && !isPointNearRoad(point, selectedRoad.geometry as unknown as LineString | MultiLineString));
+  const canAdvance = step === 0
+    ? photo !== null && !isProcessingPhoto
+    : step === 1
+      ? damageType.length > 0
+      : step === 2
+        ? (candidateArea !== null || selectedPackage !== null) && !pointOutsideRegion && !isSubmitting
+        : false;
+  const currentCandidateError = candidateArea && candidateError?.areaId === candidateArea.id ? candidateError.message : "";
+  const candidatesLoading = Boolean(candidateArea && !currentCandidateError && candidateAreaId !== candidateArea.id);
+  const rankedCandidates = candidateArea && candidateAreaId === candidateArea.id
+    ? [...candidates].sort((a, b) => candidateOrder(a, candidateArea, landmark) - candidateOrder(b, candidateArea, landmark))
     : [];
   const normalizedCandidateSearch = candidateSearch.trim().toLocaleLowerCase("id-ID");
   const visibleCandidates = normalizedCandidateSearch
     ? rankedCandidates.filter((item) => `${item.nama} ${item.kode_rup}`.toLocaleLowerCase("id-ID").includes(normalizedCandidateSearch))
     : rankedCandidates;
+  const mapFocus: ReportMapFocus | null = derivedArea
+    ? { level: derivedArea.level, district: derivedArea.district, village: derivedArea.village, rw: derivedArea.rw }
+    : null;
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/data/rw.geojson", { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Daftar kelurahan dan RW belum dapat dimuat.");
-        return response.json();
+    const ambil = (url: string | null) => url
+      ? fetch(url, { signal: controller.signal }).then((response) => {
+        if (!response.ok) throw new Error("Batas wilayah belum dapat dimuat.");
+        return response.json() as Promise<{ features?: Array<{ properties?: Record<string, unknown>; geometry?: AreaGeometry }> }>;
       })
-      .then((geojson: { features?: Array<{ properties?: { wadmkc?: string; wadmkd?: string; rw?: string }; geometry?: AreaGeometry }> }) => {
-        const options = (geojson.features ?? []).flatMap((feature) => {
-          const district = feature.properties?.wadmkc?.trim();
-          const village = feature.properties?.wadmkd?.trim();
-          const rw = feature.properties?.rw?.trim();
-          if (!district || !village || !rw || !feature.geometry) return [];
-          return [{
-            id: `${district.toLocaleLowerCase("id-ID")}|${village.toLocaleLowerCase("id-ID")}|${rw}`,
+      : Promise.resolve({ features: [] });
+    Promise.all([
+      ambil(region.boundaries.lingkungan),
+      ambil(region.boundaries.kelurahan),
+      ambil(region.boundaries.kecamatan),
+    ])
+      .then(([rw, kel, kec]) => {
+        const fields = region.boundaryFields;
+        const teks = (properties: Record<string, unknown> | undefined, key: string | null) => (
+          key && typeof properties?.[key] === "string" ? String(properties[key]).trim() : ""
+        );
+        const admin: AdminArea[] = [];
+        for (const feature of rw.features ?? []) {
+          const district = teks(feature.properties, fields.kecamatan);
+          const village = teks(feature.properties, fields.kelurahan);
+          const rwCode = teks(feature.properties, fields.lingkungan);
+          if (!district || !village || !rwCode || !feature.geometry) continue;
+          const rwNormal = rwCode.replace(/^0+/, "") || "0";
+          admin.push({
+            id: `${district.toLocaleLowerCase("id-ID")}|${village.toLocaleLowerCase("id-ID")}|${rwNormal}`,
+            level: "RW",
             district: titleCase(district),
             village: titleCase(village),
-            rw: rw.replace(/^0+/, "") || "0",
+            rw: rwNormal,
             geometry: feature.geometry,
-          }];
-        }).sort((a, b) => a.district.localeCompare(b.district, "id-ID")
-          || a.village.localeCompare(b.village, "id-ID")
-          || Number(a.rw) - Number(b.rw));
-        setAreas(options);
+          });
+        }
+        for (const feature of kel.features ?? []) {
+          const district = teks(feature.properties, fields.kecamatan);
+          const village = teks(feature.properties, fields.kelurahan);
+          if (!district || !village || !feature.geometry) continue;
+          admin.push({
+            id: `kel|${district.toLocaleLowerCase("id-ID")}|${village.toLocaleLowerCase("id-ID")}`,
+            level: "KELURAHAN",
+            district: titleCase(district),
+            village: titleCase(village),
+            rw: null,
+            geometry: feature.geometry,
+          });
+        }
+        for (const feature of kec.features ?? []) {
+          const district = teks(feature.properties, fields.kecamatan);
+          if (!district || !feature.geometry) continue;
+          admin.push({
+            id: `kec|${district.toLocaleLowerCase("id-ID")}`,
+            level: "KECAMATAN",
+            district: titleCase(district),
+            village: null,
+            rw: null,
+            geometry: feature.geometry,
+          });
+        }
+        const opsi = admin
+          .filter((area): area is AdminArea & { level: "RW"; village: string; rw: string } => area.level === "RW")
+          .map((area) => ({
+            id: area.id,
+            district: area.district,
+            village: area.village,
+            rw: area.rw,
+            geometry: area.geometry,
+          }))
+          .sort((a, b) => a.district.localeCompare(b.district, "id-ID")
+            || a.village.localeCompare(b.village, "id-ID")
+            || Number(a.rw) - Number(b.rw));
+        setAdminAreas(admin);
+        setAreas(opsi);
         if (initialPackage?.presisi_peta === "RW" && initialPackage.desa_resmi && initialPackage.kecamatan_resmi && initialPackage.rw) {
-          const packageArea = options.find((area) => (
+          const packageArea = opsi.find((area) => (
             area.district.toLocaleLowerCase("id-ID") === initialPackage.kecamatan_resmi?.toLocaleLowerCase("id-ID")
             && area.village.toLocaleLowerCase("id-ID") === initialPackage.desa_resmi?.toLocaleLowerCase("id-ID")
             && area.rw.replace(/^0+/, "") === initialPackage.rw?.replace(/^0+/, "")
@@ -186,25 +317,27 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
         if (error instanceof Error && error.name !== "AbortError") setLocationMessage(error.message);
       });
     return () => controller.abort();
-  }, [initialPackage]);
+  }, [initialPackage, region.boundaries.kecamatan, region.boundaries.kelurahan, region.boundaries.lingkungan, region.boundaryFields]);
 
+  const candidateAreaKey = candidateArea?.id ?? "";
+  const candidateDistrict = candidateArea?.district ?? "";
   useEffect(() => {
-    if (!selectedArea) return;
+    if (!candidateAreaKey || !candidateDistrict) return;
 
     const controller = new AbortController();
-    fetchRoadPackages({ district: selectedArea.district, limit: 300 }, controller.signal)
+    fetchRoadPackages({ district: candidateDistrict, limit: 300 }, controller.signal)
       .then((data) => {
         setCandidates(data.items);
-        setCandidateAreaId(selectedArea.id);
+        setCandidateAreaId(candidateAreaKey);
         setCandidateError(null);
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name !== "AbortError") {
-          setCandidateError({ areaId: selectedArea.id, message: error.message });
+          setCandidateError({ areaId: candidateAreaKey, message: error.message });
         }
       });
     return () => controller.abort();
-  }, [selectedArea]);
+  }, [candidateAreaKey, candidateDistrict]);
 
   useEffect(() => {
     return () => {
@@ -234,33 +367,46 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
       return;
     }
     setLocating(true);
-    setLocationMessage("Mencari RW dari lokasi perangkat…");
+    setLocationMessage("Mengambil lokasi perangkat…");
     navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      const match = areas.find((area) => containsPoint(area.geometry, longitude, latitude));
-      if (match) {
-        if (selectedPackage && !packageMatchesArea(selectedPackage, match)) {
-          setSelectedPackage(null);
-          setLocationMessage("Paket rujukan dilepas karena wilayahnya berbeda dari lokasi perangkat.");
-        } else {
-          setLocationMessage(`Lokasi berada di ${match.village}, RW ${match.rw}, Kecamatan ${match.district}.`);
-        }
-        setAreaId(match.id);
-        setLocationSource("DEVICE_RESOLVED_AREA");
-        invalidateSubmissionKey();
-      } else {
-        setAreaId("");
-        invalidateSubmissionKey();
-        setSelectedPackage(null);
-        setLocationMessage("Lokasi berada di luar batas RW pada data peta. Pilih kelurahan/RW secara manual.");
-      }
+      const { latitude, longitude, accuracy } = position.coords;
+      setPoint({ latitude, longitude, accuracyM: Number.isFinite(accuracy) ? accuracy : null });
+      setAreaId("");
+      setLocationSource("DEVICE_GEOLOCATION");
+      setLocationMessage("Titik dari GPS perangkat. Geser pin bila perlu dan pastikan titik sudah benar.");
+      invalidateSubmissionKey();
       setLocating(false);
     }, (error) => {
       setLocationMessage(error.code === error.PERMISSION_DENIED
-        ? "Izin lokasi tidak diberikan. Anda tetap dapat memilih kelurahan/RW secara manual."
-        : "Lokasi belum dapat dibaca. Coba lagi atau pilih kelurahan/RW secara manual.");
+        ? "Izin lokasi tidak diberikan. Anda tetap dapat mencari alamat, menggeser pin, atau memilih kelurahan/RW secara manual."
+        : "Lokasi belum dapat dibaca. Coba lagi, cari alamat, atau geser pin secara manual.");
       setLocating(false);
-    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+  }
+
+  function updatePoint(next: { latitude: number; longitude: number }, source: ReportLocationSourceState) {
+    setPoint({ ...next, accuracyM: null });
+    setAreaId("");
+    setLocationSource(source);
+    invalidateSubmissionKey();
+  }
+
+  function chooseAddress(result: GeocodeResult) {
+    updatePoint({ latitude: result.latitude, longitude: result.longitude }, "ADDRESS_GEOCODE");
+    setLocationMessage(`Titik dari pencarian alamat: ${result.label}. Geser pin bila titik belum tepat.`);
+  }
+
+  function chooseRoad(segment: RoadSegment | null) {
+    setSelectedRoad(segment);
+    invalidateSubmissionKey();
+  }
+
+  function clearPoint() {
+    setPoint(null);
+    setAreaId("");
+    setLocationSource("MANUAL_AREA");
+    setLocationMessage("");
+    invalidateSubmissionKey();
   }
 
   async function submitReport() {
@@ -276,10 +422,21 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
     observedCauses.forEach((cause) => body.append("observedCauses", CAUSE_CODES[cause as keyof typeof CAUSE_CODES]));
     if (coarseSize) body.set("coarseSize", SIZE_CODES[coarseSize as keyof typeof SIZE_CODES]);
     if (description.trim()) body.set("description", description.trim());
-    if (selectedArea) {
+    if (point) {
+      body.set("latitude", String(point.latitude));
+      body.set("longitude", String(point.longitude));
+      if (point.accuracyM !== null) body.set("accuracyM", String(point.accuracyM));
+      body.set("publicLocationConsent", publicLocationConsent ? "true" : "false");
+      body.set("locationSource", locationSource === "DEVICE_RESOLVED_AREA" || locationSource === "MANUAL_AREA"
+        ? "MAP_PIN"
+        : locationSource);
+    } else if (selectedArea) {
       body.set("areaKey", selectedArea.id);
-      body.set("locationSource", locationSource);
+      body.set("locationSource", locationSource === "DEVICE_GEOLOCATION" || locationSource === "MAP_PIN" || locationSource === "ADDRESS_GEOCODE"
+        ? "MANUAL_AREA"
+        : locationSource);
     }
+    if (selectedRoad) body.set("roadSegmentId", selectedRoad.id);
     if (landmark.trim()) body.set("locationHint", landmark.trim());
     if (selectedPackage) {
       body.set("packageRup", selectedPackage.kode_rup);
@@ -500,7 +657,9 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
               {step === 2 && (
                 <>
                   <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Lokasi dan paket terkait</h2>
-                  <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">Pilih wilayah laporan untuk melihat paket yang tercatat di kecamatan tersebut.</p>
+                  <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">
+                    Tandai titik kerusakan lewat GPS, pencarian alamat, atau pin di peta. Ruas jalan hanya anotasi; paket pekerjaan tetap dipilih terpisah.
+                  </p>
 
                   {initialPackage && selectedPackage && (
                     <div className="mt-4 flex items-start justify-between gap-4 border-l-4 border-secondary bg-secondary/20 px-3 py-2.5">
@@ -512,12 +671,71 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                     </div>
                   )}
 
+                  <div className="mt-5">
+                    <ReportLocationMap
+                      region={region}
+                      point={point}
+                      onPointChange={(next) => updatePoint(next, "MAP_PIN")}
+                      selectedRoad={selectedRoad ? {
+                        id: selectedRoad.id,
+                        name: selectedRoad.name,
+                        geometry: selectedRoad.geometry as LineString | MultiLineString,
+                      } : null}
+                      focus={mapFocus}
+                      label="Titik laporan warga, bukan lokasi paket. Geser pin untuk mengoreksi."
+                      className="h-[360px] sm:h-[420px]"
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={useMyLocation} disabled={locating || adminAreas.length === 0} className="inline-flex min-h-10 items-center justify-center gap-2 border border-input bg-white px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50">
+                      <FiMapPin aria-hidden="true" />
+                      {locating ? "Mengambil lokasi…" : "Gunakan lokasi saya"}
+                    </button>
+                    {point ? (
+                      <button type="button" onClick={clearPoint} className="inline-flex min-h-10 items-center gap-2 border border-border bg-white px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                        <FiX aria-hidden="true" />
+                        Hapus titik
+                      </button>
+                    ) : null}
+                    <span className="text-[11px] leading-5 text-muted-foreground">
+                      {point ? "Pin dapat digeser atau diklik ulang di peta." : "Belum ada titik. Pilih GPS, alamat, atau klik peta."}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                    <AddressSearch regionId={region.id} onSelect={chooseAddress} />
+                    {region.roadLayer ? (
+                      <RoadSearch regionId={region.id} selected={selectedRoad} onSelect={chooseRoad} />
+                    ) : null}
+                  </div>
+
+                  {point ? (
+                    <div className="mt-4 border border-border bg-muted/30 p-3">
+                      <label className="flex items-start gap-3 text-sm leading-5 text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={publicLocationConsent}
+                          onChange={(event) => { setPublicLocationConsent(event.target.checked); invalidateSubmissionKey(); }}
+                          className="mt-1 size-4 shrink-0 accent-[#0058A3]"
+                        />
+                        <span>
+                          <span className="block font-semibold">Tampilkan titik ini di halaman publik</span>
+                          <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                            Titik presisi dapat menunjukkan lokasi rumah atau tempat kerja Anda. Jika dimatikan, titik tetap disimpan untuk staf berizin, tetapi tidak tampil di halaman publik.
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  ) : null}
+
                   <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                     <div>
-                      <label htmlFor="report-area" className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Kelurahan / RW</label>
+                      <label htmlFor="report-area" className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Kelurahan / RW manual (fallback)</label>
                       <select id="report-area" value={areaId} onChange={(event) => {
                         const nextArea = areas.find((area) => area.id === event.target.value) ?? null;
                         setAreaId(event.target.value);
+                        setPoint(null);
                         setLocationSource("MANUAL_AREA");
                         invalidateSubmissionKey();
                         if (selectedPackage && nextArea && !packageMatchesArea(selectedPackage, nextArea)) {
@@ -532,25 +750,47 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                         {areas.map((area) => <option key={area.id} value={area.id}>{area.village} RW {area.rw} — {area.district}</option>)}
                       </select>
                     </div>
-                    <button type="button" onClick={useMyLocation} disabled={locating || areas.length === 0} className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 border border-input bg-white px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50">
-                      <FiMapPin aria-hidden="true" />
-                      {locating ? "Mencari lokasi…" : "Gunakan lokasi saya"}
-                    </button>
                   </div>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                    Tanpa titik, pilih kelurahan/RW manual. Dengan titik, wilayah diturunkan server dari batas resmi.
+                  </p>
+
                   <label htmlFor="report-landmark" className="mt-4 block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Patokan lokasi (opsional) — nama jalan, kampung, RT/RW</label>
                   <input id="report-landmark" value={landmark} onChange={(event) => { setLandmark(event.target.value); invalidateSubmissionKey(); }} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
                   <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; disimpan privat dan tidak ditampilkan publik.</p>
 
-                  {locationMessage && <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{locationMessage}</p>}
-                  {!selectedArea && !locationMessage && <p className="mt-4 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{selectedPackage ? "Belum ada area laporan. Paket rujukan tetap dapat digunakan; pilih wilayah untuk melihat kandidat paket." : "Pilih kelurahan/RW atau gunakan lokasi saya untuk melihat kandidat paket."}</p>}
+                  {pointOutsideRegion ? (
+                    <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-xs leading-5 text-foreground">
+                      Titik berada di luar Kota Tangerang. Laporan tidak dapat dikirim sampai pin dipindahkan ke dalam wilayah kerja.
+                    </p>
+                  ) : displayLocationMessage ? (
+                    <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{displayLocationMessage}</p>
+                  ) : !candidateArea && !point ? (
+                    <p className="mt-4 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
+                      {selectedPackage ? "Belum ada area laporan. Paket rujukan tetap dapat digunakan; pilih wilayah untuk melihat kandidat paket." : "Pilih titik, cari alamat, atau pilih kelurahan/RW untuk melihat kandidat paket."}
+                    </p>
+                  ) : null}
 
-                  {selectedArea && (
+                  {roadWarning ? (
+                    <p className="mt-3 border border-[#E6C84D] bg-[#FFF8DB] px-3 py-2.5 text-xs leading-5 text-foreground">
+                      <strong className="block">Ruas tidak beririsan dengan titik</strong>
+                      Ruas tetap boleh dikirim sebagai anotasi, tetapi periksa kembali apakah ruas yang dipilih sudah benar.
+                    </p>
+                  ) : null}
+
+                  {candidateArea ? (
                     <div className="mt-6">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <h3 className="font-heading text-base font-bold text-foreground">Kandidat paket di kecamatan</h3>
+                        <h3 className="font-heading text-base font-bold text-foreground">Kandidat paket di wilayah</h3>
                         {!candidatesLoading && !currentCandidateError && <span className="text-xs font-medium text-muted-foreground">{visibleCandidates.length} paket ditemukan</span>}
                       </div>
-                      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Lokasi laporan memakai batas RW {selectedArea.rw} di {selectedArea.village}; titik paket yang lebih umum tidak dianggap sebagai titik kerusakan.</p>
+                      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                        {derivedArea?.level === "KECAMATAN"
+                          ? `Titik hanya dapat diturunkan sampai Kecamatan ${derivedArea.district}; kandidat paket memakai cakupan kecamatan.`
+                          : derivedArea?.level === "KELURAHAN"
+                            ? `Lokasi memakai Kelurahan ${derivedArea.village}, Kecamatan ${derivedArea.district}; paket yang lebih umum tidak dianggap sebagai titik kerusakan.`
+                            : `Lokasi laporan memakai ${candidateArea.rw ? `RW ${candidateArea.rw} di ${candidateArea.village}` : candidateArea.village}; titik paket yang lebih umum tidak dianggap sebagai titik kerusakan.`}
+                      </p>
 
                       {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && (
                         <label className="relative mt-3 block max-w-sm">
@@ -562,16 +802,16 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
 
                       {candidatesLoading && <p className="mt-4 text-sm text-muted-foreground">Memuat paket wilayah…</p>}
                       {currentCandidateError && <p role="alert" className="mt-4 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">{currentCandidateError}</p>}
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && !rankedCandidates.some((item) => candidateOrder(item, selectedArea, landmark) === 0) && (
+                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && candidateArea.rw && !rankedCandidates.some((item) => candidateOrder(item, candidateArea, landmark) === 0) && (
                         <p className="mt-3 border border-[#E6A49D] bg-[#FCEBE8] px-3 py-2.5 text-xs leading-5 text-foreground"><strong className="block">Belum ada paket yang menyebut RW ini</strong>Paket di bawah berasal dari wilayah yang lebih luas atau nama lokasi yang mirip. Periksa detailnya sebelum memilih; laporan tetap dapat dibuat tanpa tautan paket.</p>
                       )}
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Belum ada paket jalan tercatat untuk kecamatan ini. Laporan tetap dapat dibuat tanpa tautan paket.</p>}
+                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Belum ada paket jalan tercatat untuk wilayah ini. Laporan tetap dapat dibuat tanpa tautan paket.</p>}
                       {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && visibleCandidates.length === 0 && <p className="mt-3 text-sm text-muted-foreground">Tidak ada paket yang cocok dengan pencarian.</p>}
                       {!candidatesLoading && !currentCandidateError && visibleCandidates.length > 0 && (
                         <div aria-label="Daftar kandidat paket" role="region" tabIndex={0} className="mt-3 max-h-[24rem] overflow-y-auto overscroll-contain pr-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                           <ul className="grid gap-2.5">
                           {visibleCandidates.map((item) => {
-                            const matchOrder = candidateOrder(item, selectedArea, landmark);
+                            const matchOrder = candidateOrder(item, candidateArea, landmark);
                             const active = selectedPackage?.kode_rup === item.kode_rup;
                             return (
                               <li key={item.kode_rup} className={`border p-3 transition-colors ${active ? "border-primary bg-primary/5" : "border-border bg-white"}`}>
@@ -593,7 +833,7 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
 
@@ -625,7 +865,10 @@ export default function ReportPrototype({ initialPackage = null }: { initialPack
               <SummaryRow label="Kerusakan" value={damageType || "Belum dipilih"} pending={!damageType} />
               <SummaryRow label="Penyebab" value={observedCauses.length ? observedCauses.join(", ") : "Belum dipilih"} pending={observedCauses.length === 0} />
               <SummaryRow label="Ukuran" value={coarseSize || "Belum dipilih"} pending={!coarseSize} />
-              <SummaryRow label="Wilayah" value={selectedArea ? `${selectedArea.village} RW ${selectedArea.rw}, ${selectedArea.district}` : "Belum dipilih"} pending={!selectedArea} />
+              <SummaryRow label="Wilayah" value={derivedArea ? areaLabelOf(derivedArea) : selectedArea ? `${selectedArea.village} RW ${selectedArea.rw}, ${selectedArea.district}` : "Belum dipilih"} pending={!derivedArea && !selectedArea} />
+              <SummaryRow label="Titik" value={point ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}${point.accuracyM ? ` · ±${Math.round(point.accuracyM)} m` : ""}` : "Belum ada"} pending={!point} />
+              <SummaryRow label="Ruas" value={selectedRoad ? selectedRoad.name ?? "Ruas tanpa nama" : "Belum dipilih"} />
+              <SummaryRow label="Titik publik" value={point ? (publicLocationConsent ? "Ditampilkan" : "Disembunyikan") : "Tidak berlaku"} />
               <SummaryRow label="Patokan" value={landmark || "Tidak diisi"} />
               <SummaryRow label="Paket" value={selectedPackage ? `RUP ${selectedPackage.kode_rup}` : "Belum ditautkan"} />
             </dl>

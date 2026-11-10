@@ -1,6 +1,6 @@
 # DATABASE — Model Data Ingestion Multi-Region
 
-Status: seluruh 10 migrasi Prisma diterapkan ke database terkonfigurasi di `.env.local` pada 9 November 2026 (Postgres 17 + PostGIS); `npx prisma migrate status` menyatakan skema mutakhir.
+Status: seluruh 11 migrasi Prisma diterapkan ke database pengembangan PostGIS pada 10 November 2026; `npx prisma migrate status` menyatakan skema mutakhir. Migrasi terbaru adalah `20261110120000_road_network_report_location` (aditif).
 Sesudah migrasi, target ini berisi 2 `road_packages` dan 0 `administrative_areas`. Angka tersebut berbeda dari rekonsiliasi snapshot lengkap yang dicatat di bawah; jangan menganggap katalog target ini sudah terisi penuh.
 Skema kanonik ada di `prisma/schema.prisma`; dokumen ini menjelaskan ERD, kunci, foreign key,
 index, provenance, dan retensi. Worker tidak memakai Prisma Client (batch 50 ribu baris), tetapi
@@ -36,6 +36,7 @@ erDiagram
   regions ||--o{ realization_packages : packages
   regions ||--o{ realization_transactions : transactions
   regions ||--o{ administrative_areas : boundaries
+  regions ||--o{ road_segments : road_network
   regions ||--o{ region_manifests : snapshots
   regions ||--o| ingestion_locks : lock
 
@@ -69,6 +70,7 @@ erDiagram
   realization_packages ||--o{ realization_package_rups : maps_to
   administrative_areas ||--o{ road_package_area_links : anchors
   administrative_areas ||--o{ reports : area
+  road_segments ||--o{ reports : annotates
 ```
 
 Tabel report/auth (`User`, `Session`, `Account`, `Verification`, `rateLimit`, `Permission`,
@@ -93,6 +95,7 @@ operasional dihapus.
 | `rup_details` | jadwal, lokasi mentah, MAK, volume (hanya RUP yang ada) | `rup_package_id` |
 | `road_packages` | paket jalan hasil filter snapshot | `(region_id, rup)` |
 | `administrative_areas` | poligon kecamatan/kelurahan/RW | `(region_id, stable_key)` |
+| `road_segments` | layer jalan Overture: GERS id, nama/kelas/permukaan/lebar, geometri garis, provenance rilis | `(region_id, source_object_id)` |
 | `lpse_contracts` | kontrak SPSE/LPSE yang tercocok ke RUP | `(region_id, lpse_id)` |
 | `vendors` | penyedia global, nama ternormalisasi | `normalized_name` |
 | `realization_packages` | agregat paket realisasi INAPROC | `(region_id, kode_paket, tahun)` |
@@ -258,3 +261,47 @@ Sumber: `data/regions/kota-tangerang/manifest.json` (gate `LULUS: 0 masalah`) da
 
 Raw record = RUP 28.699 + detail 2.553 + realisasi 50.836 + LPSE 7.557 (daftar 4.869 + detail 949
 + kontrak tercocok 1.739) + batas 1.137.
+
+## 10. Layer Jalan Overture dan Lokasi Laporan (10 November 2026)
+
+### `road_segments`
+
+| Kolom | Tipe | Catatan |
+|---|---|---|
+| `id` | UUID | PK internal; jangan dipakai sebagai kode publik laporan. |
+| `region_id` | varchar(64) | FK `regions.id`, `RESTRICT`. |
+| `source_object_id` | varchar(64) | **GERS id** Overture; unik per region. |
+| `name` | text nullable | `names.primary`; null bila Overture tidak memberi nama. |
+| `number` | varchar(80) nullable | Selalu null untuk Overture; tidak ada nomor ruas kota. |
+| `road_class` | varchar(40) | `class` Overture (`residential`, `trunk`, …). |
+| `surface` | varchar(40) nullable | `road_surface` hanya bila satu aturan sederhana. |
+| `length_m` | numeric(12,2) | Dihitung dari geometri setelah clip. |
+| `width_m` | numeric(8,2) nullable | `width_rules` hanya bila satu nilai numerik tanpa segmen bersyarat. |
+| `district_names`, `village_names` | text[] | Hasil spatial join titik tengah segmen; boleh kosong. |
+| `geometry` | `extensions.geometry(Geometry,4326)` | Garis hasil clip; check constraint hanya LineString/MultiLineString. |
+| `source_name`, `source_url` | teks | `Overture`, URL rilis. |
+| `source_release` | varchar(40) | Rilis Overture, mis. `2026-10-21.0`. |
+| `license` | varchar(40) | `ODbL-1.0`. |
+| `source_retrieved_at`, `dataset_version` | timestamp/varchar | Provenance artefak. |
+| `is_active` | boolean | Segmen yang hilang dari snapshot dinonaktifkan, tidak dihapus. |
+
+Index: unik `(region_id, source_object_id)`, index `(region_id, name)`, `(region_id, road_class)`,
+`(region_id, is_active)`, dan GIST pada `geometry`.
+
+### Kolom baru `reports`
+
+| Kolom | Tipe | Catatan |
+|---|---|---|
+| `location_point` | `extensions.geometry(Point,4326)` nullable | Titik presisi; GIST index. |
+| `location_accuracy_m` | double precision nullable | Akurasi GPS bila tersedia. |
+| `public_location_consent` | boolean default true | Hanya bila true titik masuk proyeksi publik. |
+| `road_segment_id` | UUID nullable | FK `road_segments.id`, `ON DELETE SET NULL`; index. |
+| `road_name_snapshot`, `road_number_snapshot` | teks nullable | Snapshot anotasi ruas saat kirim. |
+| `road_class_snapshot` | varchar(40) nullable | Kelas ruas saat kirim. |
+| `road_source_release` | varchar(40) nullable | Rilis Overture saat kirim. |
+
+Enum `ReportLocationSource` mendapat nilai `DEVICE_GEOLOCATION`, `MAP_PIN`, dan
+`ADDRESS_GEOCODE`; nilai lama dipertahankan. Enum `IngestionSourceKind` mendapat
+`ROAD_NETWORK`. Migrasi bersifat aditif: laporan lama tetap valid dengan kolom baru null.
+
+Lisensi layer dan kewajiban atribusi dijelaskan di `docs/DATA-LICENSE.md`.

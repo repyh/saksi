@@ -1,4 +1,5 @@
 import "server-only";
+import type { LineString, MultiLineString } from "geojson";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/server/api/shared/api-error";
@@ -111,8 +112,10 @@ export async function getPublishedReportDetail(publicCode: string): Promise<Publ
       rwCodeSnapshot: true,
       roadNameSnapshot: true,
       roadNumberSnapshot: true,
+      roadClassSnapshot: true,
+      roadSourceRelease: true,
       submittedAt: true,
-      roadSegment: { select: { sourceObjectId: true } },
+      roadSegment: { select: { id: true, sourceObjectId: true } },
       packageLink: { select: { rupSnapshot: true, packageNameSnapshot: true } },
       statusEvents: {
         where: { toStatus: "PUBLISHED" as const },
@@ -138,11 +141,20 @@ export async function getPublishedReportDetail(publicCode: string): Promise<Publ
   const point = points[0]
     ? { latitude: Number(points[0].latitude), longitude: Number(points[0].longitude) }
     : null;
-  const road = report.roadNameSnapshot
+  const geometryRows = report.roadSegment
+    ? await prisma.$queryRawUnsafe<Array<{ geometry: unknown }>>(
+      `SELECT extensions.ST_AsGeoJSON(geometry)::json AS geometry
+         FROM road_segments WHERE id = $1::uuid LIMIT 1`,
+      report.roadSegment.id,
+    )
+    : [];
+  const road = report.roadNameSnapshot || report.roadClassSnapshot
     ? {
       name: report.roadNameSnapshot,
       number: report.roadNumberSnapshot,
+      roadClass: report.roadClassSnapshot,
       sourceObjectId: report.roadSegment?.sourceObjectId ?? null,
+      geometry: (geometryRows[0]?.geometry ?? null) as LineString | MultiLineString | null,
     }
     : null;
 

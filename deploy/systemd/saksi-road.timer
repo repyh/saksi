@@ -1,0 +1,12 @@
+[Unit]
+Description=Jadwal bulanan layer jalan Overture SAKSI (01:00 WIB tanggal 2)
+Documentation=file:/opt/saksi/docs/INGESTION.md
+
+[Timer]
+OnCalendar=*-*-02 01:00:00 Asia/Jakarta
+RandomizedDelaySec=1800
+Persistent=true
+Unit=saksi-road.service
+
+[Install]
+WantedBy=timers.target

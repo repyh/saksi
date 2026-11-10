@@ -182,11 +182,22 @@ if (regionConfig.jalan) {
     "SELECT count(*) AS n FROM road_segments WHERE region_id=$1 AND is_active",
     [REGION_ID],
   ));
+  if (m.jalan?.bernama != null) {
+    cek("segmen jalan bernama", m.jalan.bernama, await satu(
+      "SELECT count(*) AS n FROM road_segments WHERE region_id=$1 AND is_active AND name IS NOT NULL",
+      [REGION_ID],
+    ));
+  }
   cek("checksum layer jalan", manifest.berkas?.[regionConfig.jalan.berkas]?.sha256 ?? checksumLayer, checksumLayer);
   catat("segmen jalan tersimpan", await satu(
     "SELECT count(*) AS n FROM road_segments WHERE region_id=$1",
     [REGION_ID],
   ));
+  const rilisJalan = await q(
+    "SELECT DISTINCT source_release, license FROM road_segments WHERE region_id=$1 AND is_active LIMIT 1",
+    [REGION_ID],
+  );
+  catat("rilis/lisensi jalan", rilisJalan[0] ? `${rilisJalan[0].source_release} · ${rilisJalan[0].license}` : "tidak ada");
 }
 
 // ---- Provenance mentah ----

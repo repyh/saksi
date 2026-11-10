@@ -2,6 +2,7 @@ export const PERMISSION_CATALOG = [
   { code: "reports.read_queue", description: "View report queue metadata", sensitive: false },
   { code: "reports.read_deidentified", description: "Read report details without reporter identity or restricted evidence", sensitive: true },
   { code: "reports.read_sensitive_evidence", description: "View private report photo evidence", sensitive: true },
+  { code: "reports.read_precise_location", description: "View exact report locations and annotated road segments", sensitive: true },
   { code: "access.users.read", description: "View staff accounts and access state", sensitive: true },
   { code: "access.permissions.read_own", description: "View your own active permission details in the dashboard", sensitive: false },
   { code: "access.users.edit", description: "Update staff account profile details", sensitive: true },
@@ -13,7 +14,6 @@ export const PERMISSION_CATALOG = [
 // Keep not-yet-implemented permissions documented here, but out of the active
 // catalog. They cannot be assigned, included in presets, or resolved by the authority.
 // Reports: assignment, status changes, notes, redaction, export.
-// { code: "reports.read_precise_location", description: "View exact report locations", sensitive: true },
 // { code: "reports.assign", description: "Assign or reassign reports for review", sensitive: false },
 // { code: "reports.change_status", description: "Change report moderation status", sensitive: true },
 // { code: "reports.add_internal_note", description: "Add staff-only notes to reports", sensitive: true },

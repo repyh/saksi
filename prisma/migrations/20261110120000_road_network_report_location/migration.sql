@@ -13,8 +13,10 @@ CREATE TABLE "road_segments" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "region_id" VARCHAR(64) NOT NULL,
     "source_object_id" VARCHAR(64) NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" TEXT,
     "number" VARCHAR(80),
+    "road_class" VARCHAR(40) NOT NULL,
+    "surface" VARCHAR(40),
     "length_m" DECIMAL(12,2),
     "width_m" DECIMAL(8,2),
     "district_names" TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -22,6 +24,8 @@ CREATE TABLE "road_segments" (
     "geometry" extensions.geometry(Geometry, 4326) NOT NULL,
     "source_name" VARCHAR(120) NOT NULL,
     "source_url" TEXT,
+    "source_release" VARCHAR(40) NOT NULL,
+    "license" VARCHAR(40) NOT NULL,
     "source_retrieved_at" TIMESTAMPTZ(6) NOT NULL,
     "dataset_version" VARCHAR(120) NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
@@ -37,6 +41,7 @@ CREATE TABLE "road_segments" (
 CREATE UNIQUE INDEX "road_segments_region_id_source_object_id_key"
   ON "road_segments"("region_id", "source_object_id");
 CREATE INDEX "road_segments_region_id_name_idx" ON "road_segments"("region_id", "name");
+CREATE INDEX "road_segments_region_id_road_class_idx" ON "road_segments"("region_id", "road_class");
 CREATE INDEX "road_segments_region_id_is_active_idx" ON "road_segments"("region_id", "is_active");
 CREATE INDEX "road_segments_geometry_gist_idx" ON "road_segments" USING GIST ("geometry");
 
@@ -48,7 +53,8 @@ ALTER TABLE "reports"
   ADD COLUMN "road_segment_id" UUID,
   ADD COLUMN "road_name_snapshot" TEXT,
   ADD COLUMN "road_number_snapshot" VARCHAR(80),
-  ADD COLUMN "road_source_version" VARCHAR(120);
+  ADD COLUMN "road_class_snapshot" VARCHAR(40),
+  ADD COLUMN "road_source_release" VARCHAR(40);
 
 -- CreateIndex
 CREATE INDEX "reports_location_point_gist_idx" ON "reports" USING GIST ("location_point");

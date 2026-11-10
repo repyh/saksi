@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { accountApi } from "@/server/api/account/account.api";
 import { DashboardTabs } from "@/features/dashboard/components/dashboard-tabs";
+import { getRegion, regionSummary } from "@/server/regions/region-registry";
 
 export const metadata: Metadata = {
   title: "Dashboard — SAKSI",
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
       <h1 className="mb-6 font-heading text-3xl leading-tight font-extrabold tracking-[-0.035em] text-foreground sm:mb-7 sm:text-4xl">
         Dashboard
       </h1>
-      <DashboardTabs account={account} />
+      <DashboardTabs account={account} region={regionSummary(getRegion())} />
     </main>
   );
 }

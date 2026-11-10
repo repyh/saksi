@@ -1,0 +1,25 @@
+[Unit]
+Description=SAKSI road network refresh (Overture)
+Documentation=file:/opt/saksi/docs/INGESTION.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=saksi
+Group=saksi
+WorkingDirectory=/opt/saksi
+EnvironmentFile=/etc/saksi/ingestion.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash -lc 'npm run data:jalan -- --region kota-tangerang && node workers/ingest.mjs --region kota-tangerang --sources jalan --trigger cron'
+TimeoutStartSec=7200
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/saksi/data /opt/saksi/public/data

@@ -54,7 +54,7 @@ function hitungPenyedia(hasil, roadKode) {
   return { lpse: lpseN, realisasi: realisasiN, tanpa, tanpaPagu, unik: vendor.size };
 }
 
-export function validasi({ hasil, manifest }) {
+export function validasi({ hasil, manifest, hanyaJalan = false }) {
   const masalah = [];
   const tolak = (pesan) => masalah.push(pesan);
   const roadKode = new Set(hasil.roadRows.map((r) => r.rup));
@@ -79,6 +79,21 @@ export function validasi({ hasil, manifest }) {
   cekUnik("realization_transactions", hasil.transaksiRows, (r) => r.checksum_sha256);
   cekUnik("realization_package_rups", hasil.paketRupRows, (r) => `${r.package_key}|${r.kode_rup}`);
   cekUnik("road_segments", hasil.roadSegmentRows ?? [], (r) => r.source_object_id);
+
+  if (hanyaJalan) {
+    if (manifest?.metrik?.jalan?.fitur != null
+      && (hasil.roadSegmentRows?.length ?? 0) !== manifest.metrik.jalan.fitur) {
+      tolak(`layer jalan: ${hasil.roadSegmentRows?.length ?? 0} ≠ manifest ${manifest.metrik.jalan.fitur}`);
+    }
+    return {
+      lulus: masalah.length === 0,
+      masalah,
+      metrik: {
+        jalan: hasil.roadSegmentRows?.length ?? 0,
+        jalan_bernama: (hasil.roadSegmentRows ?? []).filter((r) => r.name).length,
+      },
+    };
+  }
 
   // Relasi wajib.
   for (const r of hasil.roadRows) {

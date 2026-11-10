@@ -168,22 +168,36 @@ function cekLayerJalan() {
   }
   const features = Array.isArray(dokumen.features) ? dokumen.features : [];
   if (!features.length) tolak("layer jalan tidak memuat fitur");
-  const objectid = new Set();
+  const gers = new Set();
+  let bernama = 0;
   for (const fitur of features) {
-    const id = fitur?.properties?.objectid;
-    if (id === undefined || id === null || String(id).trim() === "") tolak("layer jalan: fitur tanpa objectid");
-    else if (objectid.has(String(id))) tolak(`layer jalan: objectid ganda ${id}`);
-    else objectid.add(String(id));
-    if (!String(fitur?.properties?.nama ?? "").trim()) tolak(`layer jalan: fitur ${id ?? "?"} tanpa nama`);
+    const id = fitur?.properties?.id;
+    if (id === undefined || id === null || String(id).trim() === "") tolak("layer jalan: fitur tanpa GERS id");
+    else if (gers.has(String(id))) tolak(`layer jalan: GERS id ganda ${id}`);
+    else gers.add(String(id));
+    if (!String(fitur?.properties?.nama ?? "").trim()) {
+      // Nama kosong sah menurut Overture; hanya dicatat sebagai coverage.
+    } else {
+      bernama += 1;
+    }
+    if (!String(fitur?.properties?.kelas ?? "").trim()) tolak(`layer jalan: fitur ${id ?? "?"} tanpa kelas`);
     const tipe = fitur?.geometry?.type;
     if (tipe !== "LineString" && tipe !== "MultiLineString") {
       tolak(`layer jalan: fitur ${id ?? "?"} bertipe ${tipe ?? "kosong"} bukan garis`);
     }
   }
+  const lisensi = dokumen?.source?.license ?? region.jalan.lisensi ?? null;
+  if (!lisensi) tolak("layer jalan: lisensi tidak dicatat");
+  if (lisensi && region.jalan.lisensi && lisensi !== region.jalan.lisensi) {
+    tolak(`layer jalan: lisensi ${lisensi} ≠ konfigurasi ${region.jalan.lisensi}`);
+  }
   return {
     fitur: features.length,
+    bernama,
+    tanpa_nama: features.length - bernama,
     berkas: region.jalan.berkas,
-    versi: region.jalan.versi ?? null,
+    rilis: dokumen?.source?.release ?? region.jalan.release ?? null,
+    lisensi,
     label: region.jalan.label ?? null,
   };
 }
@@ -244,7 +258,7 @@ console.log(
 console.log(
   `penyedia          : ${penyedia.lpseN + penyedia.realisasiN}/${paket.length} (${persen(penyedia.lpseN + penyedia.realisasiN, paket.length)}%) · LPSE ${penyedia.lpseN} · realisasi ${penyedia.realisasiN} · tanpa ${penyedia.tanpa} (${rupiah(penyedia.tanpaPagu)}) · ${penyedia.penyedia} unik`,
 );
-if (jalan) console.log(`layer jalan       : ${jalan.fitur} segmen · ${jalan.label ?? jalan.berkas} · versi ${jalan.versi ?? "?"}`);
+if (jalan) console.log(`layer jalan       : ${jalan.fitur} segmen · ${jalan.bernama} bernama · ${jalan.tanpa_nama} tanpa nama · ${jalan.rilis ?? "?"} · ${jalan.lisensi ?? "?"}`);
 
 if (masalah.length) {
   console.error(`\nGAGAL: ${masalah.length} masalah ditemukan`);

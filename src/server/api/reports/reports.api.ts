@@ -234,7 +234,13 @@ export class ReportsApi extends ApiController {
 
       const preciseLocationAccess = await hasPermission(actor.id, "reports.read_precise_location");
       let location: { latitude: number; longitude: number; accuracyM: number | null } | null = null;
-      let road: { id: string; name: string; number: string | null } | null = null;
+      let road: {
+        id: string;
+        name: string | null;
+        number: string | null;
+        roadClass: string | null;
+        geometry: unknown;
+      } | null = null;
       if (preciseLocationAccess) {
         const points = await prisma.$queryRawUnsafe<Array<{ latitude: number; longitude: number; accuracyM: number | null }>>(
           `SELECT extensions.ST_Y(location_point) AS "latitude",
@@ -253,10 +259,18 @@ export class ReportsApi extends ApiController {
           }
           : null;
         if (report.roadSegmentId) {
-          road = await prisma.roadSegment.findUnique({
+          const segment = await prisma.roadSegment.findUnique({
             where: { id: report.roadSegmentId },
-            select: { id: true, name: true, number: true },
+            select: { id: true, name: true, number: true, roadClass: true },
           });
+          if (segment) {
+            const geometryRows = await prisma.$queryRawUnsafe<Array<{ geometry: unknown }>>(
+              `SELECT extensions.ST_AsGeoJSON(geometry)::json AS geometry
+                 FROM road_segments WHERE id = $1::uuid LIMIT 1`,
+              segment.id,
+            );
+            road = { ...segment, geometry: geometryRows[0]?.geometry ?? null };
+          }
         }
         if (location) {
           await prisma.authorizationAuditEvent.create({

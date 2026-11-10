@@ -86,7 +86,8 @@ export async function persistSubmittedReport(input: {
         roadSegmentId: input.location.road?.id ?? null,
         roadNameSnapshot: input.location.road?.name ?? null,
         roadNumberSnapshot: input.location.road?.number ?? null,
-        roadSourceVersion: input.location.road?.sourceVersion ?? null,
+        roadClassSnapshot: input.location.road?.roadClass ?? null,
+        roadSourceRelease: input.location.road?.sourceRelease ?? null,
         locationSource: input.location.point || areaSnapshot
           ? input.submission.locationSource!
           : input.packageItem ? "PACKAGE_REFERENCE_ONLY" : "UNKNOWN",
