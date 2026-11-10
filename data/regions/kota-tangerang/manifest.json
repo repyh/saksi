@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-09T19:33:14.747Z",
+  "dibuat": "2026-11-10T03:02:44.958Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -30,28 +30,28 @@
     },
     "data/rup_kota_tangerang_2025_2026.json": {
       "berkas": "data/rup_kota_tangerang_2025_2026.json",
-      "byte": 9621080,
-      "sha256": "e35448d077cadd47d54d5a02b4f1fa2154d41699c96bd9ab2c3b2200340008ce"
+      "byte": 9817074,
+      "sha256": "72a6ae616d4196a2b178d7184d58d0be86a7a8c33d9c16167a6ecd2ca34b0c5c"
     },
     "data/rup_detail_kota_tangerang.json": {
       "berkas": "data/rup_detail_kota_tangerang.json",
-      "byte": 1344770,
-      "sha256": "37db65d8610f291db190ba020f91e2af64890aa392597c91e66e8c6e4c277685"
+      "byte": 1302247,
+      "sha256": "67f9a54a6dba8092286cbc3ddaa325346ed4970d14aa214ae2bf73b647fcb6a4"
     },
     "data/realisasi_kota_tangerang.json": {
       "berkas": "data/realisasi_kota_tangerang.json",
-      "byte": 20385511,
-      "sha256": "fb0baf6bc7a810fce72f64351c39f0040bc0e33edf0c9c99a4507b6fa9db73cc"
+      "byte": 20524751,
+      "sha256": "05e4848c441c5a291acb232752cc6ae5a72978a9895680d980875911e5bcaf50"
     },
     "data/lpse_kota_tangerang_2025_2026.json": {
       "berkas": "data/lpse_kota_tangerang_2025_2026.json",
-      "byte": 1152592,
-      "sha256": "39d56d0b33c839aec0f1ba0dd3d08d67e2c9c4be5c6b396e783bebada66a67e1"
+      "byte": 1191989,
+      "sha256": "518f20ad58775753d2fbbdb19d71afc72885a5d53e5f58ee0423ce87d9f04bb7"
     },
     "data/saksi_kota_tangerang_2025_2026.json": {
       "berkas": "data/saksi_kota_tangerang_2025_2026.json",
-      "byte": 1103207,
-      "sha256": "dc3dc604e1b6d37f5611733e3a263c878704464d87b3a1564fad1d7393bdd145"
+      "byte": 1109264,
+      "sha256": "2c534699c97c438667bfce6690b8f406acf6b3f744f0942780ace0bb20e3f4e0"
     },
     "public/data/kel.geojson": {
       "berkas": "public/data/kel.geojson",
@@ -70,14 +70,14 @@
     }
   },
   "metrik": {
-    "paket": 2552,
-    "pagu": 813127177758,
+    "paket": 2567,
+    "pagu": 818974265458,
     "per_tahun": {
       "2025": 1592,
-      "2026": 960
+      "2026": 975
     },
     "presisi": {
-      "Kabupaten": 344,
+      "Kabupaten": 359,
       "Kelurahan": 517,
       "RW": 1612,
       "Kecamatan": 79
@@ -87,17 +87,17 @@
     "unit_lingkungan_tersentuh": 585,
     "kecamatan_tersentuh": 13,
     "penyedia": {
-      "lpse": 731,
-      "realisasi": 1603,
-      "tanpa_rekam": 218,
-      "tanpa_rekam_pagu": 132343800219,
-      "unik": 633
+      "lpse": 918,
+      "realisasi": 1416,
+      "tanpa_rekam": 233,
+      "tanpa_rekam_pagu": 138190887919,
+      "unik": 656
     },
     "sumber": {
-      "rup": 28699,
-      "detail": 2553,
-      "realisasi": 50836,
-      "lpse": 1739,
+      "rup": 29288,
+      "detail": 2552,
+      "realisasi": 51153,
+      "lpse": 1757,
       "batas_kecamatan": 13,
       "batas_kelurahan": 104,
       "batas_rw": 1020
