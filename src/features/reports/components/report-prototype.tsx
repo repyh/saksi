@@ -616,34 +616,54 @@ export default function ReportPrototype({
                       </div>
                     </div>
                   ) : (
-                    <label htmlFor="report-photo" className="group mt-5 flex min-h-[220px] cursor-pointer flex-col items-center justify-center border border-dashed border-primary/45 bg-muted/25 px-5 py-8 text-center transition-colors hover:bg-muted/60 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary sm:min-h-[260px]">
+                    <div className="mt-5 flex flex-col items-center justify-center border border-dashed border-primary/45 bg-muted/25 px-5 py-8 text-center sm:min-h-[260px]">
                       <span className="flex size-12 items-center justify-center border border-border bg-white text-primary">
                         <FiCamera className="size-5" aria-hidden="true" />
                       </span>
-                      <span className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</span>
-                      <span className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
-                        {isProcessingPhoto ? "Memproses dan menghapus metadata di perangkat…" : "EXIF dihapus di perangkat. Saat laporan dikirim, foto tersanitasi disimpan privat sebagai bukti laporan."}
-                      </span>
-                      <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors group-hover:bg-[#004682]">
-                        <FiImage aria-hidden="true" />
-                        Pilih foto
-                      </span>
-                      <input
-                        id="report-photo"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        capture="environment"
-                        disabled={isProcessingPhoto}
-                        className="sr-only"
-                        onChange={(event) => {
-                          const input = event.currentTarget;
-                          void choosePhoto(input.files?.[0]);
-                          input.value = "";
-                        }}
-                        aria-describedby="photo-help photo-error"
-                      />
-                    </label>
+                      <p className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</p>
+                      <p className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
+                        Lokasi dan data kamera dihapus otomatis dari foto. Saat laporan dikirim, foto tersanitasi disimpan privat sebagai bukti laporan.
+                      </p>
+                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <label htmlFor="report-photo-camera" className="inline-flex min-h-11 cursor-pointer items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+                          <FiCamera aria-hidden="true" />
+                          Ambil foto
+                        </label>
+                        <label htmlFor="report-photo-gallery" className="inline-flex min-h-11 cursor-pointer items-center gap-2 border border-primary bg-white px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+                          <FiImage aria-hidden="true" />
+                          Pilih dari galeri
+                        </label>
+                        <input
+                          id="report-photo-camera"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          capture="environment"
+                          disabled={isProcessingPhoto}
+                          className="sr-only"
+                          onChange={(event) => {
+                            const input = event.currentTarget;
+                            void choosePhoto(input.files?.[0]);
+                            input.value = "";
+                          }}
+                          aria-describedby={`photo-help${photoError ? " photo-error" : ""}`}
+                        />
+                        <input
+                          id="report-photo-gallery"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={isProcessingPhoto}
+                          className="sr-only"
+                          onChange={(event) => {
+                            const input = event.currentTarget;
+                            void choosePhoto(input.files?.[0]);
+                            input.value = "";
+                          }}
+                          aria-describedby={`photo-help${photoError ? " photo-error" : ""}`}
+                        />
+                      </div>
+                    </div>
                   )}
+                  {isProcessingPhoto ? <p role="status" className="mt-3 text-sm font-semibold text-primary">Memproses foto…</p> : null}
                   <p id="photo-help" className="mt-4 max-w-2xl text-xs leading-5 text-muted-foreground">
                     Pastikan wajah dan pelat nomor tidak terlihat sebelum memilih foto.
                   </p>
