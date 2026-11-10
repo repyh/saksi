@@ -355,8 +355,10 @@ tidak menuntut `DATABASE_URL`).
   `data/regions/kota-tangerang/jalan-tiles/` dihasilkan `npm run data:jalan` (Overture CLI + clip
   Shapely + tiles), lalu diimpor worker sebagai `ROAD_NETWORK` ke `road_segments`. Segmen yang
   hilang dinonaktifkan, bukan dihapus.
-- Peta pekerjaan memiliki toggle **Jaringan jalan** yang mati secara bawaan. Ruas hanya referensi:
-  klik/hover menampilkan atribut, bukan tautan/filter paket.
+- Peta pekerjaan memiliki toggle **Jaringan jalan** yang mati secara bawaan. Garis jalan digambar oleh
+  style peta dasar; SAKSI tidak menambah garis atau label ruas sendiri. Toggle hanya menyalakan sorot
+  satu ruas (geometri segmen Overture yang segaris dengan jalan peta dasar) plus tooltip dari layer
+  Overture tak terlihat. Ruas hanya referensi, bukan tautan atau filter paket.
 - Laporan warga memiliki titik presisi (GPS/pin/Photon), consent publik, dan anotasi ruas. Titik
   wajib di dalam region; wilayah diturunkan server via PostGIS. Titik publik hanya tampil di detail
   bila consent; staf dengan `reports.read_precise_location` melihat titik dan setiap akses diaudit.

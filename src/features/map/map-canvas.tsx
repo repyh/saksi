@@ -14,6 +14,15 @@ import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from
 import { addressSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahFull } from "./road-types";
 import { BASEMAP_URL, attributionBasemap } from "./basemap";
+import {
+  bringRoadHighlightToFront,
+  clearRoadHighlight,
+  collectRoadHighlight,
+  ensureRoadHighlightLayer,
+  removeRoadHighlight,
+  roadHighlightKey,
+  setRoadHighlight,
+} from "./basemap-roads";
 
 type BoundaryPrecision = "RW" | "Kelurahan" | "Kecamatan";
 
@@ -478,6 +487,8 @@ export default function MapCanvas(props: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  // Tooltip yang sedang tampil; ruas jalan menang atas tooltip wilayah.
+  const hoverOwnerRef = useRef<"region" | "road" | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const initialFitRef = useRef(false);
   const view: AreaView = props.viewMode;
@@ -643,6 +654,9 @@ export default function MapCanvas(props: MapCanvasProps) {
       const hover = (event: maplibregl.MapLayerMouseEvent) => {
         const feature = event.features?.[0];
         if (!feature) return;
+        // Tooltip ruas menang saat kursor di atas jalan; jangan ditimpa tooltip wilayah.
+        if (hoverOwnerRef.current === "road") return;
+        hoverOwnerRef.current = "region";
         const current = latestRef.current;
         const properties = (feature.properties ?? {}) as BoundaryProperties;
         const aggregate = current.areaStats[PRECISION_STATS_KEY[level]].get(areaKeyFromProperties(properties, level, fields));
@@ -653,6 +667,8 @@ export default function MapCanvas(props: MapCanvasProps) {
           .addTo(map);
       };
       const leave = () => {
+        if (hoverOwnerRef.current !== "region") return;
+        hoverOwnerRef.current = null;
         map.getCanvas().style.cursor = "";
         popupRef.current?.remove();
       };
@@ -699,6 +715,9 @@ export default function MapCanvas(props: MapCanvasProps) {
       }
     }
 
+    // Sorot ruas harus tetap di atas poligon wilayah meski layer batas dibuat ulang.
+    bringRoadHighlightToFront(map);
+
     return () => {
       map.off("click", handleMapClick);
       map.off("moveend", emitViewport);
@@ -714,27 +733,33 @@ export default function MapCanvas(props: MapCanvasProps) {
     };
   }, [boundaries, fields, mapLoaded, onViewportChange, precisions, props.region.environmentLabel]);
 
-  // Layer jaringan jalan dimuat hanya saat toggle dinyalakan; jangan membebani render awal.
+  // Jaringan jalan digambar oleh peta dasar; layer Overture di sini tak terlihat dan hanya dipakai
+  // untuk hit-test tooltip. Sorot memakai geometri ruas itu sendiri, jadi tidak ada garis ganda.
   useEffect(() => {
     const map = mapRef.current;
     const layer = latestRef.current.roadLayer;
     if (!map || !mapLoaded || !layer) return;
 
     const lineId = `${ROAD_SOURCE_ID}-line`;
-    const labelId = `${ROAD_SOURCE_ID}-label`;
-    const handlers: Array<() => void> = [];
-    const removeLayer = () => {
-      for (const id of [labelId, lineId]) {
-        if (map.getLayer(id)) map.removeLayer(id);
-      }
+    let hoverKey: string | null = null;
+    const clearHover = () => {
+      hoverKey = null;
+      clearRoadHighlight(map);
+    };
+    const removeLayers = () => {
+      if (hoverOwnerRef.current === "road") hoverOwnerRef.current = null;
+      removeRoadHighlight(map);
+      if (map.getLayer(lineId)) map.removeLayer(lineId);
       if (map.getSource(ROAD_SOURCE_ID)) map.removeSource(ROAD_SOURCE_ID);
       popupRef.current?.remove();
     };
 
     if (!roadEnabled) {
-      removeLayer();
+      removeLayers();
       return;
     }
+
+    ensureRoadHighlightLayer(map);
 
     if (!map.getSource(ROAD_SOURCE_ID)) {
       map.addSource(ROAD_SOURCE_ID, {
@@ -751,32 +776,9 @@ export default function MapCanvas(props: MapCanvasProps) {
         layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": "#6B7280",
-          "line-opacity": 0.62,
-          "line-width": [
-            "interpolate", ["linear"], ["coalesce", ["to-number", ["get", layer.fields.lebar]], 0],
-            0, 0.8, 3, 1.2, 6, 2.1, 10, 3.2, 20, 4.8,
-          ],
-        },
-      } as unknown as maplibregl.AddLayerObject);
-      map.addLayer({
-        id: labelId,
-        type: "symbol",
-        source: ROAD_SOURCE_ID,
-        "source-layer": layer.sourceLayer,
-        minzoom: 14,
-        layout: {
-          "text-field": ["coalesce", ["get", layer.fields.nama], ""],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 10,
-          "text-offset": [0, -0.9],
-          "text-anchor": "bottom",
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-        },
-        paint: {
-          "text-color": "#334155",
-          "text-halo-color": "rgba(255,255,255,0.92)",
-          "text-halo-width": 1.2,
+          "line-opacity": 0,
+          // Lebar hanya untuk area tangkap kursor; garisnya tidak pernah terlihat.
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 6, 14, 8, 18, 12],
         },
       } as unknown as maplibregl.AddLayerObject);
     }
@@ -784,13 +786,20 @@ export default function MapCanvas(props: MapCanvasProps) {
     const hover = (event: maplibregl.MapLayerMouseEvent) => {
       const feature = event.features?.[0];
       if (!feature) return;
+      hoverOwnerRef.current = "road";
       map.getCanvas().style.cursor = "pointer";
       popupRef.current
         ?.setLngLat(event.lngLat)
         .setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties))
         .addTo(map);
+      const key = roadHighlightKey(feature, layer.fields.nama);
+      if (key === hoverKey) return;
+      hoverKey = key;
+      setRoadHighlight(map, collectRoadHighlight(map, lineId, feature, layer.fields.nama));
     };
     const leave = () => {
+      if (hoverOwnerRef.current === "road") hoverOwnerRef.current = null;
+      clearHover();
       map.getCanvas().style.cursor = "";
       popupRef.current?.remove();
     };
@@ -798,15 +807,12 @@ export default function MapCanvas(props: MapCanvasProps) {
     map.on("mouseleave", lineId, leave);
     // Klik ruas hanya menampilkan atribut; tidak menautkan atau memfilter paket.
     map.on("click", lineId, hover);
-    handlers.push(() => {
+
+    return () => {
       map.off("mousemove", lineId, hover);
       map.off("mouseleave", lineId, leave);
       map.off("click", lineId, hover);
-    });
-
-    return () => {
-      for (const remove of handlers) remove();
-      if (mapRef.current === map) removeLayer();
+      if (mapRef.current === map) removeLayers();
     };
   }, [mapLoaded, roadEnabled, roadLayer?.tiles]);
 
@@ -949,7 +955,7 @@ export default function MapCanvas(props: MapCanvasProps) {
             type="button"
             onClick={() => { setRoadError(false); setRoadEnabled((current) => !current); }}
             aria-pressed={roadEnabled}
-            title={roadEnabled ? "Sembunyikan jaringan jalan" : "Tampilkan jaringan jalan sebagai referensi"}
+            title={roadEnabled ? "Matikan sorot dan info ruas jalan" : "Aktifkan sorot dan info ruas jalan"}
             className={`border-l border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
               roadEnabled ? "bg-[#334155] text-white" : "text-foreground/70 hover:bg-muted"
             }`}
@@ -996,11 +1002,11 @@ export default function MapCanvas(props: MapCanvasProps) {
           <p>Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi {props.region.environmentLabel} dan kelurahan.</p>
           {roadLayer ? (
             <p>
-              {roadEnabled ? "Garis abu-abu = " : "Tombol “Jaringan jalan” menampilkan "}
+              {roadEnabled ? "Ruas yang ditunjuk disorot di peta dasar. Tooltip memakai " : "Tombol “Jaringan jalan” menyalakan sorot ruas dan tooltip dari "}
               {roadLayer.label}
               {roadLayer.sourceRelease ? ` ${roadLayer.sourceRelease}` : ""} · {roadLayer.attribution}
               {roadLayer.license === "ODbL-1.0" ? " · lisensi ODbL-1.0" : ""}.
-              {" "}Ruas hanya referensi, bukan lokasi atau penaut paket.
+              {" "}Garis jalan berasal dari peta dasar; ruas hanya referensi, bukan lokasi atau penaut paket.
             </p>
           ) : null}
         </div>

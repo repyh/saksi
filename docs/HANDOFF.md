@@ -183,8 +183,11 @@ Branch `feat/road-layer-report-location` (base `8757dfe`, checkpoint `2469c0b`) 
   `data/regions/kota-tangerang/jalan.geojson` + `data/regions/kota-tangerang/jalan-tiles` (MVT) +
   `road_segments` (GERS id, class, surface, length, width, release,
   ODbL-1.0).
-- `RegionSummary.roadLayer` and a default-off **Jaringan jalan** toggle on the work map. Click/hover
-  shows name, class, length, width, and area; it never links or filters packages.
+- `RegionSummary.roadLayer` and a default-off **Jaringan jalan** toggle on the work map. Roads are
+  drawn by the basemap style; SAKSI adds no road lines or labels. The toggle only highlights the
+  hovered segment (Overture geometry, coincident with the basemap road) as one extra line, fed by an
+  invisible Overture hit layer that supplies name, class, length, width, and area; it never links or
+  filters packages.
 - Report location fields: `locationPoint`, `locationAccuracyM`, `publicLocationConsent`,
   `roadSegmentId`, and road snapshots. Server-side `resolveReportLocation` rejects points outside
   the region and derives RW → kelurahan → kecamatan with PostGIS.

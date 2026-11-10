@@ -5,6 +5,15 @@ import * as maplibregl from "maplibre-gl";
 import type { Geometry, LineString, MultiLineString } from "geojson";
 import type { RegionRoadLayer, RegionSummary } from "@/contracts/regions/region.contract";
 import { BASEMAP_URL, attributionBasemap } from "@/features/map/basemap";
+import {
+  bringRoadHighlightToFront,
+  clearRoadHighlight,
+  collectRoadHighlight,
+  ensureRoadHighlightLayer,
+  removeRoadHighlight,
+  roadHighlightKey,
+  setRoadHighlight,
+} from "@/features/map/basemap-roads";
 
 maplibregl.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
@@ -252,6 +261,8 @@ export default function ReportLocationMap({
       } as unknown as maplibregl.AddLayerObject);
     }
 
+    bringRoadHighlightToFront(map);
+
     if (!initialFitRef.current) {
       const kel = sources[1][1];
       const bounds = kel.features.length ? boundsOfGeometry({ type: "GeometryCollection", geometries: kel.features.map((feature) => feature.geometry) }) : null;
@@ -262,15 +273,20 @@ export default function ReportLocationMap({
     }
   }, [boundaries, mapLoaded, region.boundaryFields.kelurahan, region.boundaryFields.lingkungan]);
 
-  // Layer jalan Overture dimuat saat diminta; halaman publik memuatnya penuh.
+  // Jaringan jalan digambar oleh peta dasar; layer Overture tak terlihat hanya untuk hit-test
+  // tooltip, sedangkan sorot memakai geometri ruas yang ditunjuk supaya tidak ada garis ganda.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !roadLayer) return;
     const lineId = `${ROAD_SOURCE}-line`;
-    const labelId = `${ROAD_SOURCE}-label`;
-    const handlers: Array<() => void> = [];
+    let hoverKey: string | null = null;
+    const clearHover = () => {
+      hoverKey = null;
+      clearRoadHighlight(map);
+    };
     const remove = () => {
-      for (const id of [labelId, lineId]) if (map.getLayer(id)) map.removeLayer(id);
+      removeRoadHighlight(map);
+      if (map.getLayer(lineId)) map.removeLayer(lineId);
       if (map.getSource(ROAD_SOURCE)) map.removeSource(ROAD_SOURCE);
       popupRef.current?.remove();
     };
@@ -278,6 +294,7 @@ export default function ReportLocationMap({
       remove();
       return;
     }
+    ensureRoadHighlightLayer(map);
     if (!map.getSource(ROAD_SOURCE)) {
       map.addSource(ROAD_SOURCE, {
         type: "vector",
@@ -291,38 +308,34 @@ export default function ReportLocationMap({
         layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": "#6B7280",
-          "line-opacity": 0.55,
-          "line-width": ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", roadLayer.fields.lebar]], 0], 0, 0.7, 4, 1.1, 8, 1.9, 16, 3.2],
+          "line-opacity": 0,
+          // Lebar hanya area tangkap kursor; garis tidak pernah terlihat.
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 6, 14, 8, 18, 12],
         },
-      } as unknown as maplibregl.AddLayerObject);
-      map.addLayer({
-        id: labelId, type: "symbol", source: ROAD_SOURCE,
-        "source-layer": roadLayer.sourceLayer,
-        minzoom: 14,
-        layout: {
-          "text-field": ["coalesce", ["get", roadLayer.fields.nama], ""],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 10,
-          "text-offset": [0, -0.8],
-          "text-anchor": "bottom",
-        },
-        paint: { "text-color": "#334155", "text-halo-color": "rgba(255,255,255,.9)", "text-halo-width": 1.1 },
       } as unknown as maplibregl.AddLayerObject);
     }
     const hover = (event: maplibregl.MapLayerMouseEvent) => {
       const feature = event.features?.[0];
       if (!feature) return;
+      map.getCanvas().style.cursor = "pointer";
       popupRef.current?.setLngLat(event.lngLat).setHTML(roadPopup((feature.properties ?? {}) as Record<string, unknown>, roadLayer.fields)).addTo(map);
+      const key = roadHighlightKey(feature, roadLayer.fields.nama);
+      if (key === hoverKey) return;
+      hoverKey = key;
+      setRoadHighlight(map, collectRoadHighlight(map, lineId, feature, roadLayer.fields.nama));
     };
-    const leave = () => popupRef.current?.remove();
+    const leave = () => {
+      clearHover();
+      map.getCanvas().style.cursor = "";
+      popupRef.current?.remove();
+    };
     map.on("mousemove", lineId, hover);
     map.on("mouseleave", lineId, leave);
-    handlers.push(() => {
+    map.on("click", lineId, hover);
+    return () => {
       map.off("mousemove", lineId, hover);
       map.off("mouseleave", lineId, leave);
-    });
-    return () => {
-      for (const removeHandler of handlers) removeHandler();
+      map.off("click", lineId, hover);
       if (mapRef.current === map) remove();
     };
   }, [mapLoaded, roadLayer, roadsVisible]);
@@ -452,6 +465,7 @@ export default function ReportLocationMap({
           type="button"
           onClick={() => { setRoadError(false); setRoadsVisible((current) => !current); }}
           aria-pressed={roadsVisible}
+          title={roadsVisible ? "Matikan sorot dan info ruas jalan" : "Aktifkan sorot dan info ruas jalan"}
           className={`absolute left-3 top-3 z-10 border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] shadow-sm transition-colors ${roadsVisible ? "bg-[#334155] text-white" : "bg-white/95 text-foreground/70 hover:bg-muted"}`}
         >
           Jaringan jalan
@@ -469,7 +483,7 @@ export default function ReportLocationMap({
       ) : null}
       {roadsVisible && roadLayer ? (
         <p className="pointer-events-none absolute right-3 top-3 z-10 border border-border bg-white/95 px-2.5 py-1.5 text-[10px] leading-4 text-muted-foreground shadow-sm">
-          {roadLayer.attribution} · {roadLayer.license}
+          Tooltip ruas: {roadLayer.attribution} · {roadLayer.license}
         </p>
       ) : null}
     </div>

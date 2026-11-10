@@ -87,6 +87,8 @@ jalan** (jalan, jembatan, drainase/saluran, trotoar, TPT/turap).
 16. **Lisensi layer jalan ODbL.** Layer jalan bersumber Overture/OSM dengan lisensi **ODbL-1.0**.
     Atribusi `© OpenStreetMap contributors, Overture Maps Foundation (ODbL)` wajib di peta dan
     dokumentasi; lihat `docs/DATA-LICENSE.md`. Jangan memakai layer ArcGIS jalan sebagai sumber.
+    Garis jalan di peta diambil dari style peta dasar; layer Overture hanya untuk atribut tooltip dan
+    sorot ruas — jangan menggambar ulang garis atau label jalan di atas peta dasar.
 
 ## Konvensi repo
 

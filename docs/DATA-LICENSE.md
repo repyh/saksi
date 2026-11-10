@@ -15,6 +15,10 @@ laporan publik, serta metadata `data/regions/<id>/jalan.geojson` dan
 `data/regions/<id>/jalan-tiles/metadata.json` (`source.attribution`, `source.license`). Jangan
 menghapus atribusi saat memuat ulang snapshot atau membangun ulang tiles.
 
+Garis jalan yang terlihat di peta berasal dari style peta dasar (`NEXT_PUBLIC_BASEMAP_URL`, bawaan
+OpenFreeMap Positron) dan diatribusikan oleh kontrol atribusi peta. Layer Overture hanya dipakai
+untuk atribut tooltip dan sumber sorot ruas, jadi tidak digambar ulang di atas peta dasar.
+
 ## Rilis dan provenance
 
 - Rilis dipin di `data/regions/kota-tangerang/region.json` (`jalan.release`). Rilis yang dipakai
