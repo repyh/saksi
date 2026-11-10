@@ -318,6 +318,22 @@ async function simpanDomain(client, { region, hasil, grup }) {
           "micro_location", "updated_at",
         ],
       });
+
+      // Paket yang tidak lagi lolos filter (mis. klasifikasi diperketat) harus hilang dari katalog.
+      // Laporan warga yang sudah tertaut tidak dihapus: FK report_package_links bersifat Restrict.
+      const kodeRoad = hasil.roadRows.map((row) => row.rup);
+      const dihapus = await client.query(
+        `DELETE FROM road_packages rp
+          WHERE rp.region_id = $1
+            AND NOT (rp.rup = ANY($2::varchar[]))
+            AND NOT EXISTS (
+              SELECT 1 FROM report_package_links l WHERE l.road_package_id = rp.id
+            )`,
+        [region.id, kodeRoad],
+      );
+      if (dihapus.rowCount) {
+        log.info("road_packages usang dihapus", { baris: dihapus.rowCount });
+      }
     }
 
     const vendorRows = grup.has("lpse") || grup.has("realisasi") ? [...hasil.vendorMap.values()] : [];
@@ -365,6 +381,18 @@ async function simpanDomain(client, { region, hasil, grup }) {
           "checksum_sha256", "source_retrieved_at", "updated_at",
         ],
       });
+
+      // Kontrak yang tidak lagi cocok dengan paket jalan (mis. paket konsultansi keluar dari
+      // snapshot) ikut dibuang supaya hitungan rekam penyedia sama dengan manifest.
+      const idLpse = hasil.lpseRows.map((row) => row.lpse_id);
+      const lpseUsang = await client.query(
+        `DELETE FROM lpse_contracts
+          WHERE region_id = $1 AND NOT (lpse_id = ANY($2::varchar[]))`,
+        [region.id, idLpse],
+      );
+      if (lpseUsang.rowCount) {
+        log.info("lpse_contracts usang dihapus", { baris: lpseUsang.rowCount });
+      }
     }
 
     if (grup.has("realisasi") && hasil.paketRows.length) {
