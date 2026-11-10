@@ -230,8 +230,13 @@ export default function ReportPrototype({
   const visibleCandidates = normalizedCandidateSearch
     ? rankedCandidates.filter((item) => `${item.nama} ${item.kode_rup}`.toLocaleLowerCase("id-ID").includes(normalizedCandidateSearch))
     : rankedCandidates;
-  const mapFocus: ReportMapFocus | null = derivedArea
-    ? { level: derivedArea.level, district: derivedArea.district, village: derivedArea.village, rw: derivedArea.rw }
+  // Kamera hanya mengikuti wilayah yang dipilih eksplisit, bukan wilayah turunan dari pin,
+  // supaya mengetik patokan atau menempatkan pin tidak memicu fitBounds ulang.
+  const selectedAreaDistrict = selectedArea?.district ?? "";
+  const selectedAreaVillage = selectedArea?.village ?? "";
+  const selectedAreaRw = selectedArea?.rw ?? "";
+  const mapFocus: ReportMapFocus | null = selectedAreaDistrict
+    ? { level: "RW", district: selectedAreaDistrict, village: selectedAreaVillage, rw: selectedAreaRw }
     : null;
   const requirementText = step === 0
     ? "Pilih foto dulu"
