@@ -186,7 +186,7 @@ async function tarikDetail() {
   if (!existsSync(JALUR_SNAPSHOT)) throw new Error("snapshot paket tidak ada — jalankan mode daftar dulu");
   const jalurDetail = resolve(AKAR, region.sumber.detail);
   mkdirSync(dirname(jalurDetail), { recursive: true });
-  const paket = JSON.parse(readFileSync(jalurSnapshot, "utf8")).paket ?? [];
+  const paket = JSON.parse(readFileSync(JALUR_SNAPSHOT, "utf8")).paket ?? [];
   const hasil = [];
 
   for (let i = 0; i < paket.length; i += 1) {

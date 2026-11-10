@@ -19,6 +19,8 @@ export function buatRateLimit(jedaMs) {
 
 /** Retry dengan exponential backoff + jitter. */
 export async function denganRetry(fn, { percobaan = 3, dasarMs = 500, log, label = "operasi" } = {}) {
+  const catat =
+    typeof log === "function" ? log : (nama, pesan, data) => log?.[nama]?.(pesan, data);
   let terakhir;
   for (let i = 1; i <= percobaan; i += 1) {
     try {
@@ -27,7 +29,7 @@ export async function denganRetry(fn, { percobaan = 3, dasarMs = 500, log, label
       terakhir = error;
       if (i === percobaan) break;
       const jeda = dasarMs * 2 ** (i - 1) + Math.floor(Math.random() * 200);
-      log?.("warn", `${label} gagal (percobaan ${i}/${percobaan}), ulang dalam ${jeda} ms`, {
+      catat?.("warn", `${label} gagal (percobaan ${i}/${percobaan}), ulang dalam ${jeda} ms`, {
         error: error.message,
       });
       await tidur(jeda);
