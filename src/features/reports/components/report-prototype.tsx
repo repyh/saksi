@@ -196,8 +196,11 @@ export default function ReportPrototype({
   const [locationSource, setLocationSource] = useState<ReportLocationSourceState>("MANUAL_AREA");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [advanceError, setAdvanceError] = useState("");
   const [receiptCode, setReceiptCode] = useState("");
   const idempotencyKey = useRef<string | null>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const navigatedRef = useRef(false);
   const invalidateSubmissionKey = () => { idempotencyKey.current = null; };
   const selectedArea = areas.find((area) => area.id === areaId) ?? null;
   const candidateArea: AreaOption | null = selectedArea ?? (derivedArea
@@ -230,6 +233,42 @@ export default function ReportPrototype({
   const mapFocus: ReportMapFocus | null = derivedArea
     ? { level: derivedArea.level, district: derivedArea.district, village: derivedArea.village, rw: derivedArea.rw }
     : null;
+  const requirementText = step === 0
+    ? "Pilih foto dulu"
+    : step === 1
+      ? "Pilih jenis kerusakan"
+      : step === 2
+        ? "Pilih lokasi laporan dulu"
+        : "";
+
+  useEffect(() => {
+    if (!navigatedRef.current) return;
+    const heading = stepHeadingRef.current;
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
+  }, [step]);
+
+  function goToStep(nextStep: number) {
+    setAdvanceError("");
+    navigatedRef.current = true;
+    setStep(nextStep);
+  }
+
+  function handleAdvance() {
+    setAdvanceError("");
+    if (!canAdvance) {
+      setAdvanceError(requirementText);
+      if (step === 0) document.getElementById("report-photo-camera")?.focus();
+      else if (step === 1) document.querySelector<HTMLInputElement>('input[name="damage-type"]')?.focus();
+      else document.getElementById("report-location-heading")?.focus();
+      return;
+    }
+    if (step === 2) {
+      void submitReport();
+      return;
+    }
+    goToStep(step + 1);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -468,8 +507,8 @@ export default function ReportPrototype({
     <main className="min-h-[calc(100dvh-4rem)] bg-background">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-10 lg:px-10">
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-14">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+          <div className="flex min-w-0 flex-col">
+            <div className="order-1 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
               <div className="max-w-2xl">
                 {simulationBadgeEnabled() ? (
                   <span className="inline-flex items-center gap-1.5 bg-secondary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-secondary-foreground">
@@ -485,29 +524,22 @@ export default function ReportPrototype({
                   Laporan masuk antrean tinjauan internal dan tidak langsung dipublikasikan.
                 </p>
               </div>
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                  <FiArrowLeft aria-hidden="true" />
-                  Kembali ke peta
-                </Link>
-                <Link href="/laporan/publik" className="inline-flex min-h-9 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                  Lihat laporan publik
-                </Link>
-              </div>
             </div>
 
-            <nav aria-label="Tahap laporan" className="mt-8 border-b border-border py-4">
-              <ol className="grid grid-cols-4 gap-2 sm:gap-6">
+            <nav aria-label="Tahap laporan" className="order-2 mt-6 border-b border-border py-3 sm:mt-8 sm:py-4">
+              <ol className="grid grid-cols-4 gap-1.5 sm:gap-6">
                 {STEPS.map((label, index) => {
                   const complete = index < step;
                   const active = index === step;
+                  const shortLabel = label === "Kerusakan" ? "Rusak" : label === "Lokasi & paket" ? "Lokasi" : label;
                   return (
-                    <li key={label} aria-current={active ? "step" : undefined} className="flex min-h-11 items-center gap-2.5">
+                    <li key={label} aria-current={active ? "step" : undefined} className="flex min-h-11 min-w-0 items-center gap-1.5 sm:gap-2.5">
                         <span className={`flex size-7 shrink-0 items-center justify-center border text-xs font-bold tabular-nums transition-colors ${active ? "border-primary bg-primary text-white" : complete ? "border-primary bg-white text-primary" : "border-border bg-white text-muted-foreground"}`}>
                           {complete ? <FiCheck aria-hidden="true" /> : `0${index + 1}`}
                         </span>
-                        <span className={`text-xs font-semibold leading-4 sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
-                          {label}
+                        <span className={`min-w-0 text-[11px] font-semibold leading-4 sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                          <span className="sm:hidden">{shortLabel}</span>
+                          <span className="hidden sm:inline">{label}</span>
                         </span>
                     </li>
                   );
@@ -515,37 +547,51 @@ export default function ReportPrototype({
               </ol>
             </nav>
 
-            <div className="mt-4 flex items-center justify-between gap-2">
-              <span className="group relative inline-flex" tabIndex={step === 3 ? 0 : undefined} aria-describedby={step === 3 ? "back-locked-tip" : undefined}>
-                <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || step === 3} className="inline-flex min-h-11 items-center justify-center gap-1 px-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:gap-2 sm:px-3">
-                  <FiArrowLeft aria-hidden="true" />
-                  Kembali
-                </button>
-                {step === 3 && <span id="back-locked-tip" role="tooltip" className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 w-64 bg-foreground px-3 py-2 text-xs leading-5 text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Laporan sudah dikirim.</span>}
+            <div className="order-4 z-30 -mx-4 mt-2 flex flex-col gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:static lg:order-3 lg:mx-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+              <span aria-live="polite" className="sr-only">
+                Langkah {step + 1} dari {STEPS.length}: {STEPS[step]}
               </span>
-              <div className="flex items-center justify-end gap-2 sm:gap-4">
-                <span className="whitespace-nowrap text-xs text-muted-foreground">Langkah {step + 1} dari {STEPS.length}</span>
-                {step < STEPS.length - 1 ? (
-                  <button type="button" onClick={() => step === 2 ? void submitReport() : setStep((current) => Math.min(2, current + 1))} aria-describedby="advance-requirement" disabled={!canAdvance} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:gap-3 sm:px-5">
-                    {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
-                  </button>
+              {submitError && step === 2 ? (
+                <p role="alert" className="border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-sm leading-5 text-foreground">{submitError}</p>
+              ) : null}
+              <div className="flex items-center justify-between gap-2">
+                {step === 0 || step === 3 ? (
+                  <span aria-hidden="true" />
                 ) : (
-                  <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                    Kembali ke peta <FiArrowRight aria-hidden="true" />
-                  </Link>
+                  <button type="button" onClick={() => goToStep(step - 1)} className="inline-flex min-h-11 items-center justify-center gap-1 px-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:gap-2 sm:px-3">
+                    <FiArrowLeft aria-hidden="true" />
+                    Kembali
+                  </button>
                 )}
+                <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-4">
+                  {step < STEPS.length - 1 && !canAdvance && requirementText ? (
+                    <p id="advance-requirement" className="text-right text-[11px] leading-4 text-muted-foreground sm:text-xs">{requirementText}</p>
+                  ) : <span id="advance-requirement" className="sr-only" />}
+                  {step < STEPS.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleAdvance}
+                      aria-describedby="advance-requirement"
+                      aria-disabled={!canAdvance || undefined}
+                      disabled={isSubmitting}
+                      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:gap-3 sm:px-5 ${!canAdvance ? "opacity-70" : ""}`}
+                    >
+                      {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                      Kembali ke peta <FiArrowRight aria-hidden="true" />
+                    </Link>
+                  )}
+                </div>
               </div>
-              <span id="advance-requirement" className="sr-only">
-                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Kirim laporan untuk menyelesaikan pengiriman." : "Pilih kelurahan/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
-              </span>
+              {advanceError ? <p role="alert" className="text-right text-xs font-semibold text-destructive">{advanceError}</p> : null}
             </div>
 
-            {submitError && step === 2 && <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-sm leading-5 text-foreground">{submitError}</p>}
-
-            <section aria-labelledby="step-heading" className="pt-7 sm:pt-8">
+            <section aria-labelledby="step-heading" className="order-3 pt-5 sm:pt-7 lg:order-4">
               {step === 0 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Foto kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Foto kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">JPG, PNG, atau WebP · maksimal 10 MB</p>
 
                   {photo ? (
@@ -602,7 +648,7 @@ export default function ReportPrototype({
 
               {step === 1 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Jenis kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Jenis kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">Pilih kondisi yang paling mendekati.</p>
                   <fieldset className="mt-5">
                     <legend className="sr-only">Pilih jenis kerusakan</legend>
@@ -656,7 +702,7 @@ export default function ReportPrototype({
 
               {step === 2 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Lokasi dan paket terkait</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Lokasi dan paket terkait</h2>
                   <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">
                     Tandai titik kerusakan lewat GPS, pencarian alamat, atau pin di peta. Ruas jalan hanya anotasi; paket pekerjaan tetap dipilih terpisah.
                   </p>
@@ -843,7 +889,7 @@ export default function ReportPrototype({
                     <FiCheckCircle aria-hidden="true" className="size-8" />
                   </span>
                   <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">04 · Sukses</p>
-                  <h2 id="step-heading" className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground sm:text-3xl">Laporan berhasil dikirim</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="mt-2 scroll-mt-24 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground outline-none sm:text-3xl">Laporan berhasil dikirim</h2>
                   <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
                     Laporan sudah diterima untuk ditinjau. Rujukan paket, bila dipilih, hanya mencatat pilihan Anda dan bukan bukti bahwa paket menyebabkan kerusakan.
                   </p>
