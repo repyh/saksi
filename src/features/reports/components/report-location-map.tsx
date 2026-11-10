@@ -489,6 +489,8 @@ export default function ReportLocationMap({
         className={`h-full w-full ${marking ? "cursor-crosshair" : ""}`}
         role="region"
         aria-label="Peta lokasi laporan"
+        data-map-loaded={mapLoaded ? "true" : "false"}
+        data-map-marking={marking ? "true" : "false"}
         aria-describedby={!readOnly ? "report-map-pin-help" : undefined}
       />
       {!readOnly ? (

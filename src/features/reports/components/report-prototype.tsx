@@ -267,6 +267,7 @@ export default function ReportPrototype({
   const [advanceError, setAdvanceError] = useState("");
   const [receiptCode, setReceiptCode] = useState("");
   const idempotencyKey = useRef<string | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const navigatedRef = useRef(false);
   const restoredDraftRef = useRef(false);
@@ -482,6 +483,14 @@ export default function ReportPrototype({
   }, [photo?.previewUrl]);
 
   useEffect(() => {
+    const node = rootRef.current;
+    node?.setAttribute("data-report-ready", "true");
+    return () => {
+      node?.removeAttribute("data-report-ready");
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     void listReportDrafts()
       .then((drafts) => {
@@ -654,6 +663,7 @@ export default function ReportPrototype({
     try {
       const cleanPhoto = await localFileIntakeController.dispatch(file, reportPhotoPolicy, handleReportPhoto);
       setPhoto(cleanPhoto);
+      setAdvanceError("");
       invalidateSubmissionKey();
     } catch (error) {
       setPhotoError(error instanceof Error ? error.message : "Foto tidak dapat diproses di perangkat ini.");
@@ -850,7 +860,7 @@ export default function ReportPrototype({
   }
 
   return (
-    <main className="min-h-[calc(100dvh-4rem)] bg-background">
+    <main ref={rootRef} className="min-h-[calc(100dvh-4rem)] bg-background">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-10 lg:px-10">
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-14">
           <div className="flex min-w-0 flex-col">
@@ -923,7 +933,7 @@ export default function ReportPrototype({
               </ol>
             </nav>
 
-            <div className="order-4 z-30 -mx-4 mt-2 flex flex-col gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:static lg:order-3 lg:mx-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+            <div className="order-4 sticky bottom-0 z-30 -mx-4 mt-2 flex flex-col gap-2 border-t border-border bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-7 sm:px-7 lg:static lg:order-3 lg:mx-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
               <span aria-live="polite" className="sr-only">
                 Langkah {step + 1} dari {STEPS.length}: {STEPS[step]}
               </span>
@@ -948,9 +958,8 @@ export default function ReportPrototype({
                       type="button"
                       onClick={handleAdvance}
                       aria-describedby="advance-requirement"
-                      aria-disabled={!canAdvance || undefined}
                       disabled={isSubmitting}
-                      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:gap-3 sm:px-5 ${!canAdvance ? "opacity-70" : ""}`}
+                      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-3 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:gap-3 sm:px-5 ${canAdvance ? "bg-primary text-white hover:bg-[#004682]" : "bg-muted text-muted-foreground hover:bg-muted"}`}
                     >
                       {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
                     </button>
@@ -1051,7 +1060,7 @@ export default function ReportPrototype({
                     <div className="grid gap-2 sm:grid-cols-2">
                       {DAMAGE_TYPES.map((type) => (
                         <label key={type.label} className={`flex min-h-[76px] cursor-pointer items-start gap-3 border px-3 py-3 transition-colors focus-within:outline-2 focus-within:outline-primary ${damageType === type.label ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted/45"}`}>
-                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => { setDamageType(type.label); invalidateSubmissionKey(); }} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
+                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => { setDamageType(type.label); setAdvanceError(""); invalidateSubmissionKey(); }} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
                           <span className="min-w-0">
                             <span className="block text-sm font-bold leading-5">{type.label}</span>
                             <span className={`mt-0.5 block text-xs leading-4 ${damageType === type.label ? "text-white/80" : "text-muted-foreground"}`}>{type.detail}</span>

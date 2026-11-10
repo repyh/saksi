@@ -32,7 +32,7 @@ export function BudgetConcentrationChart({ data, onSelect }: { data: BudgetExplo
     <div className="mt-10 space-y-12">
       {data.length > 1 && first && last && <div className="bg-secondary px-5 py-5 text-foreground sm:px-7 sm:py-6"><p className="max-w-4xl text-base leading-7 sm:text-lg">Porsi pagu pada 10% paket terbesar {shift >= 0 ? "naik" : "turun"} <strong className="font-extrabold">{Math.abs(shift).toLocaleString("id-ID", { maximumFractionDigits: 1 })} poin persentase</strong> dari {first.label} ke {last.label}.</p><p className="mt-1 text-sm">Median pagu paket {first.median === last.median ? `tetap ${currency(last.median ?? 0)}` : `berubah dari ${currency(first.median ?? 0)} menjadi ${currency(last.median ?? 0)}`}.</p></div>}
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-center">
-        <div>
+        <div className="min-w-0">
           <h3 className="mb-3 text-lg font-bold">Kurva distribusi pagu</h3>
           <div className="overflow-x-auto"><svg viewBox="0 0 680 390" role="img" aria-labelledby="concentration-plot-title concentration-plot-desc" className="w-full min-w-[580px]">
             <title id="concentration-plot-title">Kurva konsentrasi pagu per tahun</title>
@@ -47,7 +47,7 @@ export function BudgetConcentrationChart({ data, onSelect }: { data: BudgetExplo
             <line x1="66" y1="320" x2="640" y2="40" strokeDasharray="6 6" className="stroke-muted-foreground" />
             {curves.map((points, index) => <g key={data[index].label}>
               <polyline points={points.map((point) => `${66 + point.x * 574},${320 - point.y * 280}`).join(" ")} fill="none" strokeWidth="3" strokeDasharray={index % 2 ? "8 4" : undefined} className={strokes[index % strokes.length]} />
-              {points.slice(1, -1).map((point, pointIndex) => <circle key={pointIndex} cx={66 + point.x * 574} cy={320 - point.y * 280} r="4" className={`${strokes[index % strokes.length]} fill-white`} strokeWidth="2"><title>{data[index].label}: {percent(point.x)} paket membentuk {percent(point.y)} pagu</title></circle>)}
+              {points.slice(1, -1).map((point, pointIndex) => <circle key={pointIndex} cx={66 + point.x * 574} cy={320 - point.y * 280} r="4" className={`${strokes[index % strokes.length]} fill-white`} strokeWidth="2"><title>{`${data[index].label}: ${percent(point.x)} paket membentuk ${percent(point.y)} pagu`}</title></circle>)}
             </g>)}
           </svg></div>
           <div className="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs">
