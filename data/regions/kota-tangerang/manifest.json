@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-10T03:02:44.958Z",
+  "dibuat": "2026-11-10T03:20:25.833Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -45,13 +45,13 @@
     },
     "data/lpse_kota_tangerang_2025_2026.json": {
       "berkas": "data/lpse_kota_tangerang_2025_2026.json",
-      "byte": 1191989,
-      "sha256": "518f20ad58775753d2fbbdb19d71afc72885a5d53e5f58ee0423ce87d9f04bb7"
+      "byte": 1185115,
+      "sha256": "af9d5bb9a86e4c94aa1b6fe118cb09eb489bfbbdf9b27ef837528edc4d66f49c"
     },
     "data/saksi_kota_tangerang_2025_2026.json": {
       "berkas": "data/saksi_kota_tangerang_2025_2026.json",
-      "byte": 1109264,
-      "sha256": "2c534699c97c438667bfce6690b8f406acf6b3f744f0942780ace0bb20e3f4e0"
+      "byte": 962855,
+      "sha256": "a553784e3c9c4430e5c747fc33705870a4cee71b26cdca34febbb6c29518aeef"
     },
     "public/data/kel.geojson": {
       "berkas": "public/data/kel.geojson",
@@ -70,34 +70,34 @@
     }
   },
   "metrik": {
-    "paket": 2567,
-    "pagu": 818974265458,
+    "paket": 2228,
+    "pagu": 734278962101,
     "per_tahun": {
-      "2025": 1592,
-      "2026": 975
+      "2025": 1414,
+      "2026": 814
     },
     "presisi": {
-      "Kabupaten": 359,
-      "Kelurahan": 517,
-      "RW": 1612,
-      "Kecamatan": 79
+      "Kabupaten": 120,
+      "Kelurahan": 430,
+      "RW": 1608,
+      "Kecamatan": 70
     },
-    "berlokus": 2208,
+    "berlokus": 2108,
     "kelurahan_tersentuh": 87,
     "unit_lingkungan_tersentuh": 585,
     "kecamatan_tersentuh": 13,
     "penyedia": {
-      "lpse": 918,
-      "realisasi": 1416,
-      "tanpa_rekam": 233,
-      "tanpa_rekam_pagu": 138190887919,
-      "unik": 656
+      "lpse": 1431,
+      "realisasi": 651,
+      "tanpa_rekam": 146,
+      "tanpa_rekam_pagu": 99170910314,
+      "unik": 561
     },
     "sumber": {
       "rup": 29288,
       "detail": 2552,
       "realisasi": 51153,
-      "lpse": 1757,
+      "lpse": 1623,
       "batas_kecamatan": 13,
       "batas_kelurahan": 104,
       "batas_rw": 1020

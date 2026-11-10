@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AKAR, bacaJson, muatRegion, norm } from "./lib/region.mjs";
-import { objekJalan, objekLain } from "./lib/road-filter.mjs";
+import { objekJalan, objekLain, namaNonFisik } from "./lib/road-filter.mjs";
 
 const argv = process.argv.slice(2);
 const arg = (nama, bawaan) => {
@@ -47,6 +47,7 @@ for (const item of paket) {
   if (typeof item.nama !== "string" || !item.nama.trim()) tolak(`${kode}: nama kosong`);
   if (!objekJalan(item.nama)) tolak(`${kode}: nama bukan objek jalan — ${item.nama}`);
   if (objekLain(item.nama)) tolak(`${kode}: nama memuat objek non-jalan — ${item.nama}`);
+  if (namaNonFisik(item.nama)) tolak(`${kode}: nama memuat baris non-fisik — ${item.nama}`);
   if (item.lat !== null || item.lon !== null) tolak(`${kode}: lat/lon harus null`);
   if (!PRECISION.has(item.presisi_peta)) tolak(`${kode}: presisi "${item.presisi_peta}" tidak sah`);
 

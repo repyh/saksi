@@ -63,11 +63,17 @@ menerbitkan `latitude`/`longitude` per kontrak.)
    `pemeliharaan`, `renovasi`, `penggantian`, `penataan`, `normalisasi`, `penyediaan`, `lanjutan`,
    `pemasangan`, `pengadaan`, `pembuatan`, `pengerukan`, `pengaspalan`); tidak didahului `Belanja …`.
 3. **Eksklusi**: alat, kantor, listrik, kendaraan, ATK, konsumsi, pakaian, sewa, tagihan, honor, jasa
-   konsultansi, pengawasan, perencanaan, survei, DED, aplikasi, obat/bahan kimia.
-4. **Kelas pekerjaan** (dipakai filter `Jenis`; urutan penting — drainase diuji lebih dulu supaya
-   `turap`/`TPT`/`gorong-gorong` tidak jatuh ke permukaan): `drainase`, `saluran`, `u-ditch`/`uditch`,
-   `spal`, `turap`, `talud`, `tpt`, `bronjong`, `gorong`, `culvert` → **drainase**; `jembatan` →
-   **jembatan**; sisanya (paving, beton, hotmix, aspal, rabat, **trotoar**) → **permukaan**.
+   konsultansi, pengawasan, perencanaan, survei, DED, aplikasi, obat/bahan kimia. Ditegakkan dua
+   lapis di `scripts/lib/road-filter.mjs`: **jenis pengadaan RUP** `Barang`, `Jasa Lainnya`, dan
+   `Jasa Konsultansi` dibuang seluruhnya; lalu nama yang memuat upah/iuran/bahan bakar/lampu
+   PJU/narasumber/tenaga/outsourcing/portal dibuang meski jenisnya kosong (baris swakelola).
+4. **Kelas pekerjaan** (dipakai filter `Jenis`): kategori ditentukan **objek yang disebut paling awal**
+   di nama paket, bukan urutan pemeriksaan kata. Kata objek: `jembatan` → **jembatan**; `drainase`,
+   `saluran`, `spal`, `turap`, `talud`, `tpt`, `bronjong`, `gorong`, `culvert`, `tanggul`, `got`,
+   `selokan`, `riol` → **drainase**; `jalan`, `jl`, `trotoar`, `paving`, `aspal`, `hotmix`, `beton`,
+   `rabat` → **permukaan**. Jadi `Pembangunan Jembatan Saluran X` = jembatan, sedangkan
+   `Pembangunan Jalan Saluran Pembuang X` = permukaan jalan; `Peningkatan Jl. Lingk. Jl. Tanggul`
+   tetap permukaan karena `tanggul` di situ bagian nama ruas.
 5. Hasil snapshot terakhir (paket, pagu, dan sebaran jenis pekerjaan) dibaca dari
    `data/regions/kota-tangerang/manifest.json`; angka tidak disalin ke dokumen.
 

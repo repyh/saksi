@@ -20,6 +20,17 @@ export const RE_OBJ_JL = new RegExp(`\\b${VERB}\\s+\\bjl\\b\\.?`, "i");
 
 export const RE_BUKAN = new RegExp(BUKAN, "i");
 
+// Jenis pengadaan RUP yang bukan pekerjaan fisik. Barang (lampu PJU, aspal, BBM), Jasa Lainnya
+// (iuran, outsourcing), dan Jasa Konsultansi (supervisi, perencanaan) tidak boleh masuk register
+// paket jalan meski namanya menyebut "jalan".
+export const JENIS_BUKAN_FISIK = new Set(["Barang", "Jasa Lainnya", "Jasa Konsultansi"]);
+
+// Baris swakelola/barang yang namanya fisik tetapi isinya upah, narasumber, atau material.
+export const NONFISIK =
+  "(iuran|jaminan kematian|jaminan kecelakaan|jaminan kesehatan|upah|tenaga |pppk|outsourcing|pegawai|perjalanan dinas|narasumber|monitoring dan evaluasi|bahan bakar|penerangan jalan|lampu|bahan material|belanja bahan|sewa alat|makan dan minum|pengamen|portal jalan|tukang)";
+
+export const RE_NONFISIK = new RegExp(NONFISIK, "i");
+
 /** true bila nama paket menyebut objek jalan/jembatan/drainase. */
 export function objekJalan(nama) {
   return RE_FISIK.test(nama) || RE_OBJ_JL.test(nama);
@@ -28,4 +39,14 @@ export function objekJalan(nama) {
 /** true bila nama paket menyebut objek non-jalan yang harus ditolak. */
 export function objekLain(nama) {
   return RE_BUKAN.test(nama);
+}
+
+/** true bila jenis pengadaan RUP bukan pekerjaan fisik (barang/jasa lainnya/konsultansi). */
+export function jenisBukanFisik(jenis) {
+  return JENIS_BUKAN_FISIK.has(String(jenis ?? "").trim());
+}
+
+/** true bila nama paket fisik ternyata upah, iuran, lampu PJU, atau material. */
+export function namaNonFisik(nama) {
+  return RE_NONFISIK.test(nama);
 }

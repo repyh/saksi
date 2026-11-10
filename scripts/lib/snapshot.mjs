@@ -2,7 +2,7 @@
 // workers/ingest.mjs supaya normalisasi worker dan snapshot aplikasi tidak pernah berbeda.
 // Tidak ada I/O di sini: masukan sudah dibaca pemanggil.
 import { judul, norm } from "./region.mjs";
-import { objekJalan, objekLain } from "./road-filter.mjs";
+import { jenisBukanFisik, namaNonFisik, objekJalan, objekLain } from "./road-filter.mjs";
 
 export const SEKTOR_JALAN = "Jalan, Jembatan & Drainase";
 
@@ -24,6 +24,7 @@ export function bangunSnapshot(region, { rup, detail: detailMasukan } = {}) {
   const paket = [];
   let ditolakObjek = 0;
   let ditolakBukanFisik = 0;
+  let ditolakNonKonstruksi = 0;
   const aliasDipakai = new Map();
 
   for (const r of rup ?? []) {
@@ -34,6 +35,16 @@ export function bangunSnapshot(region, { rup, detail: detailMasukan } = {}) {
     }
     if (objekLain(nama)) {
       ditolakObjek += 1;
+      continue;
+    }
+    // Jenis pengadaan RUP lebih kuat daripada nama: barang, jasa lainnya, dan jasa konsultansi
+    // bukan paket pekerjaan jalan meski namanya menyebut jalan/jembatan/drainase.
+    if (jenisBukanFisik(r.jenis)) {
+      ditolakNonKonstruksi += 1;
+      continue;
+    }
+    if (namaNonFisik(nama)) {
+      ditolakNonKonstruksi += 1;
       continue;
     }
 
@@ -117,7 +128,7 @@ export function bangunSnapshot(region, { rup, detail: detailMasukan } = {}) {
   // Tahun terbaru dulu, lalu pagu terbesar: paket yang paling lengkap datanya tampil lebih dulu.
   paket.sort((a, b) => b.tahun - a.tahun || b.pagu - a.pagu || a.kode_rup.localeCompare(b.kode_rup));
 
-  return { paket, ditolakObjek, ditolakBukanFisik, aliasDipakai };
+  return { paket, ditolakObjek, ditolakBukanFisik, ditolakNonKonstruksi, aliasDipakai };
 }
 
 /** Serialisasi snapshot persis seperti berkas yang dibaca aplikasi. */

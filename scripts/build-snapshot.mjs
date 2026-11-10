@@ -25,7 +25,7 @@ async function main() {
     console.warn(`peringatan: ${region.sumber.detail ?? "sumber.detail"} tidak tersedia — \`bulan\` akan kosong`);
   }
 
-  const { paket, ditolakObjek, ditolakBukanFisik, aliasDipakai } = bangunSnapshot(region, {
+  const { paket, ditolakObjek, ditolakBukanFisik, ditolakNonKonstruksi, aliasDipakai } = bangunSnapshot(region, {
     rup,
     detail,
   });
@@ -56,6 +56,7 @@ async function main() {
   console.log(`RUP dibaca        : ${rup.length}`);
   console.log(`ditolak (non-fisik): ${ditolakBukanFisik}`);
   console.log(`ditolak (objek lain): ${ditolakObjek}`);
+  console.log(`ditolak (non-konstruksi): ${ditolakNonKonstruksi}`);
   console.log(`paket tersimpan   : ${paket.length}`);
   console.log(`pagu              : Rp${(pagu / 1e9).toFixed(2)} M`);
   console.log(`per tahun         : ${JSON.stringify(hitung("tahun"))}`);

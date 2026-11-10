@@ -33,6 +33,17 @@ Periuk Jaya, `Parug Serab` → Parung Serab, `Batu Ceper` → Batuceper, `Suka A
 48 paket mendapat anchor lebih dalam (41 pindah ke RW, 7 ke kelurahan), sehingga presisi kecamatan
 turun dari 108 menjadi 79.
 
+**10 November 2026 — klasifikasi jenis pekerjaan dan cakupan snapshot diperbaiki.**
+`src/contracts/packages/road-work.ts` kini menentukan kategori dari **objek yang disebut paling awal**
+pada nama paket, bukan urutan kata kunci. Dua kesalahan lama hilang: `Pembangunan Jembatan Saluran …`
+tidak lagi masuk drainase, dan `Pembangunan Jalan Saluran Pembuang Semanan` tidak lagi masuk drainase
+hanya karena memuat kata `saluran`; kata `tanggul`, `got`, `selokan`, `riol` ditambahkan, sedangkan
+`tanggul` yang bagian nama ruas tetap permukaan karena `Jl.` disebut lebih dulu.
+`scripts/lib/road-filter.mjs` juga membuang baris **bukan pekerjaan fisik**: jenis pengadaan RUP
+`Barang`, `Jasa Lainnya`, `Jasa Konsultansi` (supervisi, perencanaan, lampu PJU, aspal, BBM) serta
+baris swakelola berisi upah/iuran/narasumber/tenaga. Snapshot, manifest, dan pencocokan LPSE dibangun
+ulang; register tidak lagi menampilkan paket konsultansi atau pengadaan barang sebagai paket jalan.
+
 - **Angka dataset tidak lagi ditulis di dokumen.** Jumlah paket, pagu, sebaran jenis pekerjaan,
   presisi anchor, cakupan wilayah, dan rekam penyedia dibaca dari
   `data/regions/kota-tangerang/manifest.json` (`metrik`, `dibuat`) atau
