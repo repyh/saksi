@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
+
 const steps = [
   {
     title: "Temukan ruas",
@@ -41,6 +44,19 @@ export function PackageJourneySection() {
             </li>
           ))}
         </ol>
+
+        <div className="mt-8 flex flex-col items-start gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            Menemukan jalan rusak di sekitar Anda? Laporkan dengan foto dan titik lokasi; laporan masuk antrean tinjauan sebelum tampil publik.
+          </p>
+          <Link
+            href="/laporan"
+            className="inline-flex min-h-12 shrink-0 items-center gap-3 bg-primary px-5 font-sans text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          >
+            Laporkan kerusakan jalan
+            <FiArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
 
       </div>
     </section>

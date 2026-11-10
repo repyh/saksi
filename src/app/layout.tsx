@@ -28,7 +28,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${raleway.variable} ${openSans.variable} h-full antialiased`}>
       <body className="min-h-full font-sans bg-background text-foreground flex flex-col">
-        <Suspense fallback={<header aria-hidden="true" className="h-16 w-full bg-primary/90" />}>
+        <Suspense
+          fallback={(
+            <header aria-hidden="true" className="h-16 w-full border-b border-white/25 bg-primary/90">
+              <div className="flex h-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+                <span className="font-heading text-sm font-black uppercase tracking-[0.28em] text-white">SAKSI</span>
+                <span className="h-9 w-20 animate-pulse bg-white/15" />
+              </div>
+            </header>
+          )}
+        >
           <Navbar />
         </Suspense>
         <div className="flex-1">
