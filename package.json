@@ -36,7 +36,8 @@
     "retention:reports:dry": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs --dry-run",
     "start": "next start",
     "storage:reports:ensure": "bun scripts/ensure-report-storage.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
