@@ -233,6 +233,66 @@ export async function simpanArea(client, { regionId, areas, chunk = 200 }) {
   return total;
 }
 
+export async function simpanSegmenJalan(client, { regionId, segments, chunk = 200 }) {
+  if (!segments.length) return 0;
+  let total = 0;
+  for (const bagian of potong(segments, chunk)) {
+    const params = [];
+    const nilai = bagian
+      .map((s) => {
+        params.push(
+          regionId,
+          s.source_object_id,
+          s.name,
+          s.number,
+          s.length_m,
+          s.width_m,
+          s.district_names,
+          s.village_names,
+          s.source_name,
+          s.source_url,
+          s.source_retrieved_at,
+          s.dataset_version,
+        );
+        const n = params.length;
+        params.push(s.geometry);
+        return `($${n - 11},$${n - 10},$${n - 9},$${n - 8},$${n - 7},$${n - 6},
+          $${n - 5}::text[],$${n - 4}::text[],$${n - 3},$${n - 2},$${n - 1},$${n},
+          extensions.ST_SetSRID(extensions.ST_Force2D(extensions.ST_GeomFromGeoJSON($${n + 1})), 4326),
+          true,CURRENT_TIMESTAMP)`;
+      })
+      .join(", ");
+    await client.query(
+      `INSERT INTO road_segments
+         (region_id, source_object_id, name, number, length_m, width_m,
+          district_names, village_names, source_name, source_url, source_retrieved_at,
+          dataset_version, geometry, is_active, updated_at)
+       VALUES ${nilai}
+       ON CONFLICT (region_id, source_object_id) DO UPDATE SET
+         name=EXCLUDED.name, number=EXCLUDED.number, length_m=EXCLUDED.length_m,
+         width_m=EXCLUDED.width_m, district_names=EXCLUDED.district_names,
+         village_names=EXCLUDED.village_names, source_name=EXCLUDED.source_name,
+         source_url=EXCLUDED.source_url, source_retrieved_at=EXCLUDED.source_retrieved_at,
+         dataset_version=EXCLUDED.dataset_version, geometry=EXCLUDED.geometry,
+         is_active=true, updated_at=CURRENT_TIMESTAMP`,
+      params,
+    );
+    total += bagian.length;
+  }
+  return total;
+}
+
+/** Segmen yang tidak lagi ada di snapshot ditandai nonaktif, bukan dihapus. */
+export async function nonaktifkanSegmenJalan(client, { regionId, activeObjectIds }) {
+  const { rowCount } = await client.query(
+    `UPDATE road_segments SET is_active=false, updated_at=CURRENT_TIMESTAMP
+      WHERE region_id=$1 AND is_active=true
+        AND NOT (source_object_id = ANY($2::varchar[]))`,
+    [regionId, activeObjectIds],
+  );
+  return rowCount;
+}
+
 export async function ambilIdMap(client, sql, params) {
   const { rows } = await client.query(sql, params);
   return new Map(rows.map((r) => [r.kunci, r.id]));

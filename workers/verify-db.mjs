@@ -173,6 +173,22 @@ cek("link area paket", m.berlokus, await satu(
   [REGION_ID],
 ));
 
+// ---- Layer jaringan jalan ----
+const regionConfig = JSON.parse(readFileSync(path.resolve(AKAR, "data", "regions", REGION_ID, "region.json"), "utf8"));
+if (regionConfig.jalan) {
+  const berkasJalan = path.resolve(AKAR, regionConfig.jalan.berkas);
+  const checksumLayer = sha256(readFileSync(berkasJalan));
+  cek("segmen jalan aktif", m.jalan?.fitur ?? 0, await satu(
+    "SELECT count(*) AS n FROM road_segments WHERE region_id=$1 AND is_active",
+    [REGION_ID],
+  ));
+  cek("checksum layer jalan", manifest.berkas?.[regionConfig.jalan.berkas]?.sha256 ?? checksumLayer, checksumLayer);
+  catat("segmen jalan tersimpan", await satu(
+    "SELECT count(*) AS n FROM road_segments WHERE region_id=$1",
+    [REGION_ID],
+  ));
+}
+
 // ---- Provenance mentah ----
 const raw = (
   await q(

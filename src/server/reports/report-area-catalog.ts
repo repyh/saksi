@@ -9,11 +9,14 @@ type AreaFeatureCollection = {
   }>;
 };
 
+export type ReportAreaLevel = "RW" | "KELURAHAN" | "KECAMATAN";
+
 export type ReportAreaSnapshot = {
   stableKey: string;
+  level: ReportAreaLevel;
   districtName: string;
-  villageName: string;
-  rwCode: string;
+  villageName: string | null;
+  rwCode: string | null;
   datasetVersion: string;
 };
 
@@ -35,6 +38,7 @@ async function loadAreaMap() {
     const stableKey = `${district.toLocaleLowerCase("id-ID")}|${village.toLocaleLowerCase("id-ID")}|${rw}`;
     areas.set(stableKey, {
       stableKey,
+      level: "RW",
       districtName: titleCase(district),
       villageName: titleCase(village),
       rwCode: rw.replace(/^0+/, "") || "0",
@@ -47,4 +51,13 @@ async function loadAreaMap() {
 export async function findReportAreaSnapshot(stableKey: string) {
   areaMapPromise ??= loadAreaMap();
   return (await areaMapPromise).get(stableKey) ?? null;
+}
+
+/** Label wilayah laporan; jangan menampilkan kode area internal. */
+export function reportAreaLabel(area: Pick<ReportAreaSnapshot, "level" | "districtName" | "villageName" | "rwCode">) {
+  if (area.level === "RW" && area.villageName && area.rwCode) {
+    return `${area.villageName}, RW ${area.rwCode}`;
+  }
+  if (area.level === "KELURAHAN" && area.villageName) return area.villageName;
+  return area.districtName;
 }

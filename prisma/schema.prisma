@@ -47,6 +47,9 @@ enum ReportLocationSource {
   DEVICE_RESOLVED_AREA
   PACKAGE_REFERENCE_ONLY
   UNKNOWN
+  DEVICE_GEOLOCATION
+  MAP_PIN
+  ADDRESS_GEOCODE
 }
 
 enum ReportPackageSelectionSource {
@@ -92,6 +95,7 @@ enum IngestionSourceKind {
   LPSE
   BOUNDARY
   SNAPSHOT
+  ROAD_NETWORK
 }
 
 enum IngestionStepStatus {
@@ -339,35 +343,71 @@ model RoadPackage {
   @@map("road_packages")
 }
 
+model RoadSegment {
+  id                String                                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId          String                                  @map("region_id") @db.VarChar(64)
+  sourceObjectId    String                                  @map("source_object_id") @db.VarChar(64)
+  name              String                                  @db.Text
+  number            String?                                 @db.VarChar(80)
+  lengthM           Decimal?                                @map("length_m") @db.Decimal(12, 2)
+  widthM            Decimal?                                @map("width_m") @db.Decimal(8, 2)
+  districtNames     String[]                                @default([]) @map("district_names")
+  villageNames      String[]                                @default([]) @map("village_names")
+  geometry          Unsupported("geometry(Geometry, 4326)")
+  sourceName        String                                  @map("source_name") @db.VarChar(120)
+  sourceUrl         String?                                 @map("source_url") @db.Text
+  sourceRetrievedAt DateTime                                @map("source_retrieved_at") @db.Timestamptz(6)
+  datasetVersion    String                                  @map("dataset_version") @db.VarChar(120)
+  isActive          Boolean                                 @default(true) @map("is_active")
+  createdAt         DateTime                                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  region            Region                                  @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  reports           Report[]
+
+  @@unique([regionId, sourceObjectId])
+  @@index([regionId, name])
+  @@index([regionId, isActive])
+  @@map("road_segments")
+}
+
 model Report {
-  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  publicCode           String                @unique @map("public_code") @db.VarChar(64)
-  reporterUserId       String?               @map("reporter_user_id")
-  status               ReportStatus          @default(SUBMITTED)
-  damageType           ReportDamageType      @map("damage_type")
-  observedCauses       ReportObservedCause[] @default([]) @map("observed_causes")
-  coarseSize           ReportCoarseSize?     @map("coarse_size")
-  description          String?               @db.VarChar(500)
-  areaId               String?               @map("area_id") @db.Uuid
-  areaNameSnapshot     String?               @map("area_name_snapshot") @db.VarChar(160)
-  districtNameSnapshot String?               @map("district_name_snapshot") @db.VarChar(160)
-  rwCodeSnapshot       String?               @map("rw_code_snapshot") @db.VarChar(32)
-  areaDatasetVersion   String?               @map("area_dataset_version") @db.VarChar(120)
-  locationSource       ReportLocationSource  @default(UNKNOWN) @map("location_source")
-  locationHint         String?               @map("location_hint") @db.VarChar(180)
-  submittedAt          DateTime              @default(now()) @map("submitted_at") @db.Timestamptz(6)
-  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reporter             User?                 @relation("ReportSubmitter", fields: [reporterUserId], references: [id], onDelete: SetNull)
-  area                 AdministrativeArea?   @relation(fields: [areaId], references: [id], onDelete: SetNull)
-  media                ReportMedia?
-  packageLink          ReportPackageLink?
-  statusEvents         ReportStatusEvent[]
-  idempotencyKey       ReportIdempotencyKey?
+  id                    String                                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publicCode            String                                @unique @map("public_code") @db.VarChar(64)
+  reporterUserId        String?                               @map("reporter_user_id")
+  status                ReportStatus                          @default(SUBMITTED)
+  damageType            ReportDamageType                      @map("damage_type")
+  observedCauses        ReportObservedCause[]                 @default([]) @map("observed_causes")
+  coarseSize            ReportCoarseSize?                     @map("coarse_size")
+  description           String?                               @db.VarChar(500)
+  areaId                String?                               @map("area_id") @db.Uuid
+  areaNameSnapshot      String?                               @map("area_name_snapshot") @db.VarChar(160)
+  districtNameSnapshot  String?                               @map("district_name_snapshot") @db.VarChar(160)
+  rwCodeSnapshot        String?                               @map("rw_code_snapshot") @db.VarChar(32)
+  areaDatasetVersion    String?                               @map("area_dataset_version") @db.VarChar(120)
+  locationPoint         Unsupported("geometry(Point, 4326)")?
+  locationAccuracyM     Float?                                @map("location_accuracy_m")
+  publicLocationConsent Boolean                               @default(true) @map("public_location_consent")
+  roadSegmentId         String?                               @map("road_segment_id") @db.Uuid
+  roadNameSnapshot      String?                               @map("road_name_snapshot") @db.Text
+  roadNumberSnapshot    String?                               @map("road_number_snapshot") @db.VarChar(80)
+  roadSourceVersion     String?                               @map("road_source_version") @db.VarChar(120)
+  locationSource        ReportLocationSource                  @default(UNKNOWN) @map("location_source")
+  locationHint          String?                               @map("location_hint") @db.VarChar(180)
+  submittedAt           DateTime                              @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  createdAt             DateTime                              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reporter              User?                                 @relation("ReportSubmitter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  area                  AdministrativeArea?                   @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  roadSegment           RoadSegment?                          @relation(fields: [roadSegmentId], references: [id], onDelete: SetNull)
+  media                 ReportMedia?
+  packageLink           ReportPackageLink?
+  statusEvents          ReportStatusEvent[]
+  idempotencyKey        ReportIdempotencyKey?
 
   @@index([status, submittedAt])
   @@index([areaId, submittedAt])
   @@index([reporterUserId, submittedAt])
+  @@index([roadSegmentId])
   @@map("reports")
 }
 
@@ -442,46 +482,47 @@ model ReportIdempotencyKey {
 }
 
 model Region {
-  id              String               @id @db.VarChar(64)
-  label           String               @db.VarChar(160)
-  instansi        String               @db.VarChar(32)
-  years           Int[]                @default([])
-  timezone        String               @default("Asia/Jakarta") @db.VarChar(64)
-  config          Json?
-  configChecksum  String?              @map("config_checksum") @db.VarChar(64)
-  isActive        Boolean              @default(true) @map("is_active")
-  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  dataSources     DataSource[]
-  ingestionRuns   IngestionRun[]
-  artifacts       SourceArtifact[]
-  rupPackages     RupPackage[]
-  rupDetails      RupDetail[]
-  roadPackages    RoadPackage[]
-  contracts       LpseContract[]
-  packages        RealizationPackage[]
-  transactions    RealizationTransaction[]
-  areas           AdministrativeArea[]
-  manifests       RegionManifest[]
-  lock            IngestionLock?
+  id             String                   @id @db.VarChar(64)
+  label          String                   @db.VarChar(160)
+  instansi       String                   @db.VarChar(32)
+  years          Int[]                    @default([])
+  timezone       String                   @default("Asia/Jakarta") @db.VarChar(64)
+  config         Json?
+  configChecksum String?                  @map("config_checksum") @db.VarChar(64)
+  isActive       Boolean                  @default(true) @map("is_active")
+  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  dataSources    DataSource[]
+  ingestionRuns  IngestionRun[]
+  artifacts      SourceArtifact[]
+  rupPackages    RupPackage[]
+  rupDetails     RupDetail[]
+  roadPackages   RoadPackage[]
+  contracts      LpseContract[]
+  packages       RealizationPackage[]
+  transactions   RealizationTransaction[]
+  areas          AdministrativeArea[]
+  roadSegments   RoadSegment[]
+  manifests      RegionManifest[]
+  lock           IngestionLock?
 
   @@map("regions")
 }
 
 model DataSource {
-  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId    String               @map("region_id") @db.VarChar(64)
-  kind        IngestionSourceKind
-  name        String               @db.VarChar(120)
-  endpoint    String?              @db.Text
-  format      String?              @db.VarChar(40)
-  license     String?              @db.VarChar(160)
-  isActive    Boolean              @default(true) @map("is_active")
-  metadata    Json?
-  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  region      Region               @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  artifacts   SourceArtifact[]
+  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId  String              @map("region_id") @db.VarChar(64)
+  kind      IngestionSourceKind
+  name      String              @db.VarChar(120)
+  endpoint  String?             @db.Text
+  format    String?             @db.VarChar(40)
+  license   String?             @db.VarChar(160)
+  isActive  Boolean             @default(true) @map("is_active")
+  metadata  Json?
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  region    Region              @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  artifacts SourceArtifact[]
 
   @@unique([regionId, kind, name])
   @@index([regionId, kind])
@@ -489,23 +530,23 @@ model DataSource {
 }
 
 model IngestionRun {
-  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId         String             @map("region_id") @db.VarChar(64)
-  trigger          IngestionTrigger   @default(MANUAL)
-  status           IngestionRunStatus @default(RUNNING)
-  dryRun           Boolean            @default(false) @map("dry_run")
-  requestedSources IngestionSourceKind[] @default([]) @map("requested_sources")
-  startedAt        DateTime           @default(now()) @map("started_at") @db.Timestamptz(6)
-  finishedAt       DateTime?          @map("finished_at") @db.Timestamptz(6)
-  durationMs       Int?               @map("duration_ms")
-  gitCommit        String?            @map("git_commit") @db.VarChar(64)
-  hostName         String?            @map("host_name") @db.VarChar(160)
-  lockOwner        String?            @map("lock_owner") @db.VarChar(160)
-  errorCode        String?            @map("error_code") @db.VarChar(80)
-  errorMessage     String?            @map("error_message") @db.Text
+  id               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId         String                 @map("region_id") @db.VarChar(64)
+  trigger          IngestionTrigger       @default(MANUAL)
+  status           IngestionRunStatus     @default(RUNNING)
+  dryRun           Boolean                @default(false) @map("dry_run")
+  requestedSources IngestionSourceKind[]  @default([]) @map("requested_sources")
+  startedAt        DateTime               @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt       DateTime?              @map("finished_at") @db.Timestamptz(6)
+  durationMs       Int?                   @map("duration_ms")
+  gitCommit        String?                @map("git_commit") @db.VarChar(64)
+  hostName         String?                @map("host_name") @db.VarChar(160)
+  lockOwner        String?                @map("lock_owner") @db.VarChar(160)
+  errorCode        String?                @map("error_code") @db.VarChar(80)
+  errorMessage     String?                @map("error_message") @db.Text
   stats            Json?
-  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  region           Region             @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  region           Region                 @relation(fields: [regionId], references: [id], onDelete: Restrict)
   steps            IngestionRunStep[]
   artifactLinks    IngestionRunArtifact[]
   manifest         RegionManifest?
@@ -536,22 +577,22 @@ model IngestionRunStep {
 }
 
 model SourceArtifact {
-  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId       String                  @map("region_id") @db.VarChar(64)
-  sourceId       String                  @map("source_id") @db.Uuid
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId       String                   @map("region_id") @db.VarChar(64)
+  sourceId       String                   @map("source_id") @db.Uuid
   kind           ArtifactKind
-  artifactKey    String                  @map("artifact_key") @db.VarChar(256)
-  checksumSha256 String                  @map("checksum_sha256") @db.VarChar(64)
-  byteSize       BigInt                  @map("byte_size")
-  recordCount    Int?                    @map("record_count")
-  retrievedAt    DateTime                @map("retrieved_at") @db.Timestamptz(6)
-  parserVersion  String                  @map("parser_version") @db.VarChar(64)
-  schemaVersion  String                  @map("schema_version") @db.VarChar(64)
-  storagePath    String?                 @map("storage_path") @db.Text
+  artifactKey    String                   @map("artifact_key") @db.VarChar(256)
+  checksumSha256 String                   @map("checksum_sha256") @db.VarChar(64)
+  byteSize       BigInt                   @map("byte_size")
+  recordCount    Int?                     @map("record_count")
+  retrievedAt    DateTime                 @map("retrieved_at") @db.Timestamptz(6)
+  parserVersion  String                   @map("parser_version") @db.VarChar(64)
+  schemaVersion  String                   @map("schema_version") @db.VarChar(64)
+  storagePath    String?                  @map("storage_path") @db.Text
   metadata       Json?
-  createdAt      DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  region         Region                  @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  source         DataSource              @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  region         Region                   @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  source         DataSource               @relation(fields: [sourceId], references: [id], onDelete: Restrict)
   rawRecords     RawRecord[]
   runLinks       IngestionRunArtifact[]
   areas          AdministrativeArea[]
@@ -567,11 +608,11 @@ model SourceArtifact {
 }
 
 model IngestionRunArtifact {
-  runId      String        @map("run_id") @db.Uuid
-  artifactId String        @map("artifact_id") @db.Uuid
-  role       String        @db.VarChar(80)
-  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  run        IngestionRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId      String         @map("run_id") @db.Uuid
+  artifactId String         @map("artifact_id") @db.Uuid
+  role       String         @db.VarChar(80)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  run        IngestionRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
   artifact   SourceArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
 
   @@id([runId, artifactId])
@@ -580,15 +621,15 @@ model IngestionRunArtifact {
 }
 
 model RawRecord {
-  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  artifactId     String               @map("artifact_id") @db.Uuid
-  sourceKind     IngestionSourceKind  @map("source_kind")
-  externalKey    String?              @map("external_key") @db.VarChar(256)
-  rowIndex       Int                  @map("row_index")
-  checksumSha256 String               @map("checksum_sha256") @db.VarChar(64)
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  artifactId     String              @map("artifact_id") @db.Uuid
+  sourceKind     IngestionSourceKind @map("source_kind")
+  externalKey    String?             @map("external_key") @db.VarChar(256)
+  rowIndex       Int                 @map("row_index")
+  checksumSha256 String              @map("checksum_sha256") @db.VarChar(64)
   payload        Json
-  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  artifact       SourceArtifact       @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  artifact       SourceArtifact      @relation(fields: [artifactId], references: [id], onDelete: Cascade)
 
   @@unique([artifactId, rowIndex])
   @@index([sourceKind, externalKey])
@@ -597,28 +638,28 @@ model RawRecord {
 }
 
 model RupPackage {
-  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId          String                    @map("region_id") @db.VarChar(64)
-  sourceArtifactId  String?                   @map("source_artifact_id") @db.Uuid
-  kodeRup           String                    @map("kode_rup") @db.VarChar(32)
+  id                String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId          String                  @map("region_id") @db.VarChar(64)
+  sourceArtifactId  String?                 @map("source_artifact_id") @db.Uuid
+  kodeRup           String                  @map("kode_rup") @db.VarChar(32)
   tahun             Int
-  satker            String                    @db.Text
-  instansi          String?                   @db.VarChar(160)
-  name              String                    @db.Text
-  cara              String?                   @db.VarChar(32)
-  method            String?                   @db.VarChar(64)
-  jenis             String?                   @db.VarChar(64)
-  sumberDana        String?                   @map("sumber_dana") @db.Text
-  totalNilai        Decimal                   @map("total_nilai") @db.Decimal(20, 0)
-  pdn               String?                   @db.VarChar(8)
-  umk               String?                   @db.VarChar(8)
-  isRoad            Boolean                   @default(false) @map("is_road")
-  checksumSha256    String                    @map("checksum_sha256") @db.VarChar(64)
-  sourceRetrievedAt DateTime                  @map("source_retrieved_at") @db.Timestamptz(6)
-  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  region            Region                    @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  sourceArtifact    SourceArtifact?           @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
+  satker            String                  @db.Text
+  instansi          String?                 @db.VarChar(160)
+  name              String                  @db.Text
+  cara              String?                 @db.VarChar(32)
+  method            String?                 @db.VarChar(64)
+  jenis             String?                 @db.VarChar(64)
+  sumberDana        String?                 @map("sumber_dana") @db.Text
+  totalNilai        Decimal                 @map("total_nilai") @db.Decimal(20, 0)
+  pdn               String?                 @db.VarChar(8)
+  umk               String?                 @db.VarChar(8)
+  isRoad            Boolean                 @default(false) @map("is_road")
+  checksumSha256    String                  @map("checksum_sha256") @db.VarChar(64)
+  sourceRetrievedAt DateTime                @map("source_retrieved_at") @db.Timestamptz(6)
+  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  region            Region                  @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  sourceArtifact    SourceArtifact?         @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
   detail            RupDetail?
   roadPackages      RoadPackage[]
   contracts         LpseContract[]
@@ -632,29 +673,29 @@ model RupPackage {
 }
 
 model RupDetail {
-  id                      String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  rupPackageId            String          @unique @map("rup_package_id") @db.Uuid
-  regionId                String          @map("region_id") @db.VarChar(64)
-  sourceArtifactId        String?         @map("source_artifact_id") @db.Uuid
-  kodeRup                 String          @map("kode_rup") @db.VarChar(32)
-  tahun                   Int
-  satker                  String?         @db.Text
-  jadwalPemilihanMulai    String?         @map("jadwal_pemilihan_mulai") @db.VarChar(40)
-  jadwalPemilihanAkhir    String?         @map("jadwal_pemilihan_akhir") @db.VarChar(40)
-  jadwalKontrakMulai      String?         @map("jadwal_kontrak_mulai") @db.VarChar(40)
-  jadwalKontrakAkhir      String?         @map("jadwal_kontrak_akhir") @db.VarChar(40)
-  lokasiRaw               String[]        @default([]) @map("lokasi_raw")
-  uraian                  String?         @db.Text
-  volume                  String?         @db.Text
-  spesifikasi             String?         @db.Text
-  mak                     String?         @db.VarChar(120)
-  fundingSources          Json?           @map("funding_sources")
-  checksumSha256          String          @map("checksum_sha256") @db.VarChar(64)
-  createdAt               DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
-  rupPackage              RupPackage      @relation(fields: [rupPackageId], references: [id], onDelete: Cascade)
-  sourceArtifact          SourceArtifact? @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
-  region                  Region          @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rupPackageId         String          @unique @map("rup_package_id") @db.Uuid
+  regionId             String          @map("region_id") @db.VarChar(64)
+  sourceArtifactId     String?         @map("source_artifact_id") @db.Uuid
+  kodeRup              String          @map("kode_rup") @db.VarChar(32)
+  tahun                Int
+  satker               String?         @db.Text
+  jadwalPemilihanMulai String?         @map("jadwal_pemilihan_mulai") @db.VarChar(40)
+  jadwalPemilihanAkhir String?         @map("jadwal_pemilihan_akhir") @db.VarChar(40)
+  jadwalKontrakMulai   String?         @map("jadwal_kontrak_mulai") @db.VarChar(40)
+  jadwalKontrakAkhir   String?         @map("jadwal_kontrak_akhir") @db.VarChar(40)
+  lokasiRaw            String[]        @default([]) @map("lokasi_raw")
+  uraian               String?         @db.Text
+  volume               String?         @db.Text
+  spesifikasi          String?         @db.Text
+  mak                  String?         @db.VarChar(120)
+  fundingSources       Json?           @map("funding_sources")
+  checksumSha256       String          @map("checksum_sha256") @db.VarChar(64)
+  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  rupPackage           RupPackage      @relation(fields: [rupPackageId], references: [id], onDelete: Cascade)
+  sourceArtifact       SourceArtifact? @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
+  region               Region          @relation(fields: [regionId], references: [id], onDelete: Restrict)
 
   @@index([regionId, tahun])
   @@index([kodeRup])
@@ -717,29 +758,29 @@ model LpseContract {
 }
 
 model RealizationPackage {
-  id                String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId          String                  @map("region_id") @db.VarChar(64)
-  sourceArtifactId  String?                 @map("source_artifact_id") @db.Uuid
-  vendorId          String?                 @map("vendor_id") @db.Uuid
-  kodePaket         String                  @map("kode_paket") @db.VarChar(96)
-  tahun             Int
-  name              String?                 @db.Text
-  satker            String?                 @db.Text
-  metode            String?                 @db.VarChar(64)
-  sumberTransaksi   String?                 @map("sumber_transaksi") @db.VarChar(64)
-  totalNilai        Decimal                 @map("total_nilai") @db.Decimal(20, 0) @default(0)
-  transactionCount  Int                     @default(0) @map("transaction_count")
-  rupCount          Int                     @default(0) @map("rup_count")
-  checksumSha256    String                  @map("checksum_sha256") @db.VarChar(64)
-  firstSeenAt       DateTime                @default(now()) @map("first_seen_at") @db.Timestamptz(6)
-  lastSeenAt        DateTime                @default(now()) @map("last_seen_at") @db.Timestamptz(6)
-  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  region            Region                  @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  sourceArtifact    SourceArtifact?         @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
-  vendor            Vendor?                 @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  transactions      RealizationTransaction[]
-  rupLinks          RealizationPackageRup[]
+  id               String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId         String                   @map("region_id") @db.VarChar(64)
+  sourceArtifactId String?                  @map("source_artifact_id") @db.Uuid
+  vendorId         String?                  @map("vendor_id") @db.Uuid
+  kodePaket        String                   @map("kode_paket") @db.VarChar(96)
+  tahun            Int
+  name             String?                  @db.Text
+  satker           String?                  @db.Text
+  metode           String?                  @db.VarChar(64)
+  sumberTransaksi  String?                  @map("sumber_transaksi") @db.VarChar(64)
+  totalNilai       Decimal                  @default(0) @map("total_nilai") @db.Decimal(20, 0)
+  transactionCount Int                      @default(0) @map("transaction_count")
+  rupCount         Int                      @default(0) @map("rup_count")
+  checksumSha256   String                   @map("checksum_sha256") @db.VarChar(64)
+  firstSeenAt      DateTime                 @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt       DateTime                 @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  region           Region                   @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  sourceArtifact   SourceArtifact?          @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
+  vendor           Vendor?                  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  transactions     RealizationTransaction[]
+  rupLinks         RealizationPackageRup[]
 
   @@unique([regionId, kodePaket, tahun])
   @@index([regionId, tahun])
@@ -748,26 +789,26 @@ model RealizationPackage {
 }
 
 model RealizationTransaction {
-  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionId       String              @map("region_id") @db.VarChar(64)
-  packageId      String              @map("package_id") @db.Uuid
-  sourceArtifactId String?           @map("source_artifact_id") @db.Uuid
-  vendorId       String?             @map("vendor_id") @db.Uuid
-  kodePaket      String              @map("kode_paket") @db.VarChar(96)
-  kodeRup        String?             @map("kode_rup") @db.VarChar(256)
-  tahun          Int
-  metode         String?             @db.VarChar(64)
-  sumberTransaksi String?            @map("sumber_transaksi") @db.VarChar(64)
-  satker         String?             @db.Text
-  name           String?             @db.Text
-  penyediaRaw    String?             @map("penyedia_raw") @db.Text
-  nilai          Decimal             @db.Decimal(20, 0) @default(0)
-  checksumSha256 String              @map("checksum_sha256") @db.VarChar(64)
-  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  region         Region              @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  package        RealizationPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  sourceArtifact SourceArtifact?     @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
-  vendor         Vendor?             @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionId         String             @map("region_id") @db.VarChar(64)
+  packageId        String             @map("package_id") @db.Uuid
+  sourceArtifactId String?            @map("source_artifact_id") @db.Uuid
+  vendorId         String?            @map("vendor_id") @db.Uuid
+  kodePaket        String             @map("kode_paket") @db.VarChar(96)
+  kodeRup          String?            @map("kode_rup") @db.VarChar(256)
+  tahun            Int
+  metode           String?            @db.VarChar(64)
+  sumberTransaksi  String?            @map("sumber_transaksi") @db.VarChar(64)
+  satker           String?            @db.Text
+  name             String?            @db.Text
+  penyediaRaw      String?            @map("penyedia_raw") @db.Text
+  nilai            Decimal            @default(0) @db.Decimal(20, 0)
+  checksumSha256   String             @map("checksum_sha256") @db.VarChar(64)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  region           Region             @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  package          RealizationPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  sourceArtifact   SourceArtifact?    @relation(fields: [sourceArtifactId], references: [id], onDelete: SetNull)
+  vendor           Vendor?            @relation(fields: [vendorId], references: [id], onDelete: SetNull)
 
   @@unique([regionId, checksumSha256])
   @@index([regionId, tahun])
@@ -778,12 +819,12 @@ model RealizationTransaction {
 }
 
 model RealizationPackageRup {
-  packageId   String    @map("package_id") @db.Uuid
-  rupPackageId String   @map("rup_package_id") @db.Uuid
-  kodeRup     String    @map("kode_rup") @db.VarChar(32)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  package     RealizationPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  rupPackage  RupPackage         @relation(fields: [rupPackageId], references: [id], onDelete: Cascade)
+  packageId    String             @map("package_id") @db.Uuid
+  rupPackageId String             @map("rup_package_id") @db.Uuid
+  kodeRup      String             @map("kode_rup") @db.VarChar(32)
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  package      RealizationPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  rupPackage   RupPackage         @relation(fields: [rupPackageId], references: [id], onDelete: Cascade)
 
   @@id([packageId, rupPackageId])
   @@index([kodeRup])
@@ -791,13 +832,13 @@ model RealizationPackageRup {
 }
 
 model RoadPackageAreaLink {
-  id            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  roadPackageId String                @map("road_package_id") @db.Uuid
-  areaId        String                @map("area_id") @db.Uuid
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roadPackageId String              @map("road_package_id") @db.Uuid
+  areaId        String              @map("area_id") @db.Uuid
   role          RoadPackageAreaRole
-  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  roadPackage   RoadPackage           @relation(fields: [roadPackageId], references: [id], onDelete: Cascade)
-  area          AdministrativeArea    @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  roadPackage   RoadPackage         @relation(fields: [roadPackageId], references: [id], onDelete: Cascade)
+  area          AdministrativeArea  @relation(fields: [areaId], references: [id], onDelete: Cascade)
 
   @@unique([roadPackageId, role])
   @@index([areaId, role])
@@ -822,13 +863,13 @@ model RegionManifest {
 }
 
 model IngestionLock {
-  regionId    String       @id @map("region_id") @db.VarChar(64)
-  runId       String?      @map("run_id") @db.Uuid
-  owner       String       @db.VarChar(160)
-  acquiredAt  DateTime     @default(now()) @map("acquired_at") @db.Timestamptz(6)
-  heartbeatAt DateTime     @default(now()) @map("heartbeat_at") @db.Timestamptz(6)
-  expiresAt   DateTime     @map("expires_at") @db.Timestamptz(6)
-  region      Region       @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId    String   @id @map("region_id") @db.VarChar(64)
+  runId       String?  @map("run_id") @db.Uuid
+  owner       String   @db.VarChar(160)
+  acquiredAt  DateTime @default(now()) @map("acquired_at") @db.Timestamptz(6)
+  heartbeatAt DateTime @default(now()) @map("heartbeat_at") @db.Timestamptz(6)
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+  region      Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
   @@map("ingestion_locks")
 }

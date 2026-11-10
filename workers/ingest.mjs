@@ -29,6 +29,8 @@ import {
   simpanManifest,
   simpanRawRecords,
   simpanRegion,
+  simpanSegmenJalan,
+  nonaktifkanSegmenJalan,
   tautkanArtifact,
   transaksi,
   upsertBanyak,
@@ -39,7 +41,7 @@ import { bacaSumber, daftarSumber } from "./lib/sources.mjs";
 import { checksumJson, denganRetry, rupiah, sha256, tidur } from "./lib/util.mjs";
 import { bacaManifest, validasi } from "./lib/validate.mjs";
 
-const GRUP = ["rup", "detail", "realisasi", "lpse", "boundaries"];
+const GRUP = ["rup", "detail", "realisasi", "lpse", "boundaries", "jalan"];
 
 // Deployment cron memberi env langsung; pengembangan memakai .env.local (tanpa menimpa env host).
 if (!process.env.DATABASE_URL && !process.env.DIRECT_URL) {
@@ -63,7 +65,7 @@ if (adaFlag("help") || argv.includes("-h")) {
   console.log(`pakai: node workers/ingest.mjs [opsi]
   --region <id>              region dari data/regions (bawaan kota-tangerang)
   --dry-run                  parse + normalisasi + validasi + gate, tanpa tulis DB/berkas
-  --sources <daftar>         rup,detail,realisasi,lpse,boundaries (bawaan semua)
+  --sources <daftar>         rup,detail,realisasi,lpse,boundaries,jalan (bawaan semua)
   --refresh                  jalankan penarik sumber sebelum impor
   --trigger <manual|cron>    label riwayat run (bawaan manual)
   --simulate-failure <stage> fetch|normalize|validate|before-commit|after-commit|snapshot
@@ -118,7 +120,7 @@ function tanggalProvenance(dokumen, mtime) {
 }
 
 function kunciEksternal(sumber, baris) {
-  if (sumber.grup === "boundaries") return baris?.properties?.objectid ?? null;
+  if (sumber.grup === "boundaries" || sumber.grup === "jalan") return baris?.properties?.objectid ?? null;
   if (sumber.key === "realisasi") return baris?.kode_paket ?? null;
   if (sumber.key === "lpse-rows" || sumber.key === "lpse-detail") return baris?.id ?? null;
   return baris?.kode_rup ?? baris?.kode_paket ?? baris?.id ?? null;
@@ -183,6 +185,7 @@ const ARTEFAK_KIND = {
   REALISASI: "SOURCE_EXPORT",
   LPSE: "SOURCE_EXPORT",
   BOUNDARY: "GEOJSON",
+  ROAD_NETWORK: "GEOJSON",
   SNAPSHOT: "SNAPSHOT",
 };
 
@@ -463,6 +466,17 @@ async function simpanDomain(client, { region, hasil, grup }) {
       });
     }
 
+    if (grup.has("jalan") && hasil.roadSegmentRows?.length) {
+      await simpanSegmenJalan(client, {
+        regionId: region.id,
+        segments: hasil.roadSegmentRows,
+      });
+      await nonaktifkanSegmenJalan(client, {
+        regionId: region.id,
+        activeObjectIds: hasil.roadSegmentRows.map((row) => row.source_object_id),
+      });
+    }
+
     if (grup.has("boundaries") && grup.has("rup") && hasil.areaRows.length) {
       const areaIds = await ambilIdMap(
         client,
@@ -500,6 +514,7 @@ async function simpanDomain(client, { region, hasil, grup }) {
       area: grup.has("boundaries") ? hasil.areaRows.length : 0,
       lpse: grup.has("lpse") ? hasil.lpseRows.length : 0,
       realisasi: grup.has("realisasi") ? hasil.transaksiRows.length : 0,
+      jalan: grup.has("jalan") ? hasil.roadSegmentRows?.length ?? 0 : 0,
       vendor: vendorRows.length,
     };
   });
@@ -606,6 +621,7 @@ async function main() {
         if (g === "detail") return ["RUP_DETAIL"];
         if (g === "realisasi") return ["REALISASI"];
         if (g === "lpse") return ["LPSE"];
+        if (g === "jalan") return ["ROAD_NETWORK"];
         return ["BOUNDARY"];
       }),
       gitCommit,
@@ -663,7 +679,7 @@ async function main() {
       runId,
       step: "upsert",
       status: "SUCCEEDED",
-      recordCount: ditulis.rup + ditulis.detail + ditulis.road + ditulis.area + ditulis.lpse + ditulis.realisasi,
+      recordCount: ditulis.rup + ditulis.detail + ditulis.road + ditulis.area + ditulis.lpse + ditulis.realisasi + ditulis.jalan,
       metadata: ditulis,
     });
     stats.tahap = "snapshot";

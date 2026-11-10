@@ -201,6 +201,7 @@ export async function muatRegion(id, akar = AKAR) {
     lpse: config.lpse ?? null,
     realisasi: config.realisasi ?? null,
     satkerPu: config.realisasi?.satker_pu ?? null,
+    jalan: config.jalan ?? null,
     kelurahanResmi,
     unitLingkungan,
     aliasKelurahan,

@@ -7,7 +7,7 @@ import { ApiError } from "@/server/api/shared/api-error";
 import { parseReportSubmissionFields } from "@/server/api/reports/report-schema";
 import { parseReportMultipart } from "@/server/api/reports/multipart-schema";
 import { claimReportIdempotency, setReportIdempotencyStagedPath } from "@/server/reports/report-idempotency.repository";
-import { findReportAreaSnapshot } from "@/server/reports/report-area-catalog";
+import { resolveReportLocation } from "@/server/reports/report-location.service";
 import { persistSubmittedReport } from "@/server/reports/report.repository";
 import { enforceReportSubmissionRateLimit } from "@/server/reports/report-rate-limit";
 import { removePrivateReportImage, assertPrivateReportBucketReady, downloadPrivateReportImage } from "@/server/storage/supabase-storage.client";
@@ -23,7 +23,7 @@ import {
   type PublicReportsResponse,
 } from "@/contracts/reports/public-report.contract";
 import { changeReportStatus, listPublishedReports } from "@/server/reports/public-report.repository";
-import { requirePermission, requireRequestPermission, AuthorizationError } from "@/server/authorization/authority";
+import { hasPermission, requirePermission, requireRequestPermission, AuthorizationError } from "@/server/authorization/authority";
 import { apiFailure } from "@/server/api/shared/api-response";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -215,6 +215,8 @@ export class ReportsApi extends ApiController {
           submittedAt: true,
           areaNameSnapshot: true,
           districtNameSnapshot: true,
+          roadSegmentId: true,
+          publicLocationConsent: true,
           packageLink: { select: { rupSnapshot: true, packageNameSnapshot: true } },
           media: { select: { id: true, deletedAt: true, retainedUntil: true } },
         },
@@ -229,6 +231,44 @@ export class ReportsApi extends ApiController {
           resourceId: report.id,
         },
       });
+
+      const preciseLocationAccess = await hasPermission(actor.id, "reports.read_precise_location");
+      let location: { latitude: number; longitude: number; accuracyM: number | null } | null = null;
+      let road: { id: string; name: string; number: string | null } | null = null;
+      if (preciseLocationAccess) {
+        const points = await prisma.$queryRawUnsafe<Array<{ latitude: number; longitude: number; accuracyM: number | null }>>(
+          `SELECT extensions.ST_Y(location_point) AS "latitude",
+                  extensions.ST_X(location_point) AS "longitude",
+                  location_accuracy_m AS "accuracyM"
+             FROM reports
+            WHERE id = $1::uuid AND location_point IS NOT NULL
+            LIMIT 1`,
+          report.id,
+        );
+        location = points[0]
+          ? {
+            latitude: Number(points[0].latitude),
+            longitude: Number(points[0].longitude),
+            accuracyM: points[0].accuracyM === null ? null : Number(points[0].accuracyM),
+          }
+          : null;
+        if (report.roadSegmentId) {
+          road = await prisma.roadSegment.findUnique({
+            where: { id: report.roadSegmentId },
+            select: { id: true, name: true, number: true },
+          });
+        }
+        if (location) {
+          await prisma.authorizationAuditEvent.create({
+            data: {
+              actorUserId: actor.id,
+              action: "report.precise_location.read",
+              resourceType: "report",
+              resourceId: report.id,
+            },
+          });
+        }
+      }
 
       const now = new Date();
       const hasEvidence = Boolean(report.media && !report.media.deletedAt && (!report.media.retainedUntil || report.media.retainedUntil > now));
@@ -247,6 +287,10 @@ export class ReportsApi extends ApiController {
           ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
           : null,
         hasEvidence,
+        preciseLocationAccess,
+        publicLocationConsent: report.publicLocationConsent,
+        location,
+        road,
       };
     }, {
       code: "REPORT_REVIEW_DETAIL_UNAVAILABLE",
@@ -370,8 +414,15 @@ export class ReportsApi extends ApiController {
 
         const { fields, photo: inputPhoto } = await parseReportMultipart(request);
         const submission = parseReportSubmissionFields(fields);
-        const areaSnapshot = submission.areaKey ? await findReportAreaSnapshot(submission.areaKey) : null;
-        if (submission.areaKey && !areaSnapshot) {
+        const location = await resolveReportLocation({
+          regionId: "kota-tangerang",
+          latitude: submission.latitude,
+          longitude: submission.longitude,
+          accuracyM: submission.accuracyM,
+          roadSegmentId: submission.roadSegmentId,
+          areaKey: submission.areaKey,
+        });
+        if (!location.point && submission.areaKey && !location.area) {
           throw new ApiError(422, "UNKNOWN_REPORT_AREA", "Wilayah laporan tidak ditemukan pada data batas yang tersedia.");
         }
 
@@ -426,7 +477,7 @@ export class ReportsApi extends ApiController {
             publicCode: randomBytes(24).toString("base64url"),
             actorUserId,
             submission,
-            areaSnapshot,
+            location,
             packageItem,
             photo: storedPhoto,
             idempotency: { id: claim.id, attemptId: claim.attemptId },

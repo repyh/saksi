@@ -3,6 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/server/api/shared/api-error";
 import type {
+  PublicReportDetail,
   PublicReportsQuery,
   PublicReportsResponse,
   ReportStatusChangeInput,
@@ -14,6 +15,8 @@ const PUBLIC_SELECT = {
   coarseSize: true,
   areaNameSnapshot: true,
   districtNameSnapshot: true,
+  roadNameSnapshot: true,
+  roadNumberSnapshot: true,
   submittedAt: true,
   area: { select: { regionId: true } },
   packageLink: {
@@ -76,6 +79,8 @@ export async function listPublishedReports(query: PublicReportsQuery): Promise<P
       coarseSize: report.coarseSize,
       areaName: report.areaNameSnapshot,
       districtName: report.districtNameSnapshot,
+      roadName: report.roadNameSnapshot,
+      roadNumber: report.roadNumberSnapshot,
       submittedAt: report.submittedAt.toISOString(),
       publishedAt: report.statusEvents[0]?.createdAt.toISOString() ?? null,
       package: report.packageLink
@@ -86,6 +91,77 @@ export async function listPublishedReports(query: PublicReportsQuery): Promise<P
     page: query.page,
     limit: query.limit,
     totalPages: Math.max(1, Math.ceil(total / query.limit)),
+  };
+}
+
+/**
+ * Detail satu laporan publik. Hanya status PUBLISHED yang boleh dibaca; deskripsi,
+ * petunjuk lokasi, foto, identitas pelapor, dan id area internal tidak pernah dipilih.
+ */
+export async function getPublishedReportDetail(publicCode: string): Promise<PublicReportDetail | null> {
+  const report = await prisma.report.findFirst({
+    where: { publicCode, status: "PUBLISHED" },
+    select: {
+      id: true,
+      publicCode: true,
+      damageType: true,
+      coarseSize: true,
+      areaNameSnapshot: true,
+      districtNameSnapshot: true,
+      rwCodeSnapshot: true,
+      roadNameSnapshot: true,
+      roadNumberSnapshot: true,
+      submittedAt: true,
+      roadSegment: { select: { sourceObjectId: true } },
+      packageLink: { select: { rupSnapshot: true, packageNameSnapshot: true } },
+      statusEvents: {
+        where: { toStatus: "PUBLISHED" as const },
+        orderBy: { createdAt: "desc" as const },
+        take: 1,
+        select: { createdAt: true },
+      },
+    },
+  });
+  if (!report) return null;
+
+  const points = await prisma.$queryRawUnsafe<Array<{ latitude: number; longitude: number }>>(
+    `SELECT extensions.ST_Y(location_point) AS "latitude",
+            extensions.ST_X(location_point) AS "longitude"
+       FROM reports
+      WHERE id = $1::uuid
+        AND public_location_consent = true
+        AND location_point IS NOT NULL
+      LIMIT 1`,
+    report.id,
+  );
+
+  const point = points[0]
+    ? { latitude: Number(points[0].latitude), longitude: Number(points[0].longitude) }
+    : null;
+  const road = report.roadNameSnapshot
+    ? {
+      name: report.roadNameSnapshot,
+      number: report.roadNumberSnapshot,
+      sourceObjectId: report.roadSegment?.sourceObjectId ?? null,
+    }
+    : null;
+
+  return {
+    publicCode: report.publicCode,
+    damageType: report.damageType,
+    coarseSize: report.coarseSize,
+    areaName: report.areaNameSnapshot,
+    districtName: report.districtNameSnapshot,
+    rwCode: report.rwCodeSnapshot,
+    roadName: report.roadNameSnapshot,
+    roadNumber: report.roadNumberSnapshot,
+    road,
+    point,
+    submittedAt: report.submittedAt.toISOString(),
+    publishedAt: report.statusEvents[0]?.createdAt.toISOString() ?? null,
+    package: report.packageLink
+      ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
+      : null,
   };
 }
 

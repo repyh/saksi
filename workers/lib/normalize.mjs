@@ -53,6 +53,24 @@ function barisArea({ region, sumber, baris, artifact }) {
   };
 }
 
+function koordinatDuaDimensi(koordinat) {
+  if (!Array.isArray(koordinat) || koordinat.length < 2) return null;
+  const [lon, lat] = koordinat;
+  return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : null;
+}
+
+function geometriGaris(geometry) {
+  if (!geometry || !["LineString", "MultiLineString"].includes(geometry.type)) return null;
+  if (geometry.type === "LineString") {
+    const coordinates = (geometry.coordinates ?? []).map(koordinatDuaDimensi).filter(Boolean);
+    return coordinates.length >= 2 ? { type: "LineString", coordinates } : null;
+  }
+  const coordinates = (geometry.coordinates ?? [])
+    .map((garis) => (garis ?? []).map(koordinatDuaDimensi).filter(Boolean))
+    .filter((garis) => garis.length >= 2);
+  return coordinates.length ? { type: "MultiLineString", coordinates } : null;
+}
+
 export function normalisasi({ region, sumber, data, artifactByKey }) {
   const sekarang = new Date().toISOString();
   const rupSumber = sumber.find((s) => s.key === "rup");
@@ -60,6 +78,7 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
   const realisasiSumber = sumber.find((s) => s.key === "realisasi");
   const lpseSumber = sumber.find((s) => s.key === "lpse-cocok");
   const batasSumber = sumber.filter((s) => s.grup === "boundaries");
+  const jalanSumber = sumber.find((s) => s.key === "jalan");
 
   const rupBaris = data.rup?.baris ?? [];
   const detailBaris = detailSumber ? data.detail?.baris ?? [] : [];
@@ -210,7 +229,50 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
     }
   }
 
-  // 5. Penyedia + kontrak LPSE.
+  // 5. Jaringan jalan: referensi peta dan anotasi laporan, bukan sumber lokasi paket.
+  const roadSegmentRows = [];
+  let jalanDitolak = 0;
+  if (jalanSumber) {
+    const artJalan = artifactByKey.get(jalanSumber.key);
+    for (const fitur of data.jalan?.baris ?? []) {
+      const p = fitur?.properties ?? {};
+      const objectId = String(p.objectid ?? "").trim();
+      const nama = String(p.nama ?? p.namobj ?? "").trim();
+      const geometry = geometriGaris(fitur?.geometry);
+      if (!objectId || !nama || !geometry) {
+        jalanDitolak += 1;
+        continue;
+      }
+      const angka = (nilai) => {
+        if (nilai === null || nilai === undefined || nilai === "") return null;
+        const parsed = Number(nilai);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const daftar = (nilai) => {
+        if (Array.isArray(nilai)) return nilai.map((x) => String(x).trim()).filter(Boolean);
+        return String(nilai ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+      };
+      roadSegmentRows.push({
+        region_id: region.id,
+        source_object_id: objectId,
+        name: nama,
+        number: p.nomor ? String(p.nomor).trim() || null : null,
+        length_m: angka(p.panjang),
+        width_m: angka(p.lebar),
+        district_names: daftar(p.kecamatan),
+        village_names: daftar(p.kelurahan),
+        geometry: JSON.stringify(geometry),
+        source_name: jalanSumber.name,
+        source_url: jalanSumber.endpoint ?? region.jalan?.layanan ?? null,
+        source_retrieved_at: artJalan?.retrievedAt ?? sekarang,
+        dataset_version: region.jalan?.versi ?? region.metadata.snapshot,
+        is_active: true,
+        updated_at: sekarang,
+      });
+    }
+  }
+
+  // 6. Penyedia + kontrak LPSE.
   const vendorMap = new Map();
   const tambahVendor = (nama, npwp = null) => {
     const kunci = normalisasiPenyedia(nama);
@@ -357,6 +419,7 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
     rupRows,
     detailRows,
     roadRows,
+    roadSegmentRows,
     paket,
     areaRows,
     lpseRows,
@@ -374,6 +437,8 @@ export function normalisasi({ region, sumber, data, artifactByKey }) {
       area: areaRows.length,
       area_per_level: areaPerLevel,
       area_ditolak: areaDitolak,
+      jalan: roadSegmentRows.length,
+      jalan_ditolak: jalanDitolak,
       lpse: lpseRows.length,
       lpse_dengan_pemenang: lpseRows.filter((x) => x.pemenang_name).length,
       realisasi: transaksiRows.length,

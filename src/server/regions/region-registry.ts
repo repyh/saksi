@@ -32,6 +32,26 @@ export interface RegionConfig {
   lokasi: { token_lingkungan?: string[]; penanda_kelurahan: string[] };
   lpse?: { base: string; direktori: string; keluaran: string };
   realisasi?: { satker_pu?: string };
+  jalan?: {
+    layanan: string;
+    berkas: string;
+    versi?: string;
+    label?: string;
+    sumber?: string;
+    atribusi?: string;
+    lisensi?: string;
+    fields: {
+      objectid: string;
+      nama: string;
+      nomor: string;
+      panjang: string;
+      lebar: string;
+      kecamatan: string;
+      kelurahan: string;
+    };
+    presisi?: number;
+    simplify?: number;
+  };
 }
 
 export const DEFAULT_REGION_ID = "kota-tangerang";
@@ -96,6 +116,7 @@ export function regionSummary(region: RegionConfig): RegionSummary {
   if (!kelurahanUrl) {
     throw new Error(`Region "${region.id}": batas kelurahan harus berada di public/.`);
   }
+  const jalanUrl = region.jalan ? urlPublik(region.jalan.berkas) : null;
   return {
     id: region.id,
     label: region.label,
@@ -110,6 +131,15 @@ export function regionSummary(region: RegionConfig): RegionSummary {
       kecamatan: region.batas.kelurahan.kecamatan,
       lingkungan: lingkungan?.nomor ?? null,
     },
+    roadLayer: region.jalan && jalanUrl
+      ? {
+        url: jalanUrl,
+        label: region.jalan.label ?? "Jaringan jalan",
+        attribution: region.jalan.atribusi ?? region.jalan.sumber ?? "Data publik",
+        sourceVersion: region.jalan.versi ?? null,
+        fields: region.jalan.fields,
+      }
+      : null,
     center: region.batas.pusat ?? [106.63, -6.178],
     zoom: region.batas.zoom ?? 11,
   };

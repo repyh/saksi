@@ -88,6 +88,24 @@ const SUMBER_DASAR = (region) => [
     refresh: { skrip: "scripts/lpse.mjs", args: ["detail", "--region", region.id] },
     opsional: true,
   },
+  ...(region.jalan
+    ? [
+        {
+          key: "jalan",
+          grup: "jalan",
+          kind: "ROAD_NETWORK",
+          name: "jaringan-jalan",
+          role: "road-network",
+          path: region.jalan.berkas,
+          format: "geojson",
+          endpoint: region.jalan.layanan,
+          license: region.jalan.lisensi ?? "Data publik Pemerintah Kota Tangerang",
+          parserVersion: "geojson-road-v1",
+          refresh: { skrip: "scripts/jalan.mjs", args: ["--region", region.id] },
+          opsional: true,
+        },
+      ]
+    : []),
   ...(region.batas.kelurahan
     ? [
         {

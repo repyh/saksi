@@ -78,6 +78,7 @@ export function validasi({ hasil, manifest }) {
   cekUnik("realization_packages", hasil.paketRows, (r) => `${r.kode_paket}|${r.tahun}`);
   cekUnik("realization_transactions", hasil.transaksiRows, (r) => r.checksum_sha256);
   cekUnik("realization_package_rups", hasil.paketRupRows, (r) => `${r.package_key}|${r.kode_rup}`);
+  cekUnik("road_segments", hasil.roadSegmentRows ?? [], (r) => r.source_object_id);
 
   // Relasi wajib.
   for (const r of hasil.roadRows) {
@@ -161,6 +162,9 @@ export function validasi({ hasil, manifest }) {
       }
       if (m.sumber.batas_rw != null && hasil.stats.area_per_level.RW !== m.sumber.batas_rw) {
         tolak(`batas RW: ${hasil.stats.area_per_level.RW} ≠ manifest ${m.sumber.batas_rw}`);
+      }
+      if (m.sumber.jalan != null && (hasil.roadSegmentRows?.length ?? 0) !== m.sumber.jalan) {
+        tolak(`layer jalan: ${hasil.roadSegmentRows?.length ?? 0} ≠ manifest ${m.sumber.jalan}`);
       }
     }
   }

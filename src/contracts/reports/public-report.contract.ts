@@ -12,11 +12,27 @@ export const publicReportItemSchema = z.object({
   coarseSize: z.enum(reportCoarseSizes).nullable(),
   areaName: z.string().nullable(),
   districtName: z.string().nullable(),
+  roadName: z.string().nullable(),
+  roadNumber: z.string().nullable(),
   submittedAt: z.string().datetime(),
   publishedAt: z.string().datetime().nullable(),
   package: z.object({
     rup: z.string(),
     name: z.string(),
+  }).nullable(),
+});
+
+/** Detail publik: titik hanya muncul bila pelapor memberi consent. */
+export const publicReportDetailSchema = publicReportItemSchema.extend({
+  rwCode: z.string().nullable(),
+  road: z.object({
+    name: z.string(),
+    number: z.string().nullable(),
+    sourceObjectId: z.string().nullable(),
+  }).nullable(),
+  point: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
   }).nullable(),
 });
 
@@ -43,6 +59,7 @@ export const reportStatusChangeSchema = z.object({
 });
 
 export type PublicReportItem = z.infer<typeof publicReportItemSchema>;
+export type PublicReportDetail = z.infer<typeof publicReportDetailSchema>;
 export type PublicReportsResponse = z.infer<typeof publicReportsResponseSchema>;
 export type PublicReportsQuery = z.infer<typeof publicReportsQuerySchema>;
 export type ReportStatusChangeInput = z.infer<typeof reportStatusChangeSchema>;

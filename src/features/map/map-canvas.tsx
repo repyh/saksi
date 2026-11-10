@@ -410,6 +410,24 @@ function fillLayerId(precision: BoundaryPrecision) {
   return `${sourceId(precision)}-fill`;
 }
 
+const ROAD_SOURCE_ID = "saksi-jaringan-jalan";
+
+function roadTooltipHtml(layer: NonNullable<RegionSummary["roadLayer"]>, properties: BoundaryProperties) {
+  const value = (kunci: string) => escapeHtml(properties[layer.fields[kunci as keyof typeof layer.fields]] ?? "");
+  const nomor = value("nomor");
+  const panjang = value("panjang");
+  const lebar = value("lebar");
+  const kecamatan = value("kecamatan");
+  const kelurahan = value("kelurahan");
+  const detail = [
+    nomor ? `No. ruas ${nomor}` : null,
+    panjang ? `${panjang} m` : null,
+    lebar ? `lebar ${lebar} m` : null,
+  ].filter(Boolean).join(" · ");
+  const wilayah = [kelurahan, kecamatan ? `Kec. ${kecamatan}` : null].filter(Boolean).join(" · ");
+  return `<div style="line-height:1.45"><strong>${value("nama")}</strong>${detail ? `<br>${detail}` : ""}${wilayah ? `<br>${wilayah}` : ""}<br><span style="opacity:.7">${escapeHtml(layer.label)}${layer.sourceVersion ? ` ${escapeHtml(layer.sourceVersion)}` : ""} · referensi ruas, bukan lokasi paket</span></div>`;
+}
+
 function tooltipHtml(
   properties: BoundaryProperties,
   precision: BoundaryPrecision,
@@ -473,6 +491,8 @@ export default function MapCanvas(props: MapCanvasProps) {
   const [boundaries, setBoundaries] = useState<{ rw: BoundaryCollection; kel: BoundaryCollection; kec: BoundaryCollection } | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [roadEnabled, setRoadEnabled] = useState(false);
+  const [roadError, setRoadError] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -480,6 +500,7 @@ export default function MapCanvas(props: MapCanvasProps) {
   const initialFitRef = useRef(false);
   const view: AreaView = props.viewMode;
   const onViewportChange = props.onViewportChange;
+  const roadLayer = props.region.roadLayer;
   const areaStats = useMemo(() => toAreaStatsMaps(props.areaStats), [props.areaStats]);
   const bands = useMemo(
     () => ({ rw: budgetBands(areaStats.rw), kel: budgetBands(areaStats.kel), kec: budgetBands(areaStats.kec) }),
@@ -492,11 +513,18 @@ export default function MapCanvas(props: MapCanvasProps) {
   );
 
   // Handler dan efek MapLibre mendaftar sekali; nilai terbaru dibaca lewat ref ini.
-  const latestRef = useRef({ areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion });
+  const latestRef = useRef({ areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion, roadLayer });
 
   useEffect(() => {
-    latestRef.current = { areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion };
-  }, [areaStats, bands, classes, props.onSelectRegion, props.selectedPackage, props.selectedRegion, precision, view]);
+    latestRef.current = { areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion, roadLayer };
+  }, [areaStats, bands, classes, props.onSelectRegion, props.selectedPackage, props.selectedRegion, precision, roadLayer, view]);
+
+  useEffect(() => {
+    if (!roadLayer) {
+      setRoadEnabled(false);
+      setRoadError(false);
+    }
+  }, [roadLayer]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -711,6 +739,115 @@ export default function MapCanvas(props: MapCanvasProps) {
     };
   }, [boundaries, fields, mapLoaded, onViewportChange, precisions, props.region.environmentLabel]);
 
+  // Layer jaringan jalan dimuat hanya saat toggle dinyalakan; jangan membebani render awal.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = latestRef.current.roadLayer;
+    if (!map || !mapLoaded || !layer) return;
+
+    const lineId = `${ROAD_SOURCE_ID}-line`;
+    const labelId = `${ROAD_SOURCE_ID}-label`;
+    const handlers: Array<() => void> = [];
+    const removeLayer = () => {
+      for (const id of [labelId, lineId]) {
+        if (map.getLayer(id)) map.removeLayer(id);
+      }
+      if (map.getSource(ROAD_SOURCE_ID)) map.removeSource(ROAD_SOURCE_ID);
+      popupRef.current?.remove();
+    };
+
+    if (!roadEnabled) {
+      removeLayer();
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    setRoadError(false);
+
+    fetch(layer.url, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Layer jalan tidak tersedia.");
+        return response.json() as Promise<BoundaryCollection>;
+      })
+      .then((collection) => {
+        if (cancelled || mapRef.current !== map || !Array.isArray(collection.features)) return;
+        const source = map.getSource(ROAD_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+        if (source) {
+          source.setData(collection);
+        } else {
+          map.addSource(ROAD_SOURCE_ID, { type: "geojson", data: collection });
+          map.addLayer({
+            id: lineId,
+            type: "line",
+            source: ROAD_SOURCE_ID,
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#6B7280",
+              "line-opacity": 0.62,
+              "line-width": [
+                "interpolate", ["linear"], ["coalesce", ["to-number", ["get", layer.fields.lebar]], 0],
+                0, 0.8, 3, 1.2, 6, 2.1, 10, 3.2, 20, 4.8,
+              ],
+            },
+          } as unknown as maplibregl.AddLayerObject);
+          map.addLayer({
+            id: labelId,
+            type: "symbol",
+            source: ROAD_SOURCE_ID,
+            minzoom: 14,
+            layout: {
+              "text-field": ["coalesce", ["get", layer.fields.nama], ""],
+              "text-size": 10,
+              "text-offset": [0, -0.9],
+              "text-anchor": "bottom",
+              "text-allow-overlap": false,
+              "text-ignore-placement": false,
+            },
+            paint: {
+              "text-color": "#334155",
+              "text-halo-color": "rgba(255,255,255,0.92)",
+              "text-halo-width": 1.2,
+            },
+          } as unknown as maplibregl.AddLayerObject);
+        }
+
+        const hover = (event: maplibregl.MapLayerMouseEvent) => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          map.getCanvas().style.cursor = "pointer";
+          popupRef.current
+            ?.setLngLat(event.lngLat)
+            .setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties))
+            .addTo(map);
+        };
+        const leave = () => {
+          map.getCanvas().style.cursor = "";
+          popupRef.current?.remove();
+        };
+        map.on("mousemove", lineId, hover);
+        map.on("mouseleave", lineId, leave);
+        // Klik ruas hanya menampilkan atribut; tidak menautkan atau memfilter paket.
+        map.on("click", lineId, hover);
+        handlers.push(() => {
+          map.off("mousemove", lineId, hover);
+          map.off("mouseleave", lineId, leave);
+          map.off("click", lineId, hover);
+        });
+      })
+      .catch((error: unknown) => {
+        if (cancelled || (error instanceof DOMException && error.name === "AbortError")) return;
+        setRoadError(true);
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      for (const remove of handlers) remove();
+      if (mapRef.current === map) removeLayer();
+    };
+  }, [mapLoaded, roadEnabled, roadLayer?.url]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !boundaries) return;
@@ -845,6 +982,19 @@ export default function MapCanvas(props: MapCanvasProps) {
             {labels[tingkat]}
           </button>
         ))}
+        {roadLayer ? (
+          <button
+            type="button"
+            onClick={() => setRoadEnabled((current) => !current)}
+            aria-pressed={roadEnabled}
+            title={roadEnabled ? "Sembunyikan jaringan jalan" : "Tampilkan jaringan jalan sebagai referensi"}
+            className={`border-l border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
+              roadEnabled ? "bg-[#334155] text-white" : "text-foreground/70 hover:bg-muted"
+            }`}
+          >
+            Jaringan jalan
+          </button>
+        ) : null}
       </div>
       <div className="saksi-map-overlay pointer-events-none absolute top-3 right-3 z-10 max-w-[min(23rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
         <p>
@@ -882,8 +1032,21 @@ export default function MapCanvas(props: MapCanvasProps) {
           <p>{props.viewMode === "budget" ? "Warna menunjukkan total pagu; arahkan kursor untuk jumlah paket." : props.viewMode === "work" ? "Ikon menandai jenis paket yang tercatat; warna wilayah tetap netral." : "Warna menunjukkan jumlah paket pada tiap wilayah."}</p>
           <p>Tingkat poligon diatur lewat pemilih Kecamatan / Kelurahan / {props.region.environmentLabel} di atas peta. Paket yang hanya diketahui hingga kelurahan tidak dibagi ke {props.region.environmentLabel}.</p>
           <p>Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi {props.region.environmentLabel} dan kelurahan.</p>
+          {roadLayer ? (
+            <p>
+              {roadEnabled ? "Garis abu-abu = " : "Tombol “Jaringan jalan” menampilkan "}
+              {roadLayer.label}
+              {roadLayer.sourceVersion ? ` ${roadLayer.sourceVersion}` : ""} · {roadLayer.attribution}.
+              {" "}Ruas hanya referensi, bukan lokasi atau penaut paket.
+            </p>
+          ) : null}
         </div>
       </div>
+      {roadError ? (
+        <div role="status" className="absolute top-16 left-14 z-10 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
+          Layer jaringan jalan tidak dapat dimuat.
+        </div>
+      ) : null}
       {loadError ? (
         <div role="status" className="absolute top-3 left-1/2 z-10 -translate-x-1/2 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
           Batas wilayah tidak dapat dimuat.

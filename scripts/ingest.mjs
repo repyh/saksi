@@ -1,7 +1,7 @@
 // Orkestrasi penarikan dan pembangunan snapshot per region (satu job per kode instansi/kldi).
 // Pemakaian: node scripts/ingest.mjs [--region <id> | --semua] [--dry-run] [--tanpa-lpse] [--jeda <ms>]
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { AKAR } from "./lib/region.mjs";
 
@@ -42,6 +42,11 @@ function langkah(regionId) {
       ["scripts/lpse.mjs", ["detail", "--region", regionId]],
       ["scripts/lpse.mjs", ["match", "--region", regionId]],
     );
+  }
+  const configPath = path.join(AKAR, "data", "regions", regionId, "region.json");
+  if (existsSync(configPath)) {
+    const config = JSON.parse(readFileSync(configPath, "utf8"));
+    if (config.jalan) daftar.push(["scripts/jalan.mjs", ["--region", regionId]]);
   }
   daftar.push(
     ["scripts/build-snapshot.mjs", ["--region", regionId]],

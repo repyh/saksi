@@ -4,7 +4,20 @@ import { ApiError } from "@/server/api/shared/api-error";
 
 export function parseReportSubmissionFields(fields: Record<string, string | string[]>): ReportSubmissionInput {
   const normalized = { ...fields };
-  for (const optional of ["coarseSize", "description", "areaKey", "locationSource", "locationHint", "packageRup", "packageSelectionSource"]) {
+  for (const optional of [
+    "coarseSize",
+    "description",
+    "areaKey",
+    "locationSource",
+    "locationHint",
+    "latitude",
+    "longitude",
+    "accuracyM",
+    "publicLocationConsent",
+    "roadSegmentId",
+    "packageRup",
+    "packageSelectionSource",
+  ]) {
     if (normalized[optional] === "") delete normalized[optional];
   }
   if (normalized.observedCauses === undefined) normalized.observedCauses = [];

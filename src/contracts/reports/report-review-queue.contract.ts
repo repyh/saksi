@@ -28,6 +28,19 @@ export const reportReviewDetailSchema = reportReviewQueueItemSchema.extend({
   coarseSize: z.enum(reportCoarseSizes).nullable(),
   description: z.string().max(500).nullable(),
   hasEvidence: z.boolean(),
+  /** Titik presisi hanya diisi bila aktor punya reports.read_precise_location. */
+  preciseLocationAccess: z.boolean(),
+  publicLocationConsent: z.boolean(),
+  location: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+    accuracyM: z.number().nullable(),
+  }).nullable(),
+  road: z.object({
+    id: z.string(),
+    name: z.string(),
+    number: z.string().nullable(),
+  }).nullable(),
 });
 
 export const reportReviewQueueResponseSchema = z.object({

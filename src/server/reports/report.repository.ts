@@ -4,7 +4,8 @@ import type { ReportSubmissionInput } from "@/contracts/reports/report-submissio
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/server/api/shared/api-error";
-import type { ReportAreaSnapshot } from "@/server/reports/report-area-catalog";
+import { reportAreaLabel } from "@/server/reports/report-area-catalog";
+import type { ResolvedReportLocation } from "@/server/reports/report-location.service";
 import type { StoredReportPhoto } from "@/server/uploads/purposes/report-photo.handler";
 
 const DEFAULT_REGION_ID = "kota-tangerang";
@@ -22,16 +23,17 @@ export async function persistSubmittedReport(input: {
   publicCode: string;
   actorUserId: string | null;
   submission: ReportSubmissionInput;
-  areaSnapshot: ReportAreaSnapshot | null;
+  location: ResolvedReportLocation;
   packageItem: RoadPackageItem | null;
   photo: StoredReportPhoto;
   idempotency: { id: string; attemptId: string };
 }) {
   return prisma.$transaction(async (transaction) => {
+    const areaSnapshot = input.location.area;
     let areaId: string | null = null;
-    if (input.areaSnapshot) {
+    if (areaSnapshot?.level === "RW") {
       const area = await transaction.administrativeArea.findFirst({
-        where: { regionId: DEFAULT_REGION_ID, stableKey: input.areaSnapshot.stableKey },
+        where: { regionId: DEFAULT_REGION_ID, stableKey: areaSnapshot.stableKey },
       });
       if (area?.isActive && area.level === "RW") areaId = area.id;
     }
@@ -75,13 +77,17 @@ export async function persistSubmittedReport(input: {
         coarseSize: input.submission.coarseSize ?? null,
         description: input.submission.description || null,
         areaId,
-        areaNameSnapshot: input.areaSnapshot
-          ? `${input.areaSnapshot.villageName}, RW ${input.areaSnapshot.rwCode}`
-          : null,
-        districtNameSnapshot: input.areaSnapshot?.districtName ?? null,
-        rwCodeSnapshot: input.areaSnapshot?.rwCode ?? null,
-        areaDatasetVersion: input.areaSnapshot?.datasetVersion ?? null,
-        locationSource: input.areaSnapshot
+        areaNameSnapshot: areaSnapshot ? reportAreaLabel(areaSnapshot) : null,
+        districtNameSnapshot: areaSnapshot?.districtName ?? null,
+        rwCodeSnapshot: areaSnapshot?.rwCode ?? null,
+        areaDatasetVersion: areaSnapshot?.datasetVersion ?? null,
+        locationAccuracyM: input.location.point?.accuracyM ?? null,
+        publicLocationConsent: input.submission.publicLocationConsent ?? true,
+        roadSegmentId: input.location.road?.id ?? null,
+        roadNameSnapshot: input.location.road?.name ?? null,
+        roadNumberSnapshot: input.location.road?.number ?? null,
+        roadSourceVersion: input.location.road?.sourceVersion ?? null,
+        locationSource: input.location.point || areaSnapshot
           ? input.submission.locationSource!
           : input.packageItem ? "PACKAGE_REFERENCE_ONLY" : "UNKNOWN",
         locationHint: input.submission.locationHint || null,
@@ -112,6 +118,16 @@ export async function persistSubmittedReport(input: {
       },
       select: { id: true, publicCode: true },
     });
+
+    if (input.location.point) {
+      await transaction.$executeRaw`
+        UPDATE reports
+           SET location_point = extensions.ST_SetSRID(
+             extensions.ST_MakePoint(${input.location.point.longitude}, ${input.location.point.latitude}), 4326
+           )
+         WHERE id = ${report.id}::uuid
+      `;
+    }
 
     const completed = await transaction.reportIdempotencyKey.updateMany({
       where: { id: input.idempotency.id, attemptId: input.idempotency.attemptId, status: "PROCESSING" },

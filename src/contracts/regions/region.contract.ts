@@ -16,6 +16,25 @@ export interface RegionBoundaryFields {
   lingkungan: string | null;
 }
 
+/** Properti layer GeoJSON jaringan jalan yang dipakai klien; `null` bila region tidak punya layer. */
+export interface RegionRoadLayerFields {
+  objectid: string;
+  nama: string;
+  nomor: string;
+  panjang: string;
+  lebar: string;
+  kecamatan: string;
+  kelurahan: string;
+}
+
+export interface RegionRoadLayer {
+  url: string;
+  label: string;
+  attribution: string;
+  sourceVersion: string | null;
+  fields: RegionRoadLayerFields;
+}
+
 export interface RegionSummary {
   id: string;
   label: string;
@@ -23,6 +42,8 @@ export interface RegionSummary {
   environmentLabel: string;
   boundaries: RegionBoundaryUrls;
   boundaryFields: RegionBoundaryFields;
+  /** Layer jaringan jalan referensi; hanya untuk konteks peta, bukan sumber lokasi paket. */
+  roadLayer: RegionRoadLayer | null;
   /** Pusat peta [lon, lat]. */
   center: [number, number];
   zoom: number;

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "data:enrich": "node scripts/enrich-rup.mjs",
+    "data:jalan": "node scripts/jalan.mjs",
     "data:kecamatan": "node scripts/kecamatan.mjs",
     "data:realisasi": "node scripts/realisasi.mjs",
     "data:rup": "node scripts/rup.mjs",

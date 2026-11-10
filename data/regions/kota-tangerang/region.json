@@ -47,5 +47,25 @@
     "base": "https://spse.inaproc.id/tangerangkota",
     "direktori": "data/lpse",
     "keluaran": "data/lpse_kota_tangerang_2025_2026.json"
+  },
+  "jalan": {
+    "layanan": "https://maps.tangerangkota.go.id/arcgis/rest/services/Dinas_PU_TR/Jaringan_Jalan_Kota_Tangerang_2024/MapServer/0",
+    "berkas": "public/data/jalan.geojson",
+    "versi": "2024",
+    "label": "Jaringan jalan Kota Tangerang",
+    "sumber": "Dinas PU TR Kota Tangerang (ArcGIS)",
+    "atribusi": "Dinas PU TR Kota Tangerang",
+    "lisensi": "Data publik Pemerintah Kota Tangerang; atribusi Dinas PU TR",
+    "fields": {
+      "objectid": "objectid",
+      "nama": "namobj",
+      "nomor": "nomor_ruas",
+      "panjang": "panjang",
+      "lebar": "lebar",
+      "kecamatan": "wadmkc",
+      "kelurahan": "wadmkd"
+    },
+    "presisi": 6,
+    "simplify": 0.00001
   }
 }

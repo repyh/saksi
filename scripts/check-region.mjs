@@ -151,6 +151,45 @@ function cakupanPenyedia() {
 
 const penyedia = cakupanPenyedia();
 
+// Layer jaringan jalan hanya referensi peta dan anotasi laporan, bukan sumber lokasi paket.
+function cekLayerJalan() {
+  if (!region.jalan) return null;
+  const absolut = path.resolve(AKAR, region.jalan.berkas);
+  if (!existsSync(absolut)) {
+    tolak(`layer jalan tidak ditemukan: ${region.jalan.berkas}`);
+    return null;
+  }
+  let dokumen;
+  try {
+    dokumen = JSON.parse(readFileSync(absolut, "utf8"));
+  } catch {
+    tolak(`layer jalan bukan JSON sah: ${region.jalan.berkas}`);
+    return null;
+  }
+  const features = Array.isArray(dokumen.features) ? dokumen.features : [];
+  if (!features.length) tolak("layer jalan tidak memuat fitur");
+  const objectid = new Set();
+  for (const fitur of features) {
+    const id = fitur?.properties?.objectid;
+    if (id === undefined || id === null || String(id).trim() === "") tolak("layer jalan: fitur tanpa objectid");
+    else if (objectid.has(String(id))) tolak(`layer jalan: objectid ganda ${id}`);
+    else objectid.add(String(id));
+    if (!String(fitur?.properties?.nama ?? "").trim()) tolak(`layer jalan: fitur ${id ?? "?"} tanpa nama`);
+    const tipe = fitur?.geometry?.type;
+    if (tipe !== "LineString" && tipe !== "MultiLineString") {
+      tolak(`layer jalan: fitur ${id ?? "?"} bertipe ${tipe ?? "kosong"} bukan garis`);
+    }
+  }
+  return {
+    fitur: features.length,
+    berkas: region.jalan.berkas,
+    versi: region.jalan.versi ?? null,
+    label: region.jalan.label ?? null,
+  };
+}
+
+const jalan = cekLayerJalan();
+
 // Angka sumber dipakai `workers/verify-db.mjs` untuk merekonsiliasi isi database dengan manifest.
 function metrikSumber() {
   const hitungBerkas = (rel) => {
@@ -177,6 +216,7 @@ function metrikSumber() {
       : null,
     batas_kelurahan: region.jumlahKelurahan,
     batas_rw: region.jumlahUnitLingkungan,
+    jalan: jalan?.fitur ?? null,
   };
 }
 const sumber = metrikSumber();
@@ -204,6 +244,7 @@ console.log(
 console.log(
   `penyedia          : ${penyedia.lpseN + penyedia.realisasiN}/${paket.length} (${persen(penyedia.lpseN + penyedia.realisasiN, paket.length)}%) · LPSE ${penyedia.lpseN} · realisasi ${penyedia.realisasiN} · tanpa ${penyedia.tanpa} (${rupiah(penyedia.tanpaPagu)}) · ${penyedia.penyedia} unik`,
 );
+if (jalan) console.log(`layer jalan       : ${jalan.fitur} segmen · ${jalan.label ?? jalan.berkas} · versi ${jalan.versi ?? "?"}`);
 
 if (masalah.length) {
   console.error(`\nGAGAL: ${masalah.length} masalah ditemukan`);
@@ -235,6 +276,7 @@ if (TULIS_MANIFEST) {
     region.batas.kelurahan.berkas,
     region.batas.lingkungan?.berkas,
     region.batas.kecamatan?.berkas,
+    region.jalan?.berkas,
   ].filter(Boolean);
   const manifest = {
     region: region.id,
@@ -256,6 +298,7 @@ if (TULIS_MANIFEST) {
       kelurahan_tersentuh: kelurahanTersentuh.size,
       unit_lingkungan_tersentuh: terlihatUnit.size,
       kecamatan_tersentuh: kecamatanTersentuh.size,
+      jalan,
       penyedia: {
         lpse: penyedia.lpseN,
         realisasi: penyedia.realisasiN,

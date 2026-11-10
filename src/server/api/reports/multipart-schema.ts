@@ -12,6 +12,11 @@ const SINGLE_VALUE_FIELDS = new Set([
   "areaKey",
   "locationSource",
   "locationHint",
+  "latitude",
+  "longitude",
+  "accuracyM",
+  "publicLocationConsent",
+  "roadSegmentId",
   "packageRup",
   "packageSelectionSource",
 ]);
@@ -46,10 +51,10 @@ export async function parseReportMultipart(request: Request): Promise<ParsedRepo
       limits: {
         fieldNameSize: 64,
         fieldSize: 4096,
-        fields: 12,
+        fields: 18,
         fileSize: MAX_REPORT_INPUT_BYTES,
         files: 1,
-        parts: 13,
+        parts: 19,
       },
     });
   } catch {
