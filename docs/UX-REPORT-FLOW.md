@@ -436,3 +436,39 @@ dan dapat dilakukan paralel dengan penyiapan proposal/video.
 - `docs/STATE.md` §2.3 dan §6 — status implementasi laporan dan layer jalan.
 - `docs/SPEC.md` FR-03 dan §3 — penautan laporan ke paket.
 - `AGENTS.md` — aturan keras produk (privasi, badge, tanpa pin paket, tanpa CV/NLP).
+
+---
+
+## 11. Status implementasi (11 November 2026)
+
+Cakupan putaran ini hanya P0 dan P1. P2 tidak dikerjakan kecuali copy kecil yang menempel pada
+perbaikan P0/P1. Tidak ada perubahan skema Prisma, snapshot `data/`, worker/ingest, atau deploy.
+Bukti perintah dan tangkapan layar ada di `docs/UX-REPORT-FLOW-VERIFIKASI.md`.
+
+| ID | Status | Bukti |
+|---|---|---|
+| N1 | Selesai | Menu ringkas < `md` dengan Laporkan + Masuk/Dashboard dan panel Esc: `src/components/navigation/nav-actions.tsx`; uji `e2e/navigation.e2e.ts` (menu ponsel, tanpa gulir horizontal 320 px) |
+| F1 | Selesai | Syarat terlihat di samping aksi dan tombol aktif memvalidasi saat diklik: `report-prototype.tsx` (`requirementText`, `handleAdvance`); uji "alasan aksi terlihat" |
+| L1 | Selesai | Mode eksplisit **Tandai titik**; klik ruas tidak memindahkan pin: `report-location-map.tsx`; uji "titik hanya berpindah lewat mode tandai" |
+| L2 | Selesai | Kamera dikunci pada identitas wilayah (`focusKey`) dan perubahan titik; uji posisi penanda sebelum/sesudah mengetik patokan |
+| L4 | Selesai | Pemilih **Kecamatan → Kelurahan → RW**: `report-prototype.tsx`; uji "pemilih wilayah bertingkat" |
+| S2 | Selesai | Draf IndexedDB (foto tersanitasi + field), kedaluwarsa 7 hari, dihapus setelah kirim, tawaran "Lanjutkan draf": `report-draft.contract.ts`, `report-draft-store.ts`, `report-prototype.tsx`; uji "draf dipulihkan" |
+| S3 | Selesai | Tombol **Salin nomor**, penyimpanan perangkat 30 hari, banner tanda terima setelah halaman ditutup, tautan "Laporan saya": uji "pasca-kirim" |
+| E1 | Selesai | CTA **Laporkan kerusakan jalan** setelah perjalanan paket: `package-journey-section.tsx`; uji CTA beranda |
+| N3 | Selesai | Tautan ganda di kepala alur dihapus; satu "Kembali ke peta" hanya pada keadaan sukses: uji "kepala alur laporan" |
+| F2 | Selesai | Dua aksi **Ambil foto** (`capture`) dan **Pilih dari galeri**: `report-prototype.tsx`; uji memastikan kedua input ada |
+| L3 | Selesai | Satu model lokasi aktif (**Titik presisi** / **Wilayah saja**) dengan konfirmasi sebelum menghapus titik: uji "satu model lokasi aktif" |
+| L5 | Selesai | Langkah 3 dibagi menjadi 1 Lokasi, 2 Ruas (opsional), 3 Paket (opsional) yang dapat dilipat |
+| L6 | Selesai | 5 kandidat teratas + "Lihat semua", seluruh kartu dapat diklik, "Batalkan tautan" terpisah: uji "kandidat paket" |
+| L12 | Selesai | Ringkasan consent "Sebelum kirim: …" dan pernyataan titik publik di tanda terima; default tetap aktif: uji consent |
+| S1 | Selesai | Fokus pindah ke judul langkah, gulir ke atas, `aria-live` "Langkah n dari 4", bilah aksi lengket di ponsel: uji perpindahan langkah |
+| S4 | Selesai | Kode galat dipetakan ke pesan dan tindakan (jaringan, 400, 413, 422, 429, 503): `describeSubmitFailure`; uji galat 503 |
+| R1 | Selesai | Hanya field wajib yang berstatus belum lengkap; field opsional tampil "—": uji ringkasan pada "alasan aksi" |
+| A1 | Selesai | Fokus judul langkah dan pengumuman progres: uji perpindahan langkah |
+| A2 | Selesai | Tombol tidak lagi `disabled` tanpa alasan; syarat tertulis dan galat saat klik: uji "alasan aksi" |
+| C1 | Selesai | Halaman offline berbahasa Indonesia, klaim draf sesuai, memakai token desain: `src/app/offline/page.tsx`; uji halaman offline |
+
+**Gerbang akhir:** `npm run lint` 0 temuan; `npm run build` sukses tanpa `DATABASE_URL`; `bun test`
+41 lulus; `bunx playwright test` 38 lulus, 4 dilewati secara sengaja; axe tanpa pelanggaran
+serious/critical pada Langkah 1, Langkah 3, dan layar sukses di 390 px dan 1440 px.
+
