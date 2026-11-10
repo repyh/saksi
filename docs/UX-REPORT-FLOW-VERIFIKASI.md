@@ -111,3 +111,10 @@ Indikator itu tidak muncul pada build produksi.
 6. **Peramban lain.** Hanya Chromium. Safari/iOS dan Firefox tidak diuji pada putaran ini.
 7. **Peta pada GPU nyata.** Chromium headless memakai render WebGL perangkat lunak. Basemap berhasil
    dimuat dan pin dapat diklik, tetapi kualitas visual ubin di perangkat nyata belum dinilai.
+
+## 6. Perbaikan kecil pendukung
+
+- `src/features/audit/components/budget-concentration-chart.tsx`: `min-w-0` menghentikan grafik
+  580 px memaksa halaman beranda melebar pada 320 px; `<title>` diubah menjadi template string untuk
+  menghilangkan peringatan/hydration mismatch React pada anak `<title>` berbentuk array. Keduanya
+  diperlukan agar gerbang "tanpa gulir horizontal 320 px" dan hidrasi beranda bersih.
