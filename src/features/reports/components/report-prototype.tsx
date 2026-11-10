@@ -7,12 +7,14 @@ import { fetchRoadPackages } from "@/features/map/package-api";
 import { localFileIntakeController } from "@/features/uploads/lib/local-file-intake.controller";
 import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib/report-photo.handler";
 import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
+import { deleteReportDraft, listReportDrafts, saveReportDraft } from "@/features/reports/lib/report-draft-store";
 import { simulationBadgeEnabled } from "@/lib/flags";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { LineString, MultiLineString } from "geojson";
 import type { RegionSummary } from "@/contracts/regions/region.contract";
 import type { RoadSegment } from "@/contracts/reports/road-search.contract";
 import type { GeocodeResult } from "@/contracts/reports/geocode.contract";
+import type { ReportDraft, ReportDraftState, ReportLocationMode } from "@/contracts/reports/report-draft.contract";
 import { isPointNearRoad } from "@/contracts/reports/location";
 import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
@@ -54,6 +56,48 @@ const SIZE_CODES: Record<(typeof SIZE_OPTIONS)[number], ReportCoarseSize> = {
   "Sebesar ban": "TIRE",
   "Lebih dari 1 m²": "OVER_1M2",
 };
+
+const DRAFT_ID = "laporan-aktif";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const RECEIPT_STORAGE_KEY = "saksi:report-receipt";
+const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+type StoredReceipt = {
+  code: string;
+  savedAt: string;
+  pointPublic: boolean;
+  areaLabel: string;
+};
+
+function readStoredReceipt(): StoredReceipt | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(RECEIPT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredReceipt>;
+    if (!parsed.code || !parsed.savedAt) return null;
+    if (Date.now() - new Date(parsed.savedAt).getTime() > RECEIPT_TTL_MS) {
+      window.localStorage.removeItem(RECEIPT_STORAGE_KEY);
+      return null;
+    }
+    return {
+      code: parsed.code,
+      savedAt: parsed.savedAt,
+      pointPublic: Boolean(parsed.pointPublic),
+      areaLabel: typeof parsed.areaLabel === "string" ? parsed.areaLabel : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredReceipt(receipt: StoredReceipt) {
+  try {
+    window.localStorage.setItem(RECEIPT_STORAGE_KEY, JSON.stringify(receipt));
+  } catch {
+    // Penyimpanan perangkat dapat penuh atau diblokir; tanda terima tetap tampil di layar.
+  }
+}
 
 type AreaGeometry = {
   type: "Polygon" | "MultiPolygon";
@@ -150,6 +194,11 @@ export default function ReportPrototype({
   region: RegionSummary;
 }) {
   const [step, setStep] = useState(0);
+  const [locationMode, setLocationMode] = useState<ReportLocationMode>("POINT");
+  const [draftCandidate, setDraftCandidate] = useState<ReportDraft | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [savedReceipt, setSavedReceipt] = useState<StoredReceipt | null>(null);
+  const [receiptCopied, setReceiptCopied] = useState(false);
   const [photo, setPhoto] = useState<LocalReportPhoto | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
@@ -389,6 +438,164 @@ export default function ReportPrototype({
     };
   }, [photo?.previewUrl]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void listReportDrafts()
+      .then((drafts) => {
+        if (cancelled) return;
+        const latest = drafts[0];
+        if (!latest) return;
+        const fresh = Date.now() - new Date(latest.updatedAt).getTime() <= DRAFT_TTL_MS;
+        if (fresh && latest.state && latest.state.step < 3) setDraftCandidate(latest);
+        else void deleteReportDraft(latest.id).catch(() => undefined);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setDraftReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSavedReceipt(readStoredReceipt()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady || step >= 3) return;
+    const timer = window.setTimeout(() => {
+      const hasContent = Boolean(photo || damageType || point || areaId || description.trim() || landmark.trim());
+      if (!hasContent) {
+        void deleteReportDraft(DRAFT_ID).catch(() => undefined);
+        return;
+      }
+      const state: ReportDraftState = {
+        step,
+        photo: photo
+          ? { blob: photo.file, name: photo.file.name, type: photo.file.type, width: photo.width, height: photo.height }
+          : null,
+        damageType,
+        observedCauses,
+        coarseSize,
+        description,
+        point: point ? { latitude: point.latitude, longitude: point.longitude } : null,
+        accuracyM: point?.accuracyM ?? null,
+        areaId,
+        landmark,
+        publicLocationConsent,
+        locationMode,
+        locationSource,
+        road: selectedRoad,
+        package: selectedPackage,
+        packageSelectionSource,
+      };
+      void saveReportDraft({ id: DRAFT_ID, state }).catch(() => undefined);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [
+    areaId,
+    coarseSize,
+    damageType,
+    description,
+    draftReady,
+    landmark,
+    locationMode,
+    locationSource,
+    observedCauses,
+    packageSelectionSource,
+    photo,
+    point,
+    publicLocationConsent,
+    selectedPackage,
+    selectedRoad,
+    step,
+  ]);
+
+  function applyDraft(draft: ReportDraft) {
+    const state = draft.state;
+    if (!state) return;
+    setDraftCandidate(null);
+    setPhotoError("");
+    if (state.photo?.blob) {
+      const file = new File([state.photo.blob], state.photo.name || "foto-kerusakan.webp", {
+        type: state.photo.type || "image/webp",
+        lastModified: Date.now(),
+      });
+      setPhoto({
+        file,
+        previewUrl: URL.createObjectURL(state.photo.blob),
+        width: state.photo.width,
+        height: state.photo.height,
+      });
+    } else {
+      setPhoto(null);
+    }
+    setDamageType(state.damageType ?? "");
+    setObservedCauses(Array.isArray(state.observedCauses) ? state.observedCauses : []);
+    setCoarseSize(state.coarseSize ?? "");
+    setDescription(state.description ?? "");
+    setPoint(state.point ? { ...state.point, accuracyM: state.accuracyM ?? null } : null);
+    setAreaId(state.areaId ?? "");
+    setLandmark(state.landmark ?? "");
+    setPublicLocationConsent(state.publicLocationConsent ?? true);
+    setLocationMode(state.locationMode === "AREA" ? "AREA" : "POINT");
+    setLocationSource((state.locationSource as ReportLocationSourceState) ?? "MANUAL_AREA");
+    setSelectedRoad(state.road ?? null);
+    setSelectedPackage(state.package ?? null);
+    setPackageSelectionSource(state.packageSelectionSource ?? null);
+    setStep(Math.max(0, Math.min(2, state.step ?? 0)));
+    setLocationMessage("");
+  }
+
+  function discardDraft() {
+    setDraftCandidate(null);
+    setDraftReady(true);
+    void deleteReportDraft(DRAFT_ID).catch(() => undefined);
+  }
+
+  function resetFlow() {
+    discardDraft();
+    setStep(0);
+    setPhoto(null);
+    setPhotoError("");
+    setDamageType("");
+    setObservedCauses([]);
+    setCoarseSize("");
+    setDescription("");
+    setPoint(null);
+    setAreaId("");
+    setLandmark("");
+    setPublicLocationConsent(true);
+    setLocationMode("POINT");
+    setLocationSource("MANUAL_AREA");
+    setLocationMessage("");
+    setCandidateSearch("");
+    setSelectedRoad(null);
+    setSelectedPackage(initialPackage);
+    setPackageSelectionSource(initialPackage ? "PACKAGE_PAGE" : null);
+    invalidateSubmissionKey();
+  }
+
+  async function copyReceipt(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const field = document.createElement("textarea");
+      field.value = code;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    setReceiptCopied(true);
+    window.setTimeout(() => setReceiptCopied(false), 2500);
+  }
+
   async function choosePhoto(file?: File) {
     setPhotoError("");
     if (!file) return;
@@ -499,7 +706,21 @@ export default function ReportPrototype({
         error: { message: string; code: string } | null;
       };
       if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Laporan belum dapat dikirim. Coba lagi.");
-      setReceiptCode(result.data.code);
+      const receipt: StoredReceipt = {
+        code: result.data.code,
+        savedAt: new Date().toISOString(),
+        pointPublic: Boolean(point && publicLocationConsent),
+        areaLabel: derivedArea
+          ? areaLabelOf(derivedArea)
+          : selectedArea
+            ? `${selectedArea.village}, RW ${selectedArea.rw}`
+            : "",
+      };
+      setReceiptCode(receipt.code);
+      setSavedReceipt(receipt);
+      writeStoredReceipt(receipt);
+      void deleteReportDraft(DRAFT_ID).catch(() => undefined);
+      navigatedRef.current = true;
       setStep(3);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Laporan belum dapat dikirim. Coba lagi.");
@@ -528,6 +749,36 @@ export default function ReportPrototype({
                   Tambahkan bukti kerusakan dan, jika dapat dipastikan, tautkan ke paket pekerjaan terkait.
                   Laporan masuk antrean tinjauan internal dan tidak langsung dipublikasikan.
                 </p>
+                {draftCandidate ? (
+                  <div role="status" className="mt-4 border-l-4 border-secondary bg-secondary/20 px-3 py-3">
+                    <p className="text-sm font-semibold text-foreground">Draf tersimpan di perangkat ini</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      Terakhir diubah {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(draftCandidate.updatedAt))}.
+                      Draf disimpan tujuh hari dan dihapus setelah laporan terkirim.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => applyDraft(draftCandidate)} className="inline-flex min-h-10 items-center bg-primary px-3 text-sm font-bold text-white hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        Lanjutkan draf
+                      </button>
+                      <button type="button" onClick={resetFlow} className="inline-flex min-h-10 items-center border border-border bg-white px-3 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        Mulai baru
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {savedReceipt && step < 3 ? (
+                  <div role="status" className="mt-4 border border-border bg-muted/40 px-3 py-3">
+                    <p className="text-sm font-semibold text-foreground">Tanda terima terakhir tersimpan di perangkat ini</p>
+                    <p className="mt-1 break-all font-mono text-sm font-bold text-foreground">{savedReceipt.code}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                      <button type="button" onClick={() => void copyReceipt(savedReceipt.code)} className="inline-flex min-h-10 items-center gap-2 border border-border bg-white px-3 font-semibold text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        {receiptCopied ? "Tersalin" : "Salin nomor"}
+                      </button>
+                      <Link href="/dashboard" className="font-semibold text-primary underline-offset-4 hover:underline">Laporan saya</Link>
+                      <span className="text-muted-foreground">Disimpan {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(savedReceipt.savedAt))}</span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
