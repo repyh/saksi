@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 const PAGE_SIZE = 50;
 const WORK_OPTIONS: Array<{ value: RoadWorkCategory; label: string }> = [
   { value: "SEMUA", label: "Semua jenis pekerjaan" },
-  { value: "PERMUKAAN", label: "Permukaan jalan" },
-  { value: "DRAINASE", label: "Drainase" },
+  { value: "PERMUKAAN", label: "Permukaan & trotoar" },
+  { value: "DRAINASE", label: "Drainase & penahan" },
   { value: "JEMBATAN", label: "Jembatan" },
 ];
 

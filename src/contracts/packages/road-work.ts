@@ -9,8 +9,8 @@ export const ROAD_WORK_TYPES: readonly SpecificRoadWorkCategory[] = [
 ];
 
 export const ROAD_WORK_LABELS: Record<SpecificRoadWorkCategory, string> = {
-  PERMUKAAN: "Permukaan jalan",
-  DRAINASE: "Drainase / penahan",
+  PERMUKAAN: "Permukaan & trotoar",
+  DRAINASE: "Drainase & penahan",
   JEMBATAN: "Jembatan",
 };
 
