@@ -91,12 +91,12 @@ operasional dihapus.
 | `raw_records` | baris mentah JSONB, termasuk baris tanpa pasangan | `(artifact_id, row_index)` |
 | `rup_packages` | seluruh RUP instansi (bukan hanya jalan) | `(region_id, kode_rup)` |
 | `rup_details` | jadwal, lokasi mentah, MAK, volume (hanya RUP yang ada) | `rup_package_id` |
-| `road_packages` | 2.552 paket jalan hasil filter snapshot | `(region_id, rup)` |
+| `road_packages` | paket jalan hasil filter snapshot | `(region_id, rup)` |
 | `administrative_areas` | poligon kecamatan/kelurahan/RW | `(region_id, stable_key)` |
 | `lpse_contracts` | kontrak SPSE/LPSE yang tercocok ke RUP | `(region_id, lpse_id)` |
 | `vendors` | penyedia global, nama ternormalisasi | `normalized_name` |
 | `realization_packages` | agregat paket realisasi INAPROC | `(region_id, kode_paket, tahun)` |
-| `realization_transactions` | 50.836 baris transaksi realisasi | `(region_id, checksum_sha256)` |
+| `realization_transactions` | baris transaksi realisasi | `(region_id, checksum_sha256)` |
 | `realization_package_rups` | relasi paket realisasi ↔ RUP (M–N) | `(package_id, rup_package_id)` |
 | `road_package_area_links` | paket ↔ poligon, per peran RW/kelurahan/kecamatan | `(road_package_id, role)` |
 | `region_manifests` | metrik + checksum snapshot tiap run sukses | `run_id` |

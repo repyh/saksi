@@ -1,13 +1,12 @@
 # RUP dari data.inaproc.id (pengganti sirup.inaproc.id)
 > **Catatan historis (8 November 2026):** dokumen ini merekam perpindahan sumber 31 Oktober–3 November
-> 2026. Kondisi aktif: **snapshot 5 November 2026** (rebuild 8 November 2026), **2.552 paket ·
-> Rp813,13 M**, **344 paket tanpa lokus**, **2.208 (86,5%) berlokus**. Angka 1.557/402/312 di bawah
-> adalah tahap proses, bukan kondisi terkini.
+> 2026. Angka 1.557/402/312 di bawah adalah tahap proses, bukan kondisi terkini. Jumlah paket, pagu,
+> presisi anchor, dan cakupan wilayah **tidak ditulis di sini**; baca
+> `data/regions/kota-tangerang/manifest.json` (`metrik`).
 >
 > Rebuild 8 November 2026 memperbaiki pengenalan prefiks ruas `Jl.`/`Jl` di `scripts/build-snapshot.mjs`,
-> menarik detail RUP untuk seluruh 2.552 paket (`bulan` terisi 2.472 paket), lalu menangani varian
-> lokasi: `RW O7` sebagai RW 7 dan sepuluh varian ejaan kelurahan lewat alias eksplisit. Hasilnya presisi
-> RW 1.612 · kelurahan 517 · kecamatan 79 · tanpa lokus 344.
+> menarik detail RUP untuk seluruh paket snapshot, lalu menangani varian lokasi: `RW O7` sebagai RW 7
+> dan sepuluh varian ejaan kelurahan lewat alias eksplisit.
 >
 > **Status 5 November 2026:** sumber utama sudah **dipindah ke ekspor RUP `data.inaproc.id`**
 > (`scripts/build-snapshot.mjs`) di branch `feat/data-pipeline`, karena ekspor ini juga memuat

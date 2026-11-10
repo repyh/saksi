@@ -61,16 +61,17 @@ mengubah data aktif. Jika penulisan snapshot gagal setelah commit, database beri
 Sumber dibaca dari `data/regions/<id>/region.json`; tidak ada path atau instansi yang ditanam di
 worker. Setiap berkas menjadi satu artefak:
 
-- `data/rup_kota_tangerang_2025_2026.json` → `RUP`, 28.699 baris;
-- `data/rup_detail_kota_tangerang.json` → `RUP_DETAIL`, 2.553 baris (1 tanpa pasangan RUP);
-- `data/realisasi_kota_tangerang.json` → `REALISASI`, 50.836 baris;
-- `data/lpse_kota_tangerang_2025_2026.json` → `LPSE`, 1.739 kontrak tercocok;
-- `data/lpse/rows.json` + `details.jsonl` → `LPSE`, 4.869 + 949 baris mentah (termasuk yang tidak
-  cocok);
-- `public/data/{rw,kel,kec}.geojson` → `BOUNDARY`, 1.020 + 104 + 13 fitur.
+- `data/rup_kota_tangerang_2025_2026.json` → `RUP`;
+- `data/rup_detail_kota_tangerang.json` → `RUP_DETAIL` (termasuk baris tanpa pasangan RUP);
+- `data/realisasi_kota_tangerang.json` → `REALISASI`;
+- `data/lpse_kota_tangerang_2025_2026.json` → `LPSE` (kontrak tercocok);
+- `data/lpse/rows.json` + `details.jsonl` → `LPSE` (baris mentah, termasuk yang tidak cocok);
+- `public/data/{rw,kel,kec}.geojson` → `BOUNDARY`.
 
-Untuk Kota Tangerang, detail RUP harus **2.553 baris**. Berkas detail lama (1.635 baris) menghasilkan
-presisi 78 kecamatan/345 kabupaten, bukan 79/344, sehingga tidak boleh dipakai untuk snapshot ini.
+Jumlah baris tiap artefak dicatat di `source_artifacts` dan direkap di
+`data/regions/<id>/manifest.json`; jangan menyalinnya ke dokumen. Berkas detail RUP harus mencakup
+seluruh paket snapshot — berkas detail lama yang lebih pendek menurunkan presisi dan ditolak gate
+validasi.
 
 Artefak disimpan dengan `UNIQUE (source_id, checksum_sha256)`, sehingga run kedua memakai artefak
 yang sama. Raw record memakai `UNIQUE (artifact_id, row_index)`. Inilah dasar idempotensi:

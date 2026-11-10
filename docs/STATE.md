@@ -33,14 +33,10 @@ Periuk Jaya, `Parug Serab` → Parung Serab, `Batu Ceper` → Batuceper, `Suka A
 48 paket mendapat anchor lebih dalam (41 pindah ke RW, 7 ke kelurahan), sehingga presisi kecamatan
 turun dari 108 menjadi 79.
 
-- **2.552 paket jalan/jembatan/drainase**, pagu **Rp813,13 Miliar** (TA2025 1.592 · TA2026 960).
-- Jenis pekerjaan: **drainase 1.303 · permukaan 1.205 · jembatan 44**.
-- Anchor lokasi: **RW 1.612 (63,2%)**, **kelurahan 517 (20,3%)**, **kecamatan 79 (3,1%)**,
-  **tanpa lokus 344 (13,5%)** → **2.208 paket (86,5%) punya lokus turunan**.
-- Jangkauan: **87 dari 104 kelurahan**, **585 dari 1.020 RW**, **13 kecamatan**.
-- Penyedia: **2.334 dari 2.552 paket (91,5%)** punya nama penyedia — **731 dari LPSE/SPSE**,
-  **1.603 dari Data INAPROC realisasi**; **218 paket** (Rp132,34 M; 16,3% pagu) tanpa rekam publik;
-  **633 entri penyedia unik** pada manifest (630 setelah normalisasi nama gabungan); rasio kontrak/pagu median **0,99**.
+- **Angka dataset tidak lagi ditulis di dokumen.** Jumlah paket, pagu, sebaran jenis pekerjaan,
+  presisi anchor, cakupan wilayah, dan rekam penyedia dibaca dari
+  `data/regions/kota-tangerang/manifest.json` (`metrik`, `dibuat`) atau
+  `npm run db:verify -- --region kota-tangerang`.
 - **Tidak ada paket yang punya koordinat pekerjaan.** Peta mewarnai batas wilayah, bukan titik.
 
 Alasan pindah dari Kabupaten: Kabupaten tidak punya GIS publik (hanya TileServer GL OSM), sedangkan
@@ -83,14 +79,14 @@ nomor RW dan **20,6%** kelurahan.
 Berkas berikut tetap menjadi artefak provenance dan **fallback** repository. Bila `DATABASE_URL`
 diisi, tampilan membaca katalog Supabase; tanpa database, repository kembali ke berkas ini.
 
-- `data/saksi_kota_tangerang_2025_2026.json` — 2.552 paket jalan + anchor (`rw`, `unit_id`,
+- `data/saksi_kota_tangerang_2025_2026.json` — paket jalan + anchor (`rw`, `unit_id`,
   `presisi_peta`, `bulan`, `kecamatan_resmi`, `desa_resmi`); cadangan server-only.
-- `data/lpse_kota_tangerang_2025_2026.json` — 731 paket dengan nama pelaksana dari SPSE (kolom sumber
-  `pemenang`); 1.739 paket RUP punya pengumuman LPSE yang tercocokkan.
-- `data/realisasi_kota_tangerang.json` — 50.836 baris realisasi (37.278 TA2025 + 13.558 TA2026,
-  snapshot 6 November 2026) untuk seluruh satker D44; sumber penyedia e-purchasing.
-- `public/data/rw.geojson` (1.020 poligon), `kel.geojson` (104), `kec.geojson` (13, dari ArcGIS kota,
-  dibuat ulang lewat `npm run data:kecamatan`).
+- `data/lpse_kota_tangerang_2025_2026.json` — paket dengan nama pelaksana dari SPSE (kolom sumber
+  `pemenang`); jumlahnya ada di manifest.
+- `data/realisasi_kota_tangerang.json` — baris realisasi untuk seluruh satker D44; sumber penyedia
+  e-purchasing.
+- `public/data/rw.geojson`, `kel.geojson`, `kec.geojson` (dari ArcGIS kota, dibuat ulang lewat
+  `npm run data:kecamatan`).
 - `data/regions/kota-tangerang/{region.json,aliases.json}` — konfigurasi daerah untuk snapshot dan
   pipeline penarikan (`rup.mjs`, `realisasi.mjs`, `lpse.mjs`): path sumber, kode instansi, tahun,
   properti batas, token lokasi, host SPSE, dan alias kelurahan. Region lain cukup menambah direktori
@@ -98,7 +94,7 @@ diisi, tampilan membaca katalog Supabase; tanpa database, repository kembali ke 
   adalah kelurahan (`rw` selalu `null`).
 - Arsip pipeline lama (Kabupaten/Bandung) hanya untuk referensi, tidak dipakai UI.
 
-Sumber utama: **ekspor RUP `data.inaproc.id`** (28.699 baris D44 2025+2026, ditarik `scripts/rup.mjs`), detail RUP
+Sumber utama: **ekspor RUP `data.inaproc.id`** (seluruh baris D44 2025+2026, ditarik `scripts/rup.mjs`), detail RUP
 `data.inaproc.id`, SPSE `spse.inaproc.id/tangerangkota`, Data INAPROC realisasi (ekspor CSV), dan
 ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tools/build_kota.py`) dan
 `scripts/` di repo ini (`lpse.mjs`, `realisasi.mjs`, `rup.mjs`, `enrich-rup.mjs`, `kecamatan.mjs`).
@@ -106,9 +102,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
 ### 2.3 Implementasi dan Batas Frontend/Backend
 
 - `src/app/page.tsx` — Server Component yang meminta data awal ke use case paket (default hanya
-  paket berlokasi: 2.208).
+  paket berlokasi).
 - `src/app/metode/page.tsx` — halaman `/metode` (Server Component) yang menjelaskan sumber dan
-  tanggal, pipeline, alasan anchor RW, angka snapshot, dua lapis penyedia, batas 218 paket, larangan
+  tanggal, pipeline, alasan anchor RW, angka snapshot (dihitung dari manifest), dua lapis penyedia, batas paket tanpa rekam, larangan
   klaim koordinat, apa yang tidak diklaim, dan mekanisme pembaruan worker. Angka dibangun oleh
   `src/server/packages/methodology.ts` dari manifest, snapshot, dan indeks kontrak.
 - `src/features/map/map-dashboard.tsx` — filter tahun, kecamatan → kelurahan (checkbox), jenis
@@ -132,9 +128,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   **Paket realisasi** membuka rincian per penyedia (jumlah paket + total), dan tiap paket menampilkan
   kode paket (tautan ke Data INAPROC) serta nilai realisasinya. Tidak ada baris "Penyedia lain" terpisah
   dan label "Selisih pagu" tetap apa adanya (pembanding = total realisasi RUP). Relasi M–N tidak muncul di cakupan ini
-  (0 dari 2.552 paket; 40 kode paket di seluruh D44 memetakan ke lebih dari satu RUP).
+  (tidak ada paket dalam cakupan; 40 kode paket di seluruh D44 memetakan ke lebih dari satu RUP).
 - Baris realisasi ber-metode **Swakelola** dan nama "penyedia" yang sebenarnya instansi (Dinas, OPD,
-  Pegawai Dinas) **tidak** dihitung sebagai pelaksana — 43 paket swakelola tampil sebagai tanpa rekam
+  Pegawai Dinas) **tidak** dihitung sebagai pelaksana — paket swakelola tampil sebagai tanpa rekam
   kontrak, bukan dengan penyedia palsu.
 - `src/app/api/packages/route.ts` → `src/server/api/packages/*` → `src/server/packages/service.ts` →
   `source.ts` → `database-repository.ts` (Prisma) atau `snapshot-repository.ts` (cadangan) +
@@ -148,9 +144,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   menulis `data/regions/<id>/manifest.json`. `npm run region:ingest -- --region <id>` menjalankan
   RUP → detail → realisasi → LPSE → snapshot → gate dengan jeda antar-perintah; `--semua` untuk
   seluruh region, `--dry-run` untuk melihat rencana.
-- `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia (731 dari LPSE, 1.603 dari realisasi;
-  manifest mencatat 633 entri penyedia unik; normalisasi nama gabungan yang valid menghasilkan 630
-  nama di register tanpa mengubah total paket).
+- `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia; jumlah penyedia per sumber dan entri
+  unik dibaca dari manifest (normalisasi nama gabungan tidak mengubah total paket).
 - `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
   metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit lewat route API yang sama
   dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,
@@ -291,7 +286,7 @@ tidak menuntut `DATABASE_URL`).
 |---|---|---|---|
 | **Penyajian paket** | UI lewat kontrak server | Server Component + `GET /api/packages`; repository Prisma saat `DATABASE_URL` diisi, snapshot sebagai cadangan | Pindahkan filter dan agregat peta ke SQL/PostGIS |
 | **Peta & register** | Koroplet batas resmi + register | Jalan: tiga tingkat (kecamatan/kelurahan/RW) via segmented control, filter lengkap, register + panel kontrak; register memakai `page`/`limit`, peta memakai `GET /api/packages/map` dengan `bbox` viewport, dan detail paket dimuat lewat `GET /api/packages/[rup]`. Sejak 10 Nov 2026 pembacaan katalog memakai Next Data Cache (`unstable_cache`, `revalidate: 300`) + dedupe `cache()` per request | Precompute agregat atau pindahkan filter/agregat ke SQL/PostGIS; agregat masih dihitung dari baris ter-cache per request |
-| **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung 2.552 paket, Rp813,13 M, 1.592/960, 2.208 (86,5%), 344 tanpa lokus, 87/104 kelurahan, 585/1.020 RW, 13 kecamatan, anchor 1.612/517/79, dan tanggal snapshot | Tambahkan asersi/uji bila metrik dipakai di luar landing |
+| **Metrik header** | Angka diturunkan dari data | Selesai: `src/server/packages/audit-metrics.ts` menghitung seluruh metrik dari manifest, snapshot, dan indeks kontrak (paket, pagu per tahun, presisi, cakupan wilayah, penyedia, tanggal snapshot) | Tambahkan asersi/uji bila metrik dipakai di luar landing |
 | **Badge provenance** | `DATA RESMI` / `SIMULASI PROTOTIPE` | `DATA RESMI (LPSE/INAPROC)` di panel kontrak, halaman penyedia, dan halaman detail paket; `SIMULASI PROTOTIPE` di alur lapor dan laporan warga pada detail paket, bawaannya mati (`src/lib/flags.ts`, nyalakan dengan `NEXT_PUBLIC_SIMULATION_BADGE=1`); badge presisi lokasi ada di detail paket | Badge SIRUP/Bina Marga belum |
 | **Halaman detail paket** | Rencana, lokasi, kontrak, laporan | Selesai: `/paket/[rup]` membaca item dari repository aktif (Prisma/Supabase atau snapshot) dan rincian RUP dari `data/rup_detail_*.json` server-only, memakai `routeForPackage()`, dan menampilkan kontrak lengkap serta laporan `PUBLISHED` | Penambalan detail untuk 918 paket tanpa entri RUP di luar cakupan |
 | **Direktori paket** | Daftar paket yang bisa ditelusuri tanpa peta | Selesai: `/paket` membaca `listRoadPackages()` dari repository aktif, memfilter tahun/jenis/teks di server, dan berpaginasi 50 baris | Pindahkan filter ke SQL bila jumlah region bertambah |
@@ -323,8 +318,8 @@ tidak menuntut `DATABASE_URL`).
 3. **Tingkat poligon dipilih manual**, bukan mengikuti zoom.
 4. **Filter wilayah bertingkat:** kecamatan dulu, lalu kelurahan (checkbox). Nol kelurahan bukan
    berarti "semua" — tampilkan peringatan merah dan jangan kirim permintaan.
-5. **Default hanya paket berlokasi** (2.208 dari 2.552); 344 paket presisi kabupaten muncul hanya bila
-   "Hanya paket berlokasi" dimatikan.
+5. **Default hanya paket berlokasi**; paket presisi kabupaten muncul hanya bila "Hanya paket
+   berlokasi" dimatikan.
 6. **Notasi pelaksana:** sebut **"pemenang" hanya untuk `jenis === "tender"`** (lelang/seleksi);
    selain itu (pengadaan langsung, e-purchasing, penunjukan langsung) sebut **"penyedia"**. Field
    internal dan API memakai `penyedia`; kolom sumber SPSE tetap bernama `pemenang`.

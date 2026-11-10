@@ -21,19 +21,13 @@
 
 ## Data yang ditampilkan
 
-Snapshot paket bertanggal **5 November 2026** (dirakit ulang 8 November 2026 setelah perbaikan awalan `Jl.`); detail rekam kontrak dan realisasi diperkaya **6 November 2026**.
+Jumlah paket, pagu, presisi lokasi, cakupan wilayah, dan rekam penyedia **tidak ditulis di dokumen ini** karena berubah setiap ingest. Sumber kebenarannya:
 
-| Cakupan snapshot | Nilai |
-|---|---:|
-| Paket jalan, jembatan, dan drainase | **2.552** |
-| Pagu paket | **Rp813,13 Miliar** |
-| Anchor RW | **1.612** |
-| Anchor kelurahan | **517** |
-| Anchor kecamatan | **79** |
-| Tanpa lokus yang dapat dipetakan | **344** |
-| Cakupan wilayah | **87/104 kelurahan · 585/1.020 RW · 13 kecamatan** |
+- `data/regions/kota-tangerang/manifest.json` — isi `metrik` dan waktu `dibuat`;
+- `npm run db:verify -- --region kota-tangerang` — rekonsiliasi database dengan manifest;
+- `npm run region:check -- --region kota-tangerang --manifest` — gerbang kualitas snapshot.
 
-**Rekam penyedia:** 2.334 dari 2.552 paket (91,5%) memiliki nama penyedia pada gabungan LPSE/SPSE dan Data INAPROC (731 dari LPSE/SPSE dan 1.603 dari Data INAPROC); 218 paket (Rp132,34 Miliar, 16,3% pagu) belum punya rekam publik, dan manifest mencatat 633 entri penyedia unik (630 setelah normalisasi nama gabungan). Ini menunjukkan cakupan rekam publik, bukan penilaian kualitas penyedia.
+**Rekam penyedia** dihitung dari gabungan LPSE/SPSE dan Data INAPROC realisasi; sebagian paket tetap tanpa rekam publik. Angka itu menunjukkan cakupan rekam publik, bukan penilaian kualitas penyedia.
 
 Sumber utama paket adalah ekspor RUP `data.inaproc.id` untuk `idKldi=D44`; batas administratif berasal dari ArcGIS Kota Tangerang. Data paket dibaca modul server-only: katalog Prisma/Supabase bila `DATABASE_URL` diisi, dan snapshot di `data/` sebagai cadangan tanpa database. Berkas paket tidak disajikan langsung sebagai aset publik. GeoJSON batas RW dan kelurahan tersedia di `public/data/` untuk kebutuhan peta.
 

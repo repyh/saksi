@@ -4,8 +4,12 @@
 > pengadaan langsung, e-purchasing, dan penunjukan langsung, istilah yang benar adalah **"penyedia"**;
 > kode memakai field `penyedia` dan hanya menampilkan label "Pemenang" bila `jenis === "tender"`.
 
-Snapshot LPSE **2 November 2026**, dicocokkan ulang **8 November 2026** ke snapshot RUP 2.552 paket. Skrip: `scripts/lpse.mjs` (`npm run lpse:list|detail|match`).
+Snapshot LPSE **2 November 2026**, dicocokkan ulang **8 November 2026**. Skrip: `scripts/lpse.mjs` (`npm run lpse:list|detail|match`).
 Keluaran: `data/lpse_kota_tangerang_2025_2026.json`.
+
+> Angka di dokumen ini adalah **bukti uji bertanggal** dan sengaja dibekukan. Untuk kondisi terkini,
+> baca `data/regions/kota-tangerang/manifest.json` atau jalankan
+> `npm run db:verify -- --region kota-tangerang`.
 
 ## Sumber
 

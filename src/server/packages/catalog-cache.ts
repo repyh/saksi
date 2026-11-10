@@ -61,7 +61,7 @@ const loadContractsPerRup = unstable_cache(
 /**
  * Seluruh paket jalan satu region. Baris paket dan rekam kontrak disimpan sebagai
  * dua entri Data Cache (masing-masing di bawah batas 2 MB), lalu digabung per
- * request. Penggabungan 2.552 baris jauh lebih murah daripada satu query katalog.
+ * request. Penggabungan seluruh baris katalog jauh lebih murah daripada query berulang.
  */
 export const listRoadPackagesCached = cache(
   async (regionId: string = DEFAULT_REGION_ID): Promise<RoadPackageItem[]> => {

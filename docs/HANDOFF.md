@@ -7,15 +7,13 @@
 **Branch:** `master` (kanonik). P1 poin 10–15 sudah di-merge dan di-push; branch fitur sudah diarsipkan.
 **Base:** `master` di `9bd8ef9` + lima commit P1 (`ddb9d04`, `1b5a955`, `55256c9`, `b806bfa`, `21b4024`).
 
-This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts and current numbers live in [`STATE.md`](STATE.md).
+This is the operational handoff for continuing work in this repository. The short root-level [`HANDOFF.md`](../HANDOFF.md) points here. For design decisions and constraints, read [`DESIGN.md`](DESIGN.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) before changing the interface or data flow. Product facts live in [`STATE.md`](STATE.md); current dataset numbers live in `data/regions/<id>/manifest.json`, not in documents.
 
 ## Product and data scope
 
-SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json`: **2.552 road/junction/drainage packages, Rp813,13 billion**, snapshot **5 November 2026** from the `data.inaproc.id/rup` export (rebuilt 8 November 2026 after the `Jl.` prefix fix). Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
+SAKSI makes public road-work package records easier to inspect by connecting them to a map at the location precision supported by their source data. The active snapshot is **Kota Tangerang, 2025–2026** (`idKldi=D44`, BPS `3671`), stored in `data/saksi_kota_tangerang_2025_2026.json` and produced from the `data.inaproc.id/rup` export. Do not carry forward old Kabupaten Tangerang totals (D50) or assume that a package has an official coordinate.
 
-Location anchor, after enriching from RUP details: **1,612 RW (63.2%)**, **517 kelurahan (20.3%)**, **79 kecamatan (3.1%)**, **344 without any locus (13.5%)** — so 2,208 packages (86.5%) carry a derived location. Coverage touches 87 of 104 kelurahan, 585 of 1,020 RW, in 13 kecamatan.
-
-Vendor records: **2,334 of 2,552 packages (91.5%)** name a supplier — **731 from LPSE/SPSE** (`spse.inaproc.id/tangerangkota`) and **1,603 from Data INAPROC realisation** (`data.inaproc.id`, official CSV export of 50,836 rows for all D44 work units). 218 packages (Rp132.34 billion, 16.3% of pagu) have no public record; 633 manifest supplier entries (630 names after valid combined-name normalization); median contract/pagu ratio 0.99.
+Package counts, pagu, location precision, coverage, and vendor records change on every ingest, so they are **not written in documents**. Read them from `data/regions/kota-tangerang/manifest.json` (`metrik`, `dibuat`) or run `npm run db:verify -- --region kota-tangerang`.
 
 Use neutral, evidence-led wording. A map match or citizen report is a signal for review, not proof of wrongdoing or a promise that an agency will act.
 
@@ -123,7 +121,7 @@ behaviour without it.
 | Tooltip wilayah | Arahkan kursor ke poligon | Popup memuat nama wilayah, jumlah paket/pagu, dan “Batas wilayah, bukan titik pekerjaan” |
 | Klik wilayah | Klik poligon kecamatan | URL berubah ke rute wilayah/paket, panel detail terbuka |
 | Klik area kosong | Klik di luar poligon | URL kembali `/peta-pekerjaan`, panel detail tertutup |
-| Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | 13 ikon agregat di kecamatan, 585 di RW; tidak ada marker per paket |
+| Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | Ikon agregat per kecamatan/RW; tidak ada marker per paket |
 | fitBounds awal | Muat `/peta-pekerjaan` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
 | flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 11,5 (kelurahan) / ≤ 15 (RW) |
 | Legenda & overlay | Periksa tiga mode tampilan | Teks legenda dan peringatan sesuai mode; legenda wilayah terpilih muncul |
@@ -171,7 +169,7 @@ passes `npm run lint` (0 findings) and `env -u DATABASE_URL npm run build` (succ
 - **`master` is the canonical branch.** Branch from the latest `master`, rebase before merging, and merge with fast-forward. Do not keep merged branches whose worktrees are clean.
 - Follow [`DESIGN.md`](DESIGN.md): preserve the established palette, typography, spacing, and restrained divider use. Avoid generic dashboard patterns and unnecessary copy.
 - Keep user-facing interface text in Indonesian; repository documentation uses Indonesian or English by document.
-- Format numbers for Indonesian readers (`2.552`, `91,5%`, `Rp813,13 Miliar`). Attach source, date, coverage, and methodology to public claims.
+- Format numbers for Indonesian readers (thousands with dots, comma decimals, e.g. `1.234`, `91,5%`, `Rp1,23 Miliar`); read the actual values from the region manifest. Attach source, date, coverage, and methodology to public claims.
 - Keep the 2025/2026 road-only product scope; do not surface unrelated sectors.
 - Never present an inferred map location as an official package coordinate, and never place per-package pins.
 - Use concise conventional commits, such as `feat: …`, `fix: …`, and `docs: …`.

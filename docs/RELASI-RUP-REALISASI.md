@@ -3,6 +3,10 @@
 **Snapshot:** 6 November 2026 · **Sumber:** `data/realisasi_kota_tangerang.json` (ekspor CSV resmi
 `data.inaproc.id`, seluruh satker `D44`, TA 2025 + 2026) · **Skrip:** `npm run data:realisasi`
 
+> Angka di dokumen ini adalah **bukti uji snapshot 6 November 2026** dan sengaja dibekukan. Untuk
+> kondisi terkini, baca `data/regions/kota-tangerang/manifest.json` atau jalankan
+> `npm run db:verify -- --region kota-tangerang`.
+
 Dokumen ini menjawab dua hal yang sering keliru diasumsikan:
 
 1. **Kunci halaman bukti.** `https://data.inaproc.id/realisasi?kode=…` memakai **kode paket**
