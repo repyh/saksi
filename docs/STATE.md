@@ -98,8 +98,9 @@ diisi, tampilan membaca katalog Supabase; tanpa database, repository kembali ke 
   e-purchasing.
 - `public/data/rw.geojson`, `kel.geojson`, `kec.geojson` (dari ArcGIS kota, dibuat ulang lewat
   `npm run data:kecamatan`).
-- `public/data/jalan.geojson` (snapshot Overture transportation segment, ODbL-1.0; dibuat ulang
-  lewat `npm run data:jalan`). Ini layer referensi peta, bukan lokasi paket.
+- `data/regions/kota-tangerang/jalan.geojson` (snapshot Overture transportation segment, ODbL-1.0;
+  dibuat ulang lewat `npm run data:jalan`) dan `data/regions/kota-tangerang/jalan-tiles/` (tile MVT
+  ter-gzip yang disajikan lewat route server). Ini layer referensi peta, bukan lokasi paket.
 - `data/regions/kota-tangerang/{region.json,aliases.json}` — konfigurasi daerah untuk snapshot dan
   pipeline penarikan (`rup.mjs`, `realisasi.mjs`, `lpse.mjs`): path sumber, kode instansi, tahun,
   properti batas, token lokasi, host SPSE, dan alias kelurahan. Region lain cukup menambah direktori
@@ -350,9 +351,10 @@ tidak menuntut `DATABASE_URL`).
 - Sumber layer jalan adalah **Overture Maps transportation segment** (rilis dipin di
   `data/regions/kota-tangerang/region.json`), bukan layer ArcGIS jalan. ArcGIS tetap dipakai untuk
   batas administrasi. Lisensi ODbL-1.0 dan atribusi dijelaskan di `docs/DATA-LICENSE.md`.
-- Snapshot `public/data/jalan.geojson` dihasilkan `npm run data:jalan` (Overture CLI + clip Shapely),
-  lalu diimpor worker sebagai `ROAD_NETWORK` ke `road_segments`. Segmen yang hilang dinonaktifkan,
-  bukan dihapus.
+- Snapshot `data/regions/kota-tangerang/jalan.geojson` dan tile MVT
+  `data/regions/kota-tangerang/jalan-tiles/` dihasilkan `npm run data:jalan` (Overture CLI + clip
+  Shapely + tiles), lalu diimpor worker sebagai `ROAD_NETWORK` ke `road_segments`. Segmen yang
+  hilang dinonaktifkan, bukan dihapus.
 - Peta pekerjaan memiliki toggle **Jaringan jalan** yang mati secara bawaan. Ruas hanya referensi:
   klik/hover menampilkan atribut, bukan tautan/filter paket.
 - Laporan warga memiliki titik presisi (GPS/pin/Photon), consent publik, dan anotasi ruas. Titik

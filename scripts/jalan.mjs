@@ -19,7 +19,7 @@ const REGION_ID = arg("region", "kota-tangerang");
 const HANYA_CEK = argv.includes("--check");
 /** Untuk pengembangan/runbook: pakai unduhan yang sudah ada, lewati unduh ulang. */
 const INPUT_OVERRIDE = arg("input", null);
-const MIN_LENGTH_M = 5;
+const MIN_LENGTH_M = 2;
 
 const region = await muatRegion(REGION_ID).catch((error) => {
   console.error(`region: ${error.message}`);
@@ -42,6 +42,7 @@ const kelasDipakai = new Set(
     ],
 );
 const kelasDibuang = new Set(konfigurasi.filter?.kelas_dibuang ?? ["unknown", "steps"]);
+const kelasTanpaNamaDibuang = new Set(konfigurasi.filter?.kelas_tanpa_nama_dibuang ?? []);
 
 function jalankan(perintah, args, { timeout = 3_600_000 } = {}) {
   const hasil = spawnSync(perintah, args, {
@@ -376,6 +377,7 @@ try {
   let duplikat = 0;
   let bukanSubtype = 0;
   let kelasDibuangN = 0;
+  let tanpaNamaDibuang = 0;
 
   for (const fitur of mentahFeatures) {
     const p = fitur.properties ?? {};
@@ -386,6 +388,11 @@ try {
     const kelas = String(p.class ?? "").trim();
     if (!kelas || kelasDibuang.has(kelas) || !kelasDipakai.has(kelas)) {
       kelasDibuangN += 1;
+      continue;
+    }
+    const nama = typeof p.names?.primary === "string" && p.names.primary.trim() ? p.names.primary.trim() : null;
+    if (!nama && kelasTanpaNamaDibuang.has(kelas)) {
+      tanpaNamaDibuang += 1;
       continue;
     }
     const id = String(fitur.id ?? p.id ?? "").trim();
@@ -401,7 +408,7 @@ try {
       id,
       properties: {
         id,
-        nama: typeof p.names?.primary === "string" && p.names.primary.trim() ? p.names.primary.trim() : null,
+        nama,
         kelas,
         permukaan: permukaanSederhana(p.road_surface),
         lebar: lebarSederhana(p.width_rules),
@@ -415,7 +422,7 @@ try {
     JSON.stringify({ type: "FeatureCollection", features: [...terlihat.values()] }),
   );
 
-  console.log(`filter: ${terlihat.size} segmen road (${bukanSubtype} bukan subtype, ${kelasDibuangN} kelas dibuang, ${duplikat} duplikat)`);
+  console.log(`filter: ${terlihat.size} segmen road (${bukanSubtype} bukan subtype, ${kelasDibuangN} kelas dibuang, ${tanpaNamaDibuang} tanpa nama dibuang, ${duplikat} duplikat)`);
 
   const klip = jalankan("uv", [
     "run", "--with", "shapely", "python3",
@@ -485,11 +492,16 @@ try {
       generatedAt: new Date().toISOString(),
       decimals: presisi,
       simplify: toleransi,
-      filter: { kelas_dipakai: [...kelasDipakai], kelas_dibuang: [...kelasDibuang] },
+      filter: {
+        kelas_dipakai: [...kelasDipakai],
+        kelas_dibuang: [...kelasDibuang],
+        kelas_tanpa_nama_dibuang: [...kelasTanpaNamaDibuang],
+      },
       stats: {
         unduhan: mentahFeatures.length,
         bukan_subtype: bukanSubtype,
         kelas_dibuang: kelasDibuangN,
+        tanpa_nama_dibuang: tanpaNamaDibuang,
         duplikat,
         setelah_filter: terlihat.size,
         setelah_potong: (terpotong.features ?? []).length,
@@ -515,6 +527,16 @@ try {
   console.log(`ukuran               : ${(byte / 1024 / 1024).toFixed(2)} MB`);
   console.log(`sha256               : ${checksum}`);
   console.log(`lisensi              : ${dokumen.source.license} · ${dokumen.source.attribution}`);
+
+  if (!argv.includes("--no-tiles")) {
+    const tiles = spawnSync(process.execPath, [
+      path.resolve(AKAR, "scripts/jalan-tiles.mjs"),
+      "--region", REGION_ID,
+    ], { cwd: AKAR, stdio: "inherit", env: process.env });
+    if (tiles.status !== 0) {
+      throw new Error(`pembuatan tile gagal (exit ${tiles.status ?? "signal"})`);
+    }
+  }
 } finally {
   rmSync(sementara, { recursive: true, force: true });
 }

@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-10T06:21:18.956Z",
+  "dibuat": "2026-11-10T10:29:04.393Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -20,8 +20,8 @@
   "berkas": {
     "data/regions/kota-tangerang/region.json": {
       "berkas": "data/regions/kota-tangerang/region.json",
-      "byte": 2088,
-      "sha256": "8e7f3bc51c2b189e4dcfc6eed28ccccb0e4ee9660f2d3a03f9f5b09decfec83b"
+      "byte": 2371,
+      "sha256": "f48c86e312ccf6e3c1772183d5a387d8fbb33d48f6c490d037bdd29b91839d7b"
     },
     "data/regions/kota-tangerang/aliases.json": {
       "berkas": "data/regions/kota-tangerang/aliases.json",
@@ -68,10 +68,15 @@
       "byte": 343669,
       "sha256": "d9100dad5e1f3859fb2ddf060a85c2d1a665b41dbb79f55fbc6ba20734dbc8fd"
     },
-    "public/data/jalan.geojson": {
-      "berkas": "public/data/jalan.geojson",
-      "byte": 18929604,
-      "sha256": "7249540f199d7d6026a04b25af8c22b206a93457c2604da148dd2a2c132b7a4f"
+    "data/regions/kota-tangerang/jalan.geojson": {
+      "berkas": "data/regions/kota-tangerang/jalan.geojson",
+      "byte": 17131414,
+      "sha256": "8f3e33de13a946692a877c947fccfc35823167dc8a296e2d4946e5fe4536a43c"
+    },
+    "data/regions/kota-tangerang/jalan-tiles/metadata.json": {
+      "berkas": "data/regions/kota-tangerang/jalan-tiles/metadata.json",
+      "byte": 403,
+      "sha256": "18030116e56ed6e0fb512cadbf5fcd45c9b51f149133f3e3b5ddc1bc6c1b304d"
     }
   },
   "metrik": {
@@ -92,13 +97,22 @@
     "unit_lingkungan_tersentuh": 585,
     "kecamatan_tersentuh": 13,
     "jalan": {
-      "fitur": 59327,
-      "bernama": 23702,
-      "tanpa_nama": 35625,
-      "berkas": "public/data/jalan.geojson",
+      "fitur": 53818,
+      "bernama": 24117,
+      "tanpa_nama": 29701,
+      "berkas": "data/regions/kota-tangerang/jalan.geojson",
       "rilis": "2026-10-21.0",
       "lisensi": "ODbL-1.0",
       "label": "Jaringan jalan Overture"
+    },
+    "tiles": {
+      "berkas": "data/regions/kota-tangerang/jalan-tiles",
+      "metadata": "data/regions/kota-tangerang/jalan-tiles/metadata.json",
+      "layer": "jalan",
+      "minzoom": 10,
+      "maxzoom": 16,
+      "tile": 783,
+      "bytes": 15935176
     },
     "penyedia": {
       "lpse": 1431,
@@ -115,7 +129,7 @@
       "batas_kecamatan": 13,
       "batas_kelurahan": 104,
       "batas_rw": 1020,
-      "jalan": 59327
+      "jalan": 53818
     }
   },
   "masalah": []

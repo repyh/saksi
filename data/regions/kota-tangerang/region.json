@@ -2,7 +2,10 @@
   "id": "kota-tangerang",
   "label": "Kota Tangerang",
   "instansi": "D44",
-  "tahun": [2025, 2026],
+  "tahun": [
+    2025,
+    2026
+  ],
   "metadata": {
     "snapshot": "5 Nov 2026",
     "sumber": "data.inaproc.id/rup"
@@ -37,8 +40,13 @@
     "zoom": 11
   },
   "lokasi": {
-    "token_lingkungan": ["RW"],
-    "penanda_kelurahan": ["kel", "kelurahan"]
+    "token_lingkungan": [
+      "RW"
+    ],
+    "penanda_kelurahan": [
+      "kel",
+      "kelurahan"
+    ]
   },
   "realisasi": {
     "satker_pu": "1.03.2.10.0.00.01.0000"
@@ -53,7 +61,11 @@
     "release": "2026-10-21.0",
     "tipe": "segment",
     "subtype": "road",
-    "berkas": "public/data/jalan.geojson",
+    "berkas": "data/regions/kota-tangerang/jalan.geojson",
+    "tiles": "data/regions/kota-tangerang/jalan-tiles",
+    "tile_minzoom": 10,
+    "tile_maxzoom": 16,
+    "tile_layer": "jalan",
     "label": "Jaringan jalan Overture",
     "atribusi": "© OpenStreetMap contributors, Overture Maps Foundation (ODbL)",
     "lisensi": "ODbL-1.0",
@@ -68,8 +80,6 @@
         "residential",
         "living_street",
         "service",
-        "track",
-        "pedestrian",
         "road"
       ],
       "kelas_dibuang": [
@@ -82,10 +92,16 @@
         "corridor",
         "sidewalk",
         "crosswalk",
-        "construction"
+        "construction",
+        "track",
+        "pedestrian"
+      ],
+      "kelas_tanpa_nama_dibuang": [
+        "service"
       ]
     },
     "presisi": 5,
-    "simplify": 0.00002
+    "simplify": 0.00002,
+    "tile_tolerance": 0.00002
   }
 }

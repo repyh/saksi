@@ -40,6 +40,11 @@ export interface RegionConfig {
     /** Opsional; bila kosong dihitung dari batas kecamatan/kelurahan region. */
     bbox?: [number, number, number, number];
     berkas: string;
+    tiles: string;
+    tile_minzoom?: number;
+    tile_maxzoom?: number;
+    tile_layer?: string;
+    tile_tolerance?: number;
     label?: string;
     atribusi?: string;
     lisensi?: string;
@@ -114,7 +119,6 @@ export function regionSummary(region: RegionConfig): RegionSummary {
   if (!kelurahanUrl) {
     throw new Error(`Region "${region.id}": batas kelurahan harus berada di public/.`);
   }
-  const jalanUrl = region.jalan ? urlPublik(region.jalan.berkas) : null;
   return {
     id: region.id,
     label: region.label,
@@ -129,9 +133,12 @@ export function regionSummary(region: RegionConfig): RegionSummary {
       kecamatan: region.batas.kelurahan.kecamatan,
       lingkungan: lingkungan?.nomor ?? null,
     },
-    roadLayer: region.jalan && jalanUrl
+    roadLayer: region.jalan
       ? {
-        url: jalanUrl,
+        tiles: `/api/jalan-tiles/${encodeURIComponent(region.id)}/{z}/{x}/{y}`,
+        minzoom: region.jalan.tile_minzoom ?? 10,
+        maxzoom: region.jalan.tile_maxzoom ?? 16,
+        sourceLayer: region.jalan.tile_layer ?? "jalan",
         label: region.jalan.label ?? "Jaringan jalan Overture",
         attribution: region.jalan.atribusi ?? "© OpenStreetMap contributors, Overture Maps Foundation (ODbL)",
         license: region.jalan.lisensi ?? "ODbL-1.0",

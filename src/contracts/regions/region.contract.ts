@@ -28,7 +28,11 @@ export interface RegionRoadLayerFields {
 }
 
 export interface RegionRoadLayer {
-  url: string;
+  /** URL template MVT, mis. `/data/jalan-tiles/{z}/{x}/{y}.pbf`. */
+  tiles: string;
+  minzoom: number;
+  maxzoom: number;
+  sourceLayer: string;
   label: string;
   attribution: string;
   license: string;

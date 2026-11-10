@@ -1,0 +1,19 @@
+{
+  "layer": "jalan",
+  "minzoom": 10,
+  "maxzoom": 16,
+  "bounds": [
+    106.55145,
+    -6.25502,
+    106.74853,
+    -6.09738
+  ],
+  "features": 53818,
+  "tiles": 783,
+  "bytes": 15935176,
+  "tolerance": 2e-05,
+  "attribution": "© OpenStreetMap contributors, Overture Maps Foundation (ODbL)",
+  "license": "ODbL-1.0",
+  "release": "2026-10-21.0",
+  "generatedAt": "2026-11-10T10:28:55.267474+00:00"
+}

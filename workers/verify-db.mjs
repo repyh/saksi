@@ -198,6 +198,19 @@ if (regionConfig.jalan) {
     [REGION_ID],
   );
   catat("rilis/lisensi jalan", rilisJalan[0] ? `${rilisJalan[0].source_release} · ${rilisJalan[0].license}` : "tidak ada");
+
+  if (regionConfig.jalan.tiles) {
+    const metadataPath = path.resolve(AKAR, regionConfig.jalan.tiles, "metadata.json");
+    const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
+    const checksumMetadata = sha256(readFileSync(metadataPath));
+    cek("tile jalan", m.tiles?.tile ?? metadata.tiles, metadata.tiles);
+    cek(
+      "checksum metadata tile",
+      manifest.berkas?.[path.join(regionConfig.jalan.tiles, "metadata.json")]?.sha256 ?? checksumMetadata,
+      checksumMetadata,
+    );
+    catat("layer tile", `${metadata.layer} · zoom ${metadata.minzoom}–${metadata.maxzoom}`);
+  }
 }
 
 // ---- Provenance mentah ----

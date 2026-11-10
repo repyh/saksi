@@ -97,8 +97,9 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 
 ## Layer Jaringan Jalan dan Titik Laporan (10 November 2026)
 
-- **Toggle layer mati secara bawaan.** Label tombol: **Jaringan jalan**. Muat GeoJSON hanya setelah
-  toggle dinyalakan; jangan memuat layer jalan pada render awal peta pekerjaan.
+- **Toggle layer mati secara bawaan.** Label tombol: **Jaringan jalan**. Muat tile MVT hanya setelah
+  toggle dinyalakan; jangan memuat layer jalan pada render awal peta pekerjaan. Snapshot GeoJSON
+  lengkap tetap server-side dan tidak disajikan ke browser.
 - **Garis netral, bukan koroplet.** Warna `#6B7280` dengan opasitas ±0,62; lebar mengikuti `lebar`
   (batas 0,7–3,2 px). Jangan memakai kuning/merah koroplet untuk ruas.
 - **Label hanya pada zoom dekat.** Nama ruas tampil pada zoom ≥14; label memakai halo putih tipis.

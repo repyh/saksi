@@ -78,6 +78,7 @@ jobs:
             artifacts/road-ingestion.log
             artifacts/road-verify.log
             data/regions/${{ env.REGION }}/manifest.json
-            public/data/jalan.geojson
+            data/regions/${{ env.REGION }}/jalan.geojson
+            data/regions/${{ env.REGION }}/jalan-tiles/metadata.json
           if-no-files-found: warn
           retention-days: 30

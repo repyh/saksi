@@ -278,59 +278,50 @@ export default function ReportLocationMap({
       remove();
       return;
     }
-    const controller = new AbortController();
-    let cancelled = false;
-    fetch(roadLayer.url, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Layer jalan tidak tersedia.");
-        return response.json() as Promise<BoundaryCollection>;
-      })
-      .then((collection) => {
-        if (cancelled || mapRef.current !== map) return;
-        if (!map.getSource(ROAD_SOURCE)) map.addSource(ROAD_SOURCE, { type: "geojson", data: collection });
-        else (map.getSource(ROAD_SOURCE) as maplibregl.GeoJSONSource).setData(collection);
-        if (!map.getLayer(lineId)) {
-          map.addLayer({
-            id: lineId, type: "line", source: ROAD_SOURCE,
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": "#6B7280",
-              "line-opacity": 0.55,
-              "line-width": ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", roadLayer.fields.lebar]], 0], 0, 0.7, 4, 1.1, 8, 1.9, 16, 3.2],
-            },
-          } as unknown as maplibregl.AddLayerObject);
-          map.addLayer({
-            id: labelId, type: "symbol", source: ROAD_SOURCE, minzoom: 14,
-            layout: {
-              "text-field": ["coalesce", ["get", roadLayer.fields.nama], ""],
-              "text-font": ["Noto Sans Regular"],
-              "text-size": 10,
-              "text-offset": [0, -0.8],
-              "text-anchor": "bottom",
-            },
-            paint: { "text-color": "#334155", "text-halo-color": "rgba(255,255,255,.9)", "text-halo-width": 1.1 },
-          } as unknown as maplibregl.AddLayerObject);
-        }
-        const hover = (event: maplibregl.MapLayerMouseEvent) => {
-          const feature = event.features?.[0];
-          if (!feature) return;
-          popupRef.current?.setLngLat(event.lngLat).setHTML(roadPopup((feature.properties ?? {}) as Record<string, unknown>, roadLayer.fields)).addTo(map);
-        };
-        const leave = () => popupRef.current?.remove();
-        map.on("mousemove", lineId, hover);
-        map.on("mouseleave", lineId, leave);
-        handlers.push(() => {
-          map.off("mousemove", lineId, hover);
-          map.off("mouseleave", lineId, leave);
-        });
-      })
-      .catch((error: unknown) => {
-        if (cancelled || (error instanceof DOMException && error.name === "AbortError")) return;
-        setRoadError(true);
-      });
+    if (!map.getSource(ROAD_SOURCE)) {
+      map.addSource(ROAD_SOURCE, {
+        type: "vector",
+        tiles: [roadLayer.tiles],
+        minzoom: roadLayer.minzoom,
+        maxzoom: roadLayer.maxzoom,
+      } as maplibregl.VectorSourceSpecification);
+      map.addLayer({
+        id: lineId, type: "line", source: ROAD_SOURCE,
+        "source-layer": roadLayer.sourceLayer,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#6B7280",
+          "line-opacity": 0.55,
+          "line-width": ["interpolate", ["linear"], ["coalesce", ["to-number", ["get", roadLayer.fields.lebar]], 0], 0, 0.7, 4, 1.1, 8, 1.9, 16, 3.2],
+        },
+      } as unknown as maplibregl.AddLayerObject);
+      map.addLayer({
+        id: labelId, type: "symbol", source: ROAD_SOURCE,
+        "source-layer": roadLayer.sourceLayer,
+        minzoom: 14,
+        layout: {
+          "text-field": ["coalesce", ["get", roadLayer.fields.nama], ""],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 10,
+          "text-offset": [0, -0.8],
+          "text-anchor": "bottom",
+        },
+        paint: { "text-color": "#334155", "text-halo-color": "rgba(255,255,255,.9)", "text-halo-width": 1.1 },
+      } as unknown as maplibregl.AddLayerObject);
+    }
+    const hover = (event: maplibregl.MapLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      popupRef.current?.setLngLat(event.lngLat).setHTML(roadPopup((feature.properties ?? {}) as Record<string, unknown>, roadLayer.fields)).addTo(map);
+    };
+    const leave = () => popupRef.current?.remove();
+    map.on("mousemove", lineId, hover);
+    map.on("mouseleave", lineId, leave);
+    handlers.push(() => {
+      map.off("mousemove", lineId, hover);
+      map.off("mouseleave", lineId, leave);
+    });
     return () => {
-      cancelled = true;
-      controller.abort();
       for (const removeHandler of handlers) removeHandler();
       if (mapRef.current === map) remove();
     };

@@ -11,8 +11,9 @@ Setiap tampilan peta dan turunan database harus memuat atribusi:
 > © OpenStreetMap contributors, Overture Maps Foundation (ODbL)
 
 Atribusi tersebut ditampilkan di kontrol legenda peta pekerjaan, peta laporan, halaman detail
-laporan publik, dan metadata `public/data/jalan.geojson` (`source.attribution`,
-`source.license`). Jangan menghapus atribusi saat memuat ulang snapshot.
+laporan publik, serta metadata `data/regions/<id>/jalan.geojson` dan
+`data/regions/<id>/jalan-tiles/metadata.json` (`source.attribution`, `source.license`). Jangan
+menghapus atribusi saat memuat ulang snapshot atau membangun ulang tiles.
 
 ## Rilis dan provenance
 
@@ -26,7 +27,8 @@ laporan publik, dan metadata `public/data/jalan.geojson` (`source.attribution`,
 
 ## Kewajiban ODbL
 
-Karena `public/data/jalan.geojson` dan tabel `road_segments` adalah database turunan Overture:
+Karena `data/regions/<id>/jalan.geojson`, tile MVT, dan tabel `road_segments` adalah database
+turunan Overture:
 
 1. Pertahankan atribusi dan notice lisensi pada distribusi.
 2. Jika database turunan didistribusikan publik, sediakan database tersebut (atau cara

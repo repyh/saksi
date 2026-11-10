@@ -1,7 +1,7 @@
 // Gerbang kualitas satu region: struktur snapshot, objek jalan, anchor lokasi, dan cakupan penyedia.
 // Pemakaian: node scripts/check-region.mjs [--region <id>] [--manifest]
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { AKAR, bacaJson, muatRegion, norm } from "./lib/region.mjs";
 import { objekJalan, objekLain, namaNonFisik } from "./lib/road-filter.mjs";
@@ -204,6 +204,63 @@ function cekLayerJalan() {
 
 const jalan = cekLayerJalan();
 
+function hitungTile(relatif) {
+  const akar = path.resolve(AKAR, relatif);
+  if (!existsSync(akar)) return 0;
+  let jumlah = 0;
+  const kunjungi = (direktori) => {
+    for (const entri of readdirSync(direktori, { withFileTypes: true })) {
+      const jalur = path.join(direktori, entri.name);
+      if (entri.isDirectory()) kunjungi(jalur);
+      else if (entri.name.endsWith(".pbf.gz")) jumlah += 1;
+    }
+  };
+  kunjungi(akar);
+  return jumlah;
+}
+
+function cekTileJalan() {
+  if (!region.jalan?.tiles) return null;
+  const metadataPath = path.resolve(AKAR, region.jalan.tiles, "metadata.json");
+  if (!existsSync(metadataPath)) {
+    tolak(`metadata tile jalan tidak ditemukan: ${region.jalan.tiles}/metadata.json`);
+    return null;
+  }
+  let metadata;
+  try {
+    metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
+  } catch {
+    tolak(`metadata tile jalan bukan JSON sah: ${region.jalan.tiles}/metadata.json`);
+    return null;
+  }
+  const layer = region.jalan.tile_layer ?? "jalan";
+  const minzoom = region.jalan.tile_minzoom ?? 10;
+  const maxzoom = region.jalan.tile_maxzoom ?? 16;
+  if (metadata.layer !== layer) tolak(`tile layer ${metadata.layer} ≠ ${layer}`);
+  if (metadata.minzoom !== minzoom) tolak(`tile minzoom ${metadata.minzoom} ≠ ${minzoom}`);
+  if (metadata.maxzoom !== maxzoom) tolak(`tile maxzoom ${metadata.maxzoom} ≠ ${maxzoom}`);
+  if (!metadata.tiles) tolak("metadata tile tidak mencatat jumlah tile");
+  if (jalan && metadata.features !== jalan.fitur) {
+    tolak(`tile features ${metadata.features} ≠ layer ${jalan.fitur}`);
+  }
+  if (!metadata.license) tolak("tile jalan tanpa lisensi");
+  const jumlah = hitungTile(region.jalan.tiles);
+  if (metadata.tiles && jumlah !== metadata.tiles) {
+    tolak(`jumlah tile ${jumlah} ≠ metadata ${metadata.tiles}`);
+  }
+  return {
+    berkas: region.jalan.tiles,
+    metadata: `${region.jalan.tiles}/metadata.json`,
+    layer,
+    minzoom,
+    maxzoom,
+    tile: jumlah,
+    bytes: metadata.bytes ?? null,
+  };
+}
+
+const tiles = cekTileJalan();
+
 // Angka sumber dipakai `workers/verify-db.mjs` untuk merekonsiliasi isi database dengan manifest.
 function metrikSumber() {
   const hitungBerkas = (rel) => {
@@ -259,6 +316,7 @@ console.log(
   `penyedia          : ${penyedia.lpseN + penyedia.realisasiN}/${paket.length} (${persen(penyedia.lpseN + penyedia.realisasiN, paket.length)}%) · LPSE ${penyedia.lpseN} · realisasi ${penyedia.realisasiN} · tanpa ${penyedia.tanpa} (${rupiah(penyedia.tanpaPagu)}) · ${penyedia.penyedia} unik`,
 );
 if (jalan) console.log(`layer jalan       : ${jalan.fitur} segmen · ${jalan.bernama} bernama · ${jalan.tanpa_nama} tanpa nama · ${jalan.rilis ?? "?"} · ${jalan.lisensi ?? "?"}`);
+if (tiles) console.log(`tile jalan        : ${tiles.tile} tile · zoom ${tiles.minzoom}–${tiles.maxzoom} · ${(Number(tiles.bytes ?? 0) / 1024 / 1024).toFixed(2)} MB`);
 
 if (masalah.length) {
   console.error(`\nGAGAL: ${masalah.length} masalah ditemukan`);
@@ -291,6 +349,7 @@ if (TULIS_MANIFEST) {
     region.batas.lingkungan?.berkas,
     region.batas.kecamatan?.berkas,
     region.jalan?.berkas,
+    region.jalan?.tiles ? path.join(region.jalan.tiles, "metadata.json") : null,
   ].filter(Boolean);
   const manifest = {
     region: region.id,
@@ -313,6 +372,7 @@ if (TULIS_MANIFEST) {
       unit_lingkungan_tersentuh: terlihatUnit.size,
       kecamatan_tersentuh: kecamatanTersentuh.size,
       jalan,
+      tiles,
       penyedia: {
         lpse: penyedia.lpseN,
         realisasi: penyedia.realisasiN,

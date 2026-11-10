@@ -70,7 +70,7 @@ worker. Setiap berkas menjadi satu artefak:
 - `data/lpse_kota_tangerang_2025_2026.json` → `LPSE` (kontrak tercocok);
 - `data/lpse/rows.json` + `details.jsonl` → `LPSE` (baris mentah, termasuk yang tidak cocok);
 - `public/data/{rw,kel,kec}.geojson` → `BOUNDARY`;
-- `public/data/jalan.geojson` → `ROAD_NETWORK` (Overture transportation segment, ODbL-1.0).
+- `data/regions/<id>/jalan.geojson` → `ROAD_NETWORK` (Overture transportation segment, ODbL-1.0).
 
 Jumlah baris tiap artefak dicatat di `source_artifacts` dan direkap di
 `data/regions/<id>/manifest.json`; jangan menyalinnya ke dokumen. Berkas detail RUP harus mencakup
@@ -264,8 +264,8 @@ Konfigurasi ada di `data/regions/<id>/region.json` pada kunci `jalan`.
 pip install overturemaps
 # atau
 uvx overturemaps --version
-# clip memakai Shapely di lingkungan sementara uv
-uv run --with shapely python3 --version
+# clip + MVT memakai Shapely, mapbox-vector-tile, dan mercantile di lingkungan sementara uv
+uv run --with shapely --with mapbox-vector-tile --with mercantile python3 --version
 ```
 
 Rilis dipin di `jalan.release`; bila kosong, script memakai `overturemaps releases latest` dan
@@ -276,20 +276,29 @@ mencatatnya di manifest. Rilis yang dipakai saat ini: **2026-10-21.0**.
 ```bash
 npm run data:jalan -- --region kota-tangerang
 npm run data:jalan -- --region kota-tangerang --check
+npm run data:jalan:tiles -- --region kota-tangerang   # hanya bangun ulang MVT
 ```
 
 Langkah script:
 
 1. hitung bbox dari `public/data/kec.geojson` (atau `jalan.bbox` bila diisi);
 2. unduh `--type=segment -f geojson` ke direktori sementara;
-3. buang `subtype != road`, kelas `unknown`/`steps`/pejalan kaki, dan duplikat GERS;
+3. buang `subtype != road`, kelas `unknown`/`steps`/`footway`/`path`/`track`/`pedestrian`, dan
+   duplikat GERS; `service` tanpa nama juga dibuang;
 4. petakan GERS id, `names.primary`, `class`, `road_surface`, `width_rules`, geometri;
 5. clip ke batas kecamatan dengan Shapely, sederhanakan, bulatkan koordinat;
-6. hitung panjang, spatial join kecamatan/kelurahan, tulis `public/data/jalan.geojson`;
-7. validasi GERS id unik, geometri garis, dan coverage nama.
+6. buang geometri < 2 m (hanya sisa clipping), hitung panjang, spatial join kecamatan/kelurahan,
+   tulis `data/regions/<id>/jalan.geojson`;
+7. validasi GERS id unik, geometri garis, dan coverage nama;
+8. bangun MVT `z10–z16` ke `data/regions/<id>/jalan-tiles`, gzip per tile, tulis `metadata.json`.
 
 `widthM` hanya diisi bila `width_rules` berupa satu aturan numerik tanpa segmen bersyarat.
-`number` selalu `null` karena Overture tidak memiliki nomor ruas kota.
+`number` selalu `null` karena Overture tidak memiliki nomor ruas kota. Tile disajikan lewat
+`/api/jalan-tiles/<region>/{z}/{x}/{y}` dengan `Content-Encoding: gzip`; peta hanya mengambil tile
+yang terlihat. File GeoJSON lengkap tidak disajikan ke browser.
+
+Pada systemd, `saksi-road.service` mengarahkan cache `uv` ke `/var/cache/saksi` karena
+`ProtectHome=true`; pastikan direktori itu ada dan dapat ditulis user `saksi`.
 
 ### Worker dan jadwal
 
@@ -323,7 +332,7 @@ Keduanya menjalankan `npm run data:jalan` → worker `--sources jalan` → `db:v
 
 Rilis yang dipakai `2026-10-21.0` (Overture CLI 2.1.0). Angka segmen, coverage nama, ukuran berkas,
 dan checksum **tidak ditulis di dokumen**; baca `data/regions/<id>/manifest.json`
-(`metrik.jalan`, `berkas["public/data/jalan.geojson"]`) atau jalankan
+(`metrik.jalan`, `metrik.tiles`, `berkas["data/regions/<id>/jalan.geojson"]`) atau jalankan
 `npm run db:verify -- --region <id>`.
 
 | Uji | Hasil |

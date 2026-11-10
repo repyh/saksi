@@ -736,92 +736,79 @@ export default function MapCanvas(props: MapCanvasProps) {
       return;
     }
 
-    const controller = new AbortController();
-    let cancelled = false;
+    if (!map.getSource(ROAD_SOURCE_ID)) {
+      map.addSource(ROAD_SOURCE_ID, {
+        type: "vector",
+        tiles: [layer.tiles],
+        minzoom: layer.minzoom,
+        maxzoom: layer.maxzoom,
+      } as maplibregl.VectorSourceSpecification);
+      map.addLayer({
+        id: lineId,
+        type: "line",
+        source: ROAD_SOURCE_ID,
+        "source-layer": layer.sourceLayer,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#6B7280",
+          "line-opacity": 0.62,
+          "line-width": [
+            "interpolate", ["linear"], ["coalesce", ["to-number", ["get", layer.fields.lebar]], 0],
+            0, 0.8, 3, 1.2, 6, 2.1, 10, 3.2, 20, 4.8,
+          ],
+        },
+      } as unknown as maplibregl.AddLayerObject);
+      map.addLayer({
+        id: labelId,
+        type: "symbol",
+        source: ROAD_SOURCE_ID,
+        "source-layer": layer.sourceLayer,
+        minzoom: 14,
+        layout: {
+          "text-field": ["coalesce", ["get", layer.fields.nama], ""],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 10,
+          "text-offset": [0, -0.9],
+          "text-anchor": "bottom",
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
+        paint: {
+          "text-color": "#334155",
+          "text-halo-color": "rgba(255,255,255,0.92)",
+          "text-halo-width": 1.2,
+        },
+      } as unknown as maplibregl.AddLayerObject);
+    }
 
-    fetch(layer.url, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Layer jalan tidak tersedia.");
-        return response.json() as Promise<BoundaryCollection>;
-      })
-      .then((collection) => {
-        if (cancelled || mapRef.current !== map || !Array.isArray(collection.features)) return;
-        const source = map.getSource(ROAD_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
-        if (source) {
-          source.setData(collection);
-        } else {
-          map.addSource(ROAD_SOURCE_ID, { type: "geojson", data: collection });
-          map.addLayer({
-            id: lineId,
-            type: "line",
-            source: ROAD_SOURCE_ID,
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": "#6B7280",
-              "line-opacity": 0.62,
-              "line-width": [
-                "interpolate", ["linear"], ["coalesce", ["to-number", ["get", layer.fields.lebar]], 0],
-                0, 0.8, 3, 1.2, 6, 2.1, 10, 3.2, 20, 4.8,
-              ],
-            },
-          } as unknown as maplibregl.AddLayerObject);
-          map.addLayer({
-            id: labelId,
-            type: "symbol",
-            source: ROAD_SOURCE_ID,
-            minzoom: 14,
-            layout: {
-              "text-field": ["coalesce", ["get", layer.fields.nama], ""],
-              "text-font": ["Noto Sans Regular"],
-              "text-size": 10,
-              "text-offset": [0, -0.9],
-              "text-anchor": "bottom",
-              "text-allow-overlap": false,
-              "text-ignore-placement": false,
-            },
-            paint: {
-              "text-color": "#334155",
-              "text-halo-color": "rgba(255,255,255,0.92)",
-              "text-halo-width": 1.2,
-            },
-          } as unknown as maplibregl.AddLayerObject);
-        }
-
-        const hover = (event: maplibregl.MapLayerMouseEvent) => {
-          const feature = event.features?.[0];
-          if (!feature) return;
-          map.getCanvas().style.cursor = "pointer";
-          popupRef.current
-            ?.setLngLat(event.lngLat)
-            .setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties))
-            .addTo(map);
-        };
-        const leave = () => {
-          map.getCanvas().style.cursor = "";
-          popupRef.current?.remove();
-        };
-        map.on("mousemove", lineId, hover);
-        map.on("mouseleave", lineId, leave);
-        // Klik ruas hanya menampilkan atribut; tidak menautkan atau memfilter paket.
-        map.on("click", lineId, hover);
-        handlers.push(() => {
-          map.off("mousemove", lineId, hover);
-          map.off("mouseleave", lineId, leave);
-          map.off("click", lineId, hover);
-        });
-      })
-      .catch((error: unknown) => {
-        if (cancelled || (error instanceof DOMException && error.name === "AbortError")) return;
-        setRoadError(true);
-      });
+    const hover = (event: maplibregl.MapLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      map.getCanvas().style.cursor = "pointer";
+      popupRef.current
+        ?.setLngLat(event.lngLat)
+        .setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties))
+        .addTo(map);
+    };
+    const leave = () => {
+      map.getCanvas().style.cursor = "";
+      popupRef.current?.remove();
+    };
+    map.on("mousemove", lineId, hover);
+    map.on("mouseleave", lineId, leave);
+    // Klik ruas hanya menampilkan atribut; tidak menautkan atau memfilter paket.
+    map.on("click", lineId, hover);
+    handlers.push(() => {
+      map.off("mousemove", lineId, hover);
+      map.off("mouseleave", lineId, leave);
+      map.off("click", lineId, hover);
+    });
 
     return () => {
-      cancelled = true;
-      controller.abort();
       for (const remove of handlers) remove();
       if (mapRef.current === map) removeLayer();
     };
-  }, [mapLoaded, roadEnabled, roadLayer?.url]);
+  }, [mapLoaded, roadEnabled, roadLayer?.tiles]);
 
   useEffect(() => {
     const map = mapRef.current;
