@@ -122,14 +122,19 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   klaim koordinat, apa yang tidak diklaim, dan mekanisme pembaruan worker. Angka dibangun oleh
   `src/server/packages/methodology.ts` dari manifest, snapshot, dan indeks kontrak.
 - `src/features/map/map-dashboard.tsx` — filter tahun, kecamatan → kelurahan (checkbox), jenis
-  pekerjaan, kontrak, pencarian, mode tampilan (Jumlah paket / Nilai anggaran / Jenis pekerjaan),
-  register paket berpaginasi (`page`/`limit`, 50 baris pertama, tombol muat berikutnya), panel
-  pelaksana & kontrak.
+  pekerjaan, kontrak, pencarian, register paket berpaginasi (`page`/`limit`, 50 baris pertama,
+  tombol muat berikutnya), panel pelaksana & kontrak. **Ringkasan kohort** duduk di atas peta dan
+  memuat jumlah paket, pagu, pagu rata-rata, cakupan rekam penyedia, penyedia unik, komposisi jenis,
+  serta tabel per kecamatan yang bisa dibuka. Tema peta tidak lagi dipilih dari baris filter.
 - `src/features/map/map-canvas.tsx` — koroplet tiga tingkat dengan segmented control
-  **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom), legenda mengikuti tingkat, agregasi
-  kecamatan memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map` yang
-  dibatasi `bbox` viewport, bukan seluruh baris paket; klik wilayah memuat detail paket contoh lewat
-  `GET /api/packages/[rup]`.
+  **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom) dan segmented tema **Jumlah / Pagu / Jenis**
+  di kanvas; legenda mengikuti tingkat dan menyebut jumlah wilayah per kelas. Agregasi kecamatan
+  memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map` yang dibatasi
+  `bbox` viewport untuk `rw`/`kel` (kecamatan selalu penuh untuk tabel), bukan seluruh baris paket;
+  klik wilayah memuat detail paket contoh lewat `GET /api/packages/[rup]`. Tema jenis pekerjaan
+  mewarnai poligon menurut jenis dominan (>50% paket) tanpa ikon atau marker.
+- `src/features/map/map-summary.tsx` — angka kohort dan tabel per kecamatan; `src/features/map/work-encoding.ts`
+  — warna dan aturan "jenis dominan" yang dipakai peta, tabel, dan tooltip.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
   membuka **`https://data.inaproc.id/realisasi?kode=<kode paket>`**. Penting: parameter itu memakai
   **kode paket realisasi** (kode tender / kode e-katalog), **bukan** kode RUP — RUP hanya dipakai untuk

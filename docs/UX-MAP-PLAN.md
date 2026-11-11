@@ -114,6 +114,32 @@ perbaikannya. Angka dataset tidak ditulis di sini; pakai `data/regions/<id>/mani
 - Setiap baris register dan panel paket menampilkan badge presisi lokasi bila paket punya anchor.
 - `npm run lint` hijau.
 
+## Fase 3 — peta menyatakan isinya (selesai 11 November 2026)
+
+- [x] **Ringkasan kohort di atas peta**: jumlah paket (dengan penyebut seluruh region), pagu,
+      pagu rata-rata, cakupan rekam penyedia beserta jumlah penyedia unik, dan bar komposisi
+      jenis pekerjaan. Angka dihitung server dari hasil filter **tanpa** `bbox`, sehingga tidak
+      berubah saat peta digeser. Angka "N dari M paket" yang dulu di baris filter dipindah ke sini
+      agar tidak ada dua sumber untuk satu angka.
+- [x] **Tema pindah ke peta**: segmented **Jumlah / Pagu / Jenis** di atas kanvas, satu tempat
+      dengan **Kecamatan / Kelurahan / RW**. Pemilih "Tampilan" di baris filter dihapus.
+- [x] **Legenda menyatakan sebaran**, bukan hanya warna: jumlah wilayah per kelas di tiap baris,
+      label pagu ringkas (`Rp2–3,2 Miliar`), dan ramp lima kelas dengan ujung terang yang lebih
+      gelap agar terbaca di atas Positron.
+- [x] **Tema jenis pekerjaan tanpa ikon**: isi poligon = jenis yang mencakup lebih dari separuh
+      paket; wilayah tanpa jenis dominan diberi abu-abu "campuran". Marker bulat dihapus (aturan 5
+      dan performa); komposisi lengkap tetap di tooltip.
+- [x] **Tabel per kecamatan** (buka-tutup di ringkasan): paket, pagu, cakupan rekam, jenis dominan.
+      Klik nama kecamatan menyaring register; agregat kecamatan sengaja tidak dibatasi viewport agar
+      tabel tidak kehilangan baris.
+- [x] `min-w-0` pada kolom grid peta/register dan `map.resize()` setelah gaya peta siap.
+- [x] Efek lapisan berhenti bila `map.isStyleLoaded()` masih salah; sebelumnya galat
+      "Style is not done loading" menjatuhkan seluruh komponen peta.
+
+Belum dikerjakan dari daftar tema: cakupan rekam sebagai koroplet, konsentrasi penyedia,
+selisih pagu–kontrak, metode pengadaan, perbandingan tahun, dan laporan warga. Perluasan
+`RoadAreaAggregate` (satu lintasan, field aditif) sudah disiapkan lewat `withContract`.
+
 ## Evaluasi
 
 Perubahan ini berbasis review heuristik dan pemeriksaan visual, bukan studi pengguna terukur. Studi

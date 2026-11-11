@@ -7,6 +7,7 @@ import type {
   RoadPackageSearchData,
   RoadPackageSearchFilters,
   RoadPackageSort,
+  RoadPackageTotals,
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageDetail } from "@/contracts/packages/road-package-detail.contract";
@@ -211,7 +212,14 @@ function sortPackages(items: RoadPackageItem[], sort: RoadPackageSort = "pagu-de
 }
 
 function emptyAreaAggregate(): RoadAreaAggregate {
-  return { count: 0, budget: 0, workCounts: { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 }, sampleRup: null };
+  return {
+    count: 0,
+    budget: 0,
+    withContract: 0,
+    workCounts: { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 },
+    label: "",
+    sampleRup: null,
+  };
 }
 
 /**
@@ -233,10 +241,33 @@ export async function aggregateRoadPackages(
   const visible: Record<RoadAreaLevel, Set<string> | null> = {
     rw: visibleAreaKeys(context.region.id, "rw", bbox),
     kel: visibleAreaKeys(context.region.id, "kel", bbox),
-    kec: visibleAreaKeys(context.region.id, "kec", bbox),
+    // Kecamatan hanya belasan wilayah dan dipakai tabel ringkasan; menyaringnya
+    // dengan viewport membuat tabel kehilangan baris tanpa alasan yang terlihat.
+    kec: null,
   };
+  const totals: RoadPackageTotals = {
+    count: 0,
+    budget: 0,
+    withContract: 0,
+    vendors: 0,
+    located: 0,
+    workCounts: { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 },
+  };
+  const vendorKeys = new Set<string>();
 
   for (const item of context.filtered) {
+    // Ringkasan kohort sengaja dihitung tanpa `bbox` agar angkanya stabil saat peta digeser.
+    totals.count += 1;
+    totals.budget += item.pagu;
+    totals.workCounts[classifyRoadWork(item.nama)] += 1;
+    if (item.presisi_peta !== "Kabupaten") totals.located += 1;
+    if (item.kontrak) {
+      totals.withContract += 1;
+      for (const nama of [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])]) {
+        if (nama) vendorKeys.add(kunciPenyedia(nama));
+      }
+    }
+
     for (const level of levels) {
       const key = areaKeyForPackage(item, level);
       if (!key) continue;
@@ -244,11 +275,20 @@ export async function aggregateRoadPackages(
       const aggregate = maps[level].get(key) ?? emptyAreaAggregate();
       aggregate.count += 1;
       aggregate.budget += item.pagu;
+      if (item.kontrak) aggregate.withContract += 1;
       aggregate.workCounts[classifyRoadWork(item.nama)] += 1;
+      if (!aggregate.label) {
+        aggregate.label = level === "rw"
+          ? [item.rw, item.desa_resmi].filter(Boolean).join(" · ")
+          : level === "kel"
+            ? [item.desa_resmi, item.kecamatan_resmi].filter(Boolean).join(" · ")
+            : item.kecamatan_resmi ?? "";
+      }
       if (!aggregate.sampleRup) aggregate.sampleRup = item.kode_rup;
       maps[level].set(key, aggregate);
     }
   }
+  totals.vendors = vendorKeys.size;
 
   return {
     region: regionSummary(context.region),
@@ -257,6 +297,7 @@ export async function aggregateRoadPackages(
     kec: Object.fromEntries(maps.kec),
     totalCount: context.allPackages.length,
     filteredCount: context.filtered.length,
+    totals,
     bbox,
   };
 }

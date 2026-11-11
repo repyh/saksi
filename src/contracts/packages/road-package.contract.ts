@@ -146,9 +146,29 @@ export interface RoadPackageSearchData {
 export interface RoadAreaAggregate {
   count: number;
   budget: number;
+  /** Paket di wilayah ini yang punya rekam kontrak LPSE/Data INAPROC. */
+  withContract: number;
   workCounts: Record<"PERMUKAAN" | "DRAINASE" | "JEMBATAN", number>;
+  /** Nama wilayah sebagaimana tertulis di RUP, untuk tabel dan pembaca layar. */
+  label: string;
   /** RUP contoh di wilayah ini; detailnya dimuat saat wilayah dipilih. */
   sampleRup: string | null;
+}
+
+/**
+ * Ringkasan kohort filter aktif. Selalu dihitung dari seluruh hasil filter,
+ * bukan viewport, supaya angkanya tidak berubah saat peta digeser.
+ */
+export interface RoadPackageTotals {
+  count: number;
+  budget: number;
+  /** Paket dengan rekam penyedia (LPSE atau Data INAPROC). */
+  withContract: number;
+  /** Penyedia unik pada kohort (kunci normalisasi nama). */
+  vendors: number;
+  /** Paket yang punya anchor wilayah sehingga masuk koroplet. */
+  located: number;
+  workCounts: Record<"PERMUKAAN" | "DRAINASE" | "JEMBATAN", number>;
 }
 
 /** Agregat peta per tingkat batas wilayah, memakai kunci yang dinormalisasi. */
@@ -159,6 +179,8 @@ export interface RoadPackageMapData {
   kec: Record<string, RoadAreaAggregate>;
   totalCount: number;
   filteredCount: number;
+  /** Ringkasan kohort filter; tidak ikut menyempit saat `bbox` berubah. */
+  totals: RoadPackageTotals;
   /** Viewport yang dipakai, `null` bila agregat mencakup seluruh hasil filter. */
   bbox: MapBounds | null;
 }

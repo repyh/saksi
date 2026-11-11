@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { formatRupiahFull } from "./road-types";
 import { MapIntroSection } from "./map-intro-section";
+import { MapSummary } from "./map-summary";
 import { MAP_SEARCH_EVENT } from "./map-search-events";
 import { fetchRoadPackage, fetchRoadPackageMap, fetchRoadPackages } from "./package-api";
 import { ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
@@ -300,6 +301,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       kec: {},
       totalCount,
       filteredCount: 0,
+      totals: {
+        count: 0,
+        budget: 0,
+        withContract: 0,
+        vendors: 0,
+        located: 0,
+        workCounts: { PERMUKAAN: 0, DRAINASE: 0, JEMBATAN: 0 },
+      },
       bbox: mapBbox,
     };
     if (kelurahanKosong) return kosong;
@@ -347,6 +356,18 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
   const addressPath = (address: ReportAddress) => routeForAddress(address, regionId);
   const packagePath = (pkg: RoadPackageItem) => routeForPackage(pkg, regionId);
+
+  // Satu jalur untuk filter kecamatan: dropdown dan klik baris tabel ringkasan.
+  const pilihKecamatan = (district: string) => {
+    const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
+    setSelectedDistrict(district);
+    setGeneralOnly(false);
+    setSelectedVillages(null);
+    setOpenVillages(false);
+    setSelectedRegion(address);
+    updateSelectedPackage(null);
+    writeReportPath(address ? addressPath(address) : "/peta-pekerjaan");
+  };
 
   const selectPackage = (pkg: RoadPackageItem) => {
     const address = addressForPackage(pkg);
@@ -535,7 +556,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             </div>
           )}
           <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
-            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px_150px] xl:gap-2`}>
+            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2`}>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
                 <Select value={selectedYear} onValueChange={(val) => { setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026"); setBudgetDecile(undefined); }}>
@@ -551,17 +572,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Wilayah</span>
-                <Select value={selectedDistrict} onValueChange={(val) => {
-                  const district = val ?? "SEMUA";
-                  const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
-                  setSelectedDistrict(district);
-                  setGeneralOnly(false);
-                  setSelectedVillages(null);
-                  setOpenVillages(false);
-                  setSelectedRegion(address);
-                  updateSelectedPackage(null);
-                  writeReportPath(address ? addressPath(address) : "/peta-pekerjaan");
-                }}>
+                <Select value={selectedDistrict} onValueChange={(val) => pilihKecamatan(val ?? "SEMUA")}>
                   <SelectTrigger aria-label="Pilih kecamatan" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
                     <SelectValue>{selectedDistrict === "SEMUA" ? "Semua kecamatan" : selectedDistrict}</SelectValue>
                   </SelectTrigger>
@@ -663,19 +674,6 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2 flex min-w-0 flex-col gap-0.5 px-1 py-0.5 sm:col-span-1">
-                <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Tampilan</span>
-                <Select value={mapView} onValueChange={(value) => setMapView((value ?? "packages") as "packages" | "budget" | "work")}>
-                  <SelectTrigger aria-label="Tampilan peta" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
-                    <SelectValue>{mapView === "budget" ? "Nilai anggaran" : mapView === "work" ? "Jenis pekerjaan" : "Jumlah paket"}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="packages">Jumlah paket</SelectItem>
-                    <SelectItem value="budget">Nilai anggaran</SelectItem>
-                    <SelectItem value="work">Jenis pekerjaan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Urutkan</span>
                 <Select value={selectedSort} onValueChange={(value) => setSelectedSort((value ?? "pagu-desc") as RoadPackageSort)}>
@@ -722,9 +720,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 />
               </label>}
               <span aria-live="polite" className="whitespace-nowrap">
-                {isLoading
-                  ? "Memuat paket…"
-                  : <><strong className="font-sans text-sm font-extrabold tabular-nums text-primary">{filteredCount.toLocaleString("id-ID")}</strong> dari {totalCount.toLocaleString("id-ID")} paket{selectedVillages?.length === 1 ? ` di ${selectedVillages[0]}` : selectedDistrict !== "SEMUA" ? ` di Kec. ${selectedDistrict}` : ""}</>}
+                {isLoading ? "Memuat paket…" : null}
               </span>
             </div>
           </div>
@@ -755,8 +751,16 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             ))}
           </div>
 
+          <MapSummary
+            totals={mapAggregate.totals}
+            totalCount={totalCount}
+            loading={isLoading}
+            kecamatan={mapAggregate.kec}
+            onSelectDistrict={pilihKecamatan}
+          />
+
           <div className={`grid grid-cols-1 lg:grid-cols-12 ${fillViewport ? "lg:min-h-0 lg:flex-1" : ""}`}>
-            <aside className={`order-1 flex h-[580px] flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}>
+            <aside className={`order-1 flex h-[580px] min-w-0 flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}>
               <ScrollArea className="flex-1">
                 <div className="divide-y divide-border">
                   {filteredPackages.map((pkg) => (
@@ -841,7 +845,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </ScrollArea>
             </aside>
 
-            <div className={`relative order-2 border-b border-border lg:order-2 lg:border-b-0 ${selectedPackage ? "lg:col-span-6" : "lg:col-span-9"} ${fillViewport ? "h-[580px] lg:h-full lg:min-h-0" : ""} ${mobilePane === "map" && !selectedPackage ? "" : "max-lg:hidden"}`}>
+            <div className={`relative order-2 min-w-0 border-b border-border lg:order-2 lg:border-b-0 ${selectedPackage ? "lg:col-span-6" : "lg:col-span-9"} ${fillViewport ? "h-[580px] lg:h-full lg:min-h-0" : ""} ${mobilePane === "map" && !selectedPackage ? "" : "max-lg:hidden"}`}>
               <MapCanvas
                 areaStats={mapAggregate}
                 region={activeRegion}
@@ -850,12 +854,13 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 onSelectRegion={selectRegion}
                 onViewportChange={setMapBbox}
                 viewMode={mapView}
+                onViewModeChange={setMapView}
                 packageCount={isLoading || kelurahanKosong ? undefined : filteredCount}
                 mapHeightClassName={fillViewport ? "h-full min-h-0" : undefined}
               />
             </div>
 
-            {selectedPackage && <aside className={`order-3 flex h-[580px] flex-col border-l border-border bg-white lg:col-span-3 lg:col-start-10 lg:order-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""}`}>
+            {selectedPackage && <aside className={`order-3 flex h-[580px] min-w-0 flex-col border-l border-border bg-white lg:col-span-3 lg:col-start-10 lg:order-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""}`}>
               {selectedPackage ? (
                 <div className="flex h-full flex-col">
                   <div className="flex items-center justify-between border-b border-border bg-muted/20 px-5 py-3">
