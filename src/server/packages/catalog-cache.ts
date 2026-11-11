@@ -39,6 +39,12 @@ const loadRoadPackageBases = unstable_cache(
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 
+/** Package rows without contract joins, cached across requests for map and summary views. */
+export const listRoadPackageBasesCached = cache(
+  async (regionId: string = DEFAULT_REGION_ID): Promise<RoadPackageItem[]> =>
+    loadRoadPackageBases(regionId),
+);
+
 const loadContractsPerRup = unstable_cache(
   async (regionId: string): Promise<Record<string, RoadPackageContract>> => {
     const [bases, indeks] = await Promise.all([
@@ -66,7 +72,7 @@ const loadContractsPerRup = unstable_cache(
 export const listRoadPackagesCached = cache(
   async (regionId: string = DEFAULT_REGION_ID): Promise<RoadPackageItem[]> => {
     const [bases, contracts] = await Promise.all([
-      loadRoadPackageBases(regionId),
+      listRoadPackageBasesCached(regionId),
       loadContractsPerRup(regionId),
     ]);
     return bases.map((item) => ({

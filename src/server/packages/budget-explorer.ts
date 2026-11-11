@@ -16,8 +16,11 @@ function summarize(label: string, rows: RoadPackageItem[]): BudgetExplorerNode {
   return { label, count: rows.length, locatedCount: rows.filter((row) => row.presisi_peta !== "Kabupaten").length, budget: rows.reduce((sum, row) => sum + row.pagu, 0) };
 }
 
-export async function susunBudgetExplorer(region: string): Promise<BudgetExplorerNode[]> {
-  const rows = await listRoadPackagesCached(region);
+export async function susunBudgetExplorer(
+  region: string,
+  packages?: RoadPackageItem[],
+): Promise<BudgetExplorerNode[]> {
+  const rows = packages ?? await listRoadPackagesCached(region);
   function mapLink(year: number, decile?: number, work?: string, district?: string) {
     const params = new URLSearchParams({ region, tahun: String(year) });
     if (decile) params.set("kelompok", String(decile));
@@ -70,7 +73,7 @@ export async function susunBudgetExplorer(region: string): Promise<BudgetExplore
 }
 
 const loadBudgetExplorer = unstable_cache(
-  susunBudgetExplorer,
+  async (region: string) => susunBudgetExplorer(region),
   ["catalog-budget-explorer", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
@@ -80,6 +83,6 @@ const budgetExplorerForRequest = cache(
 );
 
 /** Pohon eksplorasi anggaran landing; turunan murni katalog, aman di-cache. */
-export function buildBudgetExplorer(region: string): Promise<BudgetExplorerNode[]> {
-  return budgetExplorerForRequest(region);
+export function buildBudgetExplorer(region: string, packages?: RoadPackageItem[]): Promise<BudgetExplorerNode[]> {
+  return packages ? susunBudgetExplorer(region, packages) : budgetExplorerForRequest(region);
 }

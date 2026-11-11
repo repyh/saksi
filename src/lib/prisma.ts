@@ -7,7 +7,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function buatKlien(): PrismaClient {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl =
+    process.env.NODE_ENV === "development"
+      ? process.env.DIRECT_URL ?? process.env.DATABASE_URL
+      : process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error(
       "DATABASE_URL belum diset. Fitur database (autentikasi, simpan laporan, katalog paket) " +

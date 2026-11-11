@@ -29,9 +29,9 @@ export function NavBrand({ config = DEFAULT_BRAND, className = "" }: NavBrandPro
         {shortName}
       </span>
 
-      <span className="hidden h-4 w-px bg-white/35 sm:inline-block" aria-hidden="true" />
+      <span className="hidden h-4 w-px bg-white/35 2xl:inline-block" aria-hidden="true" />
 
-      <span className="hidden truncate font-sans text-xs font-normal tracking-normal text-white/80 sm:inline-block">
+      <span className="hidden truncate font-sans text-xs font-normal tracking-normal text-white/80 2xl:inline-block">
         {fullName}
       </span>
     </Link>

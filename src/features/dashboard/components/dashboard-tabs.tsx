@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FiArrowUpRight, FiBriefcase, FiEdit2, FiFileText, FiLogOut, FiMap, FiRefreshCw, FiX } from "react-icons/fi";
 import type { DashboardAccount } from "@/contracts/account/dashboard.contract";
 import type { RegionSummary } from "@/contracts/regions/region.contract";
@@ -173,14 +173,30 @@ const workspaces = [
   },
 ];
 
+type DashboardTabValue = "workspace" | "reports" | "account" | "report-moderation" | "account-management";
+
+function resolveDashboardTab(
+  value: string | null,
+  canViewReportQueue: boolean,
+  hasAccountManagementAccess: boolean,
+): DashboardTabValue {
+  if (value === "reports" || value === "account") return value;
+  if (value === "report-moderation" && canViewReportQueue) return value;
+  if (value === "account-management" && hasAccountManagementAccess) return value;
+  return "workspace";
+}
+
 export function DashboardTabs({ account, region }: { account: DashboardAccount; region: RegionSummary }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("workspace");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const hasAccountManagementAccess = account.dashboardPermissions.manageAccounts;
   const canViewReportQueue = account.dashboardPermissions.viewReportQueue;
   const canViewReportDetails = account.dashboardPermissions.viewReportDetails;
   const canViewReportEvidence = account.dashboardPermissions.viewReportEvidence;
   const canChangeReportStatus = account.dashboardPermissions.changeReportStatus;
+  const requestedTab = searchParams.get("tab");
+  const activeTab = resolveDashboardTab(requestedTab, canViewReportQueue, hasAccountManagementAccess);
   const [name, setName] = useState(account.name);
   const [email, setEmail] = useState(account.email);
   const [editingField, setEditingField] = useState<"name" | "email" | null>(null);
@@ -190,6 +206,27 @@ export function DashboardTabs({ account, region }: { account: DashboardAccount; 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const hasProfileChanges = name.trim() !== account.name || email.trim().toLowerCase() !== account.email.toLowerCase();
+
+  useEffect(() => {
+    if (requestedTab === null || requestedTab === activeTab) return;
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (activeTab === "workspace") nextParams.delete("tab");
+    else nextParams.set("tab", activeTab);
+    const query = nextParams.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }, [activeTab, pathname, requestedTab, router, searchParams]);
+
+  function selectTab(value: string | null) {
+    if (!value) return;
+
+    const nextTab = resolveDashboardTab(value, canViewReportQueue, hasAccountManagementAccess);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (nextTab === "workspace") nextParams.delete("tab");
+    else nextParams.set("tab", nextTab);
+    const query = nextParams.toString();
+    router.push(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }
 
   function resetProfile() {
     setName(account.name);
@@ -274,7 +311,7 @@ export function DashboardTabs({ account, region }: { account: DashboardAccount; 
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={(value) => value && setActiveTab(value)} orientation="horizontal" className="min-w-0">
+    <Tabs value={activeTab} onValueChange={selectTab} orientation="horizontal" className="min-w-0">
       <TabsList aria-label="Bagian dashboard" className="flex h-auto w-full justify-start gap-2 overflow-x-auto border-b border-border bg-transparent p-0">
           <TabsTrigger value="workspace" className="h-12 shrink-0 rounded-none border-b-[3px] border-transparent bg-transparent px-4 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[active]:border-secondary data-[active]:bg-transparent data-[active]:text-primary">
             Telusuri

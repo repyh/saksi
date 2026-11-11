@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { PackageSearchForm } from "./package-search-form";
 
-export function PackageSearchSection() {
+export function PackageSearchSection({ regionId }: { regionId: string }) {
   return (
     <section aria-labelledby="package-search-title" className="relative isolate scroll-mt-16 min-h-[220px] overflow-hidden border-t-4 border-secondary text-white sm:min-h-[240px] lg:min-h-[260px]">
       <Image
@@ -21,7 +21,7 @@ export function PackageSearchSection() {
             Gunakan nama kelurahan, jalan, kecamatan, atau nomor RUP.
           </p>
         </div>
-        <PackageSearchForm inputId="section-package-search" />
+        <PackageSearchForm inputId="section-package-search" regionId={regionId} />
       </div>
     </section>
   );

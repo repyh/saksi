@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
+
 const steps = [
   {
     title: "Temukan ruas",
@@ -13,7 +16,7 @@ const steps = [
   },
 ];
 
-export function PackageJourneySection() {
+export function PackageJourneySection({ regionId }: { regionId: string }) {
   return (
     <section aria-labelledby="package-journey-title" className="bg-muted/40">
       <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
@@ -31,8 +34,17 @@ export function PackageJourneySection() {
                 0{index + 1}
               </span>
               <div>
-                <h3 className="text-base font-bold leading-6 text-foreground sm:text-lg">
-                  {step.title}
+                <h3 className="text-base font-bold leading-6 sm:text-lg">
+                  {index === 0 ? (
+                    <Link
+                      href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`}
+                      className="inline-flex min-h-8 items-center gap-2 text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      {step.title}<FiArrowRight aria-hidden="true" className="size-4 shrink-0" />
+                    </Link>
+                  ) : (
+                    <span className="text-foreground">{step.title}</span>
+                  )}
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
                   {step.description}
@@ -41,7 +53,6 @@ export function PackageJourneySection() {
             </li>
           ))}
         </ol>
-
       </div>
     </section>
   );

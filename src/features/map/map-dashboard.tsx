@@ -665,7 +665,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, ${environmentLabel} ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? `Lokasi umum · ${regionLabel}`} · {pkg.bulan ?? "jadwal belum tersedia"}</p>
-                        <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat <FiArrowRight aria-hidden="true" /></Button>
+                        <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat ringkasan paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat ringkasan <FiArrowRight aria-hidden="true" /></Button>
                       </div>
                     </article>
                   ))}

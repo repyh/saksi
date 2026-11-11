@@ -21,6 +21,17 @@ const KATEGORI_LABEL: Record<string, string> = {
   SEMUA: "Campuran",
 };
 
+function hrefForVendorDetail(slug: string, regionId: string, returnTo: string) {
+  const params = new URLSearchParams({ region: regionId, returnTo });
+  return `/penyedia/${encodeURIComponent(slug)}?${params.toString()}`;
+}
+
+function hrefForProviderDirectory(regionId: string, query: string, sortBy: string, direction: string) {
+  const params = new URLSearchParams({ region: regionId, urut: sortBy, arah: direction });
+  if (query) params.set("q", query);
+  return `/penyedia?${params.toString()}`;
+}
+
 interface PenyediaPageProps {
   searchParams: Promise<{ q?: string; urut?: string; arah?: string; region?: string | string[] }>;
 }
@@ -47,6 +58,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
   const totalPaket = vendor.reduce((n, item) => n + item.paket, 0);
   const totalNilai = vendor.reduce((n, item) => n + item.nilai, 0);
   const tampil = vendor.slice(0, 60);
+  const returnTo = hrefForProviderDirectory(regionId, query, sortBy, direction);
   const persenVendor = ringkas.totalCount
     ? ((ringkas.withContractCount / ringkas.totalCount) * 100).toLocaleString("id-ID", {
         minimumFractionDigits: 1,
@@ -146,7 +158,9 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
             Tidak ada penyedia yang cocok. Coba kata kunci lain.
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto border border-border">
+          <>
+          <p className="mt-3 text-xs text-muted-foreground sm:hidden">Geser tabel ke samping untuk melihat kolom lainnya.</p>
+          <div role="region" aria-label="Daftar penyedia. Tabel dapat digeser secara horizontal." tabIndex={0} className="mt-2 overflow-x-auto border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:mt-4">
             <table className="w-full min-w-[720px] border-collapse font-sans text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left">
@@ -159,9 +173,9 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
               </thead>
               <tbody>
                 {tampil.map((item) => (
-                  <tr key={item.slug} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
+                  <tr key={item.slug} className="border-b border-border/60 last:border-0">
                     <td className="px-3 py-2.5 font-semibold leading-snug">
-                      <Link href={`/penyedia/${item.slug}?region=${encodeURIComponent(regionId)}`} className="text-primary underline-offset-2 hover:underline">
+                      <Link href={hrefForVendorDetail(item.slug, regionId, returnTo)} className="text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-current">
                         {item.nama}
                       </Link>
                     </td>
@@ -176,6 +190,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         <div className="mt-8 border border-border bg-muted/10 p-4 font-sans text-[12px] leading-relaxed text-foreground/80">

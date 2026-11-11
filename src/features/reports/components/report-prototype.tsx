@@ -150,6 +150,8 @@ export default function ReportPrototype({
   region: RegionSummary;
 }) {
   const [step, setStep] = useState(0);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
   const [photo, setPhoto] = useState<LocalReportPhoto | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
@@ -230,6 +232,12 @@ export default function ReportPrototype({
   const mapFocus: ReportMapFocus | null = derivedArea
     ? { level: derivedArea.level, district: derivedArea.district, village: derivedArea.village, rw: derivedArea.rw }
     : null;
+
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    stepHeadingRef.current?.focus();
+  }, [step]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -545,7 +553,7 @@ export default function ReportPrototype({
             <section aria-labelledby="step-heading" className="pt-7 sm:pt-8">
               {step === 0 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Foto kerusakan</h2>
+                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Foto kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">JPG, PNG, atau WebP · maksimal 10 MB</p>
 
                   {photo ? (
@@ -602,7 +610,7 @@ export default function ReportPrototype({
 
               {step === 1 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Jenis kerusakan</h2>
+                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Jenis kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">Pilih kondisi yang paling mendekati.</p>
                   <fieldset className="mt-5">
                     <legend className="sr-only">Pilih jenis kerusakan</legend>
@@ -656,7 +664,7 @@ export default function ReportPrototype({
 
               {step === 2 && (
                 <>
-                  <h2 id="step-heading" className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground sm:text-2xl">Lokasi dan paket terkait</h2>
+                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Lokasi dan paket terkait</h2>
                   <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">
                     Tandai titik kerusakan lewat GPS, pencarian alamat, atau pin di peta. Ruas jalan hanya anotasi; paket pekerjaan tetap dipilih terpisah.
                   </p>
@@ -843,7 +851,7 @@ export default function ReportPrototype({
                     <FiCheckCircle aria-hidden="true" className="size-8" />
                   </span>
                   <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">04 · Sukses</p>
-                  <h2 id="step-heading" className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground sm:text-3xl">Laporan berhasil dikirim</h2>
+                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-3xl">Laporan berhasil dikirim</h2>
                   <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
                     Laporan sudah diterima untuk ditinjau. Rujukan paket, bila dipilih, hanya mencatat pilihan Anda dan bukan bukti bahwa paket menyebabkan kerusakan.
                   </p>

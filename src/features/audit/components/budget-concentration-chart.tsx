@@ -47,7 +47,7 @@ export function BudgetConcentrationChart({ data, onSelect }: { data: BudgetExplo
             <line x1="66" y1="320" x2="640" y2="40" strokeDasharray="6 6" className="stroke-muted-foreground" />
             {curves.map((points, index) => <g key={data[index].label}>
               <polyline points={points.map((point) => `${66 + point.x * 574},${320 - point.y * 280}`).join(" ")} fill="none" strokeWidth="3" strokeDasharray={index % 2 ? "8 4" : undefined} className={strokes[index % strokes.length]} />
-              {points.slice(1, -1).map((point, pointIndex) => <circle key={pointIndex} cx={66 + point.x * 574} cy={320 - point.y * 280} r="4" className={`${strokes[index % strokes.length]} fill-white`} strokeWidth="2"><title>{data[index].label}: {percent(point.x)} paket membentuk {percent(point.y)} pagu</title></circle>)}
+              {points.slice(1, -1).map((point, pointIndex) => <circle key={pointIndex} cx={66 + point.x * 574} cy={320 - point.y * 280} r="4" className={`${strokes[index % strokes.length]} fill-white`} strokeWidth="2"><title>{`${data[index].label}: ${percent(point.x)} paket membentuk ${percent(point.y)} pagu`}</title></circle>)}
             </g>)}
           </svg></div>
           <div className="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs">

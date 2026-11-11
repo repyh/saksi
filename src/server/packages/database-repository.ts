@@ -7,7 +7,7 @@ import type {
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_REGION_ID } from "@/server/regions/region-registry";
 import { getIndeksKontrak } from "./lpse-repository";
-import type { RoadPackageRepository } from "./repository";
+import type { RoadPackageListOptions, RoadPackageRepository } from "./repository";
 
 const ROAD_SECTOR = "Jalan, Jembatan & Drainase";
 
@@ -16,6 +16,11 @@ const PRECISION: Record<string, RoadPrecisionType> = {
   KELURAHAN: "Kelurahan",
   KECAMATAN: "Kecamatan",
   KABUPATEN: "Kabupaten",
+};
+
+type RupPackageMetadata = {
+  sumberDana: string | null;
+  detail: { jadwalPemilihanMulai: string | null } | null;
 };
 
 /** Normalisasi nama wilayah; harus sama dengan `norm` di scripts/lib/region.mjs. */
@@ -42,32 +47,40 @@ function monthFor(value: string | null, year: number): string | null {
   return value && value.slice(-4) === String(year) ? value : null;
 }
 
-async function muatBaris(regionId: string) {
+const packageSelect = {
+  rup: true,
+  year: true,
+  name: true,
+  agencyName: true,
+  budget: true,
+  method: true,
+  locationPrecision: true,
+  officialDistrict: true,
+  officialVillage: true,
+  rwCode: true,
+  microLocation: true,
+} as const;
+
+async function muatBaris(regionId: string, includeRupMetadata = true) {
   return prisma.roadPackage.findMany({
     where: { regionId },
-    select: {
-      rup: true,
-      year: true,
-      name: true,
-      agencyName: true,
-      budget: true,
-      method: true,
-      locationPrecision: true,
-      officialDistrict: true,
-      officialVillage: true,
-      rwCode: true,
-      microLocation: true,
-      rupPackage: {
-        select: {
-          sumberDana: true,
-          detail: { select: { jadwalPemilihanMulai: true } },
-        },
-      },
-    },
+    select: includeRupMetadata
+      ? {
+          ...packageSelect,
+          rupPackage: {
+            select: {
+              sumberDana: true,
+              detail: { select: { jadwalPemilihanMulai: true } },
+            },
+          },
+        }
+      : packageSelect,
   });
 }
 
-type BarisPaket = Awaited<ReturnType<typeof muatBaris>>[number];
+type BarisPaket = Awaited<ReturnType<typeof muatBaris>>[number] & {
+  rupPackage?: RupPackageMetadata | null;
+};
 
 function petakanBaris(
   row: BarisPaket,
@@ -114,15 +127,21 @@ export function createDatabaseRoadPackageRepository(
       return urutkan(rows.map((row) => petakanBaris(row, null)));
     },
 
-    async listRoadPackages() {
+    async listRoadPackages(options: RoadPackageListOptions = {}) {
+      const includeRupMetadata = options.includeRupMetadata !== false;
+      const includeContracts = options.includeContracts !== false;
       const [rows, indeks] = await Promise.all([
-        muatBaris(regionId),
-        getIndeksKontrak(regionId),
+        muatBaris(regionId, includeRupMetadata),
+        includeContracts ? getIndeksKontrak(regionId) : Promise.resolve(null),
       ]);
       return urutkan(
-        rows.map((row) =>
-          petakanBaris(row, indeks.kontrakPerRup.get(String(row.rup)) ?? null),
-        ),
+        rows.map((row) => {
+          const metadataRow = row as typeof row & { rupPackage?: RupPackageMetadata | null };
+          return petakanBaris(
+            { ...row, rupPackage: metadataRow.rupPackage ?? null } as BarisPaket,
+            indeks?.kontrakPerRup.get(String(row.rup)) ?? null,
+          );
+        }),
       );
     },
   };
