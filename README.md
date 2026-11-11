@@ -46,7 +46,8 @@ Telusuri paket pekerjaan jalan di Kota Tangerang, pahami wilayah yang disebut da
   - [Arsitektur Backend](#arsitektur-backend)
     - [Diagram API dan alur backend](#diagram-api-dan-alur-backend)
       - [Request data paket](#request-data-paket)
-      - [Pengiriman dan moderasi laporan](#pengiriman-dan-moderasi-laporan)
+      - [Alur API pengiriman laporan](#alur-api-pengiriman-laporan)
+      - [Alur API moderasi laporan](#alur-api-moderasi-laporan)
   - [Keamanan](#keamanan)
   - [Teknologi](#teknologi)
   - [Privasi dan Lisensi Data](#privasi-dan-lisensi-data)
@@ -432,83 +433,58 @@ sequenceDiagram
 
 `GET /api/packages/map` menjalankan `aggregateRoadPackages()` untuk ringkasan wilayah, sedangkan `GET /api/packages/[rup]` menjalankan `getRoadPackage()` untuk satu paket. Ketiganya memakai validasi query atau parameter serta respons kesalahan terstruktur.
 
-#### Pengiriman dan moderasi laporan
+#### Alur API pengiriman laporan
 
 ```mermaid
-sequenceDiagram
-  autonumber
-  actor Reporter as Pelapor
-  participant Form as Form laporan
-  participant SubmitRoute as POST /api/reports
-  participant API as ReportsApi
-  participant Location as Resolver lokasi
-  participant Access as Idempotensi dan rate limit
-  participant Storage as Supabase Storage privat
-  participant DB as Prisma / PostgreSQL
-  participant Dashboard as Dashboard staf
-  participant ReviewRoute as API review laporan
-  participant Authority as Authorization authority
-  participant Public as Halaman laporan publik
+flowchart TD
+  reporter["Pelapor"] --> form["Form laporan menyiapkan multipart dan Idempotency-Key"]
+  form --> post["POST /api/reports"]
+  post --> origin{"Origin kosong atau diizinkan?"}
+  origin -- Tidak --> corsError["HTTP 403; tolak request"]
+  corsError --> form
+  origin -- Ya --> fields["ReportsApi memvalidasi field, jumlah, tipe, dan ukuran foto"]
+  fields --> location["Resolver memvalidasi titik, wilayah, paket, dan ruas"]
+  location --> valid{"Isian dan lokasi valid?"}
+  valid -- Tidak --> validationError["Kirim kesalahan; draf lokal dipertahankan"]
+  validationError --> form
+  valid -- Ya --> session{"Sesi Better Auth tersedia?"}
+  session -- Ya --> linkAccount["Hubungkan laporan dengan akun aktif"]
+  session -- Tidak --> idempotency{"Idempotensi dan rate limit lolos?"}
+  linkAccount --> idempotency
+  idempotency -- Tidak --> limitError["Kirim kesalahan tanpa membuat laporan baru"]
+  limitError --> form
+  idempotency -- Ya --> upload["Simpan foto WebP yang disanitasi di storage privat"]
+  upload --> persist["Simpan laporan, media, tautan paket, dan event awal dalam transaksi"]
+  persist --> receipt["HTTP 201 dengan kode tanda terima; status SUBMITTED"]
+  receipt --> finish((Selesai))
+```
 
-  Reporter->>Form: Kirim foto, kategori, dan lokasi
-  Form->>SubmitRoute: Multipart + Idempotency-Key
-  alt Origin tidak diizinkan
-    SubmitRoute-->>Form: Tolak request melalui CORS
-  else Origin diizinkan
-    SubmitRoute->>API: Teruskan multipart
-    API->>API: Validasi field, jumlah, tipe, dan ukuran file
-    API->>Location: Validasi titik/wilayah dan rujukan paket/ruas
-    Location-->>API: Hasil validasi lokasi
-    opt Sesi Better Auth tersedia
-      API->>API: Kaitkan laporan dengan akun aktif
-    end
-    API->>Access: Periksa Idempotency-Key dan batas pengiriman
-    alt Validasi gagal atau batas pengiriman tercapai
-      API-->>Form: Respons kesalahan, tidak membuat laporan baru
-      Form-->>Reporter: Tampilkan pesan dan pertahankan draf lokal
-    else Request baru valid
-      API->>Storage: Simpan WebP yang disanitasi
-      API->>DB: Simpan laporan, media, tautan, dan event awal
-      DB-->>API: Transaksi berhasil; status SUBMITTED
-      API-->>Form: HTTP 201 + kode tanda terima
-      Form-->>Reporter: Tampilkan tanda terima
-    end
-  end
+#### Alur API moderasi laporan
 
-  Note over Dashboard,ReviewRoute: Peninjauan adalah proses terpisah setelah laporan masuk antrean.
-  Dashboard->>ReviewRoute: GET /api/reports/review
-  ReviewRoute->>Authority: Periksa reports.read_queue
-  alt Tidak memiliki reports.read_queue
-    Authority-->>ReviewRoute: Tolak akses
-    ReviewRoute-->>Dashboard: HTTP 403
-  else Izin antrean tersedia
-    Authority-->>ReviewRoute: Izinkan
-    ReviewRoute-->>Dashboard: Ringkasan antrean tanpa identitas pelapor
-  end
-  Dashboard->>ReviewRoute: GET /api/reports/review/[reportId]
-  ReviewRoute->>Authority: Periksa reports.read_queue + reports.read_deidentified
-  Authority-->>ReviewRoute: Izinkan detail dan catat akses
-  ReviewRoute-->>Dashboard: Detail laporan yang telah dideidentifikasi
-  opt Izin reports.read_precise_location tersedia
-    ReviewRoute->>Authority: Catat akses lokasi presisi
-    ReviewRoute-->>Dashboard: Tambahkan titik dan geometri ruas
-  end
-  opt Izin reports.read_queue dan reports.read_sensitive_evidence tersedia
-    Dashboard->>ReviewRoute: GET /api/reports/review/[reportId]/evidence
-    ReviewRoute->>Authority: Periksa izin bukti dan catat akses
-    ReviewRoute-->>Dashboard: Alirkan foto dari storage privat
-  end
-  Dashboard->>ReviewRoute: PATCH /api/reports/review/[reportId] + status + alasan
-  ReviewRoute->>Authority: Periksa reports.change_status + reports.read_deidentified
-  alt Status dan alasan valid; izin tersedia
-    ReviewRoute->>DB: Catat status baru dan alasan moderasi
-    DB-->>ReviewRoute: Status tersimpan
-    ReviewRoute->>ReviewRoute: Revalidasi cache laporan publik
-    ReviewRoute-->>Dashboard: Keputusan berhasil
-  else Izin atau validasi gagal
-    ReviewRoute-->>Dashboard: Respons kesalahan; status tidak berubah
-  end
-  Note over ReviewRoute,Public: Hanya status PUBLISHED masuk proyeksi publik, titik presisi hanya disertakan bila ada persetujuan pelapor.
+```mermaid
+flowchart TD
+  dashboard["Dashboard staf"] --> queue["GET /api/reports/review"]
+  queue --> queuePermission{"Memiliki reports.read_queue?"}
+  queuePermission -- Tidak --> denied["HTTP 403"]
+  queuePermission -- Ya --> summary["Kembalikan antrean tanpa identitas pelapor"]
+  summary --> detail["GET /api/reports/review/[reportId]"]
+  detail --> detailPermission{"Memiliki reports.read_queue dan reports.read_deidentified?"}
+  detailPermission -- Tidak --> denied
+  detailPermission -- Ya --> deidentified["Kembalikan detail terdeidentifikasi dan catat akses"]
+  deidentified --> precisePermission{"Memiliki reports.read_precise_location?"}
+  precisePermission -- Ya --> precise["Tambahkan titik dan geometri ruas; catat akses presisi"]
+  precisePermission -- Tidak --> evidencePermission{"Memiliki reports.read_sensitive_evidence?"}
+  precise --> evidencePermission
+  evidencePermission -- Ya --> evidence["GET .../[reportId]/evidence; catat akses foto privat"]
+  evidencePermission -- Tidak --> decision["Pilih PUBLISHED atau REJECTED dan isi alasan"]
+  evidence --> decision
+  decision --> status["PATCH /api/reports/review/[reportId] dengan kode publik"]
+  status --> statusPermission{"Memiliki reports.change_status dan detail, dengan alasan valid?"}
+  statusPermission -- Tidak --> rejected["Tolak request; status tidak berubah"]
+  statusPermission -- Ya --> event["Simpan status dan alasan sebagai event; revalidasi cache publik"]
+  event --> published{"Status PUBLISHED?"}
+  published -- Ya --> public["Tampilkan proyeksi publik terbatas; titik hanya dengan consent"]
+  published -- Tidak --> private["REJECTED tidak masuk ke tampilan publik"]
 ```
 
 Pengiriman dapat dilakukan tanpa akun; jika sesi tersedia, API mengaitkan laporan dengan akun tersebut. Akses detail, foto bukti, dan lokasi presisi memerlukan izin terpisah. Penolakan memerlukan alasan, dan laporan `REJECTED` tidak masuk ke tampilan publik.
