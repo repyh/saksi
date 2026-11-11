@@ -13,7 +13,7 @@ export function Navbar({
   return (
     <header
       className={cn(
-        "w-full border-b border-white/25 bg-primary/90 supports-[backdrop-filter]:backdrop-blur-sm",
+        "relative w-full border-b border-white/25 bg-primary supports-[backdrop-filter]:backdrop-blur-sm",
         sticky ? "sticky top-0 z-50" : "relative",
         className
       )}

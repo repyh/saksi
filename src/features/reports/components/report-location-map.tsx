@@ -167,11 +167,22 @@ export default function ReportLocationMap({
   const [boundaries, setBoundaries] = useState<BoundaryCollection | null>(null);
   const [roadsVisible, setRoadsVisible] = useState(roadsAlwaysVisible);
   const [roadError, setRoadError] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const focusRef = useRef(focus);
+  const selectedRoadRef = useRef(selectedRoad);
   const roadLayer = region.roadLayer;
 
   useEffect(() => {
     onPointChangeRef.current = onPointChange;
   }, [onPointChange]);
+
+  useEffect(() => {
+    focusRef.current = focus;
+  }, [focus]);
+
+  useEffect(() => {
+    selectedRoadRef.current = selectedRoad;
+  }, [selectedRoad]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -426,47 +437,85 @@ export default function ReportLocationMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded || readOnly) return;
+    if (!map || !mapLoaded || readOnly || !marking) return;
     const click = (event: maplibregl.MapMouseEvent) => {
+      // Klik untuk membaca tooltip ruas tidak boleh memindahkan titik laporan.
+      const roadLineId = `${ROAD_SOURCE}-line`;
+      if (map.getLayer(roadLineId) && map.queryRenderedFeatures(event.point, { layers: [roadLineId] }).length > 0) return;
       onPointChangeRef.current?.({ longitude: event.lngLat.lng, latitude: event.lngLat.lat });
     };
     map.on("click", click);
     return () => {
       map.off("click", click);
     };
-  }, [mapLoaded, readOnly]);
+  }, [mapLoaded, readOnly, marking]);
+
+  const focusKey = focus
+    ? [focus.level ?? "", focus.district ?? "", focus.village ?? "", focus.rw ?? ""].join("|")
+    : "";
+  const pointLatitude = point?.latitude ?? null;
+  const pointLongitude = point?.longitude ?? null;
+  const selectedRoadId = selectedRoad?.id ?? "";
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded) return;
-    if (focus && boundaries) {
-      const match = boundaries.features.find((feature) => cocokFokus(feature.properties, region.boundaryFields, focus));
-      const bounds = match ? boundsOfGeometry(match.geometry) : null;
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 28, maxZoom: focus.rw ? 16 : 14, duration: 600 });
-        return;
-      }
+    const currentFocus = focusRef.current;
+    if (!map || !mapLoaded || !boundaries || !currentFocus || !focusKey) return;
+    const match = boundaries.features.find((feature) => cocokFokus(feature.properties, region.boundaryFields, currentFocus));
+    const bounds = match ? boundsOfGeometry(match.geometry) : null;
+    if (bounds) {
+      map.fitBounds(bounds, { padding: 28, maxZoom: currentFocus.rw ? 16 : 14, duration: 600 });
     }
-    if (point) {
-      map.easeTo({ center: [point.longitude, point.latitude], zoom: Math.max(map.getZoom(), 15), duration: 500 });
-      return;
-    }
-    if (selectedRoad) {
-      const bounds = boundsOfGeometry(selectedRoad.geometry);
-      if (bounds) map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
-    }
-  }, [boundaries, focus, mapLoaded, point, region.boundaryFields, selectedRoad]);
+  }, [boundaries, focusKey, mapLoaded, region.boundaryFields]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || pointLatitude === null || pointLongitude === null) return;
+    map.easeTo({ center: [pointLongitude, pointLatitude], zoom: Math.max(map.getZoom(), 15), duration: 400 });
+  }, [mapLoaded, pointLatitude, pointLongitude]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const currentRoad = selectedRoadRef.current;
+    if (!map || !mapLoaded || !currentRoad || !selectedRoadId) return;
+    const bounds = boundsOfGeometry(currentRoad.geometry);
+    if (bounds) map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+  }, [mapLoaded, selectedRoadId]);
 
   return (
     <div className={`relative isolate w-full overflow-hidden border border-border bg-muted/30 ${className}`}>
-      <div ref={containerRef} className="h-full w-full" role="region" aria-label="Peta lokasi laporan" />
+      <div
+        ref={containerRef}
+        className={`h-full w-full ${marking ? "cursor-crosshair" : ""}`}
+        role="region"
+        aria-label="Peta lokasi laporan"
+        data-map-loaded={mapLoaded ? "true" : "false"}
+        data-map-marking={marking ? "true" : "false"}
+        aria-describedby={!readOnly ? "report-map-pin-help" : undefined}
+      />
+      {!readOnly ? (
+        <button
+          type="button"
+          onClick={() => setMarking((current) => !current)}
+          aria-pressed={marking}
+          className={`absolute right-3 top-3 z-10 inline-flex min-h-11 items-center gap-2 border px-3 text-[11px] font-bold uppercase tracking-[0.06em] shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${marking ? "border-primary bg-primary text-white" : "border-border bg-white/95 text-foreground hover:bg-muted"}`}
+        >
+          <span aria-hidden="true" className={`size-2.5 rounded-full ${marking ? "bg-secondary" : "bg-primary"}`} />
+          {marking ? "Selesai menandai" : point ? "Tandai ulang" : "Tandai titik"}
+        </button>
+      ) : null}
+      {!readOnly ? (
+        <p id="report-map-pin-help" className="sr-only">
+          Peta hanya memindahkan titik saat mode Tandai titik aktif. Anda juga dapat memakai lokasi perangkat, pencarian alamat, atau memilih wilayah tanpa titik.
+        </p>
+      ) : null}
       {roadLayer && !roadsAlwaysVisible ? (
         <button
           type="button"
           onClick={() => { setRoadError(false); setRoadsVisible((current) => !current); }}
           aria-pressed={roadsVisible}
           title={roadsVisible ? "Matikan sorot dan info ruas jalan" : "Aktifkan sorot dan info ruas jalan"}
-          className={`absolute left-3 top-3 z-10 border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] shadow-sm transition-colors ${roadsVisible ? "bg-[#334155] text-white" : "bg-white/95 text-foreground/70 hover:bg-muted"}`}
+          className={`absolute right-3 top-16 z-10 min-h-9 border border-border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${roadsVisible ? "bg-[#334155] text-white" : "bg-white/95 text-foreground/70 hover:bg-muted"}`}
         >
           Jaringan jalan
         </button>
@@ -482,7 +531,7 @@ export default function ReportLocationMap({
         </p>
       ) : null}
       {roadsVisible && roadLayer ? (
-        <p className="pointer-events-none absolute right-3 top-3 z-10 border border-border bg-white/95 px-2.5 py-1.5 text-[10px] leading-4 text-muted-foreground shadow-sm">
+        <p className="pointer-events-none absolute bottom-14 left-3 z-10 max-w-[min(18rem,calc(100%-1.5rem))] border border-border bg-white/95 px-2.5 py-1.5 text-[10px] leading-4 text-muted-foreground shadow-sm">
           Tooltip ruas: {roadLayer.attribution} · {roadLayer.license}
         </p>
       ) : null}

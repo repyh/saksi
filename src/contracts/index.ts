@@ -23,5 +23,8 @@ export type {
   CoarseReportLocation,
   ReportDraft,
   ReportDraftAssessment,
+  ReportDraftPhoto,
+  ReportDraftState,
+  ReportLocationMode,
   SaveReportDraftInput,
 } from "./reports/report-draft.contract";

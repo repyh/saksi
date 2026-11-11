@@ -56,7 +56,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Lewati ke konten utama
         </a>
-        <Suspense fallback={<header aria-hidden="true" className="h-16 w-full bg-primary/90" />}>
+        <Suspense
+          fallback={(
+            <header aria-hidden="true" className="h-16 w-full border-b border-white/25 bg-primary">
+              <div className="flex h-full items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+                <span className="font-heading text-sm font-black uppercase tracking-[0.28em] text-white">SAKSI</span>
+                <span className="h-9 w-20 animate-pulse bg-white/15" />
+              </div>
+            </header>
+          )}
+        >
           <Navbar />
         </Suspense>
         <div id="main-content" tabIndex={-1} className="flex-1 scroll-mt-16 focus:outline-none">

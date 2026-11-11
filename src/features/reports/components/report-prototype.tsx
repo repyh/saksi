@@ -7,12 +7,14 @@ import { fetchRoadPackages } from "@/features/map/package-api";
 import { localFileIntakeController } from "@/features/uploads/lib/local-file-intake.controller";
 import { handleReportPhoto, type LocalReportPhoto } from "@/features/reports/lib/report-photo.handler";
 import { reportPhotoPolicy } from "@/features/reports/lib/report-photo.policy";
+import { deleteReportDraft, listReportDrafts, saveReportDraft } from "@/features/reports/lib/report-draft-store";
 import { simulationBadgeEnabled } from "@/lib/flags";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import type { LineString, MultiLineString } from "geojson";
 import type { RegionSummary } from "@/contracts/regions/region.contract";
 import type { RoadSegment } from "@/contracts/reports/road-search.contract";
 import type { GeocodeResult } from "@/contracts/reports/geocode.contract";
+import type { ReportDraft, ReportDraftState, ReportLocationMode } from "@/contracts/reports/report-draft.contract";
 import { isPointNearRoad } from "@/contracts/reports/location";
 import type { ReportCoarseSize, ReportDamageType, ReportObservedCause } from "@/generated/prisma/client";
 import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCamera, FiCheck, FiCheckCircle, FiImage, FiMapPin, FiSearch, FiX } from "react-icons/fi";
@@ -54,6 +56,63 @@ const SIZE_CODES: Record<(typeof SIZE_OPTIONS)[number], ReportCoarseSize> = {
   "Sebesar ban": "TIRE",
   "Lebih dari 1 m²": "OVER_1M2",
 };
+
+const DRAFT_ID = "laporan-aktif";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const RECEIPT_STORAGE_KEY = "saksi:report-receipt";
+const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+type StoredReceipt = {
+  code: string;
+  savedAt: string;
+  pointPublic: boolean;
+  areaLabel: string;
+};
+
+function readStoredReceipt(): StoredReceipt | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(RECEIPT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredReceipt>;
+    if (!parsed.code || !parsed.savedAt) return null;
+    if (Date.now() - new Date(parsed.savedAt).getTime() > RECEIPT_TTL_MS) {
+      window.localStorage.removeItem(RECEIPT_STORAGE_KEY);
+      return null;
+    }
+    return {
+      code: parsed.code,
+      savedAt: parsed.savedAt,
+      pointPublic: Boolean(parsed.pointPublic),
+      areaLabel: typeof parsed.areaLabel === "string" ? parsed.areaLabel : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function describeSubmitFailure(status: number, code: string, message: string) {
+  if (status === 429) return message || "Batas tiga laporan per jam tercapai. Coba lagi setelah batasnya berakhir.";
+  if (status === 422) {
+    if (code === "UNKNOWN_REPORT_AREA") return "Wilayah laporan tidak dikenali. Pilih ulang kecamatan, kelurahan, dan RW.";
+    if (code === "UNKNOWN_PACKAGE_REFERENCE") return "Paket rujukan tidak ditemukan. Batalkan tautan paket lalu coba lagi.";
+    return "Ada isian yang belum sesuai. Periksa foto, jenis kerusakan, dan lokasi sebelum mengirim lagi.";
+  }
+  if (status === 400) return "Kiriman tidak valid. Muat ulang halaman lalu coba lagi.";
+  if (status === 413) return "Foto terlalu besar untuk dikirim. Pilih foto lain di bawah 10 MB.";
+  if (status === 503) return "Layanan laporan sedang tidak tersedia. Coba lagi nanti atau kirim melalui kanal resmi.";
+  return message
+    ? `${message} Coba lagi sebentar lagi; isian Anda tetap tersimpan.`
+    : "Laporan belum dapat dikirim. Periksa koneksi lalu coba lagi; isian Anda tetap tersimpan.";
+}
+
+function writeStoredReceipt(receipt: StoredReceipt) {
+  try {
+    window.localStorage.setItem(RECEIPT_STORAGE_KEY, JSON.stringify(receipt));
+  } catch {
+    // Penyimpanan perangkat dapat penuh atau diblokir; tanda terima tetap tampil di layar.
+  }
+}
 
 type AreaGeometry = {
   type: "Polygon" | "MultiPolygon";
@@ -150,8 +209,12 @@ export default function ReportPrototype({
   region: RegionSummary;
 }) {
   const [step, setStep] = useState(0);
-  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef(step);
+  const [locationMode, setLocationMode] = useState<ReportLocationMode>("POINT");
+  const [draftCandidate, setDraftCandidate] = useState<ReportDraft | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [savedReceipt, setSavedReceipt] = useState<StoredReceipt | null>(null);
+  const [receiptCopied, setReceiptCopied] = useState(false);
   const [photo, setPhoto] = useState<LocalReportPhoto | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
@@ -193,15 +256,33 @@ export default function ReportPrototype({
   const [candidateAreaId, setCandidateAreaId] = useState("");
   const [candidateError, setCandidateError] = useState<{ areaId: string; message: string } | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
+  const [districtFilter, setDistrictFilter] = useState("");
+  const [villageFilter, setVillageFilter] = useState("");
+  const [pendingLocationMode, setPendingLocationMode] = useState<ReportLocationMode | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialPackage);
   const [packageSelectionSource, setPackageSelectionSource] = useState<"PACKAGE_PAGE" | "CANDIDATE_LIST" | null>(initialPackage ? "PACKAGE_PAGE" : null);
   const [locationSource, setLocationSource] = useState<ReportLocationSourceState>("MANUAL_AREA");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [advanceError, setAdvanceError] = useState("");
   const [receiptCode, setReceiptCode] = useState("");
   const idempotencyKey = useRef<string | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const restoredDraftRef = useRef(false);
   const invalidateSubmissionKey = () => { idempotencyKey.current = null; };
   const selectedArea = areas.find((area) => area.id === areaId) ?? null;
+  const currentDistrict = selectedArea?.district ?? districtFilter;
+  const currentVillage = selectedArea?.village ?? villageFilter;
+  const districtOptions = Array.from(new Set(areas.map((area) => area.district)))
+    .sort((a, b) => a.localeCompare(b, "id-ID"));
+  const villageOptions = Array.from(new Set(
+    areas.filter((area) => area.district === currentDistrict).map((area) => area.village),
+  )).sort((a, b) => a.localeCompare(b, "id-ID"));
+  const rwOptions = areas
+    .filter((area) => area.district === currentDistrict && area.village === currentVillage)
+    .sort((a, b) => Number(a.rw) - Number(b.rw));
   const candidateArea: AreaOption | null = selectedArea ?? (derivedArea
     ? {
       id: derivedArea.id,
@@ -229,14 +310,57 @@ export default function ReportPrototype({
   const visibleCandidates = normalizedCandidateSearch
     ? rankedCandidates.filter((item) => `${item.nama} ${item.kode_rup}`.toLocaleLowerCase("id-ID").includes(normalizedCandidateSearch))
     : rankedCandidates;
-  const mapFocus: ReportMapFocus | null = derivedArea
-    ? { level: derivedArea.level, district: derivedArea.district, village: derivedArea.village, rw: derivedArea.rw }
+  const displayedCandidates = normalizedCandidateSearch || showAllCandidates
+    ? visibleCandidates
+    : visibleCandidates.slice(0, 5);
+  const consentSummary = point
+    ? publicLocationConsent
+      ? "Titik presisi akan tampil di halaman publik."
+      : "Titik presisi tidak akan tampil di halaman publik."
+    : "Tanpa titik: lokasi hanya sampai wilayah.";
+  // Kamera hanya mengikuti wilayah yang dipilih eksplisit, bukan wilayah turunan dari pin,
+  // supaya mengetik patokan atau menempatkan pin tidak memicu fitBounds ulang.
+  const selectedAreaDistrict = selectedArea?.district ?? "";
+  const selectedAreaVillage = selectedArea?.village ?? "";
+  const selectedAreaRw = selectedArea?.rw ?? "";
+  const mapFocus: ReportMapFocus | null = selectedAreaDistrict
+    ? { level: "RW", district: selectedAreaDistrict, village: selectedAreaVillage, rw: selectedAreaRw }
     : null;
+  const requirementText = step === 0
+    ? "Pilih foto dulu"
+    : step === 1
+      ? "Pilih jenis kerusakan"
+      : step === 2
+        ? "Pilih lokasi laporan dulu"
+        : "";
+
+  function goToStep(nextStep: number) {
+    setAdvanceError("");
+    setStep(nextStep);
+  }
+
+  function handleAdvance() {
+    setAdvanceError("");
+    if (!canAdvance) {
+      setAdvanceError(requirementText);
+      if (step === 0) document.getElementById("report-photo-camera")?.focus();
+      else if (step === 1) document.querySelector<HTMLInputElement>('input[name="damage-type"]')?.focus();
+      else document.getElementById("report-location-heading")?.focus();
+      return;
+    }
+    if (step === 2) {
+      void submitReport();
+      return;
+    }
+    goToStep(step + 1);
+  }
 
   useEffect(() => {
     if (previousStep.current === step) return;
     previousStep.current = step;
-    stepHeadingRef.current?.focus();
+    const heading = stepHeadingRef.current;
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
   }, [step]);
 
   useEffect(() => {
@@ -318,7 +442,12 @@ export default function ReportPrototype({
             && area.village.toLocaleLowerCase("id-ID") === initialPackage.desa_resmi?.toLocaleLowerCase("id-ID")
             && area.rw.replace(/^0+/, "") === initialPackage.rw?.replace(/^0+/, "")
           ));
-          if (packageArea) setAreaId(packageArea.id);
+          if (packageArea && !restoredDraftRef.current) {
+            setAreaId(packageArea.id);
+            setDistrictFilter(packageArea.district);
+            setVillageFilter(packageArea.village);
+            setLocationMode("AREA");
+          }
         }
       })
       .catch((error: unknown) => {
@@ -353,6 +482,179 @@ export default function ReportPrototype({
     };
   }, [photo?.previewUrl]);
 
+  useEffect(() => {
+    const node = rootRef.current;
+    node?.setAttribute("data-report-ready", "true");
+    return () => {
+      node?.removeAttribute("data-report-ready");
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listReportDrafts()
+      .then((drafts) => {
+        if (cancelled) return;
+        const latest = drafts[0];
+        if (!latest) return;
+        const fresh = Date.now() - new Date(latest.updatedAt).getTime() <= DRAFT_TTL_MS;
+        if (fresh && latest.state && latest.state.step < 3) setDraftCandidate(latest);
+        else void deleteReportDraft(latest.id).catch(() => undefined);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setDraftReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSavedReceipt(readStoredReceipt()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady || step >= 3) return;
+    const timer = window.setTimeout(() => {
+      const hasContent = Boolean(photo || damageType || point || areaId || description.trim() || landmark.trim());
+      if (!hasContent) {
+        void deleteReportDraft(DRAFT_ID).catch(() => undefined);
+        return;
+      }
+      const state: ReportDraftState = {
+        step,
+        photo: photo
+          ? { blob: photo.file, name: photo.file.name, type: photo.file.type, width: photo.width, height: photo.height }
+          : null,
+        damageType,
+        observedCauses,
+        coarseSize,
+        description,
+        point: point ? { latitude: point.latitude, longitude: point.longitude } : null,
+        accuracyM: point?.accuracyM ?? null,
+        areaId,
+        landmark,
+        publicLocationConsent,
+        locationMode,
+        locationSource,
+        road: selectedRoad,
+        package: selectedPackage,
+        packageSelectionSource,
+      };
+      void saveReportDraft({ id: DRAFT_ID, state }).catch(() => undefined);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [
+    areaId,
+    coarseSize,
+    damageType,
+    description,
+    draftReady,
+    landmark,
+    locationMode,
+    locationSource,
+    observedCauses,
+    packageSelectionSource,
+    photo,
+    point,
+    publicLocationConsent,
+    selectedPackage,
+    selectedRoad,
+    step,
+  ]);
+
+  function applyDraft(draft: ReportDraft) {
+    const state = draft.state;
+    if (!state) return;
+    restoredDraftRef.current = true;
+    setDraftCandidate(null);
+    setPhotoError("");
+    if (state.photo?.blob) {
+      const file = new File([state.photo.blob], state.photo.name || "foto-kerusakan.webp", {
+        type: state.photo.type || "image/webp",
+        lastModified: Date.now(),
+      });
+      setPhoto({
+        file,
+        previewUrl: URL.createObjectURL(state.photo.blob),
+        width: state.photo.width,
+        height: state.photo.height,
+      });
+    } else {
+      setPhoto(null);
+    }
+    setDamageType(state.damageType ?? "");
+    setObservedCauses(Array.isArray(state.observedCauses) ? state.observedCauses : []);
+    setCoarseSize(state.coarseSize ?? "");
+    setDescription(state.description ?? "");
+    setPoint(state.point ? { ...state.point, accuracyM: state.accuracyM ?? null } : null);
+    setAreaId(state.areaId ?? "");
+    setDistrictFilter("");
+    setVillageFilter("");
+    setLandmark(state.landmark ?? "");
+    setPublicLocationConsent(state.publicLocationConsent ?? true);
+    setLocationMode(state.locationMode === "AREA" ? "AREA" : "POINT");
+    setLocationSource((state.locationSource as ReportLocationSourceState) ?? "MANUAL_AREA");
+    setSelectedRoad(state.road ?? null);
+    setSelectedPackage(state.package ?? null);
+    setPackageSelectionSource(state.packageSelectionSource ?? null);
+    setStep(Math.max(0, Math.min(2, state.step ?? 0)));
+    setLocationMessage("");
+  }
+
+  function discardDraft() {
+    setDraftCandidate(null);
+    setDraftReady(true);
+    void deleteReportDraft(DRAFT_ID).catch(() => undefined);
+  }
+
+  function resetFlow() {
+    discardDraft();
+    setStep(0);
+    setPhoto(null);
+    setPhotoError("");
+    setDamageType("");
+    setObservedCauses([]);
+    setCoarseSize("");
+    setDescription("");
+    setPoint(null);
+    setAreaId("");
+    setLandmark("");
+    setPublicLocationConsent(true);
+    setLocationMode("POINT");
+    setLocationSource("MANUAL_AREA");
+    setLocationMessage("");
+    setCandidateSearch("");
+    setShowAllCandidates(false);
+    setDistrictFilter("");
+    setVillageFilter("");
+    setPendingLocationMode(null);
+    setSelectedRoad(null);
+    setSelectedPackage(initialPackage);
+    setPackageSelectionSource(initialPackage ? "PACKAGE_PAGE" : null);
+    invalidateSubmissionKey();
+  }
+
+  async function copyReceipt(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const field = document.createElement("textarea");
+      field.value = code;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    setReceiptCopied(true);
+    window.setTimeout(() => setReceiptCopied(false), 2500);
+  }
+
   async function choosePhoto(file?: File) {
     setPhotoError("");
     if (!file) return;
@@ -361,6 +663,7 @@ export default function ReportPrototype({
     try {
       const cleanPhoto = await localFileIntakeController.dispatch(file, reportPhotoPolicy, handleReportPhoto);
       setPhoto(cleanPhoto);
+      setAdvanceError("");
       invalidateSubmissionKey();
     } catch (error) {
       setPhotoError(error instanceof Error ? error.message : "Foto tidak dapat diproses di perangkat ini.");
@@ -379,6 +682,7 @@ export default function ReportPrototype({
     navigator.geolocation.getCurrentPosition((position) => {
       const { latitude, longitude, accuracy } = position.coords;
       setPoint({ latitude, longitude, accuracyM: Number.isFinite(accuracy) ? accuracy : null });
+      setLocationMode("POINT");
       setAreaId("");
       setLocationSource("DEVICE_GEOLOCATION");
       setLocationMessage("Titik dari GPS perangkat. Geser pin bila perlu dan pastikan titik sudah benar.");
@@ -394,6 +698,7 @@ export default function ReportPrototype({
 
   function updatePoint(next: { latitude: number; longitude: number }, source: ReportLocationSourceState) {
     setPoint({ ...next, accuracyM: null });
+    setLocationMode("POINT");
     setAreaId("");
     setLocationSource(source);
     invalidateSubmissionKey();
@@ -415,6 +720,65 @@ export default function ReportPrototype({
     setLocationSource("MANUAL_AREA");
     setLocationMessage("");
     invalidateSubmissionKey();
+  }
+
+  function applyLocationMode(next: ReportLocationMode) {
+    setPendingLocationMode(null);
+    setLocationMode(next);
+    setLocationMessage("");
+    if (next === "AREA") {
+      clearPoint();
+      setDistrictFilter(selectedArea?.district ?? districtFilter);
+      setVillageFilter(selectedArea?.village ?? villageFilter);
+    } else {
+      setAreaId("");
+      setDistrictFilter("");
+      setVillageFilter("");
+    }
+  }
+
+  function requestLocationMode(next: ReportLocationMode) {
+    if (next === locationMode || pendingLocationMode) return;
+    if (next === "AREA" && point) {
+      setPendingLocationMode("AREA");
+      return;
+    }
+    applyLocationMode(next);
+  }
+
+  function chooseDistrict(value: string) {
+    setDistrictFilter(value);
+    setVillageFilter("");
+    setAreaId("");
+    setLocationMessage("");
+    invalidateSubmissionKey();
+  }
+
+  function chooseVillage(value: string) {
+    setVillageFilter(value);
+    setAreaId("");
+    setLocationMessage("");
+    invalidateSubmissionKey();
+  }
+
+  function chooseArea(value: string) {
+    const nextArea = areas.find((area) => area.id === value) ?? null;
+    setAreaId(value);
+    if (nextArea) {
+      setDistrictFilter(nextArea.district);
+      setVillageFilter(nextArea.village);
+    }
+    setPoint(null);
+    setLocationSource("MANUAL_AREA");
+    setLocationMode("AREA");
+    invalidateSubmissionKey();
+    if (selectedPackage && nextArea && !packageMatchesArea(selectedPackage, nextArea)) {
+      setSelectedPackage(null);
+      setPackageSelectionSource(null);
+      setLocationMessage("Paket rujukan dilepas karena wilayahnya berbeda dari lokasi laporan.");
+    } else {
+      setLocationMessage("");
+    }
   }
 
   async function submitReport() {
@@ -458,26 +822,48 @@ export default function ReportPrototype({
         body,
         credentials: "same-origin",
       });
-      const result = await response.json() as {
+      let result: {
         data: { code: string; status: "SUBMITTED" } | null;
         error: { message: string; code: string } | null;
       };
-      if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Laporan belum dapat dikirim. Coba lagi.");
-      setReceiptCode(result.data.code);
+      try {
+        result = await response.json() as typeof result;
+      } catch {
+        setSubmitError("Respons layanan tidak dikenali. Coba lagi sebentar lagi; isian Anda tetap tersimpan.");
+        return;
+      }
+      if (!response.ok || !result.data) {
+        setSubmitError(describeSubmitFailure(response.status, result.error?.code ?? "", result.error?.message ?? ""));
+        return;
+      }
+      const receipt: StoredReceipt = {
+        code: result.data.code,
+        savedAt: new Date().toISOString(),
+        pointPublic: Boolean(point && publicLocationConsent),
+        areaLabel: derivedArea
+          ? areaLabelOf(derivedArea)
+          : selectedArea
+            ? `${selectedArea.village}, RW ${selectedArea.rw}`
+            : "",
+      };
+      setReceiptCode(receipt.code);
+      setSavedReceipt(receipt);
+      writeStoredReceipt(receipt);
+      void deleteReportDraft(DRAFT_ID).catch(() => undefined);
       setStep(3);
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Laporan belum dapat dikirim. Coba lagi.");
+    } catch {
+      setSubmitError("Koneksi terputus. Laporan belum terkirim — coba lagi; isian Anda tetap tersimpan.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <main className="min-h-[calc(100dvh-4rem)] bg-background">
+    <main ref={rootRef} className="min-h-[calc(100dvh-4rem)] bg-background">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-10 lg:px-10">
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-14">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+          <div className="flex min-w-0 flex-col">
+            <div className="order-1 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
               <div className="max-w-2xl">
                 {simulationBadgeEnabled() ? (
                   <span className="inline-flex items-center gap-1.5 bg-secondary px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-secondary-foreground">
@@ -492,30 +878,53 @@ export default function ReportPrototype({
                   Tambahkan bukti kerusakan dan, jika dapat dipastikan, tautkan ke paket pekerjaan terkait.
                   Laporan masuk antrean tinjauan internal dan tidak langsung dipublikasikan.
                 </p>
-              </div>
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                  <FiArrowLeft aria-hidden="true" />
-                  Kembali ke peta
-                </Link>
-                <Link href="/laporan/publik" className="inline-flex min-h-9 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                  Lihat laporan publik
-                </Link>
+                {draftCandidate ? (
+                  <div role="status" className="mt-4 border-l-4 border-secondary bg-secondary/20 px-3 py-3">
+                    <p className="text-sm font-semibold text-foreground">Draf tersimpan di perangkat ini</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      Terakhir diubah {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(draftCandidate.updatedAt))}.
+                      Draf disimpan tujuh hari dan dihapus setelah laporan terkirim.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => applyDraft(draftCandidate)} className="inline-flex min-h-10 items-center bg-primary px-3 text-sm font-bold text-white hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        Lanjutkan draf
+                      </button>
+                      <button type="button" onClick={resetFlow} className="inline-flex min-h-10 items-center border border-border bg-white px-3 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        Mulai baru
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {savedReceipt && step < 3 ? (
+                  <div role="status" className="mt-4 border border-border bg-muted/40 px-3 py-3">
+                    <p className="text-sm font-semibold text-foreground">Tanda terima terakhir tersimpan di perangkat ini</p>
+                    <p className="mt-1 break-all font-mono text-sm font-bold text-foreground">{savedReceipt.code}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                      <button type="button" onClick={() => void copyReceipt(savedReceipt.code)} className="inline-flex min-h-10 items-center gap-2 border border-border bg-white px-3 font-semibold text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        {receiptCopied ? "Tersalin" : "Salin nomor"}
+                      </button>
+                      <Link href="/dashboard" className="font-semibold text-primary underline-offset-4 hover:underline">Laporan saya</Link>
+                      <span className="text-muted-foreground">Disimpan {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(savedReceipt.savedAt))}</span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <nav aria-label="Tahap laporan" className="mt-8 border-b border-border py-4">
-              <ol className="grid grid-cols-4 gap-2 sm:gap-6">
+            <nav aria-label="Tahap laporan" className="order-2 mt-6 border-b border-border py-3 sm:mt-8 sm:py-4">
+              <ol className="grid grid-cols-4 gap-1.5 sm:gap-6">
                 {STEPS.map((label, index) => {
                   const complete = index < step;
                   const active = index === step;
+                  const shortLabel = label === "Kerusakan" ? "Rusak" : label === "Lokasi & paket" ? "Lokasi" : label;
                   return (
-                    <li key={label} aria-current={active ? "step" : undefined} className="flex min-h-11 items-center gap-2.5">
+                    <li key={label} aria-current={active ? "step" : undefined} className="flex min-h-11 min-w-0 items-center gap-1.5 sm:gap-2.5">
                         <span className={`flex size-7 shrink-0 items-center justify-center border text-xs font-bold tabular-nums transition-colors ${active ? "border-primary bg-primary text-white" : complete ? "border-primary bg-white text-primary" : "border-border bg-white text-muted-foreground"}`}>
                           {complete ? <FiCheck aria-hidden="true" /> : `0${index + 1}`}
                         </span>
-                        <span className={`text-xs font-semibold leading-4 sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
-                          {label}
+                        <span className={`min-w-0 text-[11px] font-semibold leading-4 sm:text-sm ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                          <span className="sm:hidden">{shortLabel}</span>
+                          <span className="hidden sm:inline">{label}</span>
                         </span>
                     </li>
                   );
@@ -523,37 +932,50 @@ export default function ReportPrototype({
               </ol>
             </nav>
 
-            <div className="mt-4 flex items-center justify-between gap-2">
-              <span className="group relative inline-flex" tabIndex={step === 3 ? 0 : undefined} aria-describedby={step === 3 ? "back-locked-tip" : undefined}>
-                <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || step === 3} className="inline-flex min-h-11 items-center justify-center gap-1 px-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:gap-2 sm:px-3">
-                  <FiArrowLeft aria-hidden="true" />
-                  Kembali
-                </button>
-                {step === 3 && <span id="back-locked-tip" role="tooltip" className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 w-64 bg-foreground px-3 py-2 text-xs leading-5 text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100">Laporan sudah dikirim.</span>}
+            <div className="order-4 sticky bottom-0 z-30 -mx-4 mt-2 flex flex-col gap-2 border-t border-border bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:-mx-7 sm:px-7 lg:static lg:order-3 lg:mx-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+              <span aria-live="polite" className="sr-only">
+                Langkah {step + 1} dari {STEPS.length}: {STEPS[step]}
               </span>
-              <div className="flex items-center justify-end gap-2 sm:gap-4">
-                <span className="whitespace-nowrap text-xs text-muted-foreground">Langkah {step + 1} dari {STEPS.length}</span>
-                {step < STEPS.length - 1 ? (
-                  <button type="button" onClick={() => step === 2 ? void submitReport() : setStep((current) => Math.min(2, current + 1))} aria-describedby="advance-requirement" disabled={!canAdvance} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:gap-3 sm:px-5">
-                    {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
-                  </button>
+              {submitError && step === 2 ? (
+                <p role="alert" className="border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-sm leading-5 text-foreground">{submitError}</p>
+              ) : null}
+              <div className="flex items-center justify-between gap-2">
+                {step === 0 || step === 3 ? (
+                  <span aria-hidden="true" />
                 ) : (
-                  <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                    Kembali ke peta <FiArrowRight aria-hidden="true" />
-                  </Link>
+                  <button type="button" onClick={() => goToStep(step - 1)} className="inline-flex min-h-11 items-center justify-center gap-1 px-1 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:gap-2 sm:px-3">
+                    <FiArrowLeft aria-hidden="true" />
+                    Kembali
+                  </button>
                 )}
+                <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-4">
+                  {step < STEPS.length - 1 && !canAdvance && requirementText ? (
+                    <p id="advance-requirement" className="text-right text-[11px] leading-4 text-muted-foreground sm:text-xs">{requirementText}</p>
+                  ) : <span id="advance-requirement" className="sr-only" />}
+                  {step < STEPS.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleAdvance}
+                      aria-describedby="advance-requirement"
+                      disabled={isSubmitting}
+                      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-3 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:gap-3 sm:px-5 ${canAdvance ? "bg-primary text-white hover:bg-[#004682]" : "bg-muted text-muted-foreground hover:bg-muted"}`}
+                    >
+                      {step === 2 ? isSubmitting ? "Mengirim…" : "Kirim laporan" : "Lanjut"} <FiArrowRight aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <Link href="/peta-pekerjaan" className="inline-flex min-h-11 items-center justify-center gap-3 bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                      Kembali ke peta <FiArrowRight aria-hidden="true" />
+                    </Link>
+                  )}
+                </div>
               </div>
-              <span id="advance-requirement" className="sr-only">
-                {step === 0 ? "Pilih foto untuk membuka langkah berikutnya." : step === 1 ? "Pilih jenis kerusakan untuk membuka langkah berikutnya." : selectedArea || selectedPackage ? "Kirim laporan untuk menyelesaikan pengiriman." : "Pilih kelurahan/RW, gunakan lokasi saya, atau buka laporan dari paket rujukan untuk melanjutkan."}
-              </span>
+              {advanceError ? <p role="alert" className="text-right text-xs font-semibold text-destructive">{advanceError}</p> : null}
             </div>
 
-            {submitError && step === 2 && <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-sm leading-5 text-foreground">{submitError}</p>}
-
-            <section aria-labelledby="step-heading" className="pt-7 sm:pt-8">
+            <section aria-labelledby="step-heading" className="order-3 pt-5 sm:pt-7 lg:order-4">
               {step === 0 && (
                 <>
-                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Foto kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Foto kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">JPG, PNG, atau WebP · maksimal 10 MB</p>
 
                   {photo ? (
@@ -573,34 +995,54 @@ export default function ReportPrototype({
                       </div>
                     </div>
                   ) : (
-                    <label htmlFor="report-photo" className="group mt-5 flex min-h-[220px] cursor-pointer flex-col items-center justify-center border border-dashed border-primary/45 bg-muted/25 px-5 py-8 text-center transition-colors hover:bg-muted/60 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary sm:min-h-[260px]">
+                    <div className="mt-5 flex flex-col items-center justify-center border border-dashed border-primary/45 bg-muted/25 px-5 py-8 text-center sm:min-h-[260px]">
                       <span className="flex size-12 items-center justify-center border border-border bg-white text-primary">
                         <FiCamera className="size-5" aria-hidden="true" />
                       </span>
-                      <span className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</span>
-                      <span className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
-                        {isProcessingPhoto ? "Memproses dan menghapus metadata di perangkat…" : "EXIF dihapus di perangkat. Saat laporan dikirim, foto tersanitasi disimpan privat sebagai bukti laporan."}
-                      </span>
-                      <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors group-hover:bg-[#004682]">
-                        <FiImage aria-hidden="true" />
-                        Pilih foto
-                      </span>
-                      <input
-                        id="report-photo"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        capture="environment"
-                        disabled={isProcessingPhoto}
-                        className="sr-only"
-                        onChange={(event) => {
-                          const input = event.currentTarget;
-                          void choosePhoto(input.files?.[0]);
-                          input.value = "";
-                        }}
-                        aria-describedby="photo-help photo-error"
-                      />
-                    </label>
+                      <p className="mt-4 font-heading text-base font-bold text-foreground">Ambil atau pilih foto</p>
+                      <p className="mt-1.5 max-w-md text-sm leading-5 text-muted-foreground">
+                        Lokasi dan data kamera dihapus otomatis dari foto. Saat laporan dikirim, foto tersanitasi disimpan privat sebagai bukti laporan.
+                      </p>
+                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <label htmlFor="report-photo-camera" className="inline-flex min-h-11 cursor-pointer items-center gap-2 bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-[#004682] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+                          <FiCamera aria-hidden="true" />
+                          Ambil foto
+                        </label>
+                        <label htmlFor="report-photo-gallery" className="inline-flex min-h-11 cursor-pointer items-center gap-2 border border-primary bg-white px-4 text-sm font-bold text-primary transition-colors hover:bg-primary/5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">
+                          <FiImage aria-hidden="true" />
+                          Pilih dari galeri
+                        </label>
+                        <input
+                          id="report-photo-camera"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          capture="environment"
+                          disabled={isProcessingPhoto}
+                          className="sr-only"
+                          onChange={(event) => {
+                            const input = event.currentTarget;
+                            void choosePhoto(input.files?.[0]);
+                            input.value = "";
+                          }}
+                          aria-describedby={`photo-help${photoError ? " photo-error" : ""}`}
+                        />
+                        <input
+                          id="report-photo-gallery"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={isProcessingPhoto}
+                          className="sr-only"
+                          onChange={(event) => {
+                            const input = event.currentTarget;
+                            void choosePhoto(input.files?.[0]);
+                            input.value = "";
+                          }}
+                          aria-describedby={`photo-help${photoError ? " photo-error" : ""}`}
+                        />
+                      </div>
+                    </div>
                   )}
+                  {isProcessingPhoto ? <p role="status" className="mt-3 text-sm font-semibold text-primary">Memproses foto…</p> : null}
                   <p id="photo-help" className="mt-4 max-w-2xl text-xs leading-5 text-muted-foreground">
                     Pastikan wajah dan pelat nomor tidak terlihat sebelum memilih foto.
                   </p>
@@ -610,14 +1052,14 @@ export default function ReportPrototype({
 
               {step === 1 && (
                 <>
-                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Jenis kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Jenis kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">Pilih kondisi yang paling mendekati.</p>
                   <fieldset className="mt-5">
                     <legend className="sr-only">Pilih jenis kerusakan</legend>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {DAMAGE_TYPES.map((type) => (
                         <label key={type.label} className={`flex min-h-[76px] cursor-pointer items-start gap-3 border px-3 py-3 transition-colors focus-within:outline-2 focus-within:outline-primary ${damageType === type.label ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted/45"}`}>
-                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => { setDamageType(type.label); invalidateSubmissionKey(); }} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
+                          <input type="radio" name="damage-type" value={type.label} checked={damageType === type.label} onChange={() => { setDamageType(type.label); setAdvanceError(""); invalidateSubmissionKey(); }} className="mt-0.5 size-4 shrink-0 accent-[#0058A3]" />
                           <span className="min-w-0">
                             <span className="block text-sm font-bold leading-5">{type.label}</span>
                             <span className={`mt-0.5 block text-xs leading-4 ${damageType === type.label ? "text-white/80" : "text-muted-foreground"}`}>{type.detail}</span>
@@ -664,184 +1106,311 @@ export default function ReportPrototype({
 
               {step === 2 && (
                 <>
-                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Lokasi dan paket terkait</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Lokasi dan paket terkait</h2>
                   <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">
-                    Tandai titik kerusakan lewat GPS, pencarian alamat, atau pin di peta. Ruas jalan hanya anotasi; paket pekerjaan tetap dipilih terpisah.
+                    Tentukan lokasi lebih dulu. Ruas jalan dan paket rujukan bersifat opsional dan tidak mengubah titik laporan.
                   </p>
 
-                  {initialPackage && selectedPackage && (
-                    <div className="mt-4 flex items-start justify-between gap-4 border-l-4 border-secondary bg-secondary/20 px-3 py-2.5">
-                      <p className="min-w-0 text-xs leading-5 text-foreground">
-                        <span className="block font-bold">Paket rujukan dari peta · RUP {selectedPackage.kode_rup}</span>
-                        <span className="mt-0.5 block">{selectedPackage.nama}</span>
+                  <section aria-labelledby="report-location-heading" className="mt-5 border border-border">
+                    <div className="border-b border-border bg-muted/30 px-3 py-3 sm:px-4">
+                      <h3 id="report-location-heading" tabIndex={-1} className="font-heading text-base font-bold text-foreground outline-none">1. Lokasi laporan</h3>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">Pilih satu cara: titik presisi atau wilayah saja.</p>
+                      <div role="group" aria-label="Model lokasi laporan" className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => requestLocationMode("POINT")}
+                          aria-pressed={locationMode === "POINT"}
+                          className={`inline-flex min-h-11 items-center border px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${locationMode === "POINT" ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted"}`}
+                        >
+                          Titik presisi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => requestLocationMode("AREA")}
+                          aria-pressed={locationMode === "AREA"}
+                          className={`inline-flex min-h-11 items-center border px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${locationMode === "AREA" ? "border-primary bg-primary text-white" : "border-border bg-white text-foreground hover:bg-muted"}`}
+                        >
+                          Wilayah saja
+                        </button>
+                      </div>
+                      {pendingLocationMode === "AREA" ? (
+                        <div role="alert" className="mt-3 border border-destructive/40 bg-destructive/10 px-3 py-2.5">
+                          <p className="text-xs leading-5 text-foreground">Pindah ke wilayah saja akan menghapus titik presisi yang sudah ditandai.</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => applyLocationMode("AREA")} className="inline-flex min-h-10 items-center bg-destructive px-3 text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive">
+                              Ya, hapus titik
+                            </button>
+                            <button type="button" onClick={() => setPendingLocationMode(null)} className="inline-flex min-h-10 items-center border border-border bg-white px-3 text-xs font-semibold text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                              Batal
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="p-3 sm:p-4">
+                      {locationMode === "POINT" ? (
+                        <>
+                          <ReportLocationMap
+                            region={region}
+                            point={point}
+                            onPointChange={(next) => updatePoint(next, "MAP_PIN")}
+                            selectedRoad={selectedRoad ? {
+                              id: selectedRoad.id,
+                              name: selectedRoad.name,
+                              geometry: selectedRoad.geometry as LineString | MultiLineString,
+                            } : null}
+                            focus={mapFocus}
+                            label="Titik laporan warga, bukan lokasi paket. Geser pin untuk mengoreksi."
+                            className="h-[360px] sm:h-[420px]"
+                          />
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <button type="button" onClick={useMyLocation} disabled={locating || adminAreas.length === 0} className="inline-flex min-h-11 items-center justify-center gap-2 border border-input bg-white px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50">
+                              <FiMapPin aria-hidden="true" />
+                              {locating ? "Mengambil lokasi…" : "Gunakan lokasi saya"}
+                            </button>
+                            {point ? (
+                              <button type="button" onClick={clearPoint} className="inline-flex min-h-11 items-center gap-2 border border-border bg-white px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+                                <FiX aria-hidden="true" />
+                                Hapus titik
+                              </button>
+                            ) : null}
+                            <span className="text-[11px] leading-5 text-muted-foreground">
+                              {point ? "Pin dapat digeser atau ditandai ulang." : "Belum ada titik. Pakai GPS, cari alamat, atau aktifkan Tandai titik."}
+                            </span>
+                          </div>
+
+                          <div className="mt-4">
+                            <AddressSearch regionId={region.id} onSelect={chooseAddress} />
+                          </div>
+
+                          {point ? (
+                            <div className="mt-4 border border-border bg-muted/30 p-3">
+                              <label className="flex items-start gap-3 text-sm leading-5 text-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={publicLocationConsent}
+                                  onChange={(event) => { setPublicLocationConsent(event.target.checked); invalidateSubmissionKey(); }}
+                                  className="mt-1 size-4 shrink-0 accent-[#0058A3]"
+                                />
+                                <span>
+                                  <span className="block font-semibold">Tampilkan titik ini di halaman publik</span>
+                                  <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                                    Titik presisi dapat menunjukkan lokasi rumah atau tempat kerja Anda. Jika dimatikan, titik tetap disimpan untuk staf berizin, tetapi tidak tampil di halaman publik.
+                                  </span>
+                                </span>
+                              </label>
+                            </div>
+                          ) : null}
+
+                          {pointOutsideRegion ? (
+                            <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-xs leading-5 text-foreground">
+                              Titik berada di luar Kota Tangerang. Laporan tidak dapat dikirim sampai pin dipindahkan ke dalam wilayah kerja.
+                            </p>
+                          ) : displayLocationMessage ? (
+                            <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{displayLocationMessage}</p>
+                          ) : !point ? (
+                            <p className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
+                              Titik belum ada. Gunakan lokasi perangkat, cari alamat, atau aktifkan mode Tandai titik di peta.
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div>
+                              <label htmlFor="report-district" className="block text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Kecamatan</label>
+                              <select
+                                id="report-district"
+                                value={currentDistrict}
+                                onChange={(event) => chooseDistrict(event.target.value)}
+                                className="mt-1.5 min-h-11 w-full border border-input bg-white px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+                              >
+                                <option value="">Pilih kecamatan…</option>
+                                {districtOptions.map((district) => <option key={district} value={district}>{district}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="report-village" className="block text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Kelurahan</label>
+                              <select
+                                id="report-village"
+                                value={currentVillage}
+                                onChange={(event) => chooseVillage(event.target.value)}
+                                disabled={!currentDistrict}
+                                className="mt-1.5 min-h-11 w-full border border-input bg-white px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                              >
+                                <option value="">{currentDistrict ? "Pilih kelurahan…" : "Pilih kecamatan dulu"}</option>
+                                {villageOptions.map((village) => <option key={village} value={village}>{village}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="report-rw" className="block text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">RW</label>
+                              <select
+                                id="report-rw"
+                                value={areaId}
+                                onChange={(event) => chooseArea(event.target.value)}
+                                disabled={!currentVillage}
+                                className="mt-1.5 min-h-11 w-full border border-input bg-white px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                              >
+                                <option value="">{currentVillage ? "Pilih RW…" : "Pilih kelurahan dulu"}</option>
+                                {rwOptions.map((area) => <option key={area.id} value={area.id}>RW {area.rw}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            Tanpa titik, wilayah dipilih bertingkat. Tiga pilihan ini cukup untuk menentukan RW.
+                          </p>
+                          {selectedArea ? (
+                            <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
+                              Wilayah laporan: {selectedArea.village}, RW {selectedArea.rw}, Kecamatan {selectedArea.district}.
+                            </p>
+                          ) : displayLocationMessage ? (
+                            <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{displayLocationMessage}</p>
+                          ) : !selectedPackage ? (
+                            <p className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
+                              Pilih kecamatan, kelurahan, lalu RW. Laporan tetap dapat dikirim tanpa titik presisi.
+                            </p>
+                          ) : null}
+                        </>
+                      )}
+
+                      <label htmlFor="report-landmark" className="mt-4 block text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Patokan lokasi (opsional) — nama jalan, kampung, RT/RW</label>
+                      <input id="report-landmark" value={landmark} onChange={(event) => { setLandmark(event.target.value); invalidateSubmissionKey(); }} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-11 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
+                      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; disimpan privat dan tidak ditampilkan publik.</p>
+                    </div>
+                  </section>
+
+                  {region.roadLayer ? (
+                    <details className="mt-5 border border-border">
+                      <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 bg-muted/20 px-3 text-sm font-bold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-4">
+                        <span>2. Ruas jalan (opsional)</span>
+                        <span className="text-[11px] font-normal text-muted-foreground">{selectedRoad ? selectedRoad.name ?? "Ruas tanpa nama" : "Buka"}</span>
+                      </summary>
+                      <div className="border-t border-border p-3 sm:p-4">
+                        <RoadSearch regionId={region.id} selected={selectedRoad} onSelect={chooseRoad} />
+                      </div>
+                    </details>
+                  ) : null}
+
+                  <details className="mt-4 border border-border">
+                    <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 bg-muted/20 px-3 text-sm font-bold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-4">
+                      <span>3. Paket rujukan (opsional)</span>
+                      <span className="text-[11px] font-normal text-muted-foreground">{selectedPackage ? `Nomor paket RUP ${selectedPackage.kode_rup}` : "Buka"}</span>
+                    </summary>
+                    <div className="border-t border-border p-3 sm:p-4">
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Tautan paket hanya rujukan untuk ditinjau, bukan bukti bahwa paket menyebabkan kerusakan.
                       </p>
-                      <button type="button" onClick={() => { setSelectedPackage(null); setPackageSelectionSource(null); invalidateSubmissionKey(); }} className="min-h-8 shrink-0 px-2 text-xs font-semibold text-primary transition-colors hover:bg-white/70 focus-visible:outline-2 focus-visible:outline-primary">Hapus tautan</button>
+
+                      {packageSelectionSource === "PACKAGE_PAGE" && selectedPackage ? (
+                        <div className="mt-3 flex items-start justify-between gap-4 border-l-4 border-secondary bg-secondary/20 px-3 py-2.5">
+                          <p className="min-w-0 text-xs leading-5 text-foreground">
+                            <span className="block font-bold">Paket rujukan dari peta · Nomor paket RUP {selectedPackage.kode_rup}</span>
+                            <span className="mt-0.5 block">{selectedPackage.nama}</span>
+                          </p>
+                          <button type="button" onClick={() => { setSelectedPackage(null); setPackageSelectionSource(null); invalidateSubmissionKey(); }} className="min-h-11 shrink-0 px-2 text-xs font-semibold text-primary transition-colors hover:bg-white/70 focus-visible:outline-2 focus-visible:outline-primary">Batalkan tautan</button>
+                        </div>
+                      ) : null}
+
+                      {candidateArea ? (
+                        <div className="mt-4">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                            <h4 className="font-heading text-base font-bold text-foreground">Paket yang mungkin terkait</h4>
+                            {!candidatesLoading && !currentCandidateError && <span className="text-xs font-medium text-muted-foreground">{visibleCandidates.length} paket ditemukan</span>}
+                          </div>
+                          <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                            {derivedArea?.level === "KECAMATAN"
+                              ? `Titik hanya dapat diturunkan sampai Kecamatan ${derivedArea.district}; kandidat paket memakai cakupan kecamatan.`
+                              : derivedArea?.level === "KELURAHAN"
+                                ? `Lokasi memakai Kelurahan ${derivedArea.village}, Kecamatan ${derivedArea.district}; paket yang lebih umum tidak dianggap sebagai titik kerusakan.`
+                                : `Lokasi laporan memakai ${candidateArea.rw ? `RW ${candidateArea.rw} di ${candidateArea.village}` : candidateArea.village}; titik paket yang lebih umum tidak dianggap sebagai titik kerusakan.`}
+                          </p>
+
+                          {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && (
+                            <label className="relative mt-3 block max-w-sm">
+                              <span className="sr-only">Cari nama paket atau nomor paket RUP</span>
+                              <FiSearch aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                              <input value={candidateSearch} onChange={(event) => setCandidateSearch(event.target.value)} placeholder="Cari nama paket atau nomor RUP" className="min-h-11 w-full border border-input bg-white pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
+                            </label>
+                          )}
+
+                          {candidatesLoading && <p className="mt-4 text-sm text-muted-foreground">Memuat paket wilayah…</p>}
+                          {currentCandidateError && <p role="alert" className="mt-4 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">{currentCandidateError}</p>}
+                          {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && candidateArea.rw && !rankedCandidates.some((item) => candidateOrder(item, candidateArea, landmark) === 0) && (
+                            <p className="mt-3 border border-[#E6A49D] bg-[#FCEBE8] px-3 py-2.5 text-xs leading-5 text-foreground"><strong className="block">Belum ada paket yang menyebut RW ini</strong>Paket di bawah berasal dari wilayah yang lebih luas atau nama lokasi yang mirip. Periksa detailnya sebelum memilih; laporan tetap dapat dibuat tanpa tautan paket.</p>
+                          )}
+                          {!candidatesLoading && !currentCandidateError && rankedCandidates.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Belum ada paket jalan tercatat untuk wilayah ini. Laporan tetap dapat dibuat tanpa tautan paket.</p>}
+                          {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && visibleCandidates.length === 0 && <p className="mt-3 text-sm text-muted-foreground">Tidak ada paket yang cocok dengan pencarian.</p>}
+                          {!candidatesLoading && !currentCandidateError && visibleCandidates.length > 0 && (
+                            <div className="mt-3">
+                              <ul className="grid gap-2.5">
+                                {displayedCandidates.map((item) => {
+                                  const matchOrder = candidateOrder(item, candidateArea, landmark);
+                                  const active = selectedPackage?.kode_rup === item.kode_rup;
+                                  return (
+                                    <li key={item.kode_rup} className={`border transition-colors ${active ? "border-primary bg-primary/5" : "border-border bg-white"}`}>
+                                      <div className="flex items-stretch">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (active) return;
+                                            setSelectedPackage(item);
+                                            setPackageSelectionSource("CANDIDATE_LIST");
+                                            invalidateSubmissionKey();
+                                          }}
+                                          aria-pressed={active}
+                                          className="min-w-0 flex-1 p-3 text-left focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary"
+                                        >
+                                          <span className="block text-sm font-semibold leading-5 text-foreground">{item.nama}</span>
+                                          <span className="mt-1 block text-xs leading-5 text-muted-foreground">{formatBudget(item.pagu)} · {item.bulan ?? "jadwal belum tersedia"} · {item.presisi_peta}</span>
+                                          <span className="mt-1 block font-mono text-[10px] text-muted-foreground">Nomor paket RUP {item.kode_rup}</span>
+                                          {matchOrder >= 2 && <span className="mt-2 block text-[10px] text-muted-foreground">Wilayah paket lebih luas; periksa detail sebelum ditautkan.</span>}
+                                        </button>
+                                        <div className="flex shrink-0 items-center border-l border-border px-2">
+                                          {active ? (
+                                            <button type="button" onClick={() => { setSelectedPackage(null); setPackageSelectionSource(null); invalidateSubmissionKey(); }} className="min-h-11 px-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-primary">
+                                              Batalkan tautan
+                                            </button>
+                                          ) : (
+                                            <span aria-hidden="true" className="px-2 text-xs font-bold text-primary">Tautkan</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                              {!normalizedCandidateSearch && visibleCandidates.length > 5 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAllCandidates((current) => !current)}
+                                  className="mt-3 inline-flex min-h-11 items-center border border-border bg-white px-3 text-xs font-bold text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                >
+                                  {showAllCandidates ? "Ringkas ke 5 teratas" : `Lihat semua (${visibleCandidates.length} paket)`}
+                                </button>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
+                          Pilih titik atau wilayah dulu untuk melihat paket yang mungkin terkait. Paket rujukan dari halaman paket tetap dapat dipakai.
+                        </p>
+                      )}
                     </div>
-                  )}
-
-                  <div className="mt-5">
-                    <ReportLocationMap
-                      region={region}
-                      point={point}
-                      onPointChange={(next) => updatePoint(next, "MAP_PIN")}
-                      selectedRoad={selectedRoad ? {
-                        id: selectedRoad.id,
-                        name: selectedRoad.name,
-                        geometry: selectedRoad.geometry as LineString | MultiLineString,
-                      } : null}
-                      focus={mapFocus}
-                      label="Titik laporan warga, bukan lokasi paket. Geser pin untuk mengoreksi."
-                      className="h-[360px] sm:h-[420px]"
-                    />
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={useMyLocation} disabled={locating || adminAreas.length === 0} className="inline-flex min-h-10 items-center justify-center gap-2 border border-input bg-white px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50">
-                      <FiMapPin aria-hidden="true" />
-                      {locating ? "Mengambil lokasi…" : "Gunakan lokasi saya"}
-                    </button>
-                    {point ? (
-                      <button type="button" onClick={clearPoint} className="inline-flex min-h-10 items-center gap-2 border border-border bg-white px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                        <FiX aria-hidden="true" />
-                        Hapus titik
-                      </button>
-                    ) : null}
-                    <span className="text-[11px] leading-5 text-muted-foreground">
-                      {point ? "Pin dapat digeser atau diklik ulang di peta." : "Belum ada titik. Pilih GPS, alamat, atau klik peta."}
-                    </span>
-                  </div>
-
-                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
-                    <AddressSearch regionId={region.id} onSelect={chooseAddress} />
-                    {region.roadLayer ? (
-                      <RoadSearch regionId={region.id} selected={selectedRoad} onSelect={chooseRoad} />
-                    ) : null}
-                  </div>
-
-                  {point ? (
-                    <div className="mt-4 border border-border bg-muted/30 p-3">
-                      <label className="flex items-start gap-3 text-sm leading-5 text-foreground">
-                        <input
-                          type="checkbox"
-                          checked={publicLocationConsent}
-                          onChange={(event) => { setPublicLocationConsent(event.target.checked); invalidateSubmissionKey(); }}
-                          className="mt-1 size-4 shrink-0 accent-[#0058A3]"
-                        />
-                        <span>
-                          <span className="block font-semibold">Tampilkan titik ini di halaman publik</span>
-                          <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
-                            Titik presisi dapat menunjukkan lokasi rumah atau tempat kerja Anda. Jika dimatikan, titik tetap disimpan untuk staf berizin, tetapi tidak tampil di halaman publik.
-                          </span>
-                        </span>
-                      </label>
-                    </div>
-                  ) : null}
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <div>
-                      <label htmlFor="report-area" className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Kelurahan / RW manual (fallback)</label>
-                      <select id="report-area" value={areaId} onChange={(event) => {
-                        const nextArea = areas.find((area) => area.id === event.target.value) ?? null;
-                        setAreaId(event.target.value);
-                        setPoint(null);
-                        setLocationSource("MANUAL_AREA");
-                        invalidateSubmissionKey();
-                        if (selectedPackage && nextArea && !packageMatchesArea(selectedPackage, nextArea)) {
-                          setSelectedPackage(null);
-                          setPackageSelectionSource(null);
-                          setLocationMessage("Paket rujukan dilepas karena wilayahnya berbeda dari lokasi laporan.");
-                        } else {
-                          setLocationMessage("");
-                        }
-                      }} className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary">
-                        <option value="">Pilih kelurahan/RW…</option>
-                        {areas.map((area) => <option key={area.id} value={area.id}>{area.village} RW {area.rw} — {area.district}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                    Tanpa titik, pilih kelurahan/RW manual. Dengan titik, wilayah diturunkan server dari batas resmi.
-                  </p>
-
-                  <label htmlFor="report-landmark" className="mt-4 block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Patokan lokasi (opsional) — nama jalan, kampung, RT/RW</label>
-                  <input id="report-landmark" value={landmark} onChange={(event) => { setLandmark(event.target.value); invalidateSubmissionKey(); }} maxLength={180} placeholder="Contoh: Jl. Arjuna III, Bumi Asri RT 04/16" className="mt-1.5 min-h-10 w-full border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
-                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">Dipakai untuk membandingkan nama lokasi paket; disimpan privat dan tidak ditampilkan publik.</p>
-
-                  {pointOutsideRegion ? (
-                    <p role="alert" className="mt-3 border-l-4 border-destructive bg-destructive/10 px-3 py-2.5 text-xs leading-5 text-foreground">
-                      Titik berada di luar Kota Tangerang. Laporan tidak dapat dikirim sampai pin dipindahkan ke dalam wilayah kerja.
-                    </p>
-                  ) : displayLocationMessage ? (
-                    <p role="status" className="mt-3 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">{displayLocationMessage}</p>
-                  ) : !candidateArea && !point ? (
-                    <p className="mt-4 bg-muted/70 px-3 py-2.5 text-xs leading-5 text-foreground">
-                      {selectedPackage ? "Belum ada area laporan. Paket rujukan tetap dapat digunakan; pilih wilayah untuk melihat kandidat paket." : "Pilih titik, cari alamat, atau pilih kelurahan/RW untuk melihat kandidat paket."}
-                    </p>
-                  ) : null}
+                  </details>
 
                   {roadWarning ? (
-                    <p className="mt-3 border border-[#E6C84D] bg-[#FFF8DB] px-3 py-2.5 text-xs leading-5 text-foreground">
+                    <p className="mt-4 border border-[#E6C84D] bg-[#FFF8DB] px-3 py-2.5 text-xs leading-5 text-foreground">
                       <strong className="block">Ruas tidak beririsan dengan titik</strong>
                       Ruas tetap boleh dikirim sebagai anotasi, tetapi periksa kembali apakah ruas yang dipilih sudah benar.
                     </p>
                   ) : null}
 
-                  {candidateArea ? (
-                    <div className="mt-6">
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <h3 className="font-heading text-base font-bold text-foreground">Kandidat paket di wilayah</h3>
-                        {!candidatesLoading && !currentCandidateError && <span className="text-xs font-medium text-muted-foreground">{visibleCandidates.length} paket ditemukan</span>}
-                      </div>
-                      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                        {derivedArea?.level === "KECAMATAN"
-                          ? `Titik hanya dapat diturunkan sampai Kecamatan ${derivedArea.district}; kandidat paket memakai cakupan kecamatan.`
-                          : derivedArea?.level === "KELURAHAN"
-                            ? `Lokasi memakai Kelurahan ${derivedArea.village}, Kecamatan ${derivedArea.district}; paket yang lebih umum tidak dianggap sebagai titik kerusakan.`
-                            : `Lokasi laporan memakai ${candidateArea.rw ? `RW ${candidateArea.rw} di ${candidateArea.village}` : candidateArea.village}; titik paket yang lebih umum tidak dianggap sebagai titik kerusakan.`}
-                      </p>
-
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && (
-                        <label className="relative mt-3 block max-w-sm">
-                          <span className="sr-only">Cari nama paket atau nomor RUP</span>
-                          <FiSearch aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                          <input value={candidateSearch} onChange={(event) => setCandidateSearch(event.target.value)} placeholder="Cari nama paket atau RUP" className="min-h-9 w-full border border-input bg-white pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary" />
-                        </label>
-                      )}
-
-                      {candidatesLoading && <p className="mt-4 text-sm text-muted-foreground">Memuat paket wilayah…</p>}
-                      {currentCandidateError && <p role="alert" className="mt-4 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">{currentCandidateError}</p>}
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && candidateArea.rw && !rankedCandidates.some((item) => candidateOrder(item, candidateArea, landmark) === 0) && (
-                        <p className="mt-3 border border-[#E6A49D] bg-[#FCEBE8] px-3 py-2.5 text-xs leading-5 text-foreground"><strong className="block">Belum ada paket yang menyebut RW ini</strong>Paket di bawah berasal dari wilayah yang lebih luas atau nama lokasi yang mirip. Periksa detailnya sebelum memilih; laporan tetap dapat dibuat tanpa tautan paket.</p>
-                      )}
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Belum ada paket jalan tercatat untuk wilayah ini. Laporan tetap dapat dibuat tanpa tautan paket.</p>}
-                      {!candidatesLoading && !currentCandidateError && rankedCandidates.length > 0 && visibleCandidates.length === 0 && <p className="mt-3 text-sm text-muted-foreground">Tidak ada paket yang cocok dengan pencarian.</p>}
-                      {!candidatesLoading && !currentCandidateError && visibleCandidates.length > 0 && (
-                        <div aria-label="Daftar kandidat paket" role="region" tabIndex={0} className="mt-3 max-h-[24rem] overflow-y-auto overscroll-contain pr-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                          <ul className="grid gap-2.5">
-                          {visibleCandidates.map((item) => {
-                            const matchOrder = candidateOrder(item, candidateArea, landmark);
-                            const active = selectedPackage?.kode_rup === item.kode_rup;
-                            return (
-                              <li key={item.kode_rup} className={`border p-3 transition-colors ${active ? "border-primary bg-primary/5" : "border-border bg-white"}`}>
-                                <div className="flex items-start gap-3">
-                                  <span className="min-w-0 flex-1">
-                                    <span className="block text-sm font-semibold leading-5 text-foreground">{item.nama}</span>
-                                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">{formatBudget(item.pagu)} · {item.bulan ?? "jadwal belum tersedia"} · {item.presisi_peta}</span>
-                                    <span className="mt-1 block font-mono text-[10px] text-muted-foreground">RUP {item.kode_rup}</span>
-                                  </span>
-                                  <button type="button" onClick={() => { setSelectedPackage(active ? null : item); setPackageSelectionSource(active ? null : "CANDIDATE_LIST"); invalidateSubmissionKey(); }} aria-pressed={active} className={`min-h-9 shrink-0 px-2.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${active ? "bg-primary text-white hover:bg-[#004682]" : "text-primary hover:bg-primary/10"}`}>
-                                    {active ? "Dipilih" : "Pilih"}
-                                  </button>
-                                </div>
-                                {matchOrder >= 2 && <span className="mt-2 block text-[10px] text-muted-foreground">Wilayah paket lebih luas; periksa detail sebelum ditautkan.</span>}
-                              </li>
-                            );
-                          })}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
+                  <p className="mt-5 border-l-4 border-primary bg-muted/40 px-3 py-2.5 text-xs leading-5 text-foreground">
+                    <strong className="font-semibold">Sebelum kirim: </strong>{consentSummary}
+                  </p>
                 </>
               )}
 
@@ -851,12 +1420,35 @@ export default function ReportPrototype({
                     <FiCheckCircle aria-hidden="true" className="size-8" />
                   </span>
                   <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">04 · Sukses</p>
-                  <h2 id="step-heading" ref={stepHeadingRef} tabIndex={-1} className="mt-2 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-3xl">Laporan berhasil dikirim</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="mt-2 scroll-mt-24 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-3xl">Laporan berhasil dikirim</h2>
                   <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-                    Laporan sudah diterima untuk ditinjau. Rujukan paket, bila dipilih, hanya mencatat pilihan Anda dan bukan bukti bahwa paket menyebabkan kerusakan.
+                    Diterima. Laporan ditinjau manual sebelum tampil publik; foto tidak pernah ditampilkan.
                   </p>
-                  <p className="mt-6 bg-white px-4 py-3 text-sm leading-5 text-foreground">
-                    Nomor tanda terima <span className="font-mono font-bold">{receiptCode}</span>
+                  <div className="mt-5 w-full max-w-lg border border-border bg-white p-4 text-left">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">Nomor tanda terima</p>
+                    <p className="mt-1 break-all font-mono text-lg font-bold text-foreground">{receiptCode}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => void copyReceipt(receiptCode)} className="inline-flex min-h-11 items-center gap-2 bg-primary px-3 text-sm font-bold text-white hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        {receiptCopied ? "Tersalin" : "Salin nomor"}
+                      </button>
+                      <Link href="/dashboard" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary underline-offset-4 hover:underline">Laporan saya</Link>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      Nomor ini disimpan di perangkat ini selama 30 hari. Untuk laporan anonim, nomor adalah satu-satunya rujukan sampai ada pencarian berbasis kode.
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-foreground">
+                      {(savedReceipt?.pointPublic ?? Boolean(point && publicLocationConsent))
+                        ? "Titik presisi tampil di halaman publik setelah laporan disetujui."
+                        : "Titik presisi tidak ditampilkan di halaman publik; staf berizin tetap dapat melihatnya."}
+                    </p>
+                  </div>
+                  <ol className="mt-5 grid w-full max-w-lg gap-1 text-left text-xs leading-5 text-muted-foreground">
+                    <li><strong className="text-foreground">1. Diterima</strong> — laporan masuk antrean tinjauan internal.</li>
+                    <li><strong className="text-foreground">2. Ditinjau</strong> — staf memeriksa foto dan lokasi; foto tetap privat.</li>
+                    <li><strong className="text-foreground">3. Tampil publik</strong> — hanya jika disetujui; titik mengikuti pilihan Anda.</li>
+                  </ol>
+                  <p className="mt-4 max-w-lg text-xs leading-5 text-muted-foreground">
+                    Rujukan paket, bila dipilih, hanya mencatat pilihan Anda dan bukan bukti bahwa paket menyebabkan kerusakan.
                   </p>
                 </div>
               )}
@@ -869,21 +1461,21 @@ export default function ReportPrototype({
               <h2 id="summary-heading" className="font-heading text-base font-bold text-foreground">Ringkasan laporan</h2>
             </div>
             <dl className="pt-2">
-              <SummaryRow label="Foto" value={photo?.file.name ?? "Belum dipilih"} pending={!photo} />
+              <SummaryRow label="Foto" value={photo ? "1 foto siap" : "Belum dipilih"} pending={!photo} />
               <SummaryRow label="Kerusakan" value={damageType || "Belum dipilih"} pending={!damageType} />
-              <SummaryRow label="Penyebab" value={observedCauses.length ? observedCauses.join(", ") : "Belum dipilih"} pending={observedCauses.length === 0} />
-              <SummaryRow label="Ukuran" value={coarseSize || "Belum dipilih"} pending={!coarseSize} />
-              <SummaryRow label="Wilayah" value={derivedArea ? areaLabelOf(derivedArea) : selectedArea ? `${selectedArea.village} RW ${selectedArea.rw}, ${selectedArea.district}` : "Belum dipilih"} pending={!derivedArea && !selectedArea} />
-              <SummaryRow label="Titik" value={point ? `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}${point.accuracyM ? ` · ±${Math.round(point.accuracyM)} m` : ""}` : "Belum ada"} pending={!point} />
-              <SummaryRow label="Ruas" value={selectedRoad ? selectedRoad.name ?? "Ruas tanpa nama" : "Belum dipilih"} />
-              <SummaryRow label="Titik publik" value={point ? (publicLocationConsent ? "Ditampilkan" : "Disembunyikan") : "Tidak berlaku"} />
-              <SummaryRow label="Patokan" value={landmark || "Tidak diisi"} />
-              <SummaryRow label="Paket" value={selectedPackage ? `RUP ${selectedPackage.kode_rup}` : "Belum ditautkan"} />
+              <SummaryRow
+                label="Lokasi"
+                value={derivedArea ? areaLabelOf(derivedArea) : selectedArea ? `${selectedArea.village} RW ${selectedArea.rw}` : point ? "Titik ditandai" : "Belum dipilih"}
+                pending={!derivedArea && !selectedArea && !point}
+              />
+              <SummaryRow label="Penyebab" value={observedCauses.length ? observedCauses.join(", ") : "—"} />
+              <SummaryRow label="Ukuran" value={coarseSize || "—"} />
+              <SummaryRow label="Ruas" value={selectedRoad ? selectedRoad.name ?? "Ruas tanpa nama" : "—"} />
+              <SummaryRow label="Patokan" value={landmark || "—"} />
+              <SummaryRow label="Paket" value={selectedPackage ? `Nomor paket RUP ${selectedPackage.kode_rup}` : "—"} />
+              <SummaryRow label="Titik publik" value={point ? (publicLocationConsent ? "Tampil publik" : "Disembunyikan") : "Tidak berlaku"} />
             </dl>
-            <div className="mt-4 bg-muted/50 p-3" role="status">
-              <p className="text-sm font-semibold leading-5 text-foreground">{step === 3 ? "Laporan diterima" : "Belum dikirim"}</p>
-              {step === 3 && <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{receiptCode}</p>}
-            </div>
+            <p className="mt-3 bg-muted/50 p-3 text-xs leading-5 text-foreground">{consentSummary}</p>
           </aside>
         </div>
       </div>

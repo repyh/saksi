@@ -34,7 +34,7 @@ export function PackageJourneySection({ regionId }: { regionId: string }) {
                 0{index + 1}
               </span>
               <div>
-                <h3 className="text-base font-bold leading-6 sm:text-lg">
+                <h3 className="text-base font-bold leading-6 text-foreground sm:text-lg">
                   {index === 0 ? (
                     <Link
                       href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`}
@@ -43,7 +43,7 @@ export function PackageJourneySection({ regionId }: { regionId: string }) {
                       {step.title}<FiArrowRight aria-hidden="true" className="size-4 shrink-0" />
                     </Link>
                   ) : (
-                    <span className="text-foreground">{step.title}</span>
+                    step.title
                   )}
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
@@ -53,6 +53,19 @@ export function PackageJourneySection({ regionId }: { regionId: string }) {
             </li>
           ))}
         </ol>
+
+        <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            Menemukan jalan rusak di sekitar Anda? Laporkan dengan foto dan titik lokasi; laporan masuk antrean tinjauan sebelum tampil publik.
+          </p>
+          <Link
+            href="/laporan"
+            className="inline-flex min-h-12 shrink-0 items-center gap-3 bg-primary px-5 font-sans text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          >
+            Laporkan kerusakan jalan
+            <FiArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
       </div>
     </section>
   );
