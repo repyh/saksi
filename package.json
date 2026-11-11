@@ -33,6 +33,7 @@
     "profile": "node scripts/profile-pages.mjs",
     "region:check": "node scripts/check-region.mjs",
     "region:ingest": "node scripts/ingest.mjs",
+    "rup:switch": "node scripts/rup-switch.mjs",
     "retention:reports": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs",
     "retention:reports:dry": "node --env-file-if-exists=.env.local scripts/retention-reports.mjs --dry-run",
     "start": "next start",

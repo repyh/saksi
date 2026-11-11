@@ -56,5 +56,7 @@ next-env.d.ts
 # dump RUP mentah (regenerasi: npm run data:rup / data:rup-detail)
 data/rup_kota_tangerang_2025_2026.json
 data/rup_detail_kota_tangerang.json
+# hasil uji RUP switch (regenerasi: npm run rup:switch)
+data/rup_switch_*.json
 
 .openchamber/
