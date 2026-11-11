@@ -31,6 +31,10 @@ pengambilan dilakukan dengan paginasi sampai halaman kosong. Nilai pagu di dafta
 ("98 Jt", "1,1 M") sehingga skrip mengalikan sendiri; nilai kontrak di halaman pemenang memakai
 format penuh.
 
+Detail diambil untuk **setiap baris** tender dan non-tender, bukan hanya yang namanya persis sama
+dengan RUP. Halaman detail memuat **Kode RUP**, jadi pencocokan memakai kode itu lebih dulu; nama
+persis hanya cadangan. E-purchasing tidak pernah muncul di SPSE dan tetap dilayani Data INAPROC.
+
 ## Hasil pencocokan
 
 | | |

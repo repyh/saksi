@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-10T10:29:04.393Z",
+  "dibuat": "2026-11-11T09:12:05.281Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -28,16 +28,6 @@
       "byte": 912,
       "sha256": "7fd80c8d290d239599615d289956f68ac02d24452b54334ca930d4799974dcda"
     },
-    "data/rup_kota_tangerang_2025_2026.json": {
-      "berkas": "data/rup_kota_tangerang_2025_2026.json",
-      "byte": 9817074,
-      "sha256": "72a6ae616d4196a2b178d7184d58d0be86a7a8c33d9c16167a6ecd2ca34b0c5c"
-    },
-    "data/rup_detail_kota_tangerang.json": {
-      "berkas": "data/rup_detail_kota_tangerang.json",
-      "byte": 1302247,
-      "sha256": "67f9a54a6dba8092286cbc3ddaa325346ed4970d14aa214ae2bf73b647fcb6a4"
-    },
     "data/realisasi_kota_tangerang.json": {
       "berkas": "data/realisasi_kota_tangerang.json",
       "byte": 20524751,
@@ -45,8 +35,8 @@
     },
     "data/lpse_kota_tangerang_2025_2026.json": {
       "berkas": "data/lpse_kota_tangerang_2025_2026.json",
-      "byte": 1185115,
-      "sha256": "af9d5bb9a86e4c94aa1b6fe118cb09eb489bfbbdf9b27ef837528edc4d66f49c"
+      "byte": 1269972,
+      "sha256": "871700de8b4ec53a304d1d02379f3a4e39711b361e8b60dd453e92e033432ec2"
     },
     "data/saksi_kota_tangerang_2025_2026.json": {
       "berkas": "data/saksi_kota_tangerang_2025_2026.json",
@@ -115,17 +105,17 @@
       "bytes": 15935176
     },
     "penyedia": {
-      "lpse": 1431,
-      "realisasi": 651,
+      "lpse": 1525,
+      "realisasi": 557,
       "tanpa_rekam": 146,
       "tanpa_rekam_pagu": 99170910314,
-      "unik": 561
+      "unik": 558
     },
     "sumber": {
-      "rup": 29288,
-      "detail": 2552,
+      "rup": null,
+      "detail": null,
       "realisasi": 51153,
-      "lpse": 1623,
+      "lpse": 1736,
       "batas_kecamatan": 13,
       "batas_kelurahan": 104,
       "batas_rw": 1020,
