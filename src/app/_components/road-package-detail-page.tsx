@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { Badge } from "@/components/ui/badge";
 import { classifyRoadWork, ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
@@ -54,6 +55,18 @@ function labelPresisi(item: { presisi_peta: string; rw: string | null }): string
   return "Kota Tangerang (umum)";
 }
 
+async function DeferredPackageReports({
+  reports,
+  regionId,
+  rup,
+}: {
+  reports: Promise<Awaited<ReturnType<typeof listPublishedReports>> | null>;
+  regionId: string;
+  rup: string;
+}) {
+  return <PackageReportsSection reports={await reports} regionId={regionId} rup={rup} />;
+}
+
 export async function generateRoadPackageDetailMetadata({
   params,
   searchParams,
@@ -86,8 +99,9 @@ export async function RoadPackageDetailPage({
   if (!detail) notFound();
 
   const reports = process.env.DATABASE_URL
-    ? await listPublishedReports({ region: regionId, package: rup, page: 1, limit: 20 }).catch(() => null)
+    ? listPublishedReports({ region: regionId, package: rup, page: 1, limit: 20 }).catch(() => null)
     : null;
+  const reportsPromise = reports ?? Promise.resolve(null);
 
   const { item, plan, snapshot } = detail;
   const regionLabel = getRegion(regionId).label;
@@ -141,7 +155,9 @@ export async function RoadPackageDetailPage({
           <PackagePlanSection plan={plan} />
           <PackageLocationSection item={item} regionId={regionId} regionLabel={regionLabel} />
           <PackageContractSection item={item} regionId={regionId} />
-          <PackageReportsSection reports={reports} regionId={regionId} rup={item.kode_rup} />
+          <Suspense fallback={<PackageReportsSection reports={null} regionId={regionId} rup={item.kode_rup} loading />}>
+            <DeferredPackageReports reports={reportsPromise} regionId={regionId} rup={item.kode_rup} />
+          </Suspense>
         </div>
 
         <p className="mt-8 border-t border-border pt-4 font-sans text-[11px] text-muted-foreground">Snapshot {snapshot.snapshot} · Sumber {snapshot.sumber}</p>
