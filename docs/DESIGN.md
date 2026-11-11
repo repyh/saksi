@@ -70,7 +70,7 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 
 Identitas `SAKSI` dan emblemnya digambar sebagai path SVG (`src/components/brand/`), bukan teks hidup:
 wordmark diturunkan dari Raleway Black dengan tracking ±`0.10em`, emblem adalah dua bidang dengan
-huruf dilubangi.
+huruf dilubangi. Aturan pemakaian, ukuran minimum, dan varian warna ada di [`docs/BRAND.md`](./BRAND.md).
 
 ---
 
