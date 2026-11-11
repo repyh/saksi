@@ -127,27 +127,6 @@ export default async function MetodePage({ searchParams }: MetodePageProps) {
         </div>
       </section>
 
-      {data.catatan.length > 0 ? (
-        <section className="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 lg:px-8">
-          <div
-            className="border-l-4 border-amber-500 bg-amber-50 p-4"
-            role="status"
-            aria-live="polite"
-          >
-            <h2 className="font-heading text-sm font-bold">Ada angka yang perlu diperiksa</h2>
-            <p className="mt-1 font-sans text-sm leading-relaxed text-foreground/80">
-              Sebagian catatan sumber belum cocok dengan snapshot aktif. Baca angka di halaman ini
-              sebagai sementara sampai perbedaan berikut ditinjau.
-            </p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 font-sans text-xs leading-relaxed text-foreground/75">
-              {data.catatan.map((catatan) => (
-                <li key={catatan}>{catatan}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
-
       {angka && penyedia ? (
         <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
           <h2 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
