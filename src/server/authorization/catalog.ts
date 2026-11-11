@@ -1,6 +1,7 @@
 export const PERMISSION_CATALOG = [
   { code: "reports.read_queue", description: "View report queue metadata", sensitive: false },
   { code: "reports.read_deidentified", description: "Read report details without reporter identity or restricted evidence", sensitive: true },
+  { code: "reports.change_status", description: "Publish or reject reports with a required moderation reason", sensitive: true },
   { code: "reports.read_sensitive_evidence", description: "View private report photo evidence", sensitive: true },
   { code: "reports.read_precise_location", description: "View exact report locations and annotated road segments", sensitive: true },
   { code: "access.users.read", description: "View staff accounts and access state", sensitive: true },
@@ -13,9 +14,8 @@ export const PERMISSION_CATALOG = [
 
 // Keep not-yet-implemented permissions documented here, but out of the active
 // catalog. They cannot be assigned, included in presets, or resolved by the authority.
-// Reports: assignment, status changes, notes, redaction, export.
+// Reports: assignment, notes, redaction, export.
 // { code: "reports.assign", description: "Assign or reassign reports for review", sensitive: false },
-// { code: "reports.change_status", description: "Change report moderation status", sensitive: true },
 // { code: "reports.add_internal_note", description: "Add staff-only notes to reports", sensitive: true },
 // { code: "reports.redact", description: "Redact sensitive material from public projections", sensitive: true },
 // { code: "reports.export", description: "Export report records", sensitive: true },
@@ -48,8 +48,8 @@ export const PERMISSION_PRESETS = [
   {
     code: "moderator",
     name: "Moderator",
-    description: "View report queue, report details, and private photo evidence.",
-    permissions: ["reports.read_queue", "reports.read_deidentified", "reports.read_sensitive_evidence"],
+    description: "Review reports, view private photo evidence, and publish or reject reports with a reason.",
+    permissions: ["reports.read_queue", "reports.read_deidentified", "reports.change_status", "reports.read_sensitive_evidence"],
   },
   {
     code: "admin",
