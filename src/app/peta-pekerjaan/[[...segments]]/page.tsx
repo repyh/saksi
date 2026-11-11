@@ -5,19 +5,43 @@ import { addressForPackage, districtSlug, parseReportSegments, type ReportViewMo
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
-import { createPageMetadata } from "@/lib/seo";
+import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
-
-export const metadata = createPageMetadata({
-  title: "Peta pekerjaan jalan Kota Tangerang",
-  description: "Jelajahi sebaran paket jalan berdasarkan kecamatan, kelurahan, RW, tahun, dan jenis pekerjaan.",
-  path: "/peta-pekerjaan",
-});
 
 interface LaporanPageProps {
   params: Promise<{ segments?: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export async function generateMetadata({ params, searchParams }: LaporanPageProps) {
+  const [{ segments = [] }, query] = await Promise.all([params, searchParams]);
+  const metadata = createPageMetadata({
+    title: "Peta pekerjaan jalan Kota Tangerang",
+    description: "Jelajahi sebaran paket jalan berdasarkan kecamatan, kelurahan, RW, tahun, dan jenis pekerjaan.",
+    path: "/peta-pekerjaan",
+  });
+  const imageQuery = new URLSearchParams();
+  const area = segments.join("/").slice(0, 384);
+  if (area) imageQuery.set("area", area);
+  for (const key of ["region", "tahun", "jenis", "tampilan", "kelompok", "umum", "lokasi", "q"] as const) {
+    const value = firstValue(query[key])?.trim();
+    if (value) imageQuery.set(key, value.slice(0, key === "q" ? 80 : 64));
+  }
+
+  const imageUrl = absoluteSiteUrl(`/api/og/peta-pekerjaan?${imageQuery.toString()}`);
+  const image = {
+    url: imageUrl,
+    width: 1200,
+    height: 630,
+    alt: "Pratinjau peta pekerjaan jalan SAKSI",
+  };
+
+  return {
+    ...metadata,
+    openGraph: { ...metadata.openGraph, images: [image] },
+    twitter: { ...metadata.twitter, card: "summary_large_image", images: [imageUrl] },
+  };
 }
 
 function firstValue(value: string | string[] | undefined) {
