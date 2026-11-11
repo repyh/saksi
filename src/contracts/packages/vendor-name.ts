@@ -34,6 +34,34 @@ const POLA_NAMA_BERBADAN = new RegExp(
 /** Batas aman: nama dengan lebih dari 6 segmen tidak dipecah. */
 const MAKS_SEGMEN = 6;
 
+/**
+ * Prefiks badan usaha yang menempel pada nama tanpa pemisah, mis. `CVKARYA`.
+ * Hanya dipakai kunci pembanding; `PDAM` dikecualikan agar tidak menjadi `PD AM`.
+ */
+const PREFIKS_MENEMPEL = new RegExp(
+  `^(?:(?:koperasi|yayasan|persero|perum|firma|cv|pt|ud)(?=[A-Z0-9])|pd(?!AM)(?=[A-Z0-9]))`,
+  "iu",
+);
+
+/**
+ * Kunci pembanding nama penyedia. Huruf disamakan besar, lalu tanda baca dan spasi
+ * dirapatkan: `CV. JABARU`, `CV  JABARU`, `CVKARYA` dan `CV. KARYA` bertemu pada
+ * kunci yang sama. Nama yang hurufnya berbeda (mis. `PRIAMA` vs `PRIMA`) tetap dua
+ * penyedia — tidak ada pencocokan samar.
+ */
+export function kunciPenyedia(nama: string) {
+  const rapi = nama
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleUpperCase("id-ID")
+    .replace(/[-'’]/g, "")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!rapi) return "";
+  return rapi.replace(PREFIKS_MENEMPEL, "$& ");
+}
+
 function namaSetelahPrefiks(segmen: string): string | null {
   const cocok = segmen.match(POLA_NAMA_BERBADAN);
   const nama = cocok?.[1]?.trim();

@@ -24,6 +24,7 @@ import {
   snapshotMetaCached,
 } from "./catalog-cache";
 import { visibleAreaKeys } from "./area-visibility";
+import { kunciPenyedia } from "./lpse-merge";
 import type { RoadPackageRepository } from "./repository";
 import { emptyPlanDetail } from "./rup-detail";
 import { bacaRupDetail } from "./rup-detail-repository";
@@ -111,7 +112,7 @@ async function buildPackageContext(
     allPackages.flatMap((item) =>
       item.kontrak
         ? [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])].map((nama) =>
-            nama.toLocaleUpperCase("id-ID"),
+            kunciPenyedia(nama),
           )
         : [],
     ),

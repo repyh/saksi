@@ -135,6 +135,13 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   **kode paket realisasi** (kode tender / kode e-katalog), **bukan** kode RUP — RUP hanya dipakai untuk
   join. Detail RUP tetap bisa dibuka lewat `https://data.inaproc.id/rup?kode=<kode_rup>`.
   Relasi RUP↔paket dan ketersediaan halaman detail dianalisis di `docs/RELASI-RUP-REALISASI.md`.
+- Penggabungan kontrak: rekam LPSE hanya menetapkan **identitas** kontrak (jenis, pemenang, HPS, nilai
+  kontrak, tautan SPSE). Baris realisasi Data INAPROC untuk RUP yang sama tetap ditempelkan sebagai
+  rincian transaksi (`paketRealisasi`, jumlah transaksi, sumber transaksi), bukan dibuang. Data
+  INAPROC hanya mengisi kontrak penuh bila RUP tidak punya rekam LPSE (mis. e-purchasing). Badge
+  menunjukkan sumber tiap bagian: `DATA RESMI (LPSE)` untuk pemenang/nilai kontrak dan
+  `DATA RESMI (INAPROC)` untuk nilai per paket realisasi. Bila Data INAPROC tidak memuat transaksi,
+  UI menyebut hal itu apa adanya — bukan menyiratkan seluruh detail hilang.
 - RUP dengan **lebih dari satu paket realisasi** (relasi 1–N, hanya e-purchasing/pengadaan langsung)
   ditampilkan eksplisit: badge "· N paket" di daftar; baris **Penyedia** di panel memuat semua penyedia
   beserta total nilainya (baris pertama dua nama, sisanya di balik "+N penyedia lainnya"); penyedia
@@ -159,7 +166,9 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   RUP → detail → realisasi → LPSE → snapshot → gate dengan jeda antar-perintah; `--semua` untuk
   seluruh region, `--dry-run` untuk melihat rencana.
 - `/penyedia`, `/penyedia/[slug]` — daftar & detail penyedia; jumlah penyedia per sumber dan entri
-  unik dibaca dari manifest (normalisasi nama gabungan tidak mengubah total paket).
+  unik dibaca dari manifest (normalisasi nama gabungan tidak mengubah total paket). Kunci penyedia
+  membuang tanda baca dan merapatkan spasi, sehingga `CV. JABARU` dan `CV JABARU` satu entri; nama
+  yang hurufnya berbeda tetap terpisah.
 - `src/features/reports/components/report-prototype.tsx` — empat langkah laporan; submit memakai API,
   metadata ke Postgres, foto WebP tersanitasi ke bucket privat. Submit lewat route API yang sama
   dengan UI sudah diverifikasi end-to-end **8 November 2026**: receipt, riwayat akun, antrean review,

@@ -203,8 +203,9 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
             rekam publik di kedua sumber.
           </p>
           <p className="mt-1.5">
-            NPWP penyedia disamarkan oleh LPSE, sehingga penyedia hanya bisa dibedakan lewat nama —
-            varian penulisan (<em>CV</em>, <em>cv.</em>, <em>PT</em>) belum dinormalisasi sepenuhnya.
+            NPWP penyedia disamarkan oleh LPSE, sehingga penyedia dibedakan lewat nama. Varian
+            penulisan (<em>CV</em> / <em>CV.</em>, spasi ganda) sudah disatukan; nama yang hurufnya
+            berbeda tetap dihitung sebagai penyedia terpisah.
           </p>
         </div>
     </CatalogPageShell>

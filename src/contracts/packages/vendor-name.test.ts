@@ -1,5 +1,31 @@
 import { test, expect } from "bun:test";
-import { normalizeVendorNames } from "./vendor-name";
+import { kunciPenyedia, normalizeVendorNames } from "./vendor-name";
+import { slugPenyedia } from "./vendor-slug";
+
+test("kunci penyedia menyatukan varian tanda baca dan spasi", () => {
+  const kunci = kunciPenyedia("CV. JABARU");
+  for (const varian of ["CV JABARU", "CV.  JABARU", "cv. jABARU", "CV.JABARU"]) {
+    expect(kunciPenyedia(varian)).toBe(kunci);
+  }
+  expect(kunciPenyedia("CVKARYA MULTI TALENTA")).toBe(kunciPenyedia("CV. KARYA MULTI TALENTA"));
+  expect(kunciPenyedia("CV. KLARA AZ-ZAHRA UTAMA")).toBe(kunciPenyedia("CV KLARA AZZAHRA UTAMA"));
+  expect(kunciPenyedia("CV.ADI PUTRA KARYA")).toBe(kunciPenyedia("CV ADI PUTRA KARYA"));
+  expect(kunciPenyedia("PT.  BERKAH KARYA NURANI")).toBe(kunciPenyedia("PT BERKAH KARYA NURANI"));
+});
+
+test("kunci penyedia tidak menyatukan nama yang hurufnya berbeda", () => {
+  expect(kunciPenyedia("PT PRIAMA KARYATAMA GEMILANG")).not.toBe(
+    kunciPenyedia("PT PRIMA KARYATAMA GEMILANG"),
+  );
+  expect(kunciPenyedia("PDAM TIRTA BENTENG")).toBe("PDAM TIRTA BENTENG");
+});
+
+test("slug penyedia sama untuk semua varian penulisan", () => {
+  expect(slugPenyedia("CV. JABARU")).toBe("cv-jabaru");
+  expect(slugPenyedia("CV JABARU")).toBe("cv-jabaru");
+  expect(slugPenyedia("CVKARYA MULTI TALENTA")).toBe("cv-karya-multi-talenta");
+  expect(slugPenyedia("CV. KARYA MULTI TALENTA")).toBe("cv-karya-multi-talenta");
+});
 
 test("memecah dua badan usaha yang sama-sama valid", () => {
   expect(normalizeVendorNames("CV. BUMI SALAKA, CV. ZARMINA FAIQA")).toEqual([

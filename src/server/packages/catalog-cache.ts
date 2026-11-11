@@ -60,7 +60,10 @@ const loadContractsPerRup = unstable_cache(
     }
     return hasil;
   },
-  ["catalog-contracts-per-rup", CATALOG_SOURCE],
+  // Kunci versi dinaikkan saat bentuk rekam kontrak berubah (mis. rincian realisasi
+  // Data INAPROC kini ikut ditempelkan ke rekam LPSE, lalu nama penyedia dibandingkan
+  // tanpa tanda baca) agar entri lama tidak dipakai sampai siklus revalidasi berikutnya.
+  ["catalog-contracts-per-rup-v3", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 
@@ -137,7 +140,7 @@ async function buildVendorCatalog(regionId: string): Promise<VendorCatalog> {
 
 const loadVendorCatalog = unstable_cache(
   buildVendorCatalog,
-  ["catalog-vendors", CATALOG_SOURCE],
+  ["catalog-vendors-v2", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 

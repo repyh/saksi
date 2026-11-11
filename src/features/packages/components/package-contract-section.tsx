@@ -39,9 +39,14 @@ export function PackageContractSection({
           Realisasi &amp; kontrak
         </h2>
         {kontrak ? (
-          <Badge variant="official">
-            {kontrak.sumber === "LPSE" ? "DATA RESMI (LPSE)" : "DATA RESMI (INAPROC)"}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="official">
+              {kontrak.sumber === "LPSE" ? "DATA RESMI (LPSE)" : "DATA RESMI (INAPROC)"}
+            </Badge>
+            {kontrak.sumber === "LPSE" && kontrak.paketRealisasi?.length ? (
+              <Badge variant="official">DATA RESMI (INAPROC)</Badge>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -157,10 +162,15 @@ export function PackageContractSection({
                 </tbody>
               </table>
               <p className="border-t border-border px-3 py-2 font-sans text-[10px] leading-relaxed text-muted-foreground">
-                Tiap nilai adalah realisasi paket itu sendiri, bukan nilai kontrak. Kode paket membuka halaman
-                realisasi Data INAPROC.
+                Tiap nilai adalah realisasi paket itu sendiri di Data INAPROC, bukan nilai kontrak. Kode paket
+                membuka halaman realisasi Data INAPROC.
               </p>
             </div>
+          ) : kontrak.sumber === "LPSE" ? (
+            <p className="mt-4 border border-dashed border-border bg-muted/10 p-3 font-sans text-[11px] leading-relaxed text-muted-foreground">
+              Pengumuman SPSE paket ini sudah tercatat. Data INAPROC belum memuat transaksi realisasinya, jadi
+              rincian kode paket realisasi belum bisa ditampilkan.
+            </p>
           ) : null}
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -185,7 +195,7 @@ export function PackageContractSection({
 
           <p className="mt-3 border-t border-border pt-3 font-sans text-[11px] leading-relaxed text-muted-foreground">
             {kontrak.sumber === "LPSE"
-              ? "Nama penyedia dan nilai kontrak dari LPSE, ditampilkan sebagai fakta kontrak — bukan penilaian kinerja. NPWP disamarkan oleh LPSE."
+              ? "Nama penyedia, nilai kontrak, dan HPS dari LPSE; nilai per paket realisasi dari Data INAPROC. Ditampilkan sebagai fakta kontrak — bukan penilaian kinerja. NPWP disamarkan oleh LPSE."
               : "Paket ini melalui e-purchasing/e-katalog, yang pencatatannya ada di Data INAPROC (bukan LPSE). Nama penyedia dan nilai transaksi ditampilkan sebagai fakta kontrak — bukan penilaian kinerja."}
           </p>
         </>

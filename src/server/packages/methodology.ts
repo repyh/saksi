@@ -19,6 +19,7 @@ import {
 } from "./catalog-cache-config";
 import { isDatabaseEnabled } from "./data-source";
 import { getLpseMeta } from "./lpse-repository";
+import { kunciPenyedia } from "./lpse-merge";
 import { snapshotMeta } from "./snapshot-repository";
 
 /**
@@ -498,15 +499,15 @@ export async function susunMetodologi(
       for (const item of paketSnapshot) {
         if (!item.kontrak) continue;
         for (const nama of [item.kontrak.penyedia, ...(item.kontrak.penyediaLain ?? [])]) {
-          const bersih = nama.trim();
-          if (bersih) namaPenyedia.add(bersih.toLocaleUpperCase("id-ID"));
+          const bersih = kunciPenyedia(nama);
+          if (bersih) namaPenyedia.add(bersih);
         }
       }
       if (penyedia) {
         penyedia = { ...penyedia, unikKontrak: namaPenyedia.size };
         if (namaPenyedia.size !== penyedia.unik) {
           catatan.push(
-            `Manifest mencatat ${idInt.format(penyedia.unik)} entri penyedia; setelah normalisasi nama gabungan, register menampilkan ${idInt.format(namaPenyedia.size)} nama unik.`,
+            `Manifest mencatat ${idInt.format(penyedia.unik)} entri penyedia; setelah normalisasi nama gabungan dan varian penulisan, register menampilkan ${idInt.format(namaPenyedia.size)} nama unik.`,
           );
         }
       }
@@ -545,7 +546,7 @@ export async function susunMetodologi(
 
 const loadMetodologi = unstable_cache(
   susunMetodologi,
-  ["catalog-methodology", CATALOG_SOURCE],
+  ["catalog-methodology-v2", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 

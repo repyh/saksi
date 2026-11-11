@@ -71,10 +71,20 @@ async function request(url) {
   };
 }
 
+/** Samakan dengan `slugPenyedia` di `src/contracts/packages/vendor-slug.ts`. */
+const PREFIKS_MENEMPEL =
+  /^(?:(?:koperasi|yayasan|persero|perum|firma|cv|pt|ud)(?=[A-Z0-9])|pd(?!AM)(?=[A-Z0-9]))/iu;
+
 function slugPenyedia(nama) {
-  return nama
+  const rapi = String(nama)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleUpperCase("id-ID")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(PREFIKS_MENEMPEL, "$& ");
+  return rapi
     .toLocaleLowerCase("id-ID")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")

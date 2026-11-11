@@ -954,9 +954,11 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
                       {selectedPackage.kontrak && !selectedPackage.kontrak.paketRealisasi?.length ? (
                         <div className="mt-4 border border-dashed border-border bg-muted/10 p-3">
-                          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Detail realisasi belum tersedia</p>
+                          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Rincian realisasi belum tersedia</p>
                           <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
-                            Rincian kode paket dan nilai transaksi realisasi untuk paket ini belum tersedia.
+                            {selectedPackage.kontrak.sumber === "LPSE"
+                              ? "Pengumuman SPSE paket ini sudah tercatat (penyedia, nilai kontrak, dan HPS di bawah). Data INAPROC belum memuat transaksi realisasinya, jadi kode paket realisasi belum bisa ditampilkan."
+                              : "Rincian kode paket dan nilai transaksi realisasi untuk paket ini belum tersedia."}
                           </p>
                         </div>
                       ) : null}
@@ -1022,6 +1024,15 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                               ) : null}
                             </tbody>
                           </table>
+                          {selectedPackage.kontrak.paketRealisasi?.length ? (
+                            <p className="border-t border-border px-3 py-2 font-sans text-[10px] leading-snug text-muted-foreground">
+                              Nilai realisasi per paket tercatat di Data INAPROC
+                              {selectedPackage.kontrak.transaksi && selectedPackage.kontrak.transaksi > 1
+                                ? ` · ${selectedPackage.kontrak.transaksi} transaksi`
+                                : ""}
+                              . Rincian kode paket ada di halaman detail paket.
+                            </p>
+                          ) : null}
                           {selectedPackage.kontrak.url ? (
                             <a
                               href={selectedPackage.kontrak.url}

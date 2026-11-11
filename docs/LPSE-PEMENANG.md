@@ -35,6 +35,12 @@ Detail diambil untuk **setiap baris** tender dan non-tender, bukan hanya yang na
 dengan RUP. Halaman detail memuat **Kode RUP**, jadi pencocokan memakai kode itu lebih dulu; nama
 persis hanya cadangan. E-purchasing tidak pernah muncul di SPSE dan tetap dilayani Data INAPROC.
 
+Saat disajikan, rekam LPSE dan baris realisasi Data INAPROC **digabung, bukan saling menimpa**: LPSE
+menetapkan pemenang, HPS, nilai kontrak, dan tautan SPSE, sedangkan realisasi tetap menjadi rincian
+transaksi per kode paket. Data INAPROC hanya mengisi kontrak sepenuhnya bila RUP tidak punya rekam
+LPSE. Karena itu paket ber-rekam LPSE tidak boleh tampil seolah rincian realisasinya tidak ada —
+rincian itu hanya benar-benar kosong bila Data INAPROC tidak memuat transaksinya.
+
 ## Hasil pencocokan
 
 | | |
@@ -73,7 +79,8 @@ Ini bukan tuduhan; ini kesenjangan keterbukaan data yang layak ditampilkan apa a
 ## Batasan
 
 - **NPWP disamarkan** oleh LPSE (`0*.5**.4**.*-*17.**0`), jadi deduplikasi penyedia hanya bisa lewat
-  nama — varian penulisan (`CV`, `cv.`, `PT`) perlu dinormalisasi lebih lanjut.
+  nama. Kunci pembanding membuang tanda baca dan merapatkan spasi (`CV. JABARU` = `CV JABARU`),
+  tanpa pencocokan samar: nama yang hurufnya berbeda (mis. `PRIAMA` vs `PRIMA`) tetap dua penyedia.
 - 233 paket pengadaan langsung tidak muncul di daftar non-tender meski ada di RUP — kemungkinan belum
   dicatat atau tercatat di tahun berbeda; jangan diklaim sebagai "tidak ada kontrak".
 - 33 paket `Dikecualikan` memang tidak melalui LPSE.
