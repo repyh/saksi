@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import type { LineString, MultiLineString } from "geojson";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,8 @@ const PUBLIC_SELECT = {
 } satisfies Prisma.ReportSelect;
 
 const EDITABLE_STATUSES = new Set(["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO", "PUBLISHED"]);
+const PUBLIC_REPORTS_CACHE_TAG = "published-reports";
+const PUBLIC_REPORTS_REVALIDATE_SECONDS = 60;
 
 function publicWhere(query: PublicReportsQuery): Prisma.ReportWhereInput {
   const where: Prisma.ReportWhereInput = { status: "PUBLISHED" };
@@ -60,7 +63,7 @@ function publicWhere(query: PublicReportsQuery): Prisma.ReportWhereInput {
 }
 
 /** Daftar laporan yang sudah disetujui moderator; tidak pernah memuat data privat. */
-export async function listPublishedReports(query: PublicReportsQuery): Promise<PublicReportsResponse> {
+async function queryPublishedReports(query: PublicReportsQuery): Promise<PublicReportsResponse> {
   const where = publicWhere(query);
   const [rows, total] = await Promise.all([
     prisma.report.findMany({
@@ -95,11 +98,21 @@ export async function listPublishedReports(query: PublicReportsQuery): Promise<P
   };
 }
 
+const listPublishedReportsCached = unstable_cache(
+  queryPublishedReports,
+  ["published-report-list"],
+  { revalidate: PUBLIC_REPORTS_REVALIDATE_SECONDS, tags: [PUBLIC_REPORTS_CACHE_TAG] },
+);
+
+export function listPublishedReports(query: PublicReportsQuery): Promise<PublicReportsResponse> {
+  return listPublishedReportsCached(query);
+}
+
 /**
  * Detail satu laporan publik. Hanya status PUBLISHED yang boleh dibaca; deskripsi,
  * petunjuk lokasi, foto, identitas pelapor, dan id area internal tidak pernah dipilih.
  */
-export async function getPublishedReportDetail(publicCode: string): Promise<PublicReportDetail | null> {
+async function queryPublishedReportDetail(publicCode: string): Promise<PublicReportDetail | null> {
   const report = await prisma.report.findFirst({
     where: { publicCode, status: "PUBLISHED" },
     select: {
@@ -175,6 +188,16 @@ export async function getPublishedReportDetail(publicCode: string): Promise<Publ
       ? { rup: report.packageLink.rupSnapshot, name: report.packageLink.packageNameSnapshot }
       : null,
   };
+}
+
+const getPublishedReportDetailCached = unstable_cache(
+  queryPublishedReportDetail,
+  ["published-report-detail"],
+  { revalidate: PUBLIC_REPORTS_REVALIDATE_SECONDS, tags: [PUBLIC_REPORTS_CACHE_TAG] },
+);
+
+export function getPublishedReportDetail(publicCode: string): Promise<PublicReportDetail | null> {
+  return getPublishedReportDetailCached(publicCode);
 }
 
 /** Publikasikan atau tolak satu laporan, dengan alasan dan riwayat status. */

@@ -665,7 +665,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       )}
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <p className="min-w-0 font-sans text-[11px] text-muted-foreground">{pkg.desa_resmi ? `${pkg.desa_resmi}${pkg.presisi_peta === "RW" && pkg.rw ? `, ${environmentLabel} ${pkg.rw}` : ""}, ${pkg.kecamatan_resmi}` : pkg.kecamatan_resmi ?? `Lokasi umum · ${regionLabel}`} · {pkg.bulan ?? "jadwal belum tersedia"}</p>
-                        <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat <FiArrowRight aria-hidden="true" /></Button>
+                        <Button type="button" variant="ghost" size="xs" onClick={() => selectPackage(pkg)} aria-label={`Lihat ringkasan paket ${pkg.nama}, RUP ${pkg.kode_rup}`} className="h-7 shrink-0 gap-1 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary">Lihat ringkasan <FiArrowRight aria-hidden="true" /></Button>
                       </div>
                     </article>
                   ))}
@@ -858,7 +858,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                                   </ul>
                                   {labelPenyediaTersembunyi ? (
                                     <Link
-                                      href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
+                                      href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
                                       className="mt-1 inline-block font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
                                     >
                                       {labelPenyediaTersembunyi}
@@ -899,7 +899,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       <FiArrowRight className="size-4 text-secondary" aria-hidden="true" />
                     </Button>
                     <Button
-                      render={<Link href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
+                      render={<Link href={`/project/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
                       nativeButton={false}
                       variant="outline"
                       className="h-10 w-full rounded-xs border-border font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-primary hover:bg-primary/5"

@@ -6,9 +6,10 @@ import { FiSearch } from "react-icons/fi";
 
 interface PackageSearchFormProps {
   inputId: string;
+  regionId: string;
 }
 
-export function PackageSearchForm({ inputId }: PackageSearchFormProps) {
+export function PackageSearchForm({ inputId, regionId }: PackageSearchFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const search = query.trim();
@@ -17,7 +18,7 @@ export function PackageSearchForm({ inputId }: PackageSearchFormProps) {
     event.preventDefault();
     if (!search) return;
 
-    const params = new URLSearchParams({ q: search });
+    const params = new URLSearchParams({ q: search, region: regionId });
     router.push(`/peta-pekerjaan?${params.toString()}`);
   }
 

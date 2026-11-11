@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
 import { getLegalDoc } from "@/lib/legal-content";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Kebijakan Privasi | SAKSI",
-  description: "Cara SAKSI menangani data akun, laporan kerusakan jalan, dan bukti foto.",
-};
+export const metadata = createPageMetadata({
+  title: "Kebijakan Privasi",
+  description: "Cara SAKSI menangani data akun, laporan kerusakan jalan, lokasi, dan bukti foto.",
+  path: "/kebijakan-privasi",
+});
 
 export default async function PrivacyPage() {
   const content = await getLegalDoc("privacy");

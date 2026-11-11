@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
@@ -7,13 +6,16 @@ import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { listRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Paket Jalan — SAKSI",
-  description: "Direktori paket pekerjaan jalan dengan rincian RUP, wilayah, pagu, dan rekam kontrak.",
-};
+export const metadata = createPageMetadata({
+  title: "Direktori paket pekerjaan jalan",
+  description: "Cari dan telusuri paket pekerjaan jalan menurut RUP, tahun, jenis pekerjaan, pagu, dan rekam kontrak.",
+  path: "/paket",
+  canonicalPath: "/project",
+});
 
 const PAGE_SIZE = 50;
 const WORK_OPTIONS: Array<{ value: RoadWorkCategory; label: string }> = [
@@ -49,6 +51,11 @@ function hrefForPage(page: number, params: { region: string; query: string; year
   query.set("arah", params.direction);
   query.set("halaman", String(page));
   return `/paket?${query.toString()}`;
+}
+
+function hrefForPackageDetail(rup: string, region: string, returnTo: string) {
+  const params = new URLSearchParams({ region, returnTo });
+  return `/paket/${encodeURIComponent(rup)}?${params.toString()}`;
 }
 
 export default async function ProjectPage({ searchParams }: ProjectPageProps) {
@@ -107,6 +114,7 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
   const page = Number.isInteger(requestedPage) ? Math.min(totalPages, Math.max(1, requestedPage)) : 1;
   const visibleProjects = projects.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pageParams = { region: regionId, query, year, work, sort, direction };
+  const returnTo = hrefForPage(page, pageParams);
 
   return (
     <CatalogPageShell variant="directory" header={
@@ -182,7 +190,9 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
       {visibleProjects.length === 0 ? (
         <p className="mt-6 border border-dashed border-border p-6 font-sans text-sm text-muted-foreground">Tidak ada paket yang cocok. Coba ubah pencarian atau filter.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto border border-border">
+        <>
+        <p className="mt-3 text-xs text-muted-foreground sm:hidden">Geser tabel ke samping untuk melihat kolom lainnya.</p>
+        <div role="region" aria-label="Daftar paket jalan. Tabel dapat digeser secara horizontal." tabIndex={0} className="mt-2 overflow-x-auto border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:mt-4">
           <table className="w-full min-w-[760px] border-collapse font-sans text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-left">
@@ -195,10 +205,10 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
             </thead>
             <tbody>
               {visibleProjects.map((project) => (
-                <tr key={project.kode_rup} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
+                <tr key={project.kode_rup} className="border-b border-border/60 last:border-0">
                   <td className="px-3 py-2.5 font-semibold leading-snug">
                     <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">RUP {project.kode_rup} · TA {project.tahun}</span>
-                    <Link href={`/paket/${encodeURIComponent(project.kode_rup)}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block text-foreground underline-offset-2 hover:text-primary hover:underline">{project.nama}</Link>
+                    <Link href={hrefForPackageDetail(project.kode_rup, regionId, returnTo)} className="mt-0.5 block text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-current">{project.nama}</Link>
                     <span className="mt-0.5 block font-sans text-[10px] font-normal text-muted-foreground">{project.satker}</span>
                   </td>
                   <td className="px-3 py-2.5 text-[12px] leading-snug text-muted-foreground">
@@ -214,6 +224,7 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {totalPages > 1 && <nav aria-label="Halaman paket jalan" className="mt-5 flex items-center justify-between gap-4 font-sans text-xs">

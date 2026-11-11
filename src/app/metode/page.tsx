@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { buildMetodologi } from "@/server/packages/methodology";
 import { resolveRegionId } from "@/server/regions/region-registry";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Metode Data SAKSI: Paket Jalan Tangerang",
-  description:
-    "Kenali sumber data paket jalan SAKSI, cara lokasi ditampilkan di peta, tanggal snapshot, dan batas yang perlu dipahami.",
-};
+export const metadata = createPageMetadata({
+  title: "Metode dan sumber data",
+  description: "Sumber data, metode pencocokan, presisi lokasi, dan batas interpretasi paket jalan SAKSI di Kota Tangerang.",
+  path: "/metode",
+});
 
 interface MetodePageProps {
   searchParams: Promise<{ region?: string | string[] }>;

@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/features/auth/components/login-form";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Masuk — SAKSI",
+export const metadata = createPageMetadata({
+  title: "Masuk",
   description: "Masuk ke akun SAKSI.",
-};
+  path: "/login",
+  index: false,
+});
 
 function safeReturnTo(value: string | string[] | undefined): string {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {

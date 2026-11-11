@@ -7,9 +7,10 @@ import type { AuditSummaryMetrics } from "@/contracts/audit/audit-summary.contra
 
 interface AuditHeaderProps {
   metrics: AuditSummaryMetrics;
+  regionId: string;
 }
 
-export function AuditHeader({ metrics }: AuditHeaderProps) {
+export function AuditHeader({ metrics, regionId }: AuditHeaderProps) {
   const {
     regionName,
     snapshotDate,
@@ -44,7 +45,7 @@ export function AuditHeader({ metrics }: AuditHeaderProps) {
                 Telusuri paket pekerjaan jalan di {regionName}, lalu cocokkan data anggaran dengan kondisi ruas yang Anda temui.
               </p>
               <div className="mt-7">
-                <PackageSearchForm inputId="hero-package-search" />
+                <PackageSearchForm inputId="hero-package-search" regionId={regionId} />
               </div>
             </div>
             <figcaption className="absolute right-4 bottom-4 left-4 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] leading-4 text-white/80 sm:justify-between">

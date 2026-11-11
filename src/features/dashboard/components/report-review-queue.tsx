@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { LineString, MultiLineString } from "geojson";
 import { FiCheck, FiFileText, FiRefreshCw, FiX } from "react-icons/fi";
@@ -35,6 +36,12 @@ const statusLabels: Record<ReportReviewQueueItem["status"], string> = {
 };
 
 const EDITABLE_STATUSES = new Set(["SUBMITTED", "UNDER_REVIEW", "NEEDS_MORE_INFO"]);
+
+type ReportAction = {
+  report: ReportReviewQueueItem;
+  status: "PUBLISHED" | "REJECTED";
+  anchor: HTMLButtonElement;
+};
 
 const statusOptions = [
   { value: "active", label: "Perlu ditinjau" },
@@ -129,6 +136,7 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
   canChangeStatus: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const actionPopoverRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<StatusFilter>("active");
   const [order, setOrder] = useState<SubmissionOrder>("submittedAt_desc");
   const [reports, setReports] = useState<ReportReviewQueueItem[]>([]);
@@ -138,7 +146,8 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
   const [loadedRequestKey, setLoadedRequestKey] = useState("");
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [action, setAction] = useState<{ report: ReportReviewQueueItem; status: "PUBLISHED" | "REJECTED" } | null>(null);
+  const [action, setAction] = useState<ReportAction | null>(null);
+  const [actionPosition, setActionPosition] = useState<{ top: number; left: number } | null>(null);
   const [reason, setReason] = useState("");
   const [actionError, setActionError] = useState("");
   const [isActing, setIsActing] = useState(false);
@@ -149,6 +158,41 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
   const [evidenceLoadFailed, setEvidenceLoadFailed] = useState(false);
   const requestKey = `${status}:${order}:${refreshKey}`;
   const isLoading = active && loadedRequestKey !== requestKey && !error;
+
+  useLayoutEffect(() => {
+    if (!action) return;
+
+    const updatePosition = () => {
+      if (!action.anchor.isConnected) {
+        setAction(null);
+        return;
+      }
+
+      const anchorRect = action.anchor.getBoundingClientRect();
+      const popoverRect = actionPopoverRef.current?.getBoundingClientRect();
+      const popoverWidth = popoverRect?.width ?? 320;
+      const popoverHeight = popoverRect?.height ?? 240;
+      const gap = 8;
+      const edge = 12;
+      const maxLeft = Math.max(edge, window.innerWidth - popoverWidth - edge);
+      const left = Math.min(maxLeft, Math.max(edge, anchorRect.right - popoverWidth));
+      const below = anchorRect.bottom + gap;
+      const top = below + popoverHeight <= window.innerHeight - edge
+        ? below
+        : Math.max(edge, anchorRect.top - popoverHeight - gap);
+
+      setActionPosition({ top, left });
+    };
+
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [action]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -220,6 +264,7 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
   }, [active, loadedRequestKey, order, requestKey, status]);
 
   function refresh() {
+    setAction(null);
     setReports([]);
     setNextCursor(null);
     setError("");
@@ -266,6 +311,13 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
     } finally {
       setIsActing(false);
     }
+  }
+
+  function openAction(event: MouseEvent<HTMLButtonElement>, report: ReportReviewQueueItem, nextStatus: ReportAction["status"]) {
+    setAction({ report, status: nextStatus, anchor: event.currentTarget });
+    setActionPosition(null);
+    setReason("");
+    setActionError("");
   }
 
   return (
@@ -398,14 +450,14 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
                         <>
                           {report.status !== "PUBLISHED" && <button
                             type="button"
-                            onClick={() => { setAction({ report, status: "PUBLISHED" }); setReason(""); setActionError(""); }}
+                            onClick={(event) => openAction(event, report, "PUBLISHED")}
                             aria-label={`Publikasikan laporan ${damageLabels[report.damageType]}`}
                             title="Publikasikan"
                             className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                           ><FiCheck aria-hidden="true" className="size-3.5" /></button>}
                           <button
                             type="button"
-                            onClick={() => { setAction({ report, status: "REJECTED" }); setReason(""); setActionError(""); }}
+                            onClick={(event) => openAction(event, report, "REJECTED")}
                             aria-label={`${report.status === "PUBLISHED" ? "Tarik publikasi" : "Tolak laporan"} ${damageLabels[report.damageType]}`}
                             title={report.status === "PUBLISHED" ? "Tarik publikasi" : "Tolak"}
                             className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-destructive text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
@@ -413,20 +465,6 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
                         </>
                       )}
                     </div>
-                    {action?.report.publicCode === report.publicCode && (
-                      <form className="mt-3 min-w-64 border border-border bg-muted/20 p-3" onSubmit={(event) => { event.preventDefault(); void submitAction(); }}>
-                        <p className="text-sm font-semibold text-foreground">{action.status === "PUBLISHED" ? "Publikasikan laporan ini" : "Tolak laporan ini"}</p>
-                        <label className="mt-2 block text-xs font-semibold text-muted-foreground">
-                          Alasan moderasi (wajib, minimal 3 karakter)
-                          <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={2} maxLength={1000} className="mt-1 w-full border border-input bg-white px-2 py-1.5 text-sm font-normal text-foreground" />
-                        </label>
-                        {actionError ? <p role="alert" className="mt-2 text-xs font-semibold text-destructive">{actionError}</p> : null}
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <button type="submit" disabled={reason.trim().length < 3 || isActing} className="inline-flex min-h-9 items-center bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{isActing ? "Menyimpan…" : "Simpan keputusan"}</button>
-                          <button type="button" onClick={() => setAction(null)} className="inline-flex min-h-9 items-center border border-border px-3 text-xs font-bold text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Batal</button>
-                        </div>
-                      </form>
-                    )}
                   </td>}
                 </tr>
               );
@@ -448,6 +486,40 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
             </div>
           )}
         </>
+      )}
+
+      {action && typeof document !== "undefined" && createPortal(
+        <div
+          role="presentation"
+          onClick={() => setAction(null)}
+          onKeyDown={(event) => { if (event.key === "Escape") setAction(null); }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 sm:pointer-events-none sm:bg-transparent sm:p-0"
+        >
+          <form
+            ref={actionPopoverRef}
+            aria-label={action.status === "PUBLISHED" ? "Publikasikan laporan" : "Tolak laporan"}
+            onSubmit={(event) => { event.preventDefault(); void submitAction(); }}
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              "--action-top": `${actionPosition?.top ?? -10000}px`,
+              "--action-left": `${actionPosition?.left ?? 0}px`,
+              visibility: actionPosition ? "visible" : "hidden",
+            } as CSSProperties}
+            className="w-full max-w-sm border border-border bg-white p-4 shadow-xl sm:pointer-events-auto sm:fixed sm:top-[var(--action-top)] sm:left-[var(--action-left)] sm:w-80 sm:max-w-[calc(100vw-1.5rem)] sm:p-3 sm:shadow-lg"
+          >
+            <p className="text-sm font-semibold text-foreground">{action.status === "PUBLISHED" ? "Publikasikan laporan ini" : "Tolak laporan ini"}</p>
+            <label className="mt-2 block text-xs font-semibold text-muted-foreground">
+              Alasan moderasi (wajib, minimal 3 karakter)
+              <textarea autoFocus value={reason} onChange={(event) => setReason(event.target.value)} rows={2} maxLength={1000} className="mt-1 w-full border border-input bg-white px-2 py-1.5 text-sm font-normal text-foreground" />
+            </label>
+            {actionError ? <p role="alert" className="mt-2 text-xs font-semibold text-destructive">{actionError}</p> : null}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="submit" disabled={reason.trim().length < 3 || isActing} className="inline-flex min-h-9 items-center bg-primary px-3 text-xs font-bold text-white transition-colors hover:bg-[#004682] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">{isActing ? "Menyimpan…" : "Simpan keputusan"}</button>
+              <button type="button" onClick={() => setAction(null)} className="inline-flex min-h-9 items-center border border-border px-3 text-xs font-bold text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Batal</button>
+            </div>
+          </form>
+        </div>,
+        document.body,
       )}
 
       {selectedReport && (

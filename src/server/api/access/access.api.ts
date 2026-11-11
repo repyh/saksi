@@ -1,8 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { grantIndividualPermissions, requireRequestPermission, revokePermissionGrant } from "@/server/authorization/authority";
+import { activeGrantWhere } from "@/server/authorization/permissions";
 import { recordAuthorizationEvent } from "@/server/authorization/audit";
-import { createRegistrationInviteSchema, grantAccountPermissionsSchema, revokeAccountPermissionSchema, updateAccountProfileSchema } from "./access-schema";
+import { changeAccountStatusSchema, createRegistrationInviteSchema, deleteAccountSchema, grantAccountPermissionsSchema, revokeAccountPermissionSchema, updateAccountProfileSchema } from "./access-schema";
 import { PERMISSION_ASSIGNMENT_POLICY, PERMISSION_CATALOG, PERMISSION_PRESETS, PRESET_ASSIGNMENT_POLICY, isPermissionCode, isPermissionPresetCode } from "@/server/authorization/catalog";
 import { ApiError } from "../shared/api-error";
 import { ApiController } from "../shared/api-controller";
@@ -51,6 +52,7 @@ export class AccessApi extends ApiController {
           email: true,
           emailVerified: true,
           createdAt: true,
+          disabledAt: true,
           permissionGrants: {
             where: { revokedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
             orderBy: { grantedAt: "desc" },
@@ -67,6 +69,7 @@ export class AccessApi extends ApiController {
           email: account.email,
           emailVerified: account.emailVerified,
           createdAt: account.createdAt.toISOString(),
+          disabledAt: account.disabledAt?.toISOString() ?? null,
           permissionCodes: [...new Set(account.permissionGrants.map(({ permissionCode }) => permissionCode))].sort(),
         })),
       };
@@ -122,6 +125,122 @@ export class AccessApi extends ApiController {
     return this.noStore(response);
   }
 
+  async changeAccountStatus(request: Request, accountId: string): Promise<Response> {
+    const response = await this.respond(async () => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Layanan akun belum tersedia.");
+      }
+      this.assertInviteRequestOrigin(request);
+      const actor = await requireRequestPermission(request.headers, "access.users.disable");
+      let payload: unknown;
+      try { payload = await request.json(); } catch { throw new ApiError(400, "INVALID_REQUEST", "Status akun tidak valid."); }
+      const parsed = changeAccountStatusSchema.safeParse(payload);
+      if (!parsed.success) throw new ApiError(400, "INVALID_REQUEST", "Status akun dan alasan minimal 8 karakter wajib diisi.");
+
+      const targetId = accountId.trim();
+      if (!targetId) throw new ApiError(400, "INVALID_ACCOUNT", "ID akun tidak valid.");
+      if (actor.id === targetId) throw new ApiError(403, "SELF_ACCOUNT_ACTION", "Anda tidak dapat mengubah status akun sendiri.");
+
+      return prisma.$transaction(async (tx) => {
+        const now = new Date();
+        const target = await tx.user.findUnique({ where: { id: targetId }, select: { id: true, disabledAt: true } });
+        if (!target) throw new ApiError(404, "ACCOUNT_NOT_FOUND", "Akun tidak ditemukan.");
+        const currentlyDisabled = target.disabledAt !== null;
+        if (currentlyDisabled === parsed.data.disabled) {
+          return { id: target.id, disabledAt: target.disabledAt?.toISOString() ?? null };
+        }
+
+        const anotherLifecycleAdmin = await tx.userPermissionGrant.findFirst({
+          where: {
+            userId: { not: targetId },
+            permissionCode: "access.users.disable",
+            ...activeGrantWhere(now),
+            user: { disabledAt: null },
+          },
+          select: { id: true },
+        });
+        if (!anotherLifecycleAdmin) {
+          throw new ApiError(409, "LAST_ACCOUNT_LIFECYCLE_ADMIN", "Berikan izin pengelolaan akun kepada admin lain sebelum mengubah status akun ini.");
+        }
+
+        const disabledAt = parsed.data.disabled ? now : null;
+        await tx.user.update({ where: { id: targetId }, data: { disabledAt } });
+        if (parsed.data.disabled) {
+          await tx.session.deleteMany({ where: { userId: targetId } });
+          await tx.registrationInvite.updateMany({
+            where: { createdByUserId: targetId, redeemedAt: null, revokedAt: null },
+            data: { revokedAt: now, revokedByUserId: actor.id },
+          });
+        }
+        await recordAuthorizationEvent(tx, {
+          actorUserId: actor.id,
+          subjectUserId: targetId,
+          action: parsed.data.disabled ? "account.disabled" : "account.enabled",
+          resourceType: "user",
+          resourceId: targetId,
+          reason: parsed.data.reason,
+          metadata: { disabledAt: disabledAt?.toISOString() ?? null },
+        });
+        return { id: target.id, disabledAt: disabledAt?.toISOString() ?? null };
+      }, { isolationLevel: "Serializable" });
+    }, { code: "ACCOUNT_STATUS_UPDATE_FAILED", message: "Status akun belum dapat diperbarui." });
+    return this.noStore(response);
+  }
+
+  async deleteAccount(request: Request, accountId: string): Promise<Response> {
+    const response = await this.respond(async () => {
+      if (!process.env.DATABASE_URL) {
+        throw new ApiError(503, "ACCOUNT_DIRECTORY_UNAVAILABLE", "Layanan akun belum tersedia.");
+      }
+      this.assertInviteRequestOrigin(request);
+      const actor = await requireRequestPermission(request.headers, "access.users.delete");
+      let payload: unknown;
+      try { payload = await request.json(); } catch { throw new ApiError(400, "INVALID_REQUEST", "Konfirmasi penghapusan akun tidak valid."); }
+      const parsed = deleteAccountSchema.safeParse(payload);
+      if (!parsed.success) throw new ApiError(400, "INVALID_REQUEST", "Masukkan email akun secara tepat dan alasan minimal 8 karakter.");
+
+      const targetId = accountId.trim();
+      if (!targetId) throw new ApiError(400, "INVALID_ACCOUNT", "ID akun tidak valid.");
+      if (actor.id === targetId) throw new ApiError(403, "SELF_ACCOUNT_ACTION", "Anda tidak dapat menghapus akun sendiri.");
+
+      await prisma.$transaction(async (tx) => {
+        const target = await tx.user.findUnique({ where: { id: targetId }, select: { id: true, email: true, disabledAt: true } });
+        if (!target) throw new ApiError(404, "ACCOUNT_NOT_FOUND", "Akun tidak ditemukan.");
+        if (!target.disabledAt) throw new ApiError(409, "ACCOUNT_MUST_BE_DISABLED", "Nonaktifkan akun terlebih dahulu sebelum menghapusnya.");
+        if (target.email.trim().toLocaleLowerCase("en-US") !== parsed.data.confirmationEmail.trim().toLocaleLowerCase("en-US")) {
+          throw new ApiError(400, "ACCOUNT_CONFIRMATION_MISMATCH", "Email konfirmasi tidak cocok dengan akun yang dipilih.");
+        }
+
+        const anotherDeletionAdmin = await tx.userPermissionGrant.findFirst({
+          where: {
+            userId: { not: targetId },
+            permissionCode: "access.users.delete",
+            ...activeGrantWhere(new Date()),
+            user: { disabledAt: null },
+          },
+          select: { id: true },
+        });
+        if (!anotherDeletionAdmin) {
+          throw new ApiError(409, "LAST_ACCOUNT_DELETION_ADMIN", "Berikan izin penghapusan akun kepada admin lain sebelum menghapus akun ini.");
+        }
+
+        await recordAuthorizationEvent(tx, {
+          actorUserId: actor.id,
+          subjectUserId: targetId,
+          action: "account.deleted",
+          resourceType: "user",
+          resourceId: targetId,
+          reason: parsed.data.reason,
+          metadata: { disabledAt: target.disabledAt.toISOString() },
+        });
+        await tx.user.delete({ where: { id: targetId } });
+      }, { isolationLevel: "Serializable" });
+
+      return { id: targetId, deleted: true };
+    }, { code: "ACCOUNT_DELETE_FAILED", message: "Akun belum dapat dihapus." });
+    return this.noStore(response);
+  }
+
   async listAccountPermissionGrants(request: Request, accountId: string): Promise<Response> {
     const response = await this.respond(async () => {
       if (!process.env.DATABASE_URL) {
@@ -157,7 +276,7 @@ export class AccessApi extends ApiController {
           grantedAt: grant.grantedAt.toISOString(),
           expiresAt: grant.expiresAt?.toISOString() ?? null,
           reason: grant.reason,
-          grantedByName: grant.grantedBy.name,
+          grantedByName: grant.grantedBy?.name ?? "Akun dihapus",
         })),
       };
     }, { code: "ACCOUNT_PERMISSIONS_UNAVAILABLE", message: "Izin akun belum dapat dimuat." });

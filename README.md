@@ -88,7 +88,7 @@ Build menjalankan `prisma generate` melalui `prebuild`, tetapi tidak memerlukan 
 
 ### Mengaktifkan auth dan fitur laporan
 
-Salin `.env.example` menjadi `.env.local`, lalu isi nilai yang sesuai untuk Supabase dan Better Auth. Minimal, fitur database memerlukan `DATABASE_URL`, `BETTER_AUTH_URL`, dan `BETTER_AUTH_SECRET`; migrasi memakai `DIRECT_URL`. Penyimpanan bukti laporan juga memerlukan `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY`. Rahasia server tidak boleh dimasukkan ke kode browser atau repositori.
+Salin `.env.example` menjadi `.env.local`, lalu isi nilai yang sesuai untuk Supabase dan Better Auth. Minimal, fitur database memerlukan `DATABASE_URL`, `BETTER_AUTH_URL`, dan `BETTER_AUTH_SECRET`; migrasi memakai `DIRECT_URL`. Penyimpanan bukti laporan juga memerlukan `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY`. Set `SITE_URL` ke origin HTTPS publik saat deploy agar canonical, Open Graph, robots.txt, dan sitemap memakai host produksi. Rahasia server tidak boleh dimasukkan ke kode browser atau repositori.
 
 Setelah koneksi database dikonfigurasi, terapkan migrasi yang sudah ada dan siapkan bucket privat:
 

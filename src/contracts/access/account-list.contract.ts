@@ -7,6 +7,7 @@ export const accountListItemSchema = z.object({
   email: z.email(),
   emailVerified: z.boolean(),
   createdAt: z.string().datetime(),
+  disabledAt: z.string().datetime().nullable(),
   permissionCodes: z.array(z.string()),
 });
 

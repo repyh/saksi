@@ -30,10 +30,12 @@ export function PackageReportsSection({
   reports,
   regionId,
   rup,
+  loading = false,
 }: {
   reports: PublicReportsResponse | null;
   regionId: string;
   rup: string;
+  loading?: boolean;
 }) {
   const showSimulationBadge = simulationBadgeEnabled();
 
@@ -46,7 +48,11 @@ export function PackageReportsSection({
         {showSimulationBadge ? <Badge variant="simulation">SIMULASI PROTOTIPE</Badge> : null}
       </div>
 
-      {!reports ? (
+      {loading ? (
+        <div role="status" className="mt-3 border border-dashed border-border bg-muted/10 p-4 font-sans text-sm text-muted-foreground">
+          Memuat laporan warga…
+        </div>
+      ) : !reports ? (
         <div role="status" className="mt-3 border border-dashed border-border bg-muted/10 p-4 font-sans text-sm leading-relaxed text-muted-foreground">
           Daftar laporan warga belum tersedia. Fitur ini memerlukan koneksi basis data laporan yang sudah
           dikonfigurasi.

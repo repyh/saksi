@@ -1,4 +1,5 @@
 import "server-only";
+import { revalidateTag } from "next/cache";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -180,11 +181,13 @@ export class ReportsApi extends ApiController {
         throw new ApiError(400, "INVALID_STATUS_CHANGE", "Status dan alasan moderasi wajib diisi dengan benar.");
       }
 
-      return changeReportStatus({
+      const result = await changeReportStatus({
         publicCode,
         actorUserId: user.id,
         change: parsedBody.data,
       });
+      revalidateTag("published-reports", { expire: 0 });
+      return result;
     }, {
       code: "REPORT_STATUS_UPDATE_FAILED",
       message: "Status laporan belum dapat diubah. Coba lagi nanti.",

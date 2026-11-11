@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft, FiArrowRight, FiExternalLink } from "react-icons/fi";
+import { JsonLd } from "@/components/seo/json-ld";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { getVendor } from "@/server/packages/service";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
+import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
 interface PenyediaDetailPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ region?: string | string[] }>;
+  searchParams: Promise<{ region?: string | string[]; returnTo?: string | string[] }>;
 }
 
 const KATEGORI_LABEL: Record<string, string> = {
@@ -21,30 +22,79 @@ const KATEGORI_LABEL: Record<string, string> = {
   SEMUA: "Campuran",
 };
 
-export async function generateMetadata({ params, searchParams }: PenyediaDetailPageProps): Promise<Metadata> {
+function providerDirectoryHref(returnTo: string | undefined, regionId: string) {
+  const fallback = new URLSearchParams({ region: regionId });
+  if (!returnTo || returnTo.length > 512) return `/penyedia?${fallback.toString()}`;
+
+  let candidate: URL;
+  try {
+    candidate = new URL(returnTo, "https://saksi.invalid");
+  } catch {
+    return `/penyedia?${fallback.toString()}`;
+  }
+
+  if (candidate.origin !== "https://saksi.invalid" || candidate.pathname !== "/penyedia") {
+    return `/penyedia?${fallback.toString()}`;
+  }
+
+  const params = new URLSearchParams({ region: regionId });
+  const query = candidate.searchParams.get("q")?.trim().slice(0, 120);
+  const sort = candidate.searchParams.get("urut");
+  const direction = candidate.searchParams.get("arah");
+  if (query) params.set("q", query);
+  if (sort === "paket" || sort === "nama" || sort === "tahun" || sort === "nilai") {
+    params.set("urut", sort);
+  }
+  if (direction === "asc" || direction === "desc") params.set("arah", direction);
+  return `/penyedia?${params.toString()}`;
+}
+
+export async function generateMetadata({ params, searchParams }: PenyediaDetailPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const regionId = resolveRegionId(query.region);
   const data = await getVendor(slug, regionId);
-  if (!data) return { title: "Penyedia tidak ditemukan — SAKSI" };
+  if (!data) {
+    return createPageMetadata({
+      title: "Penyedia tidak ditemukan",
+      description: "Rekam penyedia ini tidak ditemukan di katalog SAKSI.",
+      path: `/penyedia/${encodeURIComponent(slug)}`,
+      index: false,
+    });
+  }
 
-  return {
-    title: `${data.summary.nama} — Penyedia SAKSI`,
-    description: `Rekam kontrak ${data.summary.nama} pada paket jalan ${getRegion(regionId).label} dari LPSE dan Data INAPROC.`,
-  };
+  return createPageMetadata({
+    title: `Rekam kontrak ${data.summary.nama}`,
+    description: `Paket jalan dan rekam kontrak ${data.summary.nama} di ${getRegion(regionId).label}, berdasarkan catatan LPSE/SPSE dan Data INAPROC.`,
+    path: `/penyedia/${encodeURIComponent(slug)}`,
+  });
 }
 
 export default async function PenyediaDetailPage({ params, searchParams }: PenyediaDetailPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const regionId = resolveRegionId(query.region);
+  const returnTo = Array.isArray(query.returnTo) ? query.returnTo[0] : query.returnTo;
+  const directoryHref = providerDirectoryHref(returnTo, regionId);
   const data = await getVendor(slug, regionId);
   if (!data) notFound();
 
   const { summary, items, totalNilai } = data;
+  const canonicalPath = `/penyedia/${encodeURIComponent(slug)}`;
 
   return (
+    <>
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Penyedia", item: absoluteSiteUrl("/penyedia") },
+          { "@type": "ListItem", position: 2, name: summary.nama, item: absoluteSiteUrl(canonicalPath) },
+        ],
+      }}
+    />
     <CatalogPageShell variant="detail" header={
       <>
-          <Link href={`/penyedia?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
+          <Link href={directoryHref} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
             <FiArrowLeft aria-hidden="true" className="size-3.5" /> Semua penyedia
           </Link>
 
@@ -101,7 +151,7 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
                       <span className="block font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-primary">
                         RUP {item.kode_rup} · TA {item.tahun}
                       </span>
-                      <Link href={`/paket/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
+                      <Link href={`/project/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="mt-0.5 block font-semibold leading-snug text-foreground underline-offset-2 hover:text-primary hover:underline">
                         {item.nama}
                       </Link>
                       <span className="mt-0.5 block font-sans text-[10px] text-muted-foreground">
@@ -135,12 +185,13 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
 
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <Link href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-1.5 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">
-            Lihat di peta audit <FiArrowRight aria-hidden="true" className="size-3.5" />
+            Buka peta semua paket <FiArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
           <p className="font-sans text-[11px] text-muted-foreground">
             NPWP hanya ada pada rekam LPSE dan disamarkan di sana; penyedia dibedakan lewat nama.
           </p>
         </div>
     </CatalogPageShell>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { FiCheck, FiCopy, FiEdit2, FiEye, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiUserX, FiX } from "react-icons/fi";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { FiCheck, FiCopy, FiEdit2, FiEye, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiUserCheck, FiUserX, FiX } from "react-icons/fi";
 import { accountListResponseSchema, type AccountListItem } from "@/contracts/access/account-list.contract";
 import type { ApiResult } from "@/contracts/shared/api.contract";
 import { PERMISSION_ASSIGNMENT_POLICY, PERMISSION_CATALOG, PERMISSION_PRESETS } from "@/server/authorization/catalog";
@@ -9,6 +9,7 @@ import { AccountEditDialog } from "@/features/dashboard/components/account-edit-
 
 type InviteResult = { id: string; email: string; expiresAt: string; inviteUrl: string; permissionPresetCode: string | null; permissionCodes: string[] };
 type InviteAccessMode = "none" | "preset" | "permissions";
+type AccountLifecycleAction = { account: AccountListItem; kind: "disable" | "enable" | "delete" };
 
 const grantablePermissionCodes = new Set<string>(PERMISSION_ASSIGNMENT_POLICY["access.permissions.assign"]);
 const permissionGroups = [
@@ -57,7 +58,7 @@ function IconButton({ label, children, onClick, disabled = false, tone = "defaul
   );
 }
 
-export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssignPermissions }: { canInvite: boolean; canEdit: boolean; canApplyPresets: boolean; canAssignPermissions: boolean }) {
+export function AccountManagement({ canInvite, canEdit, canDisable, canDelete, canApplyPresets, canAssignPermissions }: { canInvite: boolean; canEdit: boolean; canDisable: boolean; canDelete: boolean; canApplyPresets: boolean; canAssignPermissions: boolean }) {
   const [accounts, setAccounts] = useState<AccountListItem[]>([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +77,12 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
   const [inviteError, setInviteError] = useState("");
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [lifecycleAction, setLifecycleAction] = useState<AccountLifecycleAction | null>(null);
+  const [lifecycleReason, setLifecycleReason] = useState("");
+  const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState("");
+  const [lifecycleError, setLifecycleError] = useState("");
+  const [isSavingLifecycle, setIsSavingLifecycle] = useState(false);
+  const lifecycleDialogRef = useRef<HTMLDialogElement>(null);
 
   const refreshAccounts = useCallback(() => {
     setIsLoading(true);
@@ -87,6 +94,13 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
     setAccounts((current) => current.map((account) => account.id === accountId ? { ...account, name } : account));
     setSelectedAccount((current) => current?.id === accountId ? { ...current, name } : current);
   }, []);
+
+  useEffect(() => {
+    const dialog = lifecycleDialogRef.current;
+    if (!lifecycleAction || !dialog || dialog.open) return;
+    dialog.showModal();
+    return () => { if (dialog.open) dialog.close(); };
+  }, [lifecycleAction]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,8 +129,50 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
   const visibleAccounts = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("id-ID");
     if (!normalized) return accounts;
-    return accounts.filter((account) => `${account.name} ${account.email} ${permissionSummary(account.permissionCodes)} ${account.permissionCodes.join(" ")}`.toLocaleLowerCase("id-ID").includes(normalized));
+    return accounts.filter((account) => `${account.name} ${account.email} ${account.disabledAt ? "nonaktif" : "aktif"} ${permissionSummary(account.permissionCodes)} ${account.permissionCodes.join(" ")}`.toLocaleLowerCase("id-ID").includes(normalized));
   }, [accounts, query]);
+
+  function openLifecycleAction(account: AccountListItem, kind: AccountLifecycleAction["kind"]) {
+    setLifecycleReason("");
+    setDeleteConfirmationEmail("");
+    setLifecycleError("");
+    setLifecycleAction({ account, kind });
+  }
+
+  async function submitLifecycleAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!lifecycleAction || isSavingLifecycle || lifecycleReason.trim().length < 8) return;
+    setIsSavingLifecycle(true);
+    setLifecycleError("");
+    const { account, kind } = lifecycleAction;
+    try {
+      const isDelete = kind === "delete";
+      const response = await fetch(isDelete ? `/api/access/accounts/${encodeURIComponent(account.id)}` : `/api/access/accounts/${encodeURIComponent(account.id)}/status`, {
+        method: isDelete ? "DELETE" : "PATCH",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(isDelete
+          ? { confirmationEmail: deleteConfirmationEmail.trim(), reason: lifecycleReason.trim() }
+          : { disabled: kind === "disable", reason: lifecycleReason.trim() }),
+      });
+      const result = await response.json() as ApiResult<{ id: string; disabledAt?: string | null; deleted?: boolean }>;
+      if (!response.ok || result.error) throw new Error(result.error?.message ?? "Perubahan akun belum dapat disimpan.");
+      if (isDelete) {
+        setAccounts((current) => current.filter(({ id }) => id !== account.id));
+        setNotice(`Akun ${account.email} dihapus. Laporan warga tetap tersimpan tanpa identitas akun.`);
+      } else {
+        const disabledAt = result.data.disabledAt ?? null;
+        setAccounts((current) => current.map((item) => item.id === account.id ? { ...item, disabledAt } : item));
+        setNotice(disabledAt ? `Akun ${account.email} dinonaktifkan dan semua sesi dicabut.` : `Akun ${account.email} diaktifkan kembali.`);
+      }
+      lifecycleDialogRef.current?.close();
+      setLifecycleAction(null);
+    } catch (cause) {
+      setLifecycleError(cause instanceof Error ? cause.message : "Perubahan akun belum dapat disimpan.");
+    } finally {
+      setIsSavingLifecycle(false);
+    }
+  }
 
   function openInvite() {
     setInviteEmail("");
@@ -214,7 +270,7 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
               <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">{accounts.length ? "Tidak ada akun yang cocok dengan pencarian." : "Belum ada akun untuk ditampilkan."}</td></tr>
             ) : visibleAccounts.map((account) => (
                 <tr key={account.id} className="border-t border-border bg-white align-middle transition-colors hover:bg-muted/20">
-                  <td className="px-4 py-3.5 font-semibold">{account.name}</td>
+                  <td className="px-4 py-3.5 font-semibold">{account.name}{account.disabledAt && <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.1em] text-red-800">Akun nonaktif</span>}</td>
                   <td className="px-4 py-3.5 text-muted-foreground">{account.email}</td>
                   <td className="px-4 py-3.5"><span className={`inline-flex items-center gap-1.5 text-xs ${account.emailVerified ? "text-emerald-800" : "text-amber-800"}`}><span className={`size-1.5 rounded-full ${account.emailVerified ? "bg-emerald-600" : "bg-amber-500"}`} />{account.emailVerified ? "Terverifikasi" : "Belum terverifikasi"}</span></td>
                   <td className="px-4 py-3.5 text-muted-foreground" title={account.permissionCodes.join(", ")}>{permissionSummary(account.permissionCodes)}</td>
@@ -224,12 +280,25 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
                       <IconButton label={canEdit || canAssignPermissions ? "Lihat atau edit akun" : "Lihat akun"} onClick={() => { setNotice(""); setSelectedAccount(account); }}>
                         {canEdit || canAssignPermissions ? <FiEdit2 aria-hidden="true" className="size-4" /> : <FiEye aria-hidden="true" className="size-4" />}
                       </IconButton>
-                      <IconButton label="Nonaktifkan akun (mockup)" tone="danger" onClick={() => setNotice("Mockup: akun tidak dinonaktifkan dan sesi tidak dicabut.")}>
-                        <FiUserX aria-hidden="true" className="size-4" />
-                      </IconButton>
-                      <IconButton label="Hapus akun (mockup)" tone="danger" onClick={() => setNotice("Mockup: akun dan riwayatnya tidak dihapus.")}>
-                        <FiTrash2 aria-hidden="true" className="size-4" />
-                      </IconButton>
+                      {canDisable && !account.isCurrentUser && (
+                        <IconButton
+                          label={account.disabledAt ? "Aktifkan akun" : "Nonaktifkan akun"}
+                          tone={account.disabledAt ? "default" : "danger"}
+                          onClick={() => openLifecycleAction(account, account.disabledAt ? "enable" : "disable")}
+                        >
+                          {account.disabledAt ? <FiUserCheck aria-hidden="true" className="size-4" /> : <FiUserX aria-hidden="true" className="size-4" />}
+                        </IconButton>
+                      )}
+                      {canDelete && !account.isCurrentUser && (
+                        <IconButton
+                          label={account.disabledAt ? "Hapus akun nonaktif" : "Nonaktifkan akun terlebih dahulu untuk menghapus"}
+                          tone="danger"
+                          disabled={!account.disabledAt}
+                          onClick={() => openLifecycleAction(account, "delete")}
+                        >
+                          <FiTrash2 aria-hidden="true" className="size-4" />
+                        </IconButton>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -237,7 +306,56 @@ export function AccountManagement({ canInvite, canEdit, canApplyPresets, canAssi
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">Aksi nonaktifkan dan hapus hanya tampilan mockup. Akun, izin, dan sesi tidak berubah.</p>
+      {canDelete && <p className="mt-2 text-xs leading-5 text-muted-foreground">Penghapusan permanen hanya tersedia setelah akun dinonaktifkan. Laporan warga dan jejak audit tetap dipertahankan.</p>}
+
+      <dialog
+        ref={lifecycleDialogRef}
+        aria-labelledby="account-lifecycle-title"
+        onClose={() => setLifecycleAction(null)}
+        onCancel={(event) => { if (isSavingLifecycle) event.preventDefault(); }}
+        onClick={(event) => { if (event.target === lifecycleDialogRef.current && !isSavingLifecycle) lifecycleDialogRef.current?.close(); }}
+        className="m-auto max-h-[min(90dvh,38rem)] w-[min(100%-2rem,36rem)] max-w-none overflow-y-auto border border-border bg-white p-0 text-foreground shadow-xl backdrop:bg-slate-950/55"
+      >
+        {lifecycleAction && (
+          <form onSubmit={(event) => void submitLifecycleAction(event)} className="grid gap-4 p-5 sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="account-lifecycle-title" className="font-heading text-xl font-bold">
+                  {lifecycleAction.kind === "disable" ? "Nonaktifkan akun" : lifecycleAction.kind === "enable" ? "Aktifkan kembali akun" : "Hapus akun permanen"}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">{lifecycleAction.account.name} · {lifecycleAction.account.email}</p>
+              </div>
+              <IconButton label="Tutup dialog status akun" onClick={() => lifecycleDialogRef.current?.close()} disabled={isSavingLifecycle}>
+                <FiX aria-hidden="true" className="size-4" />
+              </IconButton>
+            </div>
+
+            {lifecycleAction.kind === "disable" ? (
+              <p className="bg-amber-50 px-3 py-2.5 text-sm leading-5 text-amber-950">Akun tidak dapat masuk lagi, sesi aktif dicabut, dan undangan yang belum digunakan dibatalkan.</p>
+            ) : lifecycleAction.kind === "enable" ? (
+              <p className="bg-muted/50 px-3 py-2.5 text-sm leading-5 text-foreground">Akun dapat masuk kembali setelah diaktifkan. Sesi lama tidak dipulihkan.</p>
+            ) : (
+              <>
+                <p className="bg-red-50 px-3 py-2.5 text-sm leading-5 text-red-950">Tindakan permanen. Profil dan izin akun dihapus; laporan warga dan catatan audit tetap dipertahankan tanpa tautan ke akun ini.</p>
+                <label className="grid gap-1.5 text-xs font-bold">Ketik email akun untuk konfirmasi
+                  <input type="email" autoComplete="off" required value={deleteConfirmationEmail} onChange={(event) => setDeleteConfirmationEmail(event.target.value)} className="h-10 border border-input px-3 text-sm font-normal outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20" />
+                </label>
+              </>
+            )}
+
+            <label className="grid gap-1.5 text-xs font-bold">Alasan tindakan
+              <textarea required minLength={8} maxLength={500} rows={3} value={lifecycleReason} onChange={(event) => setLifecycleReason(event.target.value)} placeholder="Tulis alasan, minimal 8 karakter" className="resize-none border border-input px-3 py-2 text-sm font-normal outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20" />
+            </label>
+            {lifecycleError && <p role="alert" className="bg-red-50 px-3 py-2.5 text-sm text-red-900">{lifecycleError}</p>}
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <button type="button" onClick={() => lifecycleDialogRef.current?.close()} disabled={isSavingLifecycle} className="h-10 cursor-pointer border border-border px-4 text-xs font-bold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">Batal</button>
+              <button type="submit" disabled={isSavingLifecycle || lifecycleReason.trim().length < 8 || (lifecycleAction.kind === "delete" && deleteConfirmationEmail.trim().toLocaleLowerCase("en-US") !== lifecycleAction.account.email.toLocaleLowerCase("en-US"))} className={`h-10 cursor-pointer px-4 text-xs font-bold text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-45 ${lifecycleAction.kind === "delete" || lifecycleAction.kind === "disable" ? "bg-red-700 hover:bg-red-800 focus-visible:outline-red-700" : "bg-primary hover:bg-primary/90 focus-visible:outline-primary"}`}>
+                {isSavingLifecycle ? "Menyimpan…" : lifecycleAction.kind === "disable" ? "Nonaktifkan" : lifecycleAction.kind === "enable" ? "Aktifkan kembali" : "Hapus permanen"}
+              </button>
+            </div>
+          </form>
+        )}
+      </dialog>
 
       {selectedAccount && (
         <AccountEditDialog

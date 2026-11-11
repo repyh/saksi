@@ -66,6 +66,17 @@ export const auth = betterAuth({
         },
       },
     },
+    session: {
+      create: {
+        before: async (session) => {
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { disabledAt: true },
+          });
+          return user !== null && user.disabledAt === null;
+        },
+      },
+    },
   },
   rateLimit: {
     enabled: true,

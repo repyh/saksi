@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import ReportPrototype from "@/features/reports/components/report-prototype";
+import { createPageMetadata } from "@/lib/seo";
 import { getRegion, regionSummary, resolveRegionId } from "@/server/regions/region-registry";
 
-export const metadata: Metadata = {
-  title: "Laporkan Kerusakan Jalan — SAKSI",
-  description: "Simulasi alur laporan kerusakan jalan SAKSI.",
-};
+export const metadata = createPageMetadata({
+  title: "Laporkan kerusakan jalan",
+  description: "Buat laporan kerusakan jalan di Kota Tangerang dengan informasi lokasi yang jelas.",
+  path: "/laporan",
+  index: false,
+});
 
 interface LaporanPageProps {
   searchParams: Promise<{ region?: string | string[] }>;

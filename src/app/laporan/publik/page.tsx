@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo";
 import { listPublishedReports } from "@/server/reports/public-report.repository";
 import { searchRoadPackages } from "@/server/packages/service";
 import { getRegion, regionSummary, resolveRegionId } from "@/server/regions/region-registry";
 import type { PublicReportsResponse } from "@/contracts/reports/public-report.contract";
 
-export const metadata: Metadata = {
-  title: "Laporan Publik — SAKSI",
-  description: "Laporan kerusakan jalan warga yang sudah disetujui untuk ditampilkan.",
-};
+export const metadata = createPageMetadata({
+  title: "Laporan publik kerusakan jalan",
+  description: "Telusuri laporan kerusakan jalan yang telah disetujui untuk ditampilkan; identitas pelapor tetap dirahasiakan.",
+  path: "/laporan/publik",
+});
 
 const DAMAGE_LABELS: Record<string, string> = {
   POTHOLE: "Lubang",
@@ -189,7 +190,7 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                         <dd className="mt-0.5 text-foreground">
                           {report.package ? (
                             <Link
-                              href={`/paket/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(regionId)}`}
+                              href={`/project/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(regionId)}`}
                               className="font-semibold text-primary underline-offset-4 hover:underline"
                             >
                               RUP {report.package.rup}

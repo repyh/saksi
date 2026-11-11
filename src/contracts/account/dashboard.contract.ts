@@ -15,6 +15,8 @@ export type DashboardAccount = {
     changeReportStatus: boolean;
     inviteAccounts: boolean;
     editAccounts: boolean;
+    disableAccounts: boolean;
+    deleteAccounts: boolean;
     applyPresets: boolean;
     assignPermissions: boolean;
   };

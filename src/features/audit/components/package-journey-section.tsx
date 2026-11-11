@@ -16,7 +16,7 @@ const steps = [
   },
 ];
 
-export function PackageJourneySection() {
+export function PackageJourneySection({ regionId }: { regionId: string }) {
   return (
     <section aria-labelledby="package-journey-title" className="bg-muted/40">
       <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
@@ -35,7 +35,16 @@ export function PackageJourneySection() {
               </span>
               <div>
                 <h3 className="text-base font-bold leading-6 text-foreground sm:text-lg">
-                  {step.title}
+                  {index === 0 ? (
+                    <Link
+                      href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`}
+                      className="inline-flex min-h-8 items-center gap-2 text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      {step.title}<FiArrowRight aria-hidden="true" className="size-4 shrink-0" />
+                    </Link>
+                  ) : (
+                    step.title
+                  )}
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
                   {step.description}
@@ -45,7 +54,7 @@ export function PackageJourneySection() {
           ))}
         </ol>
 
-        <div className="mt-8 flex flex-col items-start gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-sm leading-6 text-muted-foreground">
             Menemukan jalan rusak di sekitar Anda? Laporkan dengan foto dan titik lokasi; laporan masuk antrean tinjauan sebelum tampil publik.
           </p>
@@ -57,7 +66,6 @@ export function PackageJourneySection() {
             <FiArrowRight aria-hidden="true" className="size-4" />
           </Link>
         </div>
-
       </div>
     </section>
   );

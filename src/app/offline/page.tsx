@@ -1,4 +1,12 @@
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/seo";
+
+export const metadata = createPageMetadata({
+  title: "Mode luring",
+  description: "Halaman bantuan saat koneksi internet terputus.",
+  path: "/offline",
+  index: false,
+});
 
 export default function OfflinePage() {
   return (

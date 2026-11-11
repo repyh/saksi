@@ -1,29 +1,29 @@
 export const PERMISSION_CATALOG = [
   { code: "reports.read_queue", description: "View report queue metadata", sensitive: false },
   { code: "reports.read_deidentified", description: "Read report details without reporter identity or restricted evidence", sensitive: true },
+  { code: "reports.change_status", description: "Publish or reject reports with a required moderation reason", sensitive: true },
   { code: "reports.read_sensitive_evidence", description: "View private report photo evidence", sensitive: true },
   { code: "reports.read_precise_location", description: "View exact report locations and annotated road segments", sensitive: true },
   { code: "access.users.read", description: "View staff accounts and access state", sensitive: true },
   { code: "access.permissions.read_own", description: "View your own active permission details in the dashboard", sensitive: false },
   { code: "access.users.edit", description: "Update staff account profile details", sensitive: true },
   { code: "access.users.invite", description: "Invite staff accounts", sensitive: true },
+  { code: "access.users.disable", description: "Disable or restore staff accounts and revoke sessions", sensitive: true },
+  { code: "access.users.delete", description: "Permanently remove a disabled staff account", sensitive: true },
   { code: "access.presets.apply", description: "Apply approved permission presets to individual grants", sensitive: true },
   { code: "access.permissions.assign", description: "Grant or revoke approved individual permissions", sensitive: true },
 ] as const;
 
 // Keep not-yet-implemented permissions documented here, but out of the active
 // catalog. They cannot be assigned, included in presets, or resolved by the authority.
-// Reports: assignment, status changes, notes, redaction, export.
+// Reports: assignment, notes, redaction, export.
 // { code: "reports.assign", description: "Assign or reassign reports for review", sensitive: false },
-// { code: "reports.change_status", description: "Change report moderation status", sensitive: true },
 // { code: "reports.add_internal_note", description: "Add staff-only notes to reports", sensitive: true },
 // { code: "reports.redact", description: "Redact sensitive material from public projections", sensitive: true },
 // { code: "reports.export", description: "Export report records", sensitive: true },
 // Analytics: no analytics read or export workflow exists yet.
 // { code: "analytics.read", description: "View aggregate analytics", sensitive: false },
 // { code: "analytics.export", description: "Export aggregate analytics", sensitive: true },
-// Account operations: disable and audit history are not implemented.
-// { code: "access.users.disable", description: "Disable staff accounts and revoke sessions", sensitive: true },
 // { code: "access.audit.read", description: "Read authorization and moderation audit events", sensitive: true },
 // Data operations: ingestion, import review, and snapshot publishing are not implemented.
 // { code: "sources.read", description: "View source and ingestion metadata", sensitive: false },
@@ -41,15 +41,15 @@ export const PRESET_ASSIGNMENT_POLICY = {
 export const PERMISSION_ASSIGNMENT_POLICY = {
   "access.permissions.assign": PERMISSION_CATALOG
     .map(({ code }) => code)
-    .filter((code) => code !== "access.presets.apply" && code !== "access.permissions.assign"),
+    .filter((code) => !["access.presets.apply", "access.permissions.assign", "access.users.disable", "access.users.delete"].includes(code)),
 } as const satisfies Partial<Record<PermissionCode, readonly PermissionCode[]>>;
 
 export const PERMISSION_PRESETS = [
   {
     code: "moderator",
     name: "Moderator",
-    description: "View report queue, report details, and private photo evidence.",
-    permissions: ["reports.read_queue", "reports.read_deidentified", "reports.read_sensitive_evidence"],
+    description: "Review reports, view private photo evidence, and publish or reject reports with a reason.",
+    permissions: ["reports.read_queue", "reports.read_deidentified", "reports.change_status", "reports.read_sensitive_evidence"],
   },
   {
     code: "admin",

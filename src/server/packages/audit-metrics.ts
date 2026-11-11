@@ -143,10 +143,16 @@ function spatialBreakdown(packages: RoadPackageItem[]): AuditSpatialBreakdown {
 export async function susunAuditSummaryMetrics(
   regionId: string = DEFAULT_REGION_ID,
   repository?: RoadPackageRepository,
+  packageRows?: RoadPackageItem[],
 ): Promise<AuditSummaryMetrics> {
   const region = getRegion(regionId);
+  const paketRepository = packageRows ? null : repository;
   const [packages, boundaries, meta] = await Promise.all([
-    repository ? repository.listRoadPackages() : listRoadPackagesCached(regionId),
+    packageRows
+      ? Promise.resolve(packageRows)
+      : paketRepository
+        ? paketRepository.listRoadPackages()
+        : listRoadPackagesCached(regionId),
     Promise.resolve(readBoundaries(region)),
     snapshotMetaCached(regionId),
   ]);
@@ -196,7 +202,7 @@ export async function susunAuditSummaryMetrics(
 }
 
 const loadAuditSummaryMetrics = unstable_cache(
-  susunAuditSummaryMetrics,
+  async (regionId: string) => susunAuditSummaryMetrics(regionId),
   ["catalog-audit-metrics", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
@@ -213,8 +219,9 @@ const auditSummaryMetricsForRequest = cache(
 export function buildAuditSummaryMetrics(
   regionId: string = DEFAULT_REGION_ID,
   repository?: RoadPackageRepository,
+  packageRows?: RoadPackageItem[],
 ): Promise<AuditSummaryMetrics> {
-  return repository
-    ? susunAuditSummaryMetrics(regionId, repository)
+  return repository || packageRows
+    ? susunAuditSummaryMetrics(regionId, repository, packageRows)
     : auditSummaryMetricsForRequest(regionId);
 }

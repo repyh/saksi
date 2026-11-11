@@ -209,6 +209,7 @@ export default function ReportPrototype({
   region: RegionSummary;
 }) {
   const [step, setStep] = useState(0);
+  const previousStep = useRef(step);
   const [locationMode, setLocationMode] = useState<ReportLocationMode>("POINT");
   const [draftCandidate, setDraftCandidate] = useState<ReportDraft | null>(null);
   const [draftReady, setDraftReady] = useState(false);
@@ -269,7 +270,6 @@ export default function ReportPrototype({
   const idempotencyKey = useRef<string | null>(null);
   const rootRef = useRef<HTMLElement | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const navigatedRef = useRef(false);
   const restoredDraftRef = useRef(false);
   const invalidateSubmissionKey = () => { idempotencyKey.current = null; };
   const selectedArea = areas.find((area) => area.id === areaId) ?? null;
@@ -334,16 +334,8 @@ export default function ReportPrototype({
         ? "Pilih lokasi laporan dulu"
         : "";
 
-  useEffect(() => {
-    if (!navigatedRef.current) return;
-    const heading = stepHeadingRef.current;
-    heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView({ block: "start" });
-  }, [step]);
-
   function goToStep(nextStep: number) {
     setAdvanceError("");
-    navigatedRef.current = true;
     setStep(nextStep);
   }
 
@@ -362,6 +354,14 @@ export default function ReportPrototype({
     }
     goToStep(step + 1);
   }
+
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    const heading = stepHeadingRef.current;
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
+  }, [step]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -850,7 +850,6 @@ export default function ReportPrototype({
       setSavedReceipt(receipt);
       writeStoredReceipt(receipt);
       void deleteReportDraft(DRAFT_ID).catch(() => undefined);
-      navigatedRef.current = true;
       setStep(3);
     } catch {
       setSubmitError("Koneksi terputus. Laporan belum terkirim — coba lagi; isian Anda tetap tersimpan.");
@@ -976,7 +975,7 @@ export default function ReportPrototype({
             <section aria-labelledby="step-heading" className="order-3 pt-5 sm:pt-7 lg:order-4">
               {step === 0 && (
                 <>
-                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Foto kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Foto kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">JPG, PNG, atau WebP · maksimal 10 MB</p>
 
                   {photo ? (
@@ -1053,7 +1052,7 @@ export default function ReportPrototype({
 
               {step === 1 && (
                 <>
-                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Jenis kerusakan</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Jenis kerusakan</h2>
                   <p className="mt-1.5 text-sm leading-5 text-muted-foreground">Pilih kondisi yang paling mendekati.</p>
                   <fieldset className="mt-5">
                     <legend className="sr-only">Pilih jenis kerusakan</legend>
@@ -1107,7 +1106,7 @@ export default function ReportPrototype({
 
               {step === 2 && (
                 <>
-                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground outline-none sm:text-2xl">Lokasi dan paket terkait</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="scroll-mt-24 font-heading text-xl font-bold tracking-[-0.02em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-2xl">Lokasi dan paket terkait</h2>
                   <p className="mt-1.5 max-w-xl text-sm leading-5 text-muted-foreground">
                     Tentukan lokasi lebih dulu. Ruas jalan dan paket rujukan bersifat opsional dan tidak mengubah titik laporan.
                   </p>
@@ -1421,7 +1420,7 @@ export default function ReportPrototype({
                     <FiCheckCircle aria-hidden="true" className="size-8" />
                   </span>
                   <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">04 · Sukses</p>
-                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="mt-2 scroll-mt-24 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground outline-none sm:text-3xl">Laporan berhasil dikirim</h2>
+                  <h2 ref={stepHeadingRef} tabIndex={-1} id="step-heading" className="mt-2 scroll-mt-24 font-heading text-2xl font-bold tracking-[-0.03em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-3xl">Laporan berhasil dikirim</h2>
                   <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
                     Diterima. Laporan ditinjau manual sebelum tampil publik; foto tidak pernah ditampilkan.
                   </p>
