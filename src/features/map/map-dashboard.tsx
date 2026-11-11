@@ -64,6 +64,13 @@ const CONTRACT_LABELS: Record<RoadContractFilter, string> = {
   TANPA: "Tanpa rekam penyedia",
 };
 
+const SORT_OPTIONS: RoadPackageSort[] = ["pagu-desc", "pagu-asc", "nama"];
+const SORT_LABELS: Record<RoadPackageSort, string> = {
+  "pagu-desc": "Pagu terbesar",
+  "pagu-asc": "Pagu terkecil",
+  nama: "Nama A–Z",
+};
+
 function normalizeDistrictName(value: string) {
   return value
     .toLocaleLowerCase("id-ID")
@@ -103,6 +110,7 @@ interface MapDashboardProps {
     selectedWork?: RoadWorkCategory;
     selectedContract?: RoadContractFilter;
     selectedVillages?: string[] | null;
+    selectedSort?: RoadPackageSort;
     mapView?: ReportViewMode;
     searchQuery?: string;
   };
@@ -145,6 +153,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   }, [openVillages]);
   const [selectedWork, setSelectedWork] = useState<RoadWorkCategory>(initialRouteState?.selectedWork ?? "SEMUA");
   const [selectedContract, setSelectedContract] = useState<RoadContractFilter>(initialRouteState?.selectedContract ?? "SEMUA");
+  const [selectedSort, setSelectedSort] = useState<RoadPackageSort>(initialRouteState?.selectedSort ?? "pagu-desc");
   const [searchQuery, setSearchQuery] = useState<string>(initialRouteState?.searchQuery ?? "");
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
   const selectedPackageRef = useRef<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
@@ -181,9 +190,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     if (locatedOnly) params.set("lokasi", "1");
     if (selectedWork !== "SEMUA") params.set("work", selectedWork);
     if (selectedContract !== "SEMUA") params.set("kontrak", selectedContract);
+    if (selectedSort !== "pagu-desc") params.set("sort", selectedSort);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
     return params.toString();
-  }, [generalOnly, activeDecile, selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, searchQuery]);
+  }, [generalOnly, activeDecile, selectedYear, selectedDistrict, selectedVillages, locatedOnly, selectedWork, selectedContract, selectedSort, searchQuery]);
 
   const lastRequestedQuery = useRef(addressRouting ? "" : queryString);
   const currentFilters = useMemo<RoadPackageSearchFilters>(() => ({
@@ -327,6 +337,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       work: selectedWork,
       contract: selectedContract,
       villages: selectedVillages ?? undefined,
+      sort: selectedSort,
       view: mapView,
       query: searchQuery,
     });
@@ -402,13 +413,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       work: selectedWork,
       contract: selectedContract,
       villages: selectedVillages ?? undefined,
+      sort: selectedSort,
       view: mapView,
       query: searchQuery,
     });
     if (`${window.location.pathname}${window.location.search}` !== url) {
       window.history.replaceState(null, "", url);
     }
-  }, [generalOnly, activeDecile, addressRouting, locatedOnly, mapView, regionId, searchQuery, selectedContract, selectedVillages, selectedWork, selectedYear]);
+  }, [generalOnly, activeDecile, addressRouting, locatedOnly, mapView, regionId, searchQuery, selectedContract, selectedSort, selectedVillages, selectedWork, selectedYear]);
 
   useEffect(() => {
     if (!addressRouting) return;
@@ -426,12 +438,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       const group = Number(params.get("kelompok"));
       const contract = params.get("kontrak");
       const desa = params.getAll("desa");
+      const urut = params.get("urut");
       setBudgetDecile(Number.isInteger(group) && group >= 1 && group <= 10 && (year === "2025" || year === "2026") ? group : undefined);
       setLocatedOnly(params.get("lokasi") !== "0");
       setGeneralOnly(params.get("umum") === "1");
       setSelectedYear(year === "2025" || year === "2026" ? year : "SEMUA");
       setSelectedWork(WORK_OPTIONS.includes(work as RoadWorkCategory) ? work as RoadWorkCategory : "SEMUA");
       setSelectedContract(contract === "ADA" || contract === "TANPA" ? contract : "SEMUA");
+      setSelectedSort(urut === "pagu-asc" || urut === "nama" ? urut : "pagu-desc");
       setSelectedVillages(desa.length ? desa : null);
       setMapView(view === "budget" || view === "work" ? view : "packages");
       setSearchQuery(params.get("q") ?? "");
@@ -520,7 +534,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             </div>
           )}
           <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
-            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2`}>
+            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px_150px] xl:gap-2`}>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
                 <Select value={selectedYear} onValueChange={(val) => { setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026"); setBudgetDecile(undefined); }}>
@@ -661,9 +675,20 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
+                <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Urutkan</span>
+                <Select value={selectedSort} onValueChange={(value) => setSelectedSort((value ?? "pagu-desc") as RoadPackageSort)}>
+                  <SelectTrigger aria-label="Urutan register paket" className="h-7 w-full min-w-0 border-0 bg-transparent px-1 text-xs font-semibold shadow-none">
+                    <SelectValue>{SORT_LABELS[selectedSort]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((sort) => <SelectItem key={sort} value={sort}>{SORT_LABELS[sort]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div aria-live="polite" className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 border-t border-border pt-1.5 font-sans text-[11px] text-muted-foreground sm:border-t-0 sm:pt-0">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 border-t border-border pt-1.5 font-sans text-[11px] text-muted-foreground sm:border-t-0 sm:pt-0">
               <button
                 type="button"
                 onClick={() => setFiltersOpen((open) => !open)}
@@ -695,10 +720,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                   className="h-8 pl-8 pr-2 text-[11px]"
                 />
               </label>}
-              <span className="whitespace-nowrap">
+              <span aria-live="polite" className="whitespace-nowrap">
                 {isLoading
                   ? "Memuat paket…"
-                  : <><strong className="font-sans text-sm font-extrabold tabular-nums text-primary">{filteredCount.toLocaleString("id-ID")}</strong> dari {totalCount.toLocaleString("id-ID")} paket</>}
+                  : <><strong className="font-sans text-sm font-extrabold tabular-nums text-primary">{filteredCount.toLocaleString("id-ID")}</strong> dari {totalCount.toLocaleString("id-ID")} paket{selectedVillages?.length === 1 ? ` di ${selectedVillages[0]}` : selectedDistrict !== "SEMUA" ? ` di Kec. ${selectedDistrict}` : ""}</>}
               </span>
             </div>
           </div>

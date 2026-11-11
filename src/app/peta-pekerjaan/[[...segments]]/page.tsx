@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import MapDashboard from "@/features/map/map-dashboard";
 import { addressForPackage, districtSlug, parseReportSegments, type ReportViewMode } from "@/features/map/report-routes";
-import type { RoadContractFilter, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
+import type { RoadContractFilter, RoadPackageSort, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
 import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
@@ -70,6 +70,8 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const locatedOnly = !generalOnly && firstValue(query.lokasi) !== "0";
   const rawContract = firstValue(query.kontrak);
   const contract: RoadContractFilter = rawContract === "ADA" || rawContract === "TANPA" ? rawContract : "SEMUA";
+  const rawSort = firstValue(query.urut);
+  const sort: RoadPackageSort = rawSort === "pagu-asc" || rawSort === "nama" ? rawSort : "pagu-desc";
   const rawVillages = query.desa;
   const villages = (Array.isArray(rawVillages) ? rawVillages : rawVillages ? [rawVillages] : []).filter(Boolean);
   const selection = parseReportSegments(segments, regionId);
@@ -82,6 +84,7 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
     region: regionId, locatedOnly, generalOnly, budgetDecile: decile,
     year: rawYear === "2025" || rawYear === "2026" ? rawYear : undefined,
     work: selectedWork, contract, district: selectedDistrict, query: firstValue(query.q),
+    sort,
     villages: selectedDistrict && villages.length ? villages : undefined,
   } as const;
   const [initialData, initialAggregate] = await Promise.all([searchRoadPackages(filters), aggregateRoadPackages(filters)]);
@@ -126,6 +129,7 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
           selectedWork,
           selectedContract: contract,
           selectedVillages: selectedDistrict && villages.length ? villages : null,
+          selectedSort: sort,
           mapView,
           searchQuery: firstValue(query.q) ?? "",
         }}

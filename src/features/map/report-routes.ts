@@ -1,4 +1,4 @@
-import type { RoadContractFilter, RoadPackageItem, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
+import type { RoadContractFilter, RoadPackageItem, RoadPackageSort, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 
 export type ReportViewMode = "packages" | "budget" | "work";
 
@@ -24,6 +24,7 @@ export interface ReportFilters {
   work: RoadWorkCategory;
   contract?: RoadContractFilter;
   villages?: string[];
+  sort?: RoadPackageSort;
   view: ReportViewMode;
   query: string;
 }
@@ -136,6 +137,7 @@ export function routeForFilters(pathname: string, filters: ReportFilters) {
   if (filters.work !== "SEMUA") url.searchParams.set("jenis", filters.work.toLocaleLowerCase("id-ID"));
   if (filters.contract && filters.contract !== "SEMUA") url.searchParams.set("kontrak", filters.contract);
   for (const desa of filters.villages ?? []) url.searchParams.append("desa", desa);
+  if (filters.sort && filters.sort !== "pagu-desc") url.searchParams.set("urut", filters.sort);
   if (filters.view !== "packages") url.searchParams.set("tampilan", filters.view);
   if (filters.query.trim()) url.searchParams.set("q", filters.query.trim());
   return `${url.pathname}${url.search}`;

@@ -95,6 +95,9 @@ export interface RoadMapUnit {
 /** Kotak batas peta [minLon, minLat, maxLon, maxLat]. */
 export type MapBounds = [number, number, number, number];
 
+/** Urutan register paket. */
+export type RoadPackageSort = "pagu-desc" | "pagu-asc" | "nama";
+
 export interface RoadPackageSearchFilters {
   /** Region (kabupaten/kota); bawaan region aktif di server. */
   region?: string;
@@ -110,6 +113,8 @@ export interface RoadPackageSearchFilters {
   locatedOnly?: boolean;
   work?: RoadWorkCategory;
   contract?: RoadContractFilter;
+  /** Urutan register; bawaan `pagu-desc`. */
+  sort?: RoadPackageSort;
   query?: string;
   /** Halaman register (1-based). */
   page?: number;

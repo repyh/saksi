@@ -31,7 +31,7 @@ Use neutral, evidence-led wording. A map match or citizen report is a signal for
 | `/laporan/paket/[rup]` | Report with a package reference | Opens the report flow with the matching package preselected as a reference. |
 | `/laporan/publik` | Published reports | Public list of `PUBLISHED` reports filtered by region/package/kecamatan/kelurahan. Shows damage type, coarse size, area, dates, and package reference only. |
 | `/penyedia`, `/penyedia/[slug]` | Supplier register | Suppliers with at least one road package, joined to RUP; every figure carries its denominator, never a composite score. |
-| `GET /api/packages` | Package search API | Validates filter/search parameters, supports `page`/`limit` (50 default, 300 max), and returns an `ApiResult` response with counts and pagination metadata. |
+| `GET /api/packages` | Package search API | Validates filter/search parameters, supports `page`/`limit` (50 default, 300 max), `sort` (`pagu-desc` default, `pagu-asc`, `nama`), and returns an `ApiResult` response with counts and pagination metadata. |
 | `GET /api/packages/map` | Map aggregate API | Returns compact per-kecamatan/kelurahan/RW counts, budgets, work counts, and a sample RUP for areas intersecting the optional `bbox`; the map no longer downloads every matching package. |
 | `GET /api/packages/[rup]` | Package detail API | Returns one package (including its contract record) for the selected detail panel. |
 | `POST /api/reports` | Report submission | Bounded multipart with an `Idempotency-Key`; validates the RW area and optional RUP, stores sanitised WebP in the private bucket, and returns an opaque receipt code. |
@@ -153,6 +153,10 @@ Perbaikan UI/UX peta dari review 11 November 2026. Rencana lengkap ada di `docs/
 | Tampilan anggaran | Pilih **Nilai anggaran** | Ramp biru, bukan merah; legenda menyatakan skala nilai |
 | Tampilan jenis pekerjaan | Pilih **Jenis pekerjaan** | Isi = jumlah paket, satu ikon jenis dominan per wilayah, ikon biru |
 | Keadaan kosong | Filter tanpa hasil | Peta menampilkan pesan tanpa paket; galat batas punya **Coba lagi** |
+| Label angka | Perbesar peta ke zoom ≥ 12,5 | Angka paket per wilayah muncul dengan halo putih; tidak tampil di zoom kota |
+| Sort register | Pilih **Urutkan → Pagu terkecil** | Urutan berubah, URL menyimpan `urut=pagu-asc` |
+| Aksesibilitas peta | Fokuskan kanvas dengan Tab | Fokus terlihat, instruksi panah/zoom terbaca, hitungan mengumumkan wilayah |
+| Performa | Geser peta pada tampilan jumlah paket | Hanya tingkat aktif dibangun ulang; ikon jenis pekerjaan mengikuti viewport |
 
 ## Report submission verification (8 November 2026)
 

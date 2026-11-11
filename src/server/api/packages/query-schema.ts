@@ -2,6 +2,7 @@ import "server-only";
 import type {
   MapBounds,
   RoadPackageSearchFilters,
+  RoadPackageSort,
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
 import { ApiError } from "@/server/api/shared/api-error";
@@ -25,6 +26,7 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   const district = url.searchParams.get("district")?.trim() || undefined;
   const work = url.searchParams.get("work")?.trim() || undefined;
   const contract = url.searchParams.get("kontrak")?.trim() || undefined;
+  const sortParam = url.searchParams.get("sort")?.trim() || undefined;
   const desa = url.searchParams
     .getAll("desa")
     .flatMap((nilai) => nilai.split(","))
@@ -72,6 +74,9 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
   if (contract && contract !== "ADA" && contract !== "TANPA") {
     throw new ApiError(400, "INVALID_QUERY", "Filter kontrak harus ADA atau TANPA.");
   }
+  if (sortParam && sortParam !== "pagu-desc" && sortParam !== "pagu-asc" && sortParam !== "nama") {
+    throw new ApiError(400, "INVALID_QUERY", "Urutan harus pagu-desc, pagu-asc, atau nama.");
+  }
   if (query && query.length > 120) {
     throw new ApiError(400, "INVALID_QUERY", "Pencarian maksimal 120 karakter.");
   }
@@ -103,6 +108,7 @@ export function parsePackageFilters(url: URL): RoadPackageSearchFilters {
     locatedOnly: lokasi === "1",
     work: work as RoadWorkCategory | undefined,
     contract: contract as RoadPackageSearchFilters["contract"],
+    sort: sortParam as RoadPackageSort | undefined,
     query,
     page,
     limit,

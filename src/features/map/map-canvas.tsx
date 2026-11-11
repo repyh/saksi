@@ -248,6 +248,7 @@ function styleFor(
     opacity: selected || inSelectedScope ? 1 : 0.8,
     fillColor: bucket.fill,
     fillOpacity: count === 0 ? 0.18 : 0.72,
+    count,
   };
 }
 
@@ -319,6 +320,7 @@ function styledCollection(
           _lineOpacity: style.opacity,
           _fillOpacity: style.fillOpacity,
           _highlight: highlight,
+          _count: style.count,
         },
       };
     }),
@@ -659,6 +661,26 @@ export default function MapCanvas(props: MapCanvasProps) {
         } as unknown as maplibregl.AddLayerObject);
       }
 
+      // Angka paket per wilayah hanya pada zoom dekat agar peta kota tidak penuh label.
+      if (!map.getLayer(`${id}-label`)) {
+        map.addLayer({
+          id: `${id}-label`,
+          type: "symbol",
+          source: id,
+          minzoom: 12.5,
+          filter: [">", ["get", "_count"], 0],
+          layout: {
+            visibility: level === state.precision ? "visible" : "none",
+            "text-field": ["to-string", ["get", "_count"]],
+            "text-font": ["Noto Sans Regular"],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 15, 13],
+            "text-padding": 2,
+            "text-allow-overlap": false,
+          },
+          paint: { "text-color": "#0A192F", "text-halo-color": "#FFFFFF", "text-halo-width": 1.2 },
+        } as unknown as maplibregl.AddLayerObject);
+      }
+
       const hover = (event: maplibregl.MapLayerMouseEvent) => {
         const feature = event.features?.[0];
         if (!feature) return;
@@ -732,7 +754,7 @@ export default function MapCanvas(props: MapCanvasProps) {
       if (mapRef.current !== map) return;
       for (const level of precisions) {
         const id = sourceId(level);
-        for (const suffix of ["fill", "line", "exact", "scope"]) {
+        for (const suffix of ["fill", "line", "exact", "scope", "label"]) {
           if (map.getLayer(`${id}-${suffix}`)) map.removeLayer(`${id}-${suffix}`);
         }
         if (map.getSource(id)) map.removeSource(id);
@@ -829,22 +851,25 @@ export default function MapCanvas(props: MapCanvasProps) {
     const state = latestRef.current;
     for (const level of precisions) {
       const id = sourceId(level);
-      const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
-      if (source) {
-        source.setData(styledCollection(
-          level === "RW" ? boundaries.rw : level === "Kelurahan" ? boundaries.kel : boundaries.kec,
-          level,
-          fields,
-          state.areaStats[PRECISION_STATS_KEY[level]],
-          state.selectedPackage,
-          state.selectedRegion,
-          state.view,
-          state.bands[PRECISION_STATS_KEY[level]],
-          state.classes[PRECISION_STATS_KEY[level]],
-        ));
-      }
       const visible = level === precision;
-      for (const suffix of ["fill", "line", "exact", "scope"]) {
+      // Hanya tingkat yang tampil dibangun ulang; tingkat tersembunyi dibangun saat dipilih.
+      if (visible) {
+        const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
+        if (source) {
+          source.setData(styledCollection(
+            level === "RW" ? boundaries.rw : level === "Kelurahan" ? boundaries.kel : boundaries.kec,
+            level,
+            fields,
+            state.areaStats[PRECISION_STATS_KEY[level]],
+            state.selectedPackage,
+            state.selectedRegion,
+            state.view,
+            state.bands[PRECISION_STATS_KEY[level]],
+            state.classes[PRECISION_STATS_KEY[level]],
+          ));
+        }
+      }
+      for (const suffix of ["fill", "line", "exact", "scope", "label"]) {
         if (map.getLayer(`${id}-${suffix}`)) {
           map.setLayoutProperty(`${id}-${suffix}`, "visibility", visible ? "visible" : "none");
         }
@@ -878,27 +903,35 @@ export default function MapCanvas(props: MapCanvasProps) {
       const previousArea = (previousBounds[1][0] - previousBounds[0][0]) * (previousBounds[1][1] - previousBounds[0][1]);
       if (area > previousArea) perArea.set(key, feature);
     }
-    for (const [key, feature] of perArea) {
-      const aggregate = aggregates.get(key);
-      if (!aggregate) continue;
-      // Satu ikon per wilayah: jenis dominan. Semua jenis tetap ada di tooltip.
-      const dominan = ROAD_WORK_TYPES.reduce<SpecificRoadWorkCategory | null>((best, category) => {
-        if (aggregate.workCounts[category] <= 0) return best;
-        if (!best || aggregate.workCounts[category] > aggregate.workCounts[best]) return category;
-        return best;
-      }, null);
-      if (!dominan) continue;
-      const center = centerOfFeature(feature);
-      if (!center) continue;
-      const element = document.createElement("div");
-      element.className = "saksi-work-type-icon";
-      element.style.pointerEvents = "none";
-      element.innerHTML = workTypeIconMarkup(dominan);
-      const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(center).addTo(map);
-      markersRef.current.push(marker);
-    }
+    const render = () => {
+      for (const marker of markersRef.current) marker.remove();
+      markersRef.current = [];
+      const viewport = map.getBounds();
+      for (const [key, feature] of perArea) {
+        const aggregate = aggregates.get(key);
+        if (!aggregate) continue;
+        // Satu ikon per wilayah: jenis dominan. Semua jenis tetap ada di tooltip.
+        const dominan = ROAD_WORK_TYPES.reduce<SpecificRoadWorkCategory | null>((best, category) => {
+          if (aggregate.workCounts[category] <= 0) return best;
+          if (!best || aggregate.workCounts[category] > aggregate.workCounts[best]) return category;
+          return best;
+        }, null);
+        if (!dominan) continue;
+        const center = centerOfFeature(feature);
+        if (!center || !viewport.contains(center)) continue;
+        const element = document.createElement("div");
+        element.className = "saksi-work-type-icon";
+        element.style.pointerEvents = "none";
+        element.innerHTML = workTypeIconMarkup(dominan);
+        const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(center).addTo(map);
+        markersRef.current.push(marker);
+      }
+    };
+    render();
+    map.on("moveend", render);
 
     return () => {
+      map.off("moveend", render);
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
     };
@@ -1015,8 +1048,13 @@ export default function MapCanvas(props: MapCanvasProps) {
         className="h-full w-full"
         role="region"
         aria-label={`Peta koroplet batas ${wilayahLabel} paket jalan`}
+        aria-describedby="saksi-map-help"
         tabIndex={0}
       />
+      <p id="saksi-map-help" className="sr-only">
+        Gunakan tombol panah untuk menggeser peta dan tombol plus atau minus untuk memperbesar.
+        Tingkat wilayah dipilih lewat tombol Kecamatan, Kelurahan, atau {props.region.environmentLabel}.
+      </p>
       <div className="saksi-map-overlay absolute top-3 left-14 z-10 flex max-w-[calc(100%-4rem)] flex-wrap overflow-hidden border border-border bg-white/95 shadow-sm">
         {precisions.map((tingkat) => (
           <button

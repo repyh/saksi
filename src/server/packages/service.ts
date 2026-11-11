@@ -6,6 +6,7 @@ import type {
   RoadPackageMapData,
   RoadPackageSearchData,
   RoadPackageSearchFilters,
+  RoadPackageSort,
   VendorSummary,
 } from "@/contracts/packages/road-package.contract";
 import type { RoadPackageDetail } from "@/contracts/packages/road-package-detail.contract";
@@ -178,10 +179,11 @@ export async function searchRoadPackages(
 ): Promise<RoadPackageSearchData> {
   const context = await packageContext(filters, repository);
   const limit = normalizeLimit(filters.limit);
-  const totalPages = Math.max(1, Math.ceil(context.filtered.length / limit));
+  const ordered = sortPackages(context.filtered, filters.sort);
+  const totalPages = Math.max(1, Math.ceil(ordered.length / limit));
   const page = Math.min(normalizePage(filters.page), totalPages);
   const start = (page - 1) * limit;
-  const items = context.filtered.slice(start, start + limit);
+  const items = ordered.slice(start, start + limit);
 
   return {
     region: regionSummary(context.region),
@@ -197,6 +199,14 @@ export async function searchRoadPackages(
     totalPages,
     hasMore: start + limit < context.filtered.length,
   };
+}
+
+/** Urutan register; salinan baru agar konteks ter-cache tidak ikut terurut. */
+function sortPackages(items: RoadPackageItem[], sort: RoadPackageSort = "pagu-desc") {
+  const urut = [...items];
+  if (sort === "pagu-asc") return urut.sort((a, b) => a.pagu - b.pagu || a.kode_rup.localeCompare(b.kode_rup));
+  if (sort === "nama") return urut.sort((a, b) => a.nama.localeCompare(b.nama, "id") || a.kode_rup.localeCompare(b.kode_rup));
+  return urut.sort((a, b) => b.pagu - a.pagu || a.kode_rup.localeCompare(b.kode_rup));
 }
 
 function emptyAreaAggregate(): RoadAreaAggregate {

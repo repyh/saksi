@@ -87,14 +87,19 @@ perbaikannya. Angka dataset tidak ditulis di sini; pakai `data/regions/<id>/mani
 - [x] Register: seluruh baris dapat diklik (tombol penuh, sorotan baris terpilih) dan tetap
       menyediakan "muat paket lagi". Sort belum ada karena API belum menerima parameter urutan.
 
-## Fase 2 — peningkatan
+## Fase 2 — peningkatan (selesai 11 November 2026)
 
 - [x] Empty state peta saat filter tidak menghasilkan paket; tombol **Coba lagi** saat batas gagal
       dimuat.
-- [ ] Label angka pada poligon di zoom dekat; ringkasan wilayah untuk pembaca layar; keyboard pan.
-- [ ] Ekspor CSV register terfilter.
-- [ ] Memo per tingkat untuk `styledCollection`; marker jenis pekerjaan hanya di wilayah terlihat.
-- [ ] Sort register (butuh parameter urutan di `GET /api/packages`).
+- [x] Label angka paket pada poligon di zoom ≥ 12,5 (minzoom), dengan halo putih.
+- [x] Ringkasan wilayah untuk pembaca layar: hitungan pada `aria-live` menyebut wilayah terpilih;
+      kanvas fokusabel dengan instruksi `aria-describedby`.
+- [x] Performa: hanya tingkat poligon yang tampil dibangun ulang (`setData`); tingkat lain dibangun
+      saat dipilih. Ikon jenis pekerjaan hanya untuk wilayah di viewport dan diperbarui saat peta
+      berhenti bergerak.
+- [x] Sort register: `sort` di `GET /api/packages` (`pagu-desc`, `pagu-asc`, `nama`), kontrol
+      **Urutkan** di filter, parameter URL `urut`.
+- [ ] Ekspor CSV register terfilter (dilewati atas permintaan).
 - [ ] Diskusi produk: layer laporan warga terverifikasi di peta yang sama.
 
 ## Kriteria penerimaan Fase 0
