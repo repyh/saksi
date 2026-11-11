@@ -19,6 +19,8 @@ const accessPermissions = [
   "access.permissions.read_own",
   "access.users.edit",
   "access.users.invite",
+  "access.users.disable",
+  "access.users.delete",
   "access.presets.apply",
   "access.permissions.assign",
 ] as const satisfies readonly PermissionCode[];
@@ -165,10 +167,16 @@ export async function revokePermissionGrant(input: {
     if (grant.userId === input.actorUserId) throw new AuthorizationError(403, "You cannot revoke permissions from your own account.");
 
     const otherPermissions = await permissionsForUser(grant.userId, tx, grant.id);
-    const isDelegationAuthority = grant.permissionCode === "access.presets.apply" || grant.permissionCode === "access.permissions.assign";
-    if (isDelegationAuthority) {
+    const protectedAuthorities = new Set<string>([
+      "access.presets.apply",
+      "access.permissions.assign",
+      "access.users.disable",
+      "access.users.delete",
+    ]);
+    const isProtectedAuthority = protectedAuthorities.has(grant.permissionCode);
+    if (isProtectedAuthority) {
       if (!actorPermissions.has("access.presets.apply")) {
-        throw new AuthorizationError(403, "Only an administrator may revoke a delegation authority.");
+        throw new AuthorizationError(403, "Only an administrator may revoke a protected account-management authority.");
       }
       const authorityRemains = otherPermissions.has(grant.permissionCode as PermissionCode)
         || Boolean(await tx.userPermissionGrant.findFirst({
@@ -176,11 +184,12 @@ export async function revokePermissionGrant(input: {
             userId: { not: grant.userId },
             permissionCode: grant.permissionCode,
             ...activeGrantWhere(new Date()),
+            user: { disabledAt: null },
           },
           select: { id: true },
         }));
       if (!authorityRemains) {
-        throw new AuthorizationError(403, "Grant this delegation authority to another administrator before revoking it.");
+        throw new AuthorizationError(403, "Grant this authority to another active administrator before revoking it.");
       }
     }
 

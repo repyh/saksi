@@ -82,19 +82,19 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
           <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
               <dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Penyedia</dt>
-              <dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">
+              <dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">
                 {vendor.length.toLocaleString("id-ID")}
               </dd>
             </div>
             <div>
               <dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Paket berkontrak</dt>
-              <dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">
+              <dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">
                 {totalPaket.toLocaleString("id-ID")}
               </dd>
             </div>
             <div>
               <dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Nilai kontrak</dt>
-              <dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">
+              <dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">
                 Rp{(totalNilai / 1e9).toFixed(2)} M
               </dd>
             </div>

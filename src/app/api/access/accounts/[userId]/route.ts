@@ -4,3 +4,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ us
   const { userId } = await params;
   return accessApi.updateAccountProfile(request, userId);
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  return accessApi.deleteAccount(request, userId);
+}

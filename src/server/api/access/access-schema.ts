@@ -20,6 +20,16 @@ export const updateAccountProfileSchema = z.object({
   name: z.string().trim().min(1).max(100),
 });
 
+export const changeAccountStatusSchema = z.object({
+  disabled: z.boolean(),
+  reason: z.string().trim().min(8).max(500),
+});
+
+export const deleteAccountSchema = z.object({
+  confirmationEmail: z.email().max(254),
+  reason: z.string().trim().min(8).max(500),
+});
+
 export const grantAccountPermissionsSchema = z.object({
   permissionCodes: z.array(z.string().min(1).max(100)).min(1).max(24),
   reason: z.string().trim().min(8).max(500),

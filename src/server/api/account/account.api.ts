@@ -54,6 +54,8 @@ export class AccountApi {
         changeReportStatus: activePermissions.has("reports.change_status"),
         inviteAccounts: activePermissions.has("access.users.invite"),
         editAccounts: activePermissions.has("access.users.edit"),
+        disableAccounts: activePermissions.has("access.users.disable"),
+        deleteAccounts: activePermissions.has("access.users.delete"),
         applyPresets: activePermissions.has("access.presets.apply"),
         assignPermissions: activePermissions.has("access.permissions.assign"),
       },

@@ -516,7 +516,7 @@ export function DashboardTabs({ account, region }: { account: DashboardAccount; 
         {hasAccountManagementAccess && (
           <TabsContent value="account-management" className="m-0">
             <h2 className="font-heading text-xl font-bold tracking-[-0.02em] sm:text-2xl">Manajemen akun</h2>
-            <AccountManagement canInvite={account.dashboardPermissions.inviteAccounts} canEdit={account.dashboardPermissions.editAccounts} canApplyPresets={account.dashboardPermissions.applyPresets} canAssignPermissions={account.dashboardPermissions.assignPermissions} />
+            <AccountManagement canInvite={account.dashboardPermissions.inviteAccounts} canEdit={account.dashboardPermissions.editAccounts} canDisable={account.dashboardPermissions.disableAccounts} canDelete={account.dashboardPermissions.deleteAccounts} canApplyPresets={account.dashboardPermissions.applyPresets} canAssignPermissions={account.dashboardPermissions.assignPermissions} />
           </TabsContent>
         )}
 

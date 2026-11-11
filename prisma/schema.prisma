@@ -125,6 +125,7 @@ model User {
   email                   String                    @unique
   emailVerified           Boolean                   @default(false)
   image                   String?
+  disabledAt              DateTime?                 @map("disabled_at") @db.Timestamptz(6)
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   sessions                Session[]
@@ -204,7 +205,7 @@ model UserPermissionGrant {
   id              String     @id @default(cuid())
   userId          String
   permissionCode  String
-  grantedByUserId String
+  grantedByUserId String?
   grantedAt       DateTime   @default(now())
   grantBatchId    String?
   expiresAt       DateTime?
@@ -213,7 +214,7 @@ model UserPermissionGrant {
   reason          String
   user            User       @relation("PermissionGrantUser", fields: [userId], references: [id], onDelete: Cascade)
   permission      Permission @relation(fields: [permissionCode], references: [code], onDelete: Restrict)
-  grantedBy       User       @relation("PermissionGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+  grantedBy       User?      @relation("PermissionGrantor", fields: [grantedByUserId], references: [id], onDelete: SetNull)
   revokedBy       User?      @relation("PermissionRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
 
   @@index([userId, revokedAt, expiresAt])
@@ -260,7 +261,7 @@ model RegistrationInvite {
   id                    String    @id @default(cuid())
   tokenHash             String    @unique
   email                 String
-  createdByUserId       String
+  createdByUserId       String?
   redeemedByUserId      String?
   revokedByUserId       String?
   permissionCodes       String[]  @default([])
@@ -269,7 +270,7 @@ model RegistrationInvite {
   expiresAt             DateTime
   redeemedAt            DateTime?
   revokedAt             DateTime?
-  createdBy             User      @relation("RegistrationInviteCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdBy             User?     @relation("RegistrationInviteCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   redeemedBy            User?     @relation("RegistrationInviteRedeemer", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
   revokedBy             User?     @relation("RegistrationInviteRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
 

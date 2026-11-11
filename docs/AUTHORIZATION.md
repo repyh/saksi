@@ -1,6 +1,6 @@
 # SAKSI Authorization Design
 
-**Status:** Permission-bit persistence and retired-permission cleanup are applied to the configured database (9 November 2026). Some access-management controls remain mockups. The report queue, de-identified detail view, and audited private-evidence read are available; moderation actions are not.
+**Status:** Permission-bit persistence and retired-permission cleanup are applied to the configured database. Account lifecycle actions, report review, and moderation workflows require dedicated permissions and are audited.
 **Scope:** Staff access to moderation, analytics, data operations, and account administration.
 
 Every authenticated account is a `User`; there is no implicit user/admin/moderator role. Authorization is expressed as individual permission codes. Named access packages such as Analyst, Moderator, and Admin are source-controlled presets that expand into permission codes before persistence. The database does not store a package assignment on a user.
@@ -39,12 +39,14 @@ No analytics permissions are currently enabled because the analytics screens and
 | `access.permissions.read_own` | View the signed-in user's active permission details in Dashboard → Akun Saya | Does not grant access to another account's permissions |
 | `access.users.edit` | Edit display names and non-sensitive profile details | Email changes require verification |
 | `access.users.invite` | Issue and revoke registration invitations | Does not itself grant permissions |
+| `access.users.disable` | Disable or restore staff accounts | Cannot change own status; disabling revokes sessions and outstanding invites |
+| `access.users.delete` | Permanently remove a disabled staff account | Requires exact-email confirmation; reports and audit history remain without the deleted account link |
 | `access.presets.apply` | Apply approved source-controlled permission presets | Preset expands to permission bits; no user package row is created |
 | `access.permissions.assign` | Assign eligible individual permission bits | Cannot assign either delegation authority |
 
 ### Account lifecycle and audit
 
-Account disable/session revocation and audit-history reading are disabled until their workflows are implemented.
+Account disable/session revocation and deletion are available through audited lifecycle endpoints. Reading the full audit history remains unavailable until a dedicated permission and UI exist.
 
 ### Data operations
 
@@ -56,7 +58,7 @@ The following definitions remain commented out in `catalog.ts` as a planning rec
 
 - Reports: `reports.read_precise_location`, `reports.assign`, `reports.change_status`, `reports.add_internal_note`, `reports.redact`, `reports.export`.
 - Analytics: `analytics.read`, `analytics.export`.
-- Accounts: `access.users.disable`, `access.audit.read`.
+- Accounts: `access.audit.read`.
 - Data operations: `sources.read`, `sources.review_import`, `sources.publish_snapshot`.
 
 Removing a code from the active catalog immediately makes persisted grants for it ineffective in application authorization. Migration `20261109170000_retire_removed_permissions` revokes any still-effective grants for the listed retired codes, archives the permission definitions, grants, and invitation snapshots in `RetiredPermissionRecordArchive`, removes those codes from live invitation snapshots, and deletes their live `UserPermissionGrant` and `Permission` rows. The archive has no foreign keys so it survives the live-row purge. Existing authorization audit events remain unchanged as historical records. The seed script only upserts active catalog entries and does not recreate retired codes.
@@ -74,7 +76,7 @@ Only permissions backed by an implemented workflow belong in the active catalog.
 
 When an inviter selects a preset, the API checks `access.presets.apply`, validates that the preset is allowed, expands it into its permission codes, and stores only those codes. The invite response may echo the chosen preset for display, and the audit event may record it as provenance. Neither the invite nor the user has a persisted preset-code field. Admin receives new catalog bits after the preset is applied again; existing user grants do not silently grow when the catalog changes.
 
-Individual-bit assignment uses `access.permissions.assign` and `PERMISSION_ASSIGNMENT_POLICY`. That policy excludes `access.presets.apply` and `access.permissions.assign`, preventing a custom grant from delegating its own assignment authority. Admin receives both authority bits through the Admin preset or the controlled bootstrap path.
+Individual-bit assignment uses `access.permissions.assign` and `PERMISSION_ASSIGNMENT_POLICY`. That policy excludes `access.presets.apply`, `access.permissions.assign`, `access.users.disable`, and `access.users.delete`, preventing custom grants from delegating permission-management or account-lifecycle authority. Admin receives these bits through the Admin preset or controlled bootstrap path.
 
 The two assignment modes are mutually exclusive on an invitation: choose one preset, choose individual bits, or grant no staff access. No account can grant access to itself.
 
@@ -140,7 +142,7 @@ The central resolver combines duplicate active grants into an effective permissi
 5. Preset assignment is restricted by `PRESET_ASSIGNMENT_POLICY` and expands to bits before persistence.
 6. An invite is email-bound, single-use, short-lived, and stores only permission codes, never a preset assignment or raw token.
 7. Ordinary revocation retains the grant row and audit history. Retiring a code uses the archive-and-purge migration; effective access is revoked before its live row is removed.
-8. Guard the last active holder of delegation authority; define an out-of-band recovery path before production.
+8. Guard the last active holder of delegation and account-lifecycle authority; disabled accounts do not count. Keep an out-of-band recovery path for production.
 9. Audit permission changes in the same transaction as the grant mutation.
 10. Keep credentials, invite tokens, and sensitive evidence out of browser responses and audit metadata.
 11. Return a user's own permission details only when `access.permissions.read_own` is active; `access.users.read` is the separate permission for the staff directory.
@@ -152,12 +154,13 @@ The central resolver combines duplicate active grants into an effective permissi
 - Central authority and strategies: `src/server/authorization/authority.ts` and `src/server/authorization/strategies/`.
 - Invite issuance expands presets before persistence; registration creates per-bit grant rows.
 - Account management opens a profile/access dialog. Profile edits use `PATCH /api/access/accounts/[userId]`; active per-bit grants are read from `GET /api/access/accounts/[userId]/permissions`, granted via `POST` to that endpoint, and individually revoked via `DELETE /api/access/accounts/[userId]/permissions/[grantId]`. Directory reads require `access.users.read`; grant and revoke require `access.permissions.assign`, a reason, and server-side policy checks. Users cannot change their own profile access grants from this dialog.
+- Account lifecycle controls use `PATCH /api/access/accounts/[userId]/status` and `DELETE /api/access/accounts/[userId]`. Disabling blocks new sessions, revokes current sessions, and revokes unused invites. Deletion requires a disabled target, exact email confirmation, and an audit reason. Report submissions and audit records are retained with the deleted user's foreign-key references cleared; grants received by that account are removed while grants they issued remain with a null grantor.
 - Permission bundles shown in the account directory remain derived summaries. The dialog reads and changes individual permission-grant rows. Grant scope is currently global; package-scoped grants are not represented by the schema.
 - `scripts/seed-authorization.ts` seeds permission definitions and can bootstrap permissions for an existing verified administrator.
 - `prisma/migrations/20261109170000_retire_removed_permissions/` archives and purges the disabled permission definitions, grants, and invite snapshots listed above. Applied to the configured database on 9 November 2026; retired live rows were verified absent and historical snapshots remain archived.
 - `scripts/bootstrap-admin.ts` creates an initial account and grants individual rows expanded from the Admin preset.
+- Migration `20261111140000_account_lifecycle` adds the disabled-account state and lifecycle permission bits, grants those bits to existing active Admin permission holders, and makes historical grantor/inviter links nullable so account deletion preserves audit and invitation records.
 - `20261105110000_flatten_permission_grants` is reported as applied by `npx prisma migrate status` against the currently configured database.
-- Account-management disable/delete controls remain mockups. Their permissions are disabled until server endpoints and session revocation are implemented.
 - Active report reads are `reports.read_queue`, `reports.read_deidentified`, and `reports.read_sensitive_evidence`. Detail reads return de-identified report content and write an authorization audit event. Evidence is streamed through the server from the private bucket and each read writes an authorization audit event. Status changes, assignment, internal notes, report redaction/export, analytics, audit-history reads, and source operations remain disabled.
 
 ## References

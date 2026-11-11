@@ -110,9 +110,9 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
         </p>
 
         <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Proyek</dt><dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">{totalProjects.toLocaleString("id-ID")}</dd></div>
-          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Total pagu</dt><dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">{formatRupiahFull(totalBudget)}</dd></div>
-          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Dengan rekam kontrak</dt><dd className="mt-0.5 font-heading text-2xl font-extrabold tabular-nums text-primary">{contracted.toLocaleString("id-ID")}</dd></div>
+          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Proyek</dt><dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">{totalProjects.toLocaleString("id-ID")}</dd></div>
+          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Total pagu</dt><dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">{formatRupiahFull(totalBudget)}</dd></div>
+          <div><dt className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Dengan rekam kontrak</dt><dd className="mt-0.5 font-sans text-2xl font-extrabold tabular-nums text-primary">{contracted.toLocaleString("id-ID")}</dd></div>
         </dl>
 
         <form action="/project" method="get" className="mt-6 grid max-w-4xl gap-2 sm:grid-cols-[minmax(15rem,1fr)_auto_auto_auto_auto] sm:items-center">
