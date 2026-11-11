@@ -261,15 +261,20 @@ Model cache sekarang memakai **Data Cache bawaan Next**, bukan `Map` selama pros
 - `getIndeksKontrak()` masih menyimpan Map per proses untuk kerja CPU, tetapi lapisan lintas
   request yang menentukan adalah Data Cache di atas. Instance baru membangun ulang Map dari entri
   cache atau satu pembacaan database; kebenaran data tidak bergantung pada umur proses.
+- TTL harian bukan satu-satunya jalur penyegaran: `revalidateCatalogCache()` membuang tag `catalog`
+  dan indeks kontrak per proses, dan worker ingestion memanggil
+  `POST /api/internal/catalog/revalidate` (token `CATALOG_REVALIDATE_TOKEN`) tepat setelah run
+  sukses. Tanpa token/`SITE_URL`, worker hanya mencatat peringatan dan katalog menunggu TTL.
 
 Audit produksi 11 November 2026 menemukan lonjakan berkala setelah cache katalog kedaluwarsa:
 `npm run profile -- --samples 3 --warmup 1 --parallel 1 --cold` mengukur `/paket` pertama 23,3 dtk;
 `/penyedia` 8,6 dtk; `/laporan/publik` 11,7 dtk. Request berulang setelah cache hangat 68–80 ms
 untuk direktori dan peta. Indeks kontrak selesai diproses dalam 48 ms; PostgreSQL menjalankan query
 utamanya dalam 22–40 ms, sedangkan pembacaan Prisma penuh memakan 9,6 dtk (sekali uji lain 18,5 dtk).
-TTL katalog dinaikkan ke 24 jam sesuai jadwal ingestion harian; daftar/detail laporan publik kini
-di-cache 60 detik dan invalidasi saat status berubah. HTML home mentah sekitar 979 KB (102 KB dengan
-gzip), sedangkan HTML peta 288 KB (28 KB gzip), sehingga ukuran HTML bukan penyebab jeda belasan detik.
+TTL katalog dinaikkan ke 24 jam dengan invalidasi eksplisit setelah ingestion; daftar/detail laporan
+publik kini di-cache 60 detik dan invalidasi saat status berubah. HTML home mentah sekitar 979 KB
+(102 KB dengan gzip), sedangkan HTML peta 288 KB (28 KB gzip), sehingga ukuran HTML bukan penyebab
+jeda belasan detik.
 
 Angka `next build` + `next start`, `DATABASE_URL` aktif, 3 warm-up + 7 sampel, p50 (mesin ini):
 

@@ -137,6 +137,7 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const actionPopoverRef = useRef<HTMLFormElement>(null);
+  const lastActionAnchorRef = useRef<HTMLButtonElement | null>(null);
   const [status, setStatus] = useState<StatusFilter>("active");
   const [order, setOrder] = useState<SubmissionOrder>("submittedAt_desc");
   const [reports, setReports] = useState<ReportReviewQueueItem[]>([]);
@@ -185,13 +186,27 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
     };
 
     const frame = window.requestAnimationFrame(updatePosition);
+    // Tinggi popover berubah saat pesan galat muncul; hitung ulang agar tetap di layar.
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updatePosition);
+    if (observer && actionPopoverRef.current) observer.observe(actionPopoverRef.current);
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
     return () => {
       window.cancelAnimationFrame(frame);
+      observer?.disconnect();
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
+  }, [action]);
+
+  useEffect(() => {
+    if (action) {
+      lastActionAnchorRef.current = action.anchor;
+      return;
+    }
+    const anchor = lastActionAnchorRef.current;
+    lastActionAnchorRef.current = null;
+    if (anchor?.isConnected) anchor.focus();
   }, [action]);
 
   useEffect(() => {
@@ -493,21 +508,37 @@ export function ReportReviewQueue({ region, active, canViewDetails, canViewEvide
           role="presentation"
           onClick={() => setAction(null)}
           onKeyDown={(event) => { if (event.key === "Escape") setAction(null); }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 sm:pointer-events-none sm:bg-transparent sm:p-0"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 sm:bg-transparent sm:p-0"
         >
           <form
             ref={actionPopoverRef}
-            aria-label={action.status === "PUBLISHED" ? "Publikasikan laporan" : "Tolak laporan"}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-action-title"
             onSubmit={(event) => { event.preventDefault(); void submitAction(); }}
+            onKeyDown={(event) => {
+              if (event.key !== "Tab") return;
+              const focusable = actionPopoverRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), textarea, input[type=email], a[href]");
+              if (!focusable?.length) return;
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+              } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
             onClick={(event) => event.stopPropagation()}
             style={{
               "--action-top": `${actionPosition?.top ?? -10000}px`,
               "--action-left": `${actionPosition?.left ?? 0}px`,
               visibility: actionPosition ? "visible" : "hidden",
             } as CSSProperties}
-            className="w-full max-w-sm border border-border bg-white p-4 shadow-xl sm:pointer-events-auto sm:fixed sm:top-[var(--action-top)] sm:left-[var(--action-left)] sm:w-80 sm:max-w-[calc(100vw-1.5rem)] sm:p-3 sm:shadow-lg"
+            className="w-full max-w-sm border border-border bg-white p-4 shadow-xl sm:fixed sm:top-[var(--action-top)] sm:left-[var(--action-left)] sm:w-80 sm:max-w-[calc(100vw-1.5rem)] sm:p-3 sm:shadow-lg"
           >
-            <p className="text-sm font-semibold text-foreground">{action.status === "PUBLISHED" ? "Publikasikan laporan ini" : "Tolak laporan ini"}</p>
+            <p id="report-action-title" className="text-sm font-semibold text-foreground">{action.status === "PUBLISHED" ? "Publikasikan laporan ini" : "Tolak laporan ini"}</p>
             <label className="mt-2 block text-xs font-semibold text-muted-foreground">
               Alasan moderasi (wajib, minimal 3 karakter)
               <textarea autoFocus value={reason} onChange={(event) => setReason(event.target.value)} rows={2} maxLength={1000} className="mt-1 w-full border border-input bg-white px-2 py-1.5 text-sm font-normal text-foreground" />

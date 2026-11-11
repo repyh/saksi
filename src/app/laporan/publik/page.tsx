@@ -190,7 +190,7 @@ export default async function PublicReportsPage({ searchParams }: PublicReportsP
                         <dd className="mt-0.5 text-foreground">
                           {report.package ? (
                             <Link
-                              href={`/project/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(regionId)}`}
+                              href={`/paket/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(regionId)}`}
                               className="font-semibold text-primary underline-offset-4 hover:underline"
                             >
                               RUP {report.package.rup}

@@ -530,6 +530,12 @@ export function getIndeksKontrak(regionId: string = DEFAULT_REGION_ID): Promise<
   return indeks;
 }
 
+/** Paksa indeks kontrak dibangun ulang pada request berikutnya (setelah ingestion). */
+export function resetIndeksKontrakCache(regionId?: string): void {
+  if (regionId) cache.delete(regionId);
+  else cache.clear();
+}
+
 export function getLpseMeta(regionId: string = DEFAULT_REGION_ID) {
   return getIndeksKontrak(regionId).then((indeks) => indeks.meta);
 }

@@ -138,6 +138,19 @@ tanpa `DATABASE_URL`.
 | `INGEST_SCHEDULER_REGION` | `kota-tangerang` | direktori `data/regions/<id>` |
 | `INGEST_SCHEDULER_REFRESH` | `0` | `1` menambahkan `--refresh` (tarik sumber sebelum impor) |
 | `INGEST_SCHEDULER_CATCHUP` | `1` | `0` mematikan catch-up saat boot |
+| `CATALOG_REVALIDATE_TOKEN` | kosong | token `POST /api/internal/catalog/revalidate`; kosong mematikan penyegaran cache |
+| `SITE_URL` | `BETTER_AUTH_URL` | origin server yang dipanggil worker untuk menyegarkan cache |
+
+**Cache katalog setelah run sukses.** Katalog di-cache 24 jam, jadi worker memanggil
+`POST /api/internal/catalog/revalidate` (header `x-catalog-revalidate-token`) tepat setelah
+`selesaikanRun` supaya data baru langsung tampil. Endpoint membuang Data Cache bertag `catalog`
+dan indeks kontrak per proses. Bila token atau `SITE_URL` belum diset, worker hanya mencatat
+peringatan dan katalog menunggu TTL harian; run tetap sukses. Jalankan manual bila perlu:
+
+```bash
+curl -fsS -X POST "$SITE_URL/api/internal/catalog/revalidate" \
+  -H "x-catalog-revalidate-token: $CATALOG_REVALIDATE_TOKEN"
+```
 
 Catch-up adalah pengganti `Persistent=true`: 30 detik setelah boot, penjadwal membandingkan
 `dibuat` di `data/regions/<id>/manifest.json` dengan jadwal terakhir. Bila manifest lebih tua dari
@@ -194,7 +207,8 @@ selalu menang.
 - langkah: `npm ci` → `prisma migrate deploy` → worker `--trigger cron` → `db:verify`;
 - log + `manifest.json` diunggah sebagai artefak 30 hari; tidak ada commit snapshot ke repo.
 
-Secret yang dibutuhkan: `DATABASE_URL`, `DIRECT_URL`.
+Secret yang dibutuhkan: `DATABASE_URL`, `DIRECT_URL`, dan `CATALOG_REVALIDATE_TOKEN` (plus `SITE_URL`
+bila host produksi berbeda dari `BETTER_AUTH_URL`).
 
 ## 6. Runbook
 

@@ -37,11 +37,28 @@ export const PRESET_ASSIGNMENT_POLICY = {
   "access.presets.apply": ["moderator", "admin"],
 } as const satisfies Partial<Record<PermissionCode, readonly string[]>>;
 
+/**
+ * Otoritas yang tidak boleh lenyap dari sistem. Revocation, penonaktifan, dan
+ * penghapusan akun wajib menyisakan minimal satu akun aktif yang memegangnya.
+ */
+export const PROTECTED_AUTHORITY_CODES = [
+  "access.presets.apply",
+  "access.permissions.assign",
+  "access.users.disable",
+  "access.users.delete",
+] as const satisfies readonly PermissionCode[];
+
+const PROTECTED_AUTHORITY_SET: ReadonlySet<string> = new Set(PROTECTED_AUTHORITY_CODES);
+
+export function isProtectedAuthority(code: string): boolean {
+  return PROTECTED_AUTHORITY_SET.has(code);
+}
+
 /** Individual grants cannot delegate the authorities used to assign presets or permissions. */
 export const PERMISSION_ASSIGNMENT_POLICY = {
   "access.permissions.assign": PERMISSION_CATALOG
     .map(({ code }) => code)
-    .filter((code) => !["access.presets.apply", "access.permissions.assign", "access.users.disable", "access.users.delete"].includes(code)),
+    .filter((code) => !PROTECTED_AUTHORITY_SET.has(code)),
 } as const satisfies Partial<Record<PermissionCode, readonly PermissionCode[]>>;
 
 export const PERMISSION_PRESETS = [

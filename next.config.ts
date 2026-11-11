@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      { source: "/project", destination: "/paket", permanent: true },
+      { source: "/project/:rup", destination: "/paket/:rup", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

@@ -6,6 +6,7 @@ import {
   PERMISSION_PRESETS,
   PRESET_ASSIGNMENT_POLICY,
   isPermissionCode,
+  isProtectedAuthority,
   isPermissionPresetCode,
   type PermissionCode,
 } from "../catalog";
@@ -167,14 +168,8 @@ export async function revokePermissionGrant(input: {
     if (grant.userId === input.actorUserId) throw new AuthorizationError(403, "You cannot revoke permissions from your own account.");
 
     const otherPermissions = await permissionsForUser(grant.userId, tx, grant.id);
-    const protectedAuthorities = new Set<string>([
-      "access.presets.apply",
-      "access.permissions.assign",
-      "access.users.disable",
-      "access.users.delete",
-    ]);
-    const isProtectedAuthority = protectedAuthorities.has(grant.permissionCode);
-    if (isProtectedAuthority) {
+    const isProtectedAuthorityGrant = isProtectedAuthority(grant.permissionCode);
+    if (isProtectedAuthorityGrant) {
       if (!actorPermissions.has("access.presets.apply")) {
         throw new AuthorizationError(403, "Only an administrator may revoke a protected account-management authority.");
       }

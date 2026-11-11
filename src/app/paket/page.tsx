@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FiSearch } from "react-icons/fi";
+import { FiMap, FiSearch } from "react-icons/fi";
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { classifyRoadWork } from "@/contracts/packages/road-work";
 import { formatRupiahFull } from "@/features/map/road-types";
@@ -14,7 +14,6 @@ export const metadata = createPageMetadata({
   title: "Direktori paket pekerjaan jalan",
   description: "Cari dan telusuri paket pekerjaan jalan menurut RUP, tahun, jenis pekerjaan, pagu, dan rekam kontrak.",
   path: "/paket",
-  canonicalPath: "/project",
 });
 
 const PAGE_SIZE = 50;
@@ -25,7 +24,7 @@ const WORK_OPTIONS: Array<{ value: RoadWorkCategory; label: string }> = [
   { value: "JEMBATAN", label: "Jembatan" },
 ];
 
-interface ProjectPageProps {
+interface PackageDirectoryPageProps {
   searchParams: Promise<{
     region?: string | string[];
     q?: string | string[];
@@ -58,7 +57,7 @@ function hrefForPackageDetail(rup: string, region: string, returnTo: string) {
   return `/paket/${encodeURIComponent(rup)}?${params.toString()}`;
 }
 
-export default async function ProjectPage({ searchParams }: ProjectPageProps) {
+export default async function PackageDirectoryPage({ searchParams }: PackageDirectoryPageProps) {
   const queryParams = await searchParams;
   const regionId = resolveRegionId(queryParams.region);
   const query = (firstValue(queryParams.q) ?? "").trim().slice(0, 120);
@@ -232,6 +231,12 @@ export default async function ProjectPage({ searchParams }: ProjectPageProps) {
         <span className="text-muted-foreground">Halaman {page.toLocaleString("id-ID")} dari {totalPages.toLocaleString("id-ID")}</span>
         {page < totalPages ? <Link href={hrefForPage(page + 1, pageParams)} className="font-bold text-primary underline-offset-2 hover:underline">Paket berikutnya</Link> : <span className="text-muted-foreground">Paket berikutnya</span>}
       </nav>}
+
+      <div className="mt-7 flex flex-wrap items-center gap-3">
+        <Link href={`/peta-pekerjaan?region=${encodeURIComponent(regionId)}`} className="inline-flex min-h-10 items-center gap-2 bg-primary px-4 font-sans text-xs font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#004682]">
+          <FiMap aria-hidden="true" className="size-4" /> Peta pekerjaan
+        </Link>
+      </div>
     </CatalogPageShell>
   );
 }

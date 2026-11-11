@@ -99,7 +99,7 @@ export default async function PublicReportDetailPage({ params }: PublicReportDet
                 <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Paket rujukan</dt>
                 <dd className="mt-1 text-sm text-foreground">
                   {report.package ? (
-                    <Link href={`/project/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(region.id)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+                    <Link href={`/paket/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(region.id)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
                       RUP {report.package.rup}
                     </Link>
                   ) : "Tidak ditautkan"}

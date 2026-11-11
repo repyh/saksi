@@ -10,9 +10,9 @@ interface PackageDetailPageProps {
 }
 
 export async function generateMetadata(props: PackageDetailPageProps): Promise<Metadata> {
-  return generateRoadPackageDetailMetadata({ ...props, directoryPath: "/paket" });
+  return generateRoadPackageDetailMetadata(props);
 }
 
 export default function PackageDetailPage(props: PackageDetailPageProps) {
-  return <RoadPackageDetailPage {...props} directoryPath="/paket" />;
+  return <RoadPackageDetailPage {...props} />;
 }

@@ -48,7 +48,8 @@ interface PageMetadataOptions {
   description: string;
   path: string;
   index?: boolean;
-  canonicalPath?: string;
+  /** Pakai `summary` untuk kartu tanpa gambar; `summary_large_image` hanya bila ada gambar. */
+  shareImage?: boolean;
 }
 
 export function createPageMetadata({
@@ -56,9 +57,9 @@ export function createPageMetadata({
   description,
   path,
   index = true,
-  canonicalPath = path,
+  shareImage = false,
 }: PageMetadataOptions): Metadata {
-  const canonicalUrl = canonicalPath;
+  const canonicalUrl = path;
   const shareTitle = `${title} | ${SITE_NAME}`;
   // OG image config, retained for later: { url: "/opengraph-image", width: 1200, height: 630 }.
 
@@ -77,7 +78,7 @@ export function createPageMetadata({
       // images: [image],
     },
     twitter: {
-      card: "summary_large_image",
+      card: shareImage ? "summary_large_image" : "summary",
       title: shareTitle,
       description,
       // images: [image],

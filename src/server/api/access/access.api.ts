@@ -1,7 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { grantIndividualPermissions, requireRequestPermission, revokePermissionGrant } from "@/server/authorization/authority";
-import { activeGrantWhere } from "@/server/authorization/permissions";
+import { describeAuthorities } from "@/server/authorization/last-authority";
+import { strandedAuthoritiesForAccount } from "@/server/authorization/permissions";
 import { recordAuthorizationEvent } from "@/server/authorization/audit";
 import { changeAccountStatusSchema, createRegistrationInviteSchema, deleteAccountSchema, grantAccountPermissionsSchema, revokeAccountPermissionSchema, updateAccountProfileSchema } from "./access-schema";
 import { PERMISSION_ASSIGNMENT_POLICY, PERMISSION_CATALOG, PERMISSION_PRESETS, PRESET_ASSIGNMENT_POLICY, isPermissionCode, isPermissionPresetCode } from "@/server/authorization/catalog";
@@ -150,17 +151,15 @@ export class AccessApi extends ApiController {
           return { id: target.id, disabledAt: target.disabledAt?.toISOString() ?? null };
         }
 
-        const anotherLifecycleAdmin = await tx.userPermissionGrant.findFirst({
-          where: {
-            userId: { not: targetId },
-            permissionCode: "access.users.disable",
-            ...activeGrantWhere(now),
-            user: { disabledAt: null },
-          },
-          select: { id: true },
-        });
-        if (!anotherLifecycleAdmin) {
-          throw new ApiError(409, "LAST_ACCOUNT_LIFECYCLE_ADMIN", "Berikan izin pengelolaan akun kepada admin lain sebelum mengubah status akun ini.");
+        if (parsed.data.disabled) {
+          const stranded = await strandedAuthoritiesForAccount(targetId, tx, now);
+          if (stranded.length > 0) {
+            throw new ApiError(
+              409,
+              "LAST_PROTECTED_AUTHORITY",
+              `Akun ini satu-satunya pemegang otoritas ${describeAuthorities(stranded)}. Alihkan otoritas tersebut ke akun aktif lain sebelum menonaktifkannya.`,
+            );
+          }
         }
 
         const disabledAt = parsed.data.disabled ? now : null;
@@ -204,24 +203,20 @@ export class AccessApi extends ApiController {
       if (actor.id === targetId) throw new ApiError(403, "SELF_ACCOUNT_ACTION", "Anda tidak dapat menghapus akun sendiri.");
 
       await prisma.$transaction(async (tx) => {
-        const target = await tx.user.findUnique({ where: { id: targetId }, select: { id: true, email: true, disabledAt: true } });
+        const target = await tx.user.findUnique({ where: { id: targetId }, select: { id: true, name: true, email: true, disabledAt: true } });
         if (!target) throw new ApiError(404, "ACCOUNT_NOT_FOUND", "Akun tidak ditemukan.");
         if (!target.disabledAt) throw new ApiError(409, "ACCOUNT_MUST_BE_DISABLED", "Nonaktifkan akun terlebih dahulu sebelum menghapusnya.");
         if (target.email.trim().toLocaleLowerCase("en-US") !== parsed.data.confirmationEmail.trim().toLocaleLowerCase("en-US")) {
           throw new ApiError(400, "ACCOUNT_CONFIRMATION_MISMATCH", "Email konfirmasi tidak cocok dengan akun yang dipilih.");
         }
 
-        const anotherDeletionAdmin = await tx.userPermissionGrant.findFirst({
-          where: {
-            userId: { not: targetId },
-            permissionCode: "access.users.delete",
-            ...activeGrantWhere(new Date()),
-            user: { disabledAt: null },
-          },
-          select: { id: true },
-        });
-        if (!anotherDeletionAdmin) {
-          throw new ApiError(409, "LAST_ACCOUNT_DELETION_ADMIN", "Berikan izin penghapusan akun kepada admin lain sebelum menghapus akun ini.");
+        const stranded = await strandedAuthoritiesForAccount(targetId, tx);
+        if (stranded.length > 0) {
+          throw new ApiError(
+            409,
+            "LAST_PROTECTED_AUTHORITY",
+            `Akun ini satu-satunya pemegang otoritas ${describeAuthorities(stranded)}. Alihkan otoritas tersebut ke akun aktif lain sebelum menghapusnya.`,
+          );
         }
 
         await recordAuthorizationEvent(tx, {
@@ -231,7 +226,11 @@ export class AccessApi extends ApiController {
           resourceType: "user",
           resourceId: targetId,
           reason: parsed.data.reason,
-          metadata: { disabledAt: target.disabledAt.toISOString() },
+          metadata: {
+            disabledAt: target.disabledAt.toISOString(),
+            deletedAccountName: target.name,
+            deletedAccountEmail: target.email,
+          },
         });
         await tx.user.delete({ where: { id: targetId } });
       }, { isolationLevel: "Serializable" });

@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { ImageResponse } from "next/og";
-import { districtSlug, parseReportSegments } from "@/features/map/report-routes";
+import { addressSlug, districtSlug, parseReportSegments } from "@/features/map/report-routes";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
+import { getSiteOrigin } from "@/lib/seo";
 
 export const runtime = "nodejs";
 
@@ -39,10 +40,6 @@ function readGeoJSON(file: string): FeatureCollection {
 function featureRings(feature: Feature): Position[][] {
   if (feature.geometry.type === "Polygon") return feature.geometry.coordinates as Position[][];
   return (feature.geometry.coordinates as Position[][][]).flat();
-}
-
-function normalize(value: unknown) {
-  return String(value ?? "").trim().toLocaleLowerCase("id-ID").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function compactRing(ring: Position[], maxPoints: number): Position[] {
@@ -85,40 +82,43 @@ function toMapShapes(features: Array<{ feature: Feature; selected: boolean }>): 
 function selectedFeature(regionId: string, segments: string[]) {
   const selection = parseReportSegments(segments);
   const region = getRegion(regionId);
+  const kelurahanField = region.batas.kelurahan.nama;
   const districtFile = region.batas.kecamatan?.berkas ?? region.batas.kelurahan.berkas;
   const districtField = region.batas.kecamatan?.nama ?? region.batas.kelurahan.kecamatan;
   const city = readGeoJSON(districtFile).features;
+  const matchesDistrict = (value: unknown) =>
+    !selection.districtSlug || districtSlug(String(value ?? "")) === selection.districtSlug;
   const district = selection.districtSlug
-    ? city.find((feature) => districtSlug(String(feature.properties[districtField] ?? "")) === selection.districtSlug)
+    ? city.find((feature) => matchesDistrict(feature.properties[districtField]))
     : undefined;
 
   if (selection.districtSlug && !district) return { city, selected: null, areaLabel: null };
-  if (selection.rwSlug && region.batas.lingkungan) {
-    const rw = selection.rwSlug.replace(/^rw-?/i, "");
-    const collection = readGeoJSON(region.batas.lingkungan.berkas);
-    const feature = collection.features.find((item) =>
-      normalize(item.properties[region.batas.lingkungan!.nomor]) === normalize(rw)
-      && (!selection.villageSlug || normalize(item.properties[region.batas.kelurahan.nama]) === normalize(selection.villageSlug.replaceAll("-", " ")))
-      && (!selection.districtSlug || districtSlug(String(item.properties[region.batas.lingkungan!.kecamatan] ?? "")) === selection.districtSlug),
+
+  const lingkungan = region.batas.lingkungan;
+  if (selection.rwSlug && lingkungan) {
+    const rw = addressSlug(selection.rwSlug.replace(/^rw-?/i, ""));
+    const feature = readGeoJSON(lingkungan.berkas).features.find((item) =>
+      addressSlug(String(item.properties[lingkungan.nomor] ?? "")) === rw
+      && (!selection.villageSlug || addressSlug(String(item.properties[kelurahanField] ?? "")) === selection.villageSlug)
+      && matchesDistrict(item.properties[lingkungan.kecamatan]),
     );
     if (feature) {
-      const area = `RW ${String(feature.properties[region.batas.lingkungan.nomor])}`;
-      const village = String(feature.properties[region.batas.lingkungan.nama]);
+      const area = `RW ${String(feature.properties[lingkungan.nomor])}`;
+      const village = String(feature.properties[kelurahanField]);
       return { city, selected: feature, areaLabel: `${area} · ${village}` };
     }
   }
   if (selection.villageSlug) {
-    const field = region.batas.kelurahan.nama;
     const kecamatanField = region.batas.kelurahan.kecamatan;
     const feature = readGeoJSON(region.batas.kelurahan.berkas).features.find((item) =>
-      normalize(item.properties[field]).replaceAll(" ", "-") === selection.villageSlug
-      && (!selection.districtSlug || districtSlug(String(item.properties[kecamatanField] ?? "")) === selection.districtSlug),
+      addressSlug(String(item.properties[kelurahanField] ?? "")) === selection.villageSlug
+      && matchesDistrict(item.properties[kecamatanField]),
     );
     if (feature) {
       return {
         city,
         selected: feature,
-        areaLabel: `${String(feature.properties[field])} · ${String(feature.properties[kecamatanField])}`,
+        areaLabel: `${String(feature.properties[kelurahanField])} · ${String(feature.properties[kecamatanField])}`,
       };
     }
   }
@@ -150,14 +150,27 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const search = requestUrl.searchParams;
   const regionId = resolveRegionId(search.get("region"));
+  const regionLabel = getRegion(regionId).label;
+  const siteHost = getSiteOrigin().host;
   const segments = (search.get("area") ?? "").split("/").filter(Boolean).slice(0, 8).map((segment) => segment.slice(0, 96));
-  const { city, selected, areaLabel } = selectedFeature(regionId, segments);
-  const mapFeatures = selected
-    ? [{ feature: selected, selected: true }]
-    : city.map((feature) => ({ feature, selected: false }));
-  const shapes = toMapShapes(mapFeatures);
   const labels = getFilterLabels(search);
-  const heading = areaLabel ?? "Kota Tangerang";
+
+  let shapes: MapShape[] = [];
+  let areaLabel: string | null = null;
+  try {
+    const selection = selectedFeature(regionId, segments);
+    areaLabel = selection.areaLabel;
+    const mapFeatures = selection.selected
+      ? [{ feature: selection.selected, selected: true }]
+      : selection.city.map((feature) => ({ feature, selected: false }));
+    shapes = toMapShapes(mapFeatures);
+  } catch {
+    // Berkas batas tidak terbaca: kartu tetap dibuat, hanya tanpa gambar peta.
+    shapes = [];
+    areaLabel = null;
+  }
+
+  const heading = areaLabel ?? regionLabel;
   const focusLabel = areaLabel ? "Area pilihan" : "Cakupan peta";
   const response = new ImageResponse(
     (
@@ -172,7 +185,7 @@ export async function GET(request: Request) {
             <div style={{ display: "flex", flexDirection: "column", width: 610 }}>
               <div style={{ display: "flex", marginBottom: 16, fontSize: 17, fontWeight: 700, letterSpacing: 2.5, color: COLORS.blue, textTransform: "uppercase" }}>{focusLabel}</div>
               <div style={{ display: "flex", fontSize: areaLabel ? 42 : 48, fontWeight: 800, lineHeight: 1.12 }}>{heading}</div>
-              <div style={{ display: "flex", marginTop: 14, fontSize: 23, color: COLORS.muted }}>Peta pekerjaan jalan · Kota Tangerang</div>
+              <div style={{ display: "flex", marginTop: 14, fontSize: 23, color: COLORS.muted }}>Peta pekerjaan jalan · {regionLabel}</div>
               {labels.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24 }}>{labels.map((label) => <div key={label} style={{ display: "flex", padding: "8px 12px", border: `1px solid ${COLORS.border}`, backgroundColor: "#f7f9fc", color: COLORS.muted, fontSize: 16 }}>{label}</div>)}</div>}
             </div>
             <div style={{ display: "flex", width: 400, height: 400, alignItems: "center", justifyContent: "center", border: `1px solid ${COLORS.border}`, backgroundColor: COLORS.map }}>
@@ -183,7 +196,7 @@ export async function GET(request: Request) {
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 14, borderTop: `1px solid ${COLORS.border}`, color: COLORS.muted, fontSize: 15 }}>
             <div style={{ display: "flex" }}>Data publik · wilayah · kontrak</div>
-            <div style={{ display: "flex", fontWeight: 700, color: COLORS.blue }}>saksi.repyh.my.id</div>
+            <div style={{ display: "flex", fontWeight: 700, color: COLORS.blue }}>{siteHost}</div>
           </div>
         </div>
       </div>

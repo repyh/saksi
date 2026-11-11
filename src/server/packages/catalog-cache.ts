@@ -1,5 +1,5 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
 import type {
   RoadPackageContract,
@@ -13,7 +13,7 @@ import {
   CATALOG_REVALIDATE_SECONDS,
   CATALOG_SOURCE,
 } from "./catalog-cache-config";
-import { getIndeksKontrak, ringkasanPenyedia, slugPenyedia } from "./lpse-repository";
+import { getIndeksKontrak, resetIndeksKontrakCache, ringkasanPenyedia, slugPenyedia } from "./lpse-repository";
 import { snapshotMeta } from "./snapshot-repository";
 import { createRoadPackageRepository } from "./source";
 
@@ -146,3 +146,16 @@ export const getVendorCatalogCached = cache(
   async (regionId: string = DEFAULT_REGION_ID): Promise<VendorCatalog> =>
     loadVendorCatalog(regionId),
 );
+
+/**
+ * Buang seluruh cache katalog setelah ingestion selesai. TTL harian membuat data
+ * baru bisa tertinggal hingga sehari tanpa langkah ini; pemanggilnya adalah
+ * `POST /api/internal/catalog/revalidate` yang dijalankan worker ingestion.
+ *
+ * `revalidateTag` hanya mengosongkan Data Cache; indeks kontrak per proses punya
+ * masa hidup sendiri dan harus direset eksplisit.
+ */
+export async function revalidateCatalogCache(): Promise<void> {
+  revalidateTag(CATALOG_CACHE_TAGS[0], { expire: 0 });
+  resetIndeksKontrakCache();
+}

@@ -215,7 +215,7 @@ model UserPermissionGrant {
   user            User       @relation("PermissionGrantUser", fields: [userId], references: [id], onDelete: Cascade)
   permission      Permission @relation(fields: [permissionCode], references: [code], onDelete: Restrict)
   grantedBy       User?      @relation("PermissionGrantor", fields: [grantedByUserId], references: [id], onDelete: SetNull)
-  revokedBy       User?      @relation("PermissionRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+  revokedBy       User?      @relation("PermissionRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
 
   @@index([userId, revokedAt, expiresAt])
   @@index([permissionCode, revokedAt])

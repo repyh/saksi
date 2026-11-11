@@ -100,7 +100,7 @@ Evidence: `src/app/paket/page.tsx:183`; `src/app/penyedia/page.tsx:147`.
 ## Suggested order for follow-up
 
 1. Verify the global header at 320px, 375px, and tablet widths; provide an accessible compact navigation pattern if it clips or compresses.
-2. Resolve whether `/project` remains a required destination or whether `/paket` is the accepted route and label.
+2. ~~Resolve whether `/project` remains a required destination or whether `/paket` is the accepted route and label.~~ Resolved 11 November 2026: `/paket` is the only directory and detail route; the navbar label is “Paket Jalan” and `/project` answers with a permanent redirect.
 3. Improve the map-selection label and expose public reports from a broader discovery point.
 4. Add keyboard skip navigation and announce/focus report-step changes.
 5. Preserve context on return/map transitions and make row click targets match their hover affordance.

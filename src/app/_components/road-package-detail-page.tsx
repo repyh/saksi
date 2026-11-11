@@ -20,18 +20,17 @@ import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
 export interface RoadPackageDetailPageProps {
   params: Promise<{ rup: string }>;
   searchParams: Promise<{ region?: string | string[]; returnTo?: string | string[] }>;
-  directoryPath: "/paket" | "/project";
 }
 
 function firstValue(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function packageDirectoryHref(returnTo: string | undefined, regionId: string, directoryPath: RoadPackageDetailPageProps["directoryPath"]) {
-  const fallback = `${directoryPath}?region=${encodeURIComponent(regionId)}`;
-  if (!returnTo?.startsWith(`${directoryPath}?`)) return fallback;
+function packageDirectoryHref(returnTo: string | undefined, regionId: string) {
+  const fallback = `/paket?region=${encodeURIComponent(regionId)}`;
+  if (!returnTo?.startsWith("/paket?")) return fallback;
 
-  const requested = new URLSearchParams(returnTo.slice(`${directoryPath}?`.length));
+  const requested = new URLSearchParams(returnTo.slice("/paket?".length));
   const params = new URLSearchParams({ region: regionId });
   const query = requested.get("q")?.trim().slice(0, 120);
   const year = requested.get("tahun");
@@ -47,7 +46,7 @@ function packageDirectoryHref(returnTo: string | undefined, regionId: string, di
   if (direction === "asc" || direction === "desc") params.set("arah", direction);
   if (Number.isInteger(page) && page > 0 && page <= 10_000) params.set("halaman", String(page));
 
-  return `${directoryPath}?${params.toString()}`;
+  return `/paket?${params.toString()}`;
 }
 
 function labelPresisi(item: { presisi_peta: string; rw: string | null }): string {
@@ -72,45 +71,34 @@ async function DeferredPackageReports({
 export async function generateRoadPackageDetailMetadata({
   params,
   searchParams,
-  directoryPath,
 }: RoadPackageDetailPageProps): Promise<Metadata> {
   const [{ rup }, query] = await Promise.all([params, searchParams]);
-  if (!/^\d{1,16}$/.test(rup)) {
-    return createPageMetadata({
-      title: "Proyek jalan tidak ditemukan",
-      description: "Rincian proyek jalan ini tidak tersedia di katalog SAKSI.",
-      path: `${directoryPath}/${encodeURIComponent(rup)}`,
-      index: false,
-    });
-  }
+  const notFoundMetadata = createPageMetadata({
+    title: "Paket jalan tidak ditemukan",
+    description: "Rincian paket jalan ini tidak tersedia di katalog SAKSI.",
+    path: `/paket/${encodeURIComponent(rup)}`,
+    index: false,
+  });
+  if (!/^\d{1,16}$/.test(rup)) return notFoundMetadata;
+
   const regionId = resolveRegionId(query.region);
   const detail = await getRoadPackageDetail(rup, regionId);
-  if (!detail) {
-    return createPageMetadata({
-      title: "Proyek jalan tidak ditemukan",
-      description: "Rincian proyek jalan ini tidak tersedia di katalog SAKSI.",
-      path: `${directoryPath}/${encodeURIComponent(rup)}`,
-      index: false,
-    });
-  }
+  if (!detail) return notFoundMetadata;
 
-  const canonicalPath = `/project/${encodeURIComponent(detail.item.kode_rup)}`;
   return createPageMetadata({
-    title: `${detail.item.nama} — Proyek RUP ${detail.item.kode_rup}`,
-    description: `Rencana pengadaan, wilayah, pagu, dan rekam kontrak yang tersedia untuk proyek RUP ${detail.item.kode_rup} di ${detail.region.label}.`,
-    path: canonicalPath,
-    canonicalPath,
+    title: `${detail.item.nama} — Paket RUP ${detail.item.kode_rup}`,
+    description: `Rencana, lokasi, pagu, dan rekam kontrak yang tersedia untuk paket RUP ${detail.item.kode_rup} di ${detail.region.label}.`,
+    path: `/paket/${encodeURIComponent(detail.item.kode_rup)}`,
   });
 }
 
 export async function RoadPackageDetailPage({
   params,
   searchParams,
-  directoryPath,
 }: RoadPackageDetailPageProps) {
   const [{ rup }, query] = await Promise.all([params, searchParams]);
   const regionId = resolveRegionId(query.region);
-  const returnHref = packageDirectoryHref(firstValue(query.returnTo), regionId, directoryPath);
+  const returnHref = packageDirectoryHref(firstValue(query.returnTo), regionId);
   if (!/^\d{1,16}$/.test(rup)) notFound();
 
   const detail = await getRoadPackageDetail(rup, regionId);
@@ -123,9 +111,7 @@ export async function RoadPackageDetailPage({
 
   const { item, plan, snapshot } = detail;
   const regionLabel = getRegion(regionId).label;
-  const typeLabel = directoryPath === "/project" ? "Proyek" : "Paket";
-  const returnLabel = directoryPath === "/project" ? "Semua proyek jalan" : "Semua paket jalan";
-  const detailPath = `/project/${encodeURIComponent(item.kode_rup)}`;
+  const detailPath = `/paket/${encodeURIComponent(item.kode_rup)}`;
 
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-white text-foreground">
@@ -137,8 +123,8 @@ export async function RoadPackageDetailPage({
             {
               "@type": "ListItem",
               position: 1,
-              name: "Proyek jalan",
-              item: absoluteSiteUrl("/project"),
+              name: "Paket pekerjaan jalan",
+              item: absoluteSiteUrl("/paket"),
             },
             {
               "@type": "ListItem",
@@ -152,17 +138,17 @@ export async function RoadPackageDetailPage({
       <section className="border-b border-border bg-muted/20">
         <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <Link href={returnHref} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
-            <FiArrowLeft aria-hidden="true" className="size-3.5" /> {returnLabel}
+            <FiArrowLeft aria-hidden="true" className="size-3.5" /> Semua paket jalan
           </Link>
 
           <p className="mt-4 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
-            {typeLabel} RUP {item.kode_rup} · TA {item.tahun}
+            Paket RUP {item.kode_rup} · TA {item.tahun}
           </p>
           <h1 className="mt-2 font-heading text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl">{item.nama}</h1>
 
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Pagu {typeLabel.toLocaleLowerCase("id-ID")}</p>
+              <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Pagu paket</p>
               <p className="mt-1 font-heading text-3xl font-extrabold tabular-nums tracking-tight text-primary">{formatRupiahFull(item.pagu)}</p>
             </div>
             <Link href={`/laporan/paket/${item.kode_rup}?region=${encodeURIComponent(regionId)}`} className="inline-flex items-center gap-2 bg-primary px-4 py-2.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#004682]">

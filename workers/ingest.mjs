@@ -537,6 +537,36 @@ function jalankanGate(snapshotPath, { manifest = false } = {}) {
   return keluaran;
 }
 
+const REVALIDATE_TIMEOUT_MS = 10_000;
+
+/**
+ * Buang cache katalog di server aplikasi setelah run sukses. Tanpa langkah ini
+ * TTL harian membuat katalog baru bisa tertinggal sampai sehari. Kegagalan di
+ * sini tidak menggagalkan ingestion; data sudah tersimpan di database.
+ */
+async function segarkanCacheKatalog(logger) {
+  const token = process.env.CATALOG_REVALIDATE_TOKEN?.trim();
+  const origin = process.env.SITE_URL?.trim() || process.env.BETTER_AUTH_URL?.trim();
+  if (!token || !origin) {
+    logger.warn("cache katalog tidak disegarkan: CATALOG_REVALIDATE_TOKEN atau SITE_URL belum diset");
+    return;
+  }
+  try {
+    const respons = await fetch(new URL("/api/internal/catalog/revalidate", origin), {
+      method: "POST",
+      headers: { "x-catalog-revalidate-token": token },
+      signal: AbortSignal.timeout(REVALIDATE_TIMEOUT_MS),
+    });
+    if (!respons.ok) {
+      logger.warn("cache katalog tidak disegarkan", { status: respons.status, origin });
+      return;
+    }
+    logger.info("cache katalog disegarkan", { origin });
+  } catch (error) {
+    logger.warn("cache katalog tidak disegarkan", { error: error.message, origin });
+  }
+}
+
 async function main() {
   const region = await muatRegion(REGION_ID).catch((error) => {
     throw new Error(`region: ${error.message}`);
@@ -731,6 +761,7 @@ async function main() {
     }
     await selesaikanRun(client, { runId, stats, startedAt: mulai });
     log.info("run sukses", { run_id: runId, metrik: validDb.metrik, pagu: rupiah(validDb.metrik.pagu ?? 0), ditulis });
+    await segarkanCacheKatalog(log);
   } catch (error) {
     if (runId) {
       await catatStep(client, {

@@ -208,7 +208,9 @@ cp .env.example .env.local
 Copy-Item .env.example .env.local
 ```
 
-Konfigurasikan variabel sesuai kebutuhan fitur, termasuk `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `SUPABASE_URL`, dan `SUPABASE_SERVICE_ROLE_KEY`. Service role key hanya boleh digunakan di server. Set `SITE_URL` ke origin publik saat deployment.
+Konfigurasikan variabel sesuai kebutuhan fitur, termasuk `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `SUPABASE_URL`, dan `SUPABASE_SERVICE_ROLE_KEY`. Service role key hanya boleh digunakan di server. Set `SITE_URL` ke origin publik saat deployment, dan isi `CATALOG_REVALIDATE_TOKEN` agar worker ingestion dapat menyegarkan cache katalog lewat `POST /api/internal/catalog/revalidate`.
+
+`DATABASE_URL` adalah satu-satunya penanda fitur database aktif (autentikasi, laporan, katalog database); `DIRECT_URL` hanya dipakai Prisma CLI untuk migrasi. Bila pooler Supavisor bermasalah saat pengembangan lokal, arahkan `DATABASE_URL` ke koneksi session mode yang sama dengan `DIRECT_URL` alih-alih mengosongkannya.
 
 Terapkan migrasi dan siapkan penyimpanan privat hanya pada environment database yang memang Anda kelola:
 
