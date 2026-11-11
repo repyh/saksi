@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/repyh/saksi/dc29118/docs/assets/brand/saksi-logo-horizontal.svg" alt="Logo SAKSI" width="280">
+
 # SAKSI
 
 **Sistem Akuntabilitas & Komparasi Spasial Infrastruktur**
@@ -24,6 +26,9 @@ Telusuri paket pekerjaan jalan di Kota Tangerang, pahami wilayah yang disebut da
   - [Tentang SAKSI](#tentang-saksi)
   - [Screenshot Aplikasi](#screenshot-aplikasi)
   - [Fitur](#fitur)
+  - [Diagram Sistem](#diagram-sistem)
+    - [Use case diagram](#use-case-diagram)
+    - [Activity diagram](#activity-diagram)
   - [Panduan Penggunaan](#panduan-penggunaan)
     - [Menelusuri paket pekerjaan](#menelusuri-paket-pekerjaan)
     - [Membaca detail proyek](#membaca-detail-proyek)
@@ -41,6 +46,10 @@ Telusuri paket pekerjaan jalan di Kota Tangerang, pahami wilayah yang disebut da
     - [Mengaktifkan database dan fitur laporan](#mengaktifkan-database-dan-fitur-laporan)
     - [Pemeriksaan](#pemeriksaan)
   - [Arsitektur Backend](#arsitektur-backend)
+    - [Diagram API dan alur backend](#diagram-api-dan-alur-backend)
+      - [Request data paket](#request-data-paket)
+      - [Alur API pengiriman laporan](#alur-api-pengiriman-laporan)
+      - [Alur API moderasi laporan](#alur-api-moderasi-laporan)
   - [Keamanan](#keamanan)
   - [Teknologi](#teknologi)
   - [Privasi dan Lisensi Data](#privasi-dan-lisensi-data)
@@ -87,6 +96,84 @@ Cuplikan menampilkan data pada waktu pengambilan; jumlah dan daftar paket dapat 
 - **Pelaporan kondisi jalan** dengan pilihan kategori dari pelapor, lokasi, foto, serta tautan paket rujukan bila relevan.
 - **Dashboard akun** untuk melihat laporan sendiri, memperbarui profil, meninjau laporan, dan mengelola akun sesuai izin.
 - **PWA** dengan halaman offline untuk membantu akses ketika koneksi terputus. Peta dan respons API tidak disimpan oleh service worker.
+
+## Diagram Sistem
+
+Diagram berikut merangkum kemampuan aplikasi dan alur utama yang tersedia. Diagram dirender langsung oleh GitHub dari Mermaid.
+
+### Use case diagram
+
+```mermaid
+flowchart LR
+  visitor["Pengunjung / warga"]
+  account["Pengguna masuk"]
+  reviewer["Peninjau laporan"]
+  administrator["Administrator akun"]
+
+  subgraph SAKSI["Sistem SAKSI"]
+    direction TB
+    analysis(["Jelajahi analisis distribusi anggaran"])
+    map(["Filter peta dan cari paket pekerjaan"])
+    details(["Lihat detail proyek dan penyedia"])
+    publicReports(["Baca laporan jalan yang dipublikasikan"])
+    submit(["Kirim laporan kerusakan jalan"])
+    ownAccount(["Lihat laporan sendiri dan kelola profil"])
+    moderate(["Tinjau laporan sesuai izin akun"])
+    manageAccounts(["Undang dan kelola akun sesuai izin"])
+  end
+
+  visitor --- analysis
+  visitor --- map
+  visitor --- details
+  visitor --- publicReports
+  visitor --- submit
+  account --- ownAccount
+  reviewer --- moderate
+  administrator --- manageAccounts
+
+  classDef actor fill:#ffffff,stroke:#0058A3,stroke-width:2px,color:#0A192F
+  classDef usecase fill:#F1F5F9,stroke:#0058A3,stroke-width:1.5px,color:#0A192F
+  class visitor,account,reviewer,administrator actor
+  class analysis,map,details,publicReports,submit,ownAccount,moderate,manageAccounts usecase
+```
+
+Pengguna masuk tetap dapat memakai fitur publik. Pengiriman laporan tidak mewajibkan akun; tab dashboard dan tindakan staf mengikuti sesi serta izin akun.
+
+### Activity diagram
+
+Activity diagram ini mengikuti pengiriman laporan sampai tanda terima. Peninjauan dan keputusan publikasi dilakukan kemudian oleh staf.
+
+```mermaid
+flowchart TB
+  start((Mulai)) --> open["Buka /laporan atau mulai dari detail paket"]
+  open --> hasDraft{"Ada draf lokal?"}
+  hasDraft -- Ya --> restore["Pulihkan draf dan periksa foto serta isian tersimpan"]
+  hasDraft -- Tidak --> photo["Pilih atau ambil foto wajib; browser menyanitasi foto dan menyimpan draf lokal"]
+  restore --> photo
+  photo --> damage["Pilih jenis kerusakan; penyebab, ukuran kasar, dan deskripsi bersifat opsional"]
+  damage --> location["Tentukan lokasi dengan pin, GPS, pencarian alamat, atau wilayah manual"]
+  location --> optional["Opsional: tautkan paket atau ruas; atur persetujuan publik untuk titik presisi"]
+  optional --> complete{"Foto, jenis kerusakan, dan lokasi yang diperlukan sudah lengkap?"}
+  complete -- Tidak --> correct["Tampilkan petunjuk; koreksi isian. Draf tetap tersimpan."]
+  correct --> photo
+  complete -- Ya --> send["Kirim laporan melalui POST /api/reports"]
+  send --> validate["Server memeriksa isian, foto, lokasi, dan rujukan; menerapkan idempotensi serta pembatasan laju"]
+  validate --> valid{"Pemeriksaan server lolos?"}
+  valid -- Tidak --> apiError["Tampilkan kesalahan; perbaiki isian dan kirim ulang"]
+  apiError --> send
+  valid -- Ya --> persist["Simpan laporan berstatus SUBMITTED dan foto di storage privat"]
+  persist --> receipt["Tampilkan kode tanda terima; laporan masuk antrean peninjauan"]
+  receipt --> finish((Selesai))
+
+  classDef decision fill:#EAF3FB,stroke:#0058A3,stroke-width:2px,color:#0A192F
+  classDef action fill:#ffffff,stroke:#0058A3,stroke-width:1.5px,color:#0A192F
+  classDef storage fill:#F1F5F9,stroke:#0058A3,stroke-width:1.5px,color:#0A192F
+  class hasDraft,complete,valid decision
+  class open,restore,photo,damage,location,optional,correct,send,validate,apiError,receipt action
+  class persist storage
+```
+
+Laporan berstatus `SUBMITTED` belum tampil ke publik. Laporan baru tersedia setelah ditinjau dan dipublikasikan; titik presisi hanya ditampilkan bila pelapor menyetujuinya.
 
 ## Panduan Penggunaan
 
@@ -233,17 +320,176 @@ Build menghasilkan Prisma Client melalui `prebuild` dan dirancang tetap dapat be
 
 Next.js menangani halaman, autentikasi, dan Route Handler yang menjadi perantara antara browser dan layanan aplikasi. Logika pencarian dan laporan berada di modul server; browser tidak mengakses Prisma atau database secara langsung.
 
-```text
-Browser dan peta MapLibre
-        ↓
-Halaman Next.js / Route Handler
-        ↓
-API domain → use case → repository server-only
-                           ├─ Prisma → Supabase PostgreSQL/PostGIS
-                           └─ Snapshot data lokal (cadangan)
+### Diagram API dan alur backend
 
-Worker ingest terjadwal → validasi data → Supabase
+```mermaid
+flowchart LR
+  subgraph client["Antarmuka"]
+    mapUI["Peta interaktif"]
+    reportUI["Formulir laporan"]
+    dashboardUI["Dashboard"]
+    serverPages["Server Components<br/>beranda, peta, proyek, penyedia"]
+  end
+
+  subgraph routes["Next.js Route Handlers / BFF"]
+    packageRoutes["GET /api/packages<br/>GET /api/packages/map<br/>GET /api/packages/[rup]"]
+    reportSubmitRoute["POST /api/reports"]
+    reportReadRoutes["GET /api/reports/mine<br/>GET /api/reports/public<br/>GET /api/reports/review"]
+    moderationRoute["PATCH /api/reports/review/[reportId]<br/>GET /api/reports/review/[reportId]/evidence"]
+    accessRoutes["GET /api/access/accounts<br/>PATCH /api/access/accounts/[userId]<br/>POST /api/access/invites"]
+    roadRoutes["GET /api/roads"]
+    geocodeRoute["GET /api/geocode"]
+    tileRoute["GET /api/jalan-tiles/[...path]"]
+  end
+
+  subgraph domain["API domain dan logika server"]
+    packagesAPI["PackagesApi"]
+    packageService["Package service"]
+    packageRepository["Package repository"]
+    reportsAPI["ReportsApi → validasi, lokasi, moderasi"]
+    reportRepository["Report repository"]
+    accessAPI["AccessApi → otorisasi per izin"]
+    roadsAPI["RoadsApi"]
+    geocodeAPI["Geocode proxy"]
+  end
+
+  subgraph data["Repository dan penyimpanan server-only"]
+    prisma["Prisma adapter"]
+    postgres[("Supabase PostgreSQL / PostGIS")]
+    snapshot["Snapshot paket<br/>(cadangan tanpa database)"]
+    privateStorage[("Supabase Storage privat<br/>bukti foto laporan")]
+    authSession["Better Auth<br/>session"]
+    photon["Photon<br/>geocoding melalui proxy server"]
+    roadTiles["MVT jalan<br/>berdasarkan region"]
+  end
+
+  mapUI --> packageRoutes --> packagesAPI --> packageService --> packageRepository
+  serverPages --> packageService
+  packageRepository --> prisma --> postgres
+  packageRepository -. "DATABASE_URL tidak tersedia" .-> snapshot
+  reportUI --> reportSubmitRoute --> reportsAPI --> reportRepository --> prisma
+  reportRepository --> postgres
+  reportsAPI --> privateStorage
+  reportsAPI --> authSession
+  dashboardUI --> reportReadRoutes --> reportsAPI
+  dashboardUI --> moderationRoute --> reportsAPI
+  dashboardUI --> accessRoutes --> accessAPI --> prisma
+  accessAPI --> authSession
+  mapUI --> roadRoutes --> roadsAPI --> postgres
+  mapUI --> tileRoute --> roadTiles
+  reportUI --> roadRoutes
+  reportUI --> geocodeRoute --> geocodeAPI --> photon
+
+  classDef client fill:#F1F5F9,stroke:#0058A3,color:#0A192F
+  classDef route fill:#EAF3FB,stroke:#0058A3,color:#0A192F
+  classDef domain fill:#ffffff,stroke:#0058A3,color:#0A192F
+  classDef store fill:#FFF8D6,stroke:#C49A00,color:#0A192F
+  class mapUI,reportUI,dashboardUI,serverPages client
+  class packageRoutes,reportSubmitRoute,reportReadRoutes,moderationRoute,accessRoutes,roadRoutes,geocodeRoute,tileRoute route
+  class packagesAPI,packageService,packageRepository,reportsAPI,reportRepository,accessAPI,roadsAPI,geocodeAPI domain
+  class prisma,postgres,snapshot,privateStorage,authSession,photon,roadTiles store
 ```
+
+Diagram tersebut memisahkan request interaktif browser yang melalui Route Handler dari halaman Server Component yang memanggil package service di server. Browser tidak mengakses database atau Supabase Storage secara langsung. `GET /api/packages/map` memakai jalur BFF yang sama, lalu menjalankan agregasi peta.
+
+#### Request data paket
+
+Route paket memvalidasi query sebelum memanggil use case. `PackagesApi` memakai pembungkus respons bersama agar respons sukses dan kesalahan mengikuti bentuk API yang sama.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Visitor as Pengunjung
+  participant UI as Peta interaktif
+  participant Route as Route Handler
+  participant API as PackagesApi
+  participant Schema as parsePackageFilters
+  participant Service as Package service
+  participant Repo as Package repository
+  participant Prisma as Prisma / PostgreSQL
+  participant Snapshot as Snapshot paket
+
+  Visitor->>UI: Ubah filter atau kata pencarian
+  UI->>Route: GET /api/packages?region=...&year=...&district=...&work=...&q=...
+  Route->>API: search(request)
+  API->>Schema: Validasi parameter query
+  alt Query tidak valid
+    Schema-->>API: INVALID_QUERY
+    API-->>UI: HTTP 400 + ApiResult error
+  else Query valid
+    Schema-->>API: Filter tervalidasi
+    API->>Service: searchRoadPackages(filters)
+    Service->>Repo: Ambil paket dan rekam kontrak
+    alt DATABASE_URL tersedia
+      Repo->>Prisma: Baca katalog paket dan kontrak
+      Prisma-->>Repo: Baris katalog
+    else DATABASE_URL tidak tersedia
+      Repo->>Snapshot: Baca snapshot server-only
+      Snapshot-->>Repo: Baris snapshot
+    end
+    Repo-->>Service: Data sumber
+    Service-->>API: Hasil terfilter dan metadata halaman
+    API-->>UI: HTTP 200 + { data, error: null }
+  end
+```
+
+`GET /api/packages/map` menjalankan `aggregateRoadPackages()` untuk ringkasan wilayah, sedangkan `GET /api/packages/[rup]` menjalankan `getRoadPackage()` untuk satu paket. Ketiganya memakai validasi query atau parameter serta respons kesalahan terstruktur.
+
+#### Alur API pengiriman laporan
+
+```mermaid
+flowchart TD
+  reporter["Pelapor"] --> form["Form laporan menyiapkan multipart dan Idempotency-Key"]
+  form --> post["POST /api/reports"]
+  post --> origin{"Origin kosong atau diizinkan?"}
+  origin -- Tidak --> corsError["HTTP 403; tolak request"]
+  corsError --> form
+  origin -- Ya --> fields["ReportsApi memvalidasi field, jumlah, tipe, dan ukuran foto"]
+  fields --> location["Resolver memvalidasi titik, wilayah, paket, dan ruas"]
+  location --> valid{"Isian dan lokasi valid?"}
+  valid -- Tidak --> validationError["Kirim kesalahan; draf lokal dipertahankan"]
+  validationError --> form
+  valid -- Ya --> session{"Sesi Better Auth tersedia?"}
+  session -- Ya --> linkAccount["Hubungkan laporan dengan akun aktif"]
+  session -- Tidak --> idempotency{"Idempotensi dan rate limit lolos?"}
+  linkAccount --> idempotency
+  idempotency -- Tidak --> limitError["Kirim kesalahan tanpa membuat laporan baru"]
+  limitError --> form
+  idempotency -- Ya --> upload["Simpan foto WebP yang disanitasi di storage privat"]
+  upload --> persist["Simpan laporan, media, tautan paket, dan event awal dalam transaksi"]
+  persist --> receipt["HTTP 201 dengan kode tanda terima; status SUBMITTED"]
+  receipt --> finish((Selesai))
+```
+
+#### Alur API moderasi laporan
+
+```mermaid
+flowchart TD
+  dashboard["Dashboard staf"] --> queue["GET /api/reports/review"]
+  queue --> queuePermission{"Memiliki reports.read_queue?"}
+  queuePermission -- Tidak --> denied["HTTP 403"]
+  queuePermission -- Ya --> summary["Kembalikan antrean tanpa identitas pelapor"]
+  summary --> detail["GET /api/reports/review/[reportId]"]
+  detail --> detailPermission{"Memiliki reports.read_queue dan reports.read_deidentified?"}
+  detailPermission -- Tidak --> denied
+  detailPermission -- Ya --> deidentified["Kembalikan detail terdeidentifikasi dan catat akses"]
+  deidentified --> precisePermission{"Memiliki reports.read_precise_location?"}
+  precisePermission -- Ya --> precise["Tambahkan titik dan geometri ruas; catat akses presisi"]
+  precisePermission -- Tidak --> evidencePermission{"Memiliki reports.read_sensitive_evidence?"}
+  precise --> evidencePermission
+  evidencePermission -- Ya --> evidence["GET .../[reportId]/evidence; catat akses foto privat"]
+  evidencePermission -- Tidak --> decision["Pilih PUBLISHED atau REJECTED dan isi alasan"]
+  evidence --> decision
+  decision --> status["PATCH /api/reports/review/[reportId] dengan kode publik"]
+  status --> statusPermission{"Memiliki reports.change_status dan detail, dengan alasan valid?"}
+  statusPermission -- Tidak --> rejected["Tolak request; status tidak berubah"]
+  statusPermission -- Ya --> event["Simpan status dan alasan sebagai event; revalidasi cache publik"]
+  event --> published{"Status PUBLISHED?"}
+  published -- Ya --> public["Tampilkan proyeksi publik terbatas; titik hanya dengan consent"]
+  published -- Tidak --> private["REJECTED tidak masuk ke tampilan publik"]
+```
+
+Pengiriman dapat dilakukan tanpa akun; jika sesi tersedia, API mengaitkan laporan dengan akun tersebut. Akses detail, foto bukti, dan lokasi presisi memerlukan izin terpisah. Penolakan memerlukan alasan, dan laporan `REJECTED` tidak masuk ke tampilan publik.
 
 Saat `DATABASE_URL` tersedia, repository membaca katalog Supabase. Tanpanya, paket dibaca dari snapshot agar peta dan build tetap dapat digunakan. Worker ingest berjalan terpisah dari permintaan halaman untuk memperbarui katalog.
 
