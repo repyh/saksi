@@ -464,7 +464,7 @@ sequenceDiagram
     end
     API->>Access: Periksa Idempotency-Key dan batas pengiriman
     alt Validasi gagal atau batas pengiriman tercapai
-      API-->>Form: Respons kesalahan; tidak membuat laporan baru
+      API-->>Form: Respons kesalahan, tidak membuat laporan baru
       Form-->>Reporter: Tampilkan pesan dan pertahankan draf lokal
     else Request baru valid
       API->>Storage: Simpan WebP yang disanitasi
@@ -508,7 +508,7 @@ sequenceDiagram
   else Izin atau validasi gagal
     ReviewRoute-->>Dashboard: Respons kesalahan; status tidak berubah
   end
-  Note over ReviewRoute,Public: Hanya status PUBLISHED masuk proyeksi publik; titik presisi hanya disertakan bila ada persetujuan pelapor.
+  Note over ReviewRoute,Public: Hanya status PUBLISHED masuk proyeksi publik, titik presisi hanya disertakan bila ada persetujuan pelapor.
 ```
 
 Pengiriman dapat dilakukan tanpa akun; jika sesi tersedia, API mengaitkan laporan dengan akun tersebut. Akses detail, foto bukti, dan lokasi presisi memerlukan izin terpisah. Penolakan memerlukan alasan, dan laporan `REJECTED` tidak masuk ke tampilan publik.
