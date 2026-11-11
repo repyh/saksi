@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import MapDashboard from "@/features/map/map-dashboard";
 import { addressForPackage, districtSlug, parseReportSegments, type ReportViewMode } from "@/features/map/report-routes";
-import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
+import type { RoadContractFilter, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
 import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
@@ -68,7 +68,11 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const selectedWork: RoadWorkCategory = rawWork === "PERMUKAAN" || rawWork === "DRAINASE" || rawWork === "JEMBATAN" ? rawWork : "SEMUA";
   const generalOnly = firstValue(query.umum) === "1";
   const locatedOnly = !generalOnly && firstValue(query.lokasi) !== "0";
-  const selection = parseReportSegments(segments);
+  const rawContract = firstValue(query.kontrak);
+  const contract: RoadContractFilter = rawContract === "ADA" || rawContract === "TANPA" ? rawContract : "SEMUA";
+  const rawVillages = query.desa;
+  const villages = (Array.isArray(rawVillages) ? rawVillages : rawVillages ? [rawVillages] : []).filter(Boolean);
+  const selection = parseReportSegments(segments, regionId);
   const catalog = await searchRoadPackages({ region: regionId, limit: 1 });
   const selectedDistrict = selection.districtSlug
     ? catalog.districts.find((district) => districtSlug(district) === selection.districtSlug)
@@ -77,7 +81,8 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const filters = {
     region: regionId, locatedOnly, generalOnly, budgetDecile: decile,
     year: rawYear === "2025" || rawYear === "2026" ? rawYear : undefined,
-    work: selectedWork, district: selectedDistrict, query: firstValue(query.q),
+    work: selectedWork, contract, district: selectedDistrict, query: firstValue(query.q),
+    villages: selectedDistrict && villages.length ? villages : undefined,
   } as const;
   const [initialData, initialAggregate] = await Promise.all([searchRoadPackages(filters), aggregateRoadPackages(filters)]);
   const selectedPackage = selection.rupCode
@@ -119,6 +124,8 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
           selectedPackage,
           selectedYear: rawYear === "2025" || rawYear === "2026" ? rawYear : "SEMUA",
           selectedWork,
+          selectedContract: contract,
+          selectedVillages: selectedDistrict && villages.length ? villages : null,
           mapView,
           searchQuery: firstValue(query.q) ?? "",
         }}

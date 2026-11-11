@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as maplibregl from "maplibre-gl";
 import { FaRoad, FaWater } from "react-icons/fa6";
+import { FiChevronDown, FiChevronUp, FiMaximize } from "react-icons/fi";
 import { GiBridge } from "react-icons/gi";
 import type { IconType } from "react-icons";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -11,7 +12,7 @@ import type { RoadPackageItem, RoadPackageMapData } from "@/contracts/packages/r
 import type { RegionSummary } from "@/contracts/regions/region.contract";
 import { normalizeAreaKey } from "@/contracts/packages/area-key";
 import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from "@/contracts/packages/road-work";
-import { addressSlug, type ReportAddress } from "./report-routes";
+import { addressSlug, districtSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahFull } from "./road-types";
 import { BASEMAP_URL, attributionBasemap } from "./basemap";
 import {
@@ -39,10 +40,13 @@ interface MapCanvasProps {
   region: RegionSummary;
   selectedPackage: RoadPackageItem | null;
   selectedRegion: ReportAddress | null;
-  onSelectRegion: (region: ClickedRegion | null, sampleRup: string | null) => void;
+  /** Klik poligon hanya memilih wilayah; panel paket dibuka dari register. */
+  onSelectRegion: (region: ClickedRegion | null) => void;
   /** Kirim batas viewport agar agregat peta bisa dibatasi. */
   onViewportChange?: (bbox: [number, number, number, number]) => void;
   viewMode: "packages" | "budget" | "work";
+  /** Jumlah paket pada filter aktif; dipakai untuk keadaan kosong di peta. */
+  packageCount?: number;
   mapHeightClassName?: string;
 }
 
@@ -68,15 +72,15 @@ type StyledProperties = BoundaryProperties & {
 };
 type StyledCollection = FeatureCollection<Geometry, StyledProperties>;
 
-const BUDGET_COLORS = ["#FEE2E2", "#FCA5A5", "#EF4444", "#991B1B"] as const;
+const BUDGET_COLORS = ["#EFF6FF", "#BFDBFE", "#60A5FA", "#0058A3"] as const;
 const WORK_ICONS: Record<SpecificRoadWorkCategory, IconType> = {
   PERMUKAAN: FaRoad,
   DRAINASE: FaWater,
   JEMBATAN: GiBridge,
 };
 
-const RW_ZOOM = 12;
 const KEC_ZOOM = 11;
+const KEL_ZOOM = 14;
 const CLASSES = [
   { min: 0, max: 0, fill: "#F1F5F9", stroke: "#94A3B8", label: "0 paket" },
   { min: 1, max: 1, fill: "#FFF4B8", stroke: "#E6C84D", label: "1 paket" },
@@ -176,30 +180,25 @@ function toAreaStatsMaps(data: RoadPackageMapData): AreaStatsMaps {
   return { rw: build(data.rw), kel: build(data.kel), kec: build(data.kec) };
 }
 
-function workTypeIconMarkup(categories: SpecificRoadWorkCategory[]) {
+function workTypeIconMarkup(category: SpecificRoadWorkCategory) {
+  const Icon = WORK_ICONS[category];
   return renderToStaticMarkup(
     <span
+      title={ROAD_WORK_LABELS[category]}
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "3px",
         padding: "4px",
-        border: "1px solid #6B21A8",
+        border: "1px solid #0058A3",
         borderRadius: "999px",
         background: "rgba(255,255,255,.96)",
-        boxShadow: "0 1px 4px rgba(10,25,47,.3)",
+        boxShadow: "0 1px 4px rgba(10,25,47,.25)",
         pointerEvents: "none",
+        color: "#0058A3",
       }}
     >
-      {categories.map((category) => {
-        const Icon = WORK_ICONS[category];
-        return (
-          <span key={category} title={ROAD_WORK_LABELS[category]} style={{ display: "flex", color: "#5B2180" }}>
-            <Icon size={12} aria-hidden="true" />
-          </span>
-        );
-      })}
+      <Icon size={12} aria-hidden="true" />
     </span>,
   );
 }
@@ -236,11 +235,9 @@ function styleFor(
   const key = areaKey(feature, precision, fields);
   const aggregate = counts.get(key);
   const count = aggregate?.count ?? 0;
-  const bucket = view === "work"
-    ? { fill: aggregate ? "#E8EDF3" : "#F1F5F9", stroke: aggregate ? "#AAB6C4" : "#94A3B8" }
-    : view === "budget" && aggregate
-      ? budgetClassFor(aggregate.budget, bands)
-      : classFor(count, classes);
+  const bucket = view === "budget" && aggregate
+    ? budgetClassFor(aggregate.budget, bands)
+    : classFor(count, classes);
   const selected = highlight === "exact";
   const inSelectedScope = highlight === "scope";
   const bucketStroke = "stroke" in bucket ? bucket.stroke : bucket.fill;
@@ -392,6 +389,11 @@ function centerOfFeature(feature: BoundaryFeature): [number, number] | null {
   return [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
 }
 
+/** Pengguna yang meminta gerak minimal tidak diberi animasi terbang peta. */
+function reducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function sourceId(precision: BoundaryPrecision) {
   return `saksi-${precision.toLocaleLowerCase("id-ID")}`;
 }
@@ -481,9 +483,12 @@ export default function MapCanvas(props: MapCanvasProps) {
   const [precision, setPrecision] = useState<BoundaryPrecision>("Kelurahan");
   const [boundaries, setBoundaries] = useState<{ rw: BoundaryCollection; kel: BoundaryCollection; kec: BoundaryCollection } | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [roadEnabled, setRoadEnabled] = useState(false);
   const [roadError, setRoadError] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 1024px)").matches);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -500,9 +505,12 @@ export default function MapCanvas(props: MapCanvasProps) {
     [areaStats],
   );
   const kecClasses = useMemo(() => quantileCountBands(areaStats.kec), [areaStats.kec]);
+  // Kelurahan punya rentang paket lebar (median belasan, maksimum puluhan), jadi kelas tetap
+  // menumpuk hampir semua wilayah di kelas teratas. Kuantil dipakai seperti kecamatan.
+  const kelClasses = useMemo(() => quantileCountBands(areaStats.kel), [areaStats.kel]);
   const classes = useMemo(
-    () => ({ rw: [...CLASSES] as ClassBand[], kel: [...CLASSES] as ClassBand[], kec: kecClasses }),
-    [kecClasses],
+    () => ({ rw: [...CLASSES] as ClassBand[], kel: kelClasses, kec: kecClasses }),
+    [kecClasses, kelClasses],
   );
 
   // Handler dan efek MapLibre mendaftar sekali; nilai terbaru dibaca lewat ref ini.
@@ -534,7 +542,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         if (!controller.signal.aborted) setLoadError(true);
       });
     return () => controller.abort();
-  }, [props.region, urls.kecamatan, urls.kelurahan, urls.lingkungan]);
+  }, [props.region, urls.kecamatan, urls.kelurahan, urls.lingkungan, reloadToken]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -678,8 +686,7 @@ export default function MapCanvas(props: MapCanvasProps) {
         event.preventDefault();
         const current = latestRef.current;
         const properties = (feature.properties ?? {}) as BoundaryProperties;
-        const aggregate = current.areaStats[PRECISION_STATS_KEY[level]].get(areaKeyFromProperties(properties, level, fields));
-        current.onSelectRegion(clickedRegion(properties, level, fields), aggregate?.sampleRup ?? null);
+        current.onSelectRegion(clickedRegion(properties, level, fields));
       };
       const layerId = `${id}-fill`;
       map.on("mousemove", layerId, hover);
@@ -697,7 +704,7 @@ export default function MapCanvas(props: MapCanvasProps) {
       const active = latestRef.current.precision;
       const hits = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: [fillLayerId(active)] });
       if (hits.length) return;
-      latestRef.current.onSelectRegion(null, null);
+      latestRef.current.onSelectRegion(null);
     };
     map.on("click", handleMapClick);
 
@@ -854,17 +861,39 @@ export default function MapCanvas(props: MapCanvasProps) {
 
     const data = precision === "RW" ? boundaries.rw : precision === "Kelurahan" ? boundaries.kel : boundaries.kec;
     const aggregates = areaStats[PRECISION_STATS_KEY[precision]];
+    // Satu wilayah bisa terpecah menjadi beberapa fitur; pakai poligon terbesar agar
+    // ikon tidak muncul dua kali di wilayah yang sama.
+    const perArea = new Map<string, BoundaryFeature>();
     for (const feature of data.features) {
-      const aggregate = aggregates.get(areaKey(feature, precision, fields));
+      const key = areaKey(feature, precision, fields);
+      const previous = perArea.get(key);
+      if (!previous) {
+        perArea.set(key, feature);
+        continue;
+      }
+      const bounds = boundsOfFeature(feature);
+      const previousBounds = boundsOfFeature(previous);
+      if (!bounds || !previousBounds) continue;
+      const area = (bounds[1][0] - bounds[0][0]) * (bounds[1][1] - bounds[0][1]);
+      const previousArea = (previousBounds[1][0] - previousBounds[0][0]) * (previousBounds[1][1] - previousBounds[0][1]);
+      if (area > previousArea) perArea.set(key, feature);
+    }
+    for (const [key, feature] of perArea) {
+      const aggregate = aggregates.get(key);
       if (!aggregate) continue;
-      const categories = ROAD_WORK_TYPES.filter((category) => aggregate.workCounts[category] > 0);
-      if (!categories.length) continue;
+      // Satu ikon per wilayah: jenis dominan. Semua jenis tetap ada di tooltip.
+      const dominan = ROAD_WORK_TYPES.reduce<SpecificRoadWorkCategory | null>((best, category) => {
+        if (aggregate.workCounts[category] <= 0) return best;
+        if (!best || aggregate.workCounts[category] > aggregate.workCounts[best]) return category;
+        return best;
+      }, null);
+      if (!dominan) continue;
       const center = centerOfFeature(feature);
       if (!center) continue;
       const element = document.createElement("div");
       element.className = "saksi-work-type-icon";
       element.style.pointerEvents = "none";
-      element.innerHTML = workTypeIconMarkup(categories);
+      element.innerHTML = workTypeIconMarkup(dominan);
       const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(center).addTo(map);
       markersRef.current.push(marker);
     }
@@ -894,32 +923,50 @@ export default function MapCanvas(props: MapCanvasProps) {
     const feature = data.features.find((candidate) => areaKey(candidate, target, fields) === key);
     if (!feature) return;
     const bounds = boundsOfFeature(feature);
-    const maxZoom = target === "RW" ? 15 : target === "Kelurahan" ? RW_ZOOM - 0.5 : KEC_ZOOM;
-    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom, duration: 700 });
+    const maxZoom = target === "RW" ? 15 : target === "Kelurahan" ? KEL_ZOOM : KEC_ZOOM;
+    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom, duration: reducedMotion() ? 0 : 700 });
   }, [boundaries, fields, mapLoaded, props.selectedPackage, props.selectedRegion]);
 
   useEffect(() => {
     const map = mapRef.current;
     const region = props.selectedRegion;
-    if (!map || !mapLoaded || !boundaries || !region?.villageSlug) return;
-    const target: BoundaryPrecision = region.rwSlug ? "RW" : "Kelurahan";
-    const data = target === "RW" ? boundaries.rw : boundaries.kel;
-    const feature = data.features.find((candidate) => {
-      const properties = candidate.properties ?? {};
-      if (addressSlug(String(properti(properties, fields.kelurahan) ?? "")) !== region.villageSlug) return false;
-      if (target === "RW") {
-        return `rw-${addressSlug(String(properti(properties, fields.lingkungan) ?? "").replace(/^rw-?/i, ""))}` === region.rwSlug;
-      }
-      return true;
-    });
+    if (!map || !mapLoaded || !boundaries || !region) return;
+    const duration = reducedMotion() ? 0 : 700;
+    if (region.villageSlug) {
+      const target: BoundaryPrecision = region.rwSlug ? "RW" : "Kelurahan";
+      const data = target === "RW" ? boundaries.rw : boundaries.kel;
+      const feature = data.features.find((candidate) => {
+        const properties = candidate.properties ?? {};
+        if (addressSlug(String(properti(properties, fields.kelurahan) ?? "")) !== region.villageSlug) return false;
+        if (target === "RW") {
+          return `rw-${addressSlug(String(properti(properties, fields.lingkungan) ?? "").replace(/^rw-?/i, ""))}` === region.rwSlug;
+        }
+        return true;
+      });
+      if (!feature) return;
+      const bounds = boundsOfFeature(feature);
+      if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom: target === "RW" ? 15 : KEL_ZOOM, duration });
+      return;
+    }
+    // Kecamatan tanpa kelurahan terpilih tetap harus menggerakkan peta; sebelumnya peta diam
+    // dan filter wilayah tampak tidak berpengaruh.
+    if (!region.districtSlug) return;
+    const feature = boundaries.kec.features.find(
+      (candidate) => districtSlug(String(properti(candidate.properties ?? {}, fields.kecamatan) ?? "")) === region.districtSlug,
+    );
     if (!feature) return;
     const bounds = boundsOfFeature(feature);
-    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom: target === "RW" ? 15 : RW_ZOOM - 0.5, duration: 700 });
+    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom: KEC_ZOOM + 2, duration });
   }, [boundaries, fields, mapLoaded, props.region.environmentLabel, props.selectedRegion]);
 
   const activeBands = precision === "RW" ? bands.rw : precision === "Kelurahan" ? bands.kel : bands.kec;
-  const activeClasses = precision === "Kecamatan" ? kecClasses : [...CLASSES];
+  const activeClasses = precision === "RW" ? classes.rw : precision === "Kelurahan" ? classes.kel : classes.kec;
   const wilayahLabel = precision === "RW" ? props.region.environmentLabel : precision === "Kelurahan" ? "kelurahan" : "kecamatan";
+  const legendTitle = props.viewMode === "budget"
+    ? `Nilai anggaran per ${wilayahLabel}`
+    : props.viewMode === "work"
+      ? "Jenis pekerjaan"
+      : `Paket per ${wilayahLabel}`;
   const legendItems = props.viewMode === "work"
     ? ROAD_WORK_TYPES.map((category) => ({ fill: "transparent", label: ROAD_WORK_LABELS[category], icon: WORK_ICONS[category] }))
     : props.viewMode === "budget"
@@ -932,18 +979,53 @@ export default function MapCanvas(props: MapCanvasProps) {
         (props.selectedPackage.presisi_peta === "Kecamatan" && props.selectedPackage.kecamatan_resmi)),
   );
 
+  const fitCity = () => {
+    const map = mapRef.current;
+    if (!map || !boundaries) return;
+    const bounds = boundsOfCollection(boundaries.kel);
+    if (bounds) map.fitBounds(bounds, { padding: 18, duration: reducedMotion() ? 0 : 600 });
+  };
+
+  // Pindah ke tingkat RW pada zoom kota membuat poligon selebar jalan. Bawa pengguna ke
+  // kelurahan terpilih, atau paling sedikit ke zoom tempat RW terbaca.
+  const selectPrecision = (level: BoundaryPrecision) => {
+    setPrecision(level);
+    if (level !== "RW") return;
+    const map = mapRef.current;
+    if (!map || !boundaries) return;
+    const duration = reducedMotion() ? 0 : 600;
+    const village = props.selectedRegion?.villageSlug;
+    if (village) {
+      const feature = boundaries.kel.features.find(
+        (candidate) => addressSlug(String(properti(candidate.properties ?? {}, fields.kelurahan) ?? "")) === village,
+      );
+      const bounds = feature ? boundsOfFeature(feature) : null;
+      if (bounds) {
+        map.fitBounds(bounds, { padding: 28, maxZoom: 14.5, duration });
+        return;
+      }
+    }
+    if (map.getZoom() < 13.5) map.easeTo({ zoom: 13.5, duration });
+  };
+
   return (
     <div className={`relative z-0 isolate w-full overflow-hidden bg-muted/30 ${props.mapHeightClassName ?? "h-[580px]"}`}>
-      <div ref={containerRef} className="h-full w-full" role="region" aria-label="Peta koroplet batas wilayah" />
-      <div className="saksi-map-overlay absolute top-3 left-14 z-10 flex overflow-hidden border border-border bg-white/95 shadow-sm">
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        role="region"
+        aria-label={`Peta koroplet batas ${wilayahLabel} paket jalan`}
+        tabIndex={0}
+      />
+      <div className="saksi-map-overlay absolute top-3 left-14 z-10 flex max-w-[calc(100%-4rem)] flex-wrap overflow-hidden border border-border bg-white/95 shadow-sm">
         {precisions.map((tingkat) => (
           <button
             key={tingkat}
             type="button"
-            onClick={() => setPrecision(tingkat)}
+            onClick={() => selectPrecision(tingkat)}
             aria-pressed={precision === tingkat}
             title={`Tampilkan poligon ${labels[tingkat].toLowerCase()}`}
-            className={`px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
+            className={`whitespace-nowrap px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${
               precision === tingkat ? "bg-primary text-white" : "text-foreground/70 hover:bg-muted"
             }`}
           >
@@ -956,7 +1038,7 @@ export default function MapCanvas(props: MapCanvasProps) {
             onClick={() => { setRoadError(false); setRoadEnabled((current) => !current); }}
             aria-pressed={roadEnabled}
             title={roadEnabled ? "Matikan sorot dan info ruas jalan" : "Aktifkan sorot dan info ruas jalan"}
-            className={`border-l border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors ${
+            className={`whitespace-nowrap border-l border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${
               roadEnabled ? "bg-[#334155] text-white" : "text-foreground/70 hover:bg-muted"
             }`}
           >
@@ -964,61 +1046,120 @@ export default function MapCanvas(props: MapCanvasProps) {
           </button>
         ) : null}
       </div>
-      <div className="saksi-map-overlay pointer-events-none absolute top-3 right-3 z-10 max-w-[min(23rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
-        <p>
-          {props.selectedPackage && !hasSpecificRegion
-            ? `RUP ${props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah kecamatan/kelurahan/${props.region.environmentLabel}; peta tidak menandai area tertentu.`
-            : props.viewMode === "budget"
-              ? "Warna menunjukkan total pagu paket per wilayah; arahkan kursor untuk melihat jumlah paket."
-              : props.viewMode === "work"
-                ? "Ikon menandai jenis pekerjaan yang ada; arahkan kursor untuk melihat rinciannya."
-                : "Peta menyoroti wilayah yang disebut dalam paket; lokasi pekerjaan di dalam batas tidak diketahui."}
-        </p>
-      </div>
-      <div className="saksi-map-overlay pointer-events-none absolute right-3 bottom-3 z-10 border border-border bg-white/95 p-3 text-xs text-foreground shadow-sm">
-        <p className="mb-2 font-bold">{props.viewMode === "budget" ? `Nilai anggaran per ${wilayahLabel}` : props.viewMode === "work" ? "Jenis pekerjaan" : `Paket per ${wilayahLabel}`}</p>
-        <ul className="space-y-1.5">
-          {legendItems.map((item) => {
-            const Icon = "icon" in item ? item.icon : undefined;
-            return (
-            <li key={item.label} className="flex items-center gap-2">
-              <span className={`flex size-4 shrink-0 items-center justify-center border border-foreground/20 ${Icon ? "rounded-full bg-white" : ""}`} style={Icon ? undefined : { backgroundColor: item.fill }} aria-hidden="true">
-                {Icon ? <Icon className="size-2.5 text-[#5B2180]" /> : null}
-              </span>
-              <span>{item.label}</span>
-            </li>
-            );
-          })}
-          {hasSpecificRegion ? (
-            <li className="flex items-center gap-2 border-t border-border pt-1.5">
-              <span className="size-3 border-[3px] border-[#0A192F] bg-transparent" aria-hidden="true" />
-              <span>Wilayah paket dipilih · garis tebal</span>
-            </li>
-          ) : null}
-        </ul>
-        <div className="mt-2 max-w-52 space-y-1 border-t border-border pt-2 text-[10px] leading-4 text-muted-foreground">
-          <p>{props.viewMode === "budget" ? "Warna menunjukkan total pagu; arahkan kursor untuk jumlah paket." : props.viewMode === "work" ? "Ikon menandai jenis paket yang tercatat; warna wilayah tetap netral." : "Warna menunjukkan jumlah paket pada tiap wilayah."}</p>
-          <p>Tingkat poligon diatur lewat pemilih Kecamatan / Kelurahan / {props.region.environmentLabel} di atas peta. Paket yang hanya diketahui hingga kelurahan tidak dibagi ke {props.region.environmentLabel}.</p>
-          <p>Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi {props.region.environmentLabel} dan kelurahan.</p>
-          {roadLayer ? (
-            <p>
-              {roadEnabled ? "Ruas yang ditunjuk disorot di peta dasar. Tooltip memakai " : "Tombol “Jaringan jalan” menyalakan sorot ruas dan tooltip dari "}
-              {roadLayer.label}
-              {roadLayer.sourceRelease ? ` ${roadLayer.sourceRelease}` : ""} · {roadLayer.attribution}
-              {roadLayer.license === "ODbL-1.0" ? " · lisensi ODbL-1.0" : ""}.
-              {" "}Garis jalan berasal dari peta dasar; ruas hanya referensi, bukan lokasi atau penaut paket.
-            </p>
-          ) : null}
+      <button
+        type="button"
+        onClick={fitCity}
+        aria-label="Lihat seluruh kota"
+        title="Lihat seluruh kota"
+        className="saksi-map-overlay absolute top-[88px] left-3 z-10 flex size-8 items-center justify-center border border-border bg-white/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <FiMaximize className="size-4" aria-hidden="true" />
+      </button>
+      {props.selectedPackage && !hasSpecificRegion ? (
+        <div className="saksi-map-overlay absolute top-[128px] left-3 z-10 max-w-[min(18rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
+          RUP {props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah kecamatan/kelurahan/{props.region.environmentLabel}; peta tidak menandai area tertentu.
         </div>
+      ) : null}
+      <div className="saksi-map-overlay absolute right-3 bottom-3 z-10 w-[min(17rem,calc(100%-1.5rem))] border border-border bg-white/95 text-foreground shadow-sm">
+        <button
+          type="button"
+          onClick={() => setLegendOpen((open) => !open)}
+          aria-expanded={legendOpen}
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-sans text-[11px] font-bold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>{legendTitle}</span>
+          {legendOpen ? <FiChevronDown className="size-3.5 shrink-0" aria-hidden="true" /> : <FiChevronUp className="size-3.5 shrink-0" aria-hidden="true" />}
+        </button>
+        {legendOpen ? (
+          <div className="border-t border-border px-3 py-2 text-xs">
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              {legendItems.map((item) => {
+                const Icon = "icon" in item ? item.icon : undefined;
+                return (
+                  <li key={item.label} className="flex items-center gap-1.5">
+                    <span className={`flex size-3.5 shrink-0 items-center justify-center border border-foreground/20 ${Icon ? "rounded-full bg-white" : ""}`} style={Icon ? undefined : { backgroundColor: item.fill }} aria-hidden="true">
+                      {Icon ? <Icon className="size-2.5 text-[#0058A3]" /> : null}
+                    </span>
+                    <span className="leading-4">{item.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            {props.viewMode === "work" ? (
+              <p className="mt-1.5 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
+                Ikon = jenis dominan; warna wilayah = jumlah paket.
+              </p>
+            ) : props.viewMode === "budget" ? (
+              <p className="mt-1.5 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
+                Skala nilai pagu, bukan status atau peringatan.
+              </p>
+            ) : null}
+            {hasSpecificRegion ? (
+              <p className="mt-1.5 flex items-center gap-1.5 border-t border-border pt-1.5 text-[11px]">
+                <span className="size-3 shrink-0 border-[3px] border-[#0A192F] bg-transparent" aria-hidden="true" />
+                <span>Wilayah paket dipilih</span>
+              </p>
+            ) : null}
+            {roadLayer && roadEnabled ? (
+              <p className="mt-1.5 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
+                Ruas: {roadLayer.label}
+                {roadLayer.sourceRelease ? ` ${roadLayer.sourceRelease}` : ""} · {roadLayer.attribution}
+                {roadLayer.license === "ODbL-1.0" ? " · ODbL-1.0" : ""}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setAboutOpen((open) => !open)}
+              aria-expanded={aboutOpen}
+              className="mt-1.5 border-t border-border pt-1.5 font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {aboutOpen ? "Tutup penjelasan" : "Tentang peta"}
+            </button>
+            {aboutOpen ? (
+              <div className="mt-1 space-y-1 text-[10px] leading-4 text-muted-foreground">
+                <p>
+                  {props.viewMode === "budget"
+                    ? "Warna menunjukkan total pagu paket per wilayah; skala ini bukan status atau peringatan."
+                    : props.viewMode === "work"
+                      ? "Ikon menandai jenis pekerjaan dominan; warna wilayah menunjukkan jumlah paket."
+                      : "Warna menunjukkan jumlah paket pada tiap wilayah."}
+                  {" "}Arahkan kursor ke wilayah untuk angkanya.
+                </p>
+                <p>Paket tidak punya titik koordinat; peta memakai batas wilayah. Lokasi pekerjaan di dalam batas tidak diketahui.</p>
+                <p>Pindah ke tingkat {props.region.environmentLabel} memperbesar tampilan; paket yang hanya diketahui hingga kelurahan tidak dibagi ke {props.region.environmentLabel}.</p>
+                <p>Angka kecamatan menjumlahkan semua paket di dalamnya, termasuk yang presisi {props.region.environmentLabel} dan kelurahan.</p>
+                {roadLayer ? (
+                  <p>
+                    “Jaringan jalan” menyalakan sorot ruas dan tooltip dari {roadLayer.label}
+                    {roadLayer.sourceRelease ? ` ${roadLayer.sourceRelease}` : ""} · {roadLayer.attribution}
+                    {roadLayer.license === "ODbL-1.0" ? " · lisensi ODbL-1.0" : ""}. Garis jalan berasal dari peta dasar; ruas hanya referensi, bukan lokasi atau penaut paket.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       {roadError ? (
-        <div role="status" className="absolute top-16 left-14 z-10 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
+        <div role="status" className="saksi-map-overlay absolute top-[128px] left-14 z-10 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
           Layer jaringan jalan tidak dapat dimuat.
         </div>
       ) : null}
+      {props.packageCount === 0 && !loadError && mapLoaded ? (
+        <div role="status" className="saksi-map-overlay absolute bottom-20 left-3 z-10 max-w-[min(20rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
+          Tidak ada paket yang cocok dengan filter ini. Longgarkan filter atau hapus pencarian.
+        </div>
+      ) : null}
       {loadError ? (
-        <div role="status" className="absolute top-3 left-1/2 z-10 -translate-x-1/2 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
-          Batas wilayah tidak dapat dimuat.
+        <div role="alert" className="saksi-map-overlay absolute top-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
+          <span>Batas wilayah tidak dapat dimuat.</span>
+          <button
+            type="button"
+            onClick={() => { setLoadError(false); setReloadToken((token) => token + 1); }}
+            className="font-bold text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Coba lagi
+          </button>
         </div>
       ) : null}
     </div>

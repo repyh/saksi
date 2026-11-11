@@ -65,15 +65,15 @@ Keep the dependency direction: UI → API/contract → server use case → repos
 ## Important implementation details
 
 - `src/features/map/report-routes.ts` defines address slugs, package paths, filter query parameters, and parsing. Update parsing and generation together when changing route shape.
-- `/peta-pekerjaan` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them.
+- `/peta-pekerjaan` filter query parameters are `tahun`, `kecamatan`/district, `desa` (repeatable kelurahan), `jenis`, `kontrak`, `lokasi`, `tampilan`, and `q`. The API uses `year`, `district`, `desa`, `work`, `kontrak`, `lokasi`, and `q`; the dashboard translates between them. `routeForFilters` writes **all** of them, including `kontrak` and repeatable `desa`, so a filtered view survives reload, share, and back/forward.
 - Kelurahan selection is **tri-state**: `null` = all kelurahan of the chosen kecamatan, an array = explicit subset, and an **empty array is invalid** — the picker stays open with a red warning, the list shows the empty message, and no request is sent. Never treat "none selected" as "all".
 - `src/features/map/map-dashboard.tsx` keeps filters and selection state. Filter changes request `GET /api/packages`; the list is capped at 120 visible entries while matching packages are passed to the map.
-- `src/features/map/map-canvas.tsx` owns MapLibre rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom, and switching level does not change the current zoom either.
+- `src/features/map/map-canvas.tsx` owns MapLibre rendering, geographic layers, region selection, and legends. Polygon level is chosen by a **segmented control on the map (Kecamatan / Kelurahan / RW)** — it does **not** follow zoom. Switching to **RW** zooms to the selected kelurahan, or to a readable RW zoom when no kelurahan is selected; Kecamatan and Kelurahan keep the current zoom. The **Seluruh kota** control restores the city extent without touching filters.
 - Multi-paket relations are surfaced, not hidden: `kontrak.jumlahPaket > 1` renders "· N paket" in the
   list row and a **Paket realisasi** row in the detail panel explaining that the top name is the largest
   recipient and the evidence link opens that package. M–N (one paket → several RUP) does not occur in the
   1,634-package scope.
-- Kecamatan choropleth counts aggregate every package inside the kecamatan, including RW- and kelurahan-precision packages, and use quantile class breaks so 13 polygons do not collapse into one colour. Kelurahan/RW layers use the fixed classes 0 / 1 / 2–3 / 4–6 / 7–10 / 11+.
+- Kecamatan choropleth counts aggregate every package inside the kecamatan, including RW- and kelurahan-precision packages, and use quantile class breaks so 13 polygons do not collapse into one colour. **Kelurahan uses quantile breaks too**, because a fixed 0/1/2–3/4–6/7–10/11+ scale puts most kelurahan in the top class. RW keeps the fixed classes 0 / 1 / 2–3 / 4–6 / 7–10 / 11+, which match its per-RW spread.
 - Basemap comes from one environment variable, `NEXT_PUBLIC_BASEMAP_URL`. It now holds a **vector style JSON URL** (default `https://tiles.openfreemap.org/styles/positron`), not a raster tile template. Attribution is OpenStreetMap + OpenFreeMap for the default style, and switches for CARTO and Esri hosts so changing the style does not silently break attribution.
 - MapLibre's worker URL cannot be derived from the package's `import.meta.url` under Turbopack. `predev`/`prebuild` run `scripts/copy-maplibre-worker.mjs` to copy `maplibre-gl-worker.mjs` into `public/vendor/`, and `map-canvas.tsx` calls `setWorkerUrl("/vendor/maplibre-gl-worker.mjs")`. Keep both when upgrading MapLibre.
 - `src/features/reports/components/report-prototype.tsx` holds an unsent report in component state. The final action calls `POST /api/reports`; only a successful API receipt opens the submitted state.
@@ -117,18 +117,42 @@ behaviour without it.
 
 | Butir | Langkah | Hasil |
 |---|---|---|
-| Koroplet tiga tingkat | Klik **Kecamatan / Kelurahan / RW** di segmented control | `aria-pressed` berpindah; hanya layer tingkat aktif `visible`; zoom tidak berubah |
+| Koroplet tiga tingkat | Klik **Kecamatan / Kelurahan / RW** di segmented control | `aria-pressed` berpindah; hanya layer tingkat aktif `visible`; zoom tetap, kecuali pindah ke **RW** yang memperbesar tampilan (lihat 11 Nov) |
 | Tooltip wilayah | Arahkan kursor ke poligon | Popup memuat nama wilayah, jumlah paket/pagu, dan “Batas wilayah, bukan titik pekerjaan” |
-| Klik wilayah | Klik poligon kecamatan | URL berubah ke rute wilayah/paket, panel detail terbuka |
+| Klik wilayah | Klik poligon kecamatan/kelurahan | Register difilter ke wilayah itu (kecamatan, atau kelurahan bila punya paket); panel paket **tidak** terbuka |
 | Klik area kosong | Klik di luar poligon | URL kembali `/peta-pekerjaan`, panel detail tertutup |
 | Ikon jenis pekerjaan | Tampilan → **Jenis pekerjaan** | Ikon agregat per kecamatan/RW; tidak ada marker per paket |
 | fitBounds awal | Muat `/peta-pekerjaan` | Batas peta memuat seluruh `kel.geojson` dengan padding 18 px |
-| flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 11,5 (kelurahan) / ≤ 15 (RW) |
+| flyTo paket/region | Pilih paket kelurahan dan region | Kamera bergerak; zoom akhir ≤ 12 (kecamatan) / ≤ 14 (kelurahan) / ≤ 15 (RW) |
 | Legenda & overlay | Periksa tiga mode tampilan | Teks legenda dan peringatan sesuai mode; legenda wilayah terpilih muncul |
 | Atribusi | Periksa kontrol atribusi | `© OpenStreetMap © OpenFreeMap` tampil |
 | Tanpa marker per paket / pemilih basemap | Mode jumlah paket; cari kontrol basemap | 0 marker; tidak ada kontrol pemilih basemap |
 | Mount/unmount berulang | Bolak-balik `/` ↔ `/peta-pekerjaan` tiga kali | Selalu 1 canvas dan 1 instance peta; tanpa error halaman |
 | Basemap vector | Periksa request dan style | Request `styles/positron`; source `openmaptiles` bertipe `vector`; override `NEXT_PUBLIC_BASEMAP_URL` ke `styles/liberty` juga dihormati |
+
+## Peta pekerjaan — Fase 0–1 (11 November 2026)
+
+Perbaikan UI/UX peta dari review 11 November 2026. Rencana lengkap ada di `docs/UX-MAP-PLAN.md`.
+
+| Butir | Perubahan | Bukti |
+|---|---|---|
+| Kelas koroplet kelurahan | Kelas tetap diganti kuantil (seperti kecamatan); legenda mengikuti tingkat | Tangkapan 1440×900: lima kelas terisi, bukan satu warna |
+| Legenda | Ringkas (swatch 2 kolom), bisa ditutup, bawaan tertutup di layar < 1024 px; penjelasan pindah ke **Tentang peta** | Tangkapan 390×844: legenda hanya satu baris saat tertutup |
+| Overlay | Kartu penjelasan kanan-atas dihapus; catatan hanya muncul untuk paket tanpa wilayah | Tidak ada lagi tumpang tindih dengan tombol **Jaringan jalan** |
+| Kontrol tampilan | Tombol **Seluruh kota** (ikon) di bawah kontrol zoom | Klik mengembalikan extent kota tanpa mengubah filter |
+| Zoom tingkat | Pindah ke **RW** memperbesar ke kelurahan terpilih atau ke zoom baca RW | Tangkapan: poligon RW terbaca setelah klik RW |
+| Filter wilayah | Memilih kecamatan/kelurahan menggerakkan peta (`fitBounds`); zoom kelurahan dinaikkan dari 11,5 ke 14 | Tangkapan rute kecamatan dan kelurahan |
+| URL filter | `kontrak` dan `desa` ditulis dan dibaca kembali; slug region tidak lagi ditanam | Muat `?desa=…&kontrak=TANPA`: filter aktif dan jumlah tetap setelah reload |
+| Badge lokasi | Badge **RW nn / Kelurahan / Kecamatan** di baris register dan panel paket | Tangkapan register |
+| Jumlah paket | “N dari M paket” dan baris **Filter aktif** (tanpa tombol reset, sesuai keputusan) | Tangkapan filter bar |
+| Aksesibilitas | `focus-visible` pada kontrol peta, kanvas fokusabel, `prefers-reduced-motion` mematikan animasi kamera | Pemeriksaan kode dan `npm run lint` |
+| Klik poligon | Klik poligon kelurahan berpaket | Register difilter ke kecamatan + kelurahan, peta memperbesar, tanpa panel paket acak |
+| Register | Klik baris paket | Seluruh baris membuka panel; baris terpilih tersorot |
+| Panel paket | Periksa blok penyedia | Baris **Selisih pagu** (rupiah + persen) dan tautan bukti LPSE/INAPROC |
+| Mobile | 390×844 | Segmented **Peta/Daftar** (peta lebih dulu); filter terlipat dengan penanda jumlah |
+| Tampilan anggaran | Pilih **Nilai anggaran** | Ramp biru, bukan merah; legenda menyatakan skala nilai |
+| Tampilan jenis pekerjaan | Pilih **Jenis pekerjaan** | Isi = jumlah paket, satu ikon jenis dominan per wilayah, ikon biru |
+| Keadaan kosong | Filter tanpa hasil | Peta menampilkan pesan tanpa paket; galat batas punya **Coba lagi** |
 
 ## Report submission verification (8 November 2026)
 

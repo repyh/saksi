@@ -1,6 +1,9 @@
-import type { RoadPackageItem, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
+import type { RoadContractFilter, RoadPackageItem, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 
 export type ReportViewMode = "packages" | "budget" | "work";
+
+/** Slug region dipakai di segmen pertama URL; sama dengan `region.json` milik region aktif. */
+export const DEFAULT_REGION_SLUG = "kota-tangerang";
 
 export interface ReportAddress {
   districtSlug?: string;
@@ -19,6 +22,8 @@ export interface ReportFilters {
   locatedOnly?: boolean;
   year: "SEMUA" | "2025" | "2026";
   work: RoadWorkCategory;
+  contract?: RoadContractFilter;
+  villages?: string[];
   view: ReportViewMode;
   query: string;
 }
@@ -38,8 +43,8 @@ export function districtSlug(value: string) {
   return addressSlug(value.replace(/^(kecamatan|kec\.?)[\s-]*/iu, ""));
 }
 
-export function routeForAddress(address: ReportAddress) {
-  const segments = ["kota-tangerang"];
+export function routeForAddress(address: ReportAddress, regionSlug = DEFAULT_REGION_SLUG) {
+  const segments = [regionSlug];
   if (address.districtSlug) segments.push(address.districtSlug);
   else if (address.villageSlug || address.rwSlug) segments.push("lokasi-umum");
   if (address.villageSlug) segments.push(address.villageSlug);
@@ -47,8 +52,8 @@ export function routeForAddress(address: ReportAddress) {
   return segments.length === 1 && !address.districtSlug ? "/peta-pekerjaan" : `/peta-pekerjaan/${segments.join("/")}`;
 }
 
-export function routeForPackage(item: RoadPackageItem) {
-  const segments = ["kota-tangerang"];
+export function routeForPackage(item: RoadPackageItem, regionSlug = DEFAULT_REGION_SLUG) {
+  const segments = [regionSlug];
   const district = item.kecamatan_resmi ? districtSlug(item.kecamatan_resmi) : "";
   const village = item.desa_resmi ? addressSlug(item.desa_resmi) : "";
 
@@ -81,9 +86,9 @@ export function addressForPackage(item: RoadPackageItem): ReportAddress | null {
   return Object.keys(address).length ? address : null;
 }
 
-export function parseReportSegments(segments: string[] = []): ReportRouteSelection {
+export function parseReportSegments(segments: string[] = [], regionSlug = DEFAULT_REGION_SLUG): ReportRouteSelection {
   const normalized = segments.map((segment) => segment.toLocaleLowerCase("id-ID"));
-  if (normalized[0] === "kota-tangerang") normalized.shift();
+  if (normalized[0] === regionSlug.toLocaleLowerCase("id-ID")) normalized.shift();
   const rupIndex = normalized.findIndex((segment) => /^rup-\d+$/.test(segment));
   const addressSegments = rupIndex < 0 ? normalized : normalized.slice(0, rupIndex);
   const result: ReportRouteSelection = {};
@@ -109,15 +114,15 @@ export function parseReportSegments(segments: string[] = []): ReportRouteSelecti
   return result;
 }
 
-export function routeForSelection(selection: ReportRouteSelection) {
+export function routeForSelection(selection: ReportRouteSelection, regionSlug = DEFAULT_REGION_SLUG) {
   if (selection.rupCode) return `/peta-pekerjaan/${[
-    "kota-tangerang",
+    regionSlug,
     ...(selection.districtSlug ? [selection.districtSlug] : ["lokasi-umum"]),
     ...(selection.villageSlug ? [selection.villageSlug] : []),
     ...(selection.rwSlug ? [selection.rwSlug] : []),
     `rup-${selection.rupCode}`,
   ].join("/")}`;
-  return routeForAddress(selection);
+  return routeForAddress(selection, regionSlug);
 }
 
 export function routeForFilters(pathname: string, filters: ReportFilters) {
@@ -129,6 +134,8 @@ export function routeForFilters(pathname: string, filters: ReportFilters) {
   if (filters.locatedOnly === false) url.searchParams.set("lokasi", "0");
   if (filters.year !== "SEMUA") url.searchParams.set("tahun", filters.year);
   if (filters.work !== "SEMUA") url.searchParams.set("jenis", filters.work.toLocaleLowerCase("id-ID"));
+  if (filters.contract && filters.contract !== "SEMUA") url.searchParams.set("kontrak", filters.contract);
+  for (const desa of filters.villages ?? []) url.searchParams.append("desa", desa);
   if (filters.view !== "packages") url.searchParams.set("tampilan", filters.view);
   if (filters.query.trim()) url.searchParams.set("q", filters.query.trim());
   return `${url.pathname}${url.search}`;
