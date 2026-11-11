@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "brand:assets": "node scripts/build-brand-assets.mjs",
     "build": "next build",
     "data:enrich": "node scripts/enrich-rup.mjs",
     "data:jalan": "node scripts/jalan.mjs",

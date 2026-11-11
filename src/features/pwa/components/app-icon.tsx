@@ -1,3 +1,14 @@
+import {
+  EMBLEM_ASPECT,
+  EMBLEM_FRAME_PATH,
+  EMBLEM_SOLID_PATH,
+  EMBLEM_VIEWBOX,
+} from "@/components/brand/mark-geometry";
+
+const SIZE = 512;
+const MARK_HEIGHT = Math.round(SIZE * 0.62);
+const MARK_WIDTH = Math.round(MARK_HEIGHT * EMBLEM_ASPECT);
+
 export default function AppIcon() {
   return (
     <div
@@ -7,21 +18,18 @@ export default function AppIcon() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#1d4ed8",
+        backgroundColor: "#FFFFFF",
       }}
     >
-      <svg width="68%" height="68%" viewBox="0 0 512 512" fill="none" aria-hidden="true">
-        <path
-          d="M256 452s138-132 138-242a138 138 0 1 0-276 0c0 110 138 242 138 242Z"
-          fill="white"
-        />
-        <circle cx="256" cy="210" r="79" fill="#1d4ed8" />
-        <path
-          d="M256 153v40m0 35v40m0 35v24"
-          stroke="white"
-          strokeWidth="18"
-          strokeLinecap="round"
-        />
+      <svg
+        width={MARK_WIDTH}
+        height={MARK_HEIGHT}
+        viewBox={EMBLEM_VIEWBOX}
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d={EMBLEM_FRAME_PATH} fill="#FFDA1A" fillRule="evenodd" />
+        <path d={EMBLEM_SOLID_PATH} fill="#0058A3" fillRule="evenodd" />
       </svg>
     </div>
   );

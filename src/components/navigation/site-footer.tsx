@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiExternalLink } from "react-icons/fi";
+import { SaksiLogo } from "@/components/brand";
 
 export function SiteFooter() {
   const pathname = usePathname();
@@ -15,9 +16,10 @@ export function SiteFooter() {
           <div className="max-w-xl">
             <Link
               href="/"
-              className="font-heading text-xl font-black uppercase tracking-[0.24em] text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+              aria-label="SAKSI — beranda"
+              className="inline-flex w-fit text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
-              SAKSI
+              <SaksiLogo variant="horizontal" tone="onDark" size={38} />
             </Link>
             <div className="mt-4">
               <div className="border-l border-secondary pl-3">

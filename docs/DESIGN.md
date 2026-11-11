@@ -68,6 +68,10 @@ Diambil dari `next/font/google` di `src/app/layout.tsx`:
 - **Raleway (`--font-heading`):** Digunakan untuk seluruh heading (`h1`–`h6`), identitas `S A K S I`, dan angka metrik utama (pagu, jumlah paket, persentase).
 - **Open Sans (`--font-sans`):** Digunakan untuk teks body, tabel data, navigasi, dan metadata teknis.
 
+Identitas `SAKSI` dan emblemnya digambar sebagai path SVG (`src/components/brand/`), bukan teks hidup:
+wordmark diturunkan dari Raleway Black dengan tracking ±`0.10em`, emblem adalah dua bidang dengan
+huruf dilubangi.
+
 ---
 
 ## 4. Komponen Antarmuka (shadcn-First & `react-icons`)

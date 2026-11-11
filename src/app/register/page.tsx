@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SaksiLogo } from "@/components/brand";
 import { RegisterForm } from "@/features/auth/components/register-form";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -23,7 +24,7 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-5xl">
         <section aria-labelledby="register-title" className="grid w-full bg-white shadow-xl shadow-foreground/15 md:grid-cols-[0.9fr_1.1fr]">
           <div className="relative flex min-h-48 flex-col justify-between overflow-hidden border-b-[5px] border-secondary bg-primary p-6 text-white sm:p-9 md:min-h-[34rem] md:border-b-0 md:border-r-[5px] md:p-12">
-            <span className="font-heading text-sm font-black uppercase tracking-[0.28em]">SAKSI</span>
+            <SaksiLogo variant="horizontal" tone="onDark" size={24} />
             <div className="mt-10 max-w-sm md:mt-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-secondary">Akun undangan</p>
               <h1 id="register-title" className="mt-3 font-heading text-3xl leading-[1.12] font-extrabold tracking-[-0.035em] sm:text-4xl">

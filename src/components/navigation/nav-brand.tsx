@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SaksiLogo } from "@/components/brand";
 import { cn } from "@/lib/utils";
 import type { NavBrandConfig } from "./nav-types";
 
@@ -20,19 +21,12 @@ export function NavBrand({ config = DEFAULT_BRAND, className = "" }: NavBrandPro
     <Link
       href={href}
       className={cn(
-        "inline-flex min-w-0 items-center gap-3.5 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex min-w-0 items-center rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className
       )}
+      aria-label={`${shortName} — ${fullName}`}
     >
-      <span className="shrink-0 font-heading text-sm font-black uppercase tracking-[0.28em] text-white">
-        {shortName}
-      </span>
-
-      <span className="hidden h-4 w-px bg-white/35 sm:inline-block" aria-hidden="true" />
-
-      <span className="hidden truncate font-sans text-xs font-normal tracking-normal text-white sm:inline-block">
-        {fullName}
-      </span>
+      <SaksiLogo variant="horizontal-full" tone="onDark" size={30} />
     </Link>
   );
 }
