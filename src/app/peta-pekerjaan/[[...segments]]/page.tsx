@@ -97,7 +97,7 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
     : null;
   if (selection.rupCode && !selectedPackage) notFound();
 
-  const mapView: ReportViewMode = rawView === "budget" || rawView === "work" ? rawView : "packages";
+  const mapView: ReportViewMode = rawView === "budget" ? "budget" : "packages";
   const selectedRegion = selection.districtSlug || selection.villageSlug || selection.rwSlug
     ? {
         districtSlug: selection.districtSlug,

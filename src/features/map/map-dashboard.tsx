@@ -369,6 +369,23 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     writeReportPath(address ? addressPath(address) : "/peta-pekerjaan");
   };
 
+  /** Kembalikan seluruh filter ke keadaan awal; urutan register dan tema peta tidak diubah. */
+  const clearFilters = () => {
+    setSelectedYear("SEMUA");
+    setBudgetDecile(undefined);
+    setGeneralOnly(false);
+    setSelectedDistrict("SEMUA");
+    setSelectedVillages(null);
+    setOpenVillages(false);
+    setSelectedWork("SEMUA");
+    setSelectedContract("SEMUA");
+    setLocatedOnly(true);
+    setSearchQuery("");
+    setSelectedRegion(null);
+    updateSelectedPackage(null);
+    writeReportPath("/peta-pekerjaan");
+  };
+
   const selectPackage = (pkg: RoadPackageItem) => {
     const address = addressForPackage(pkg);
     updateSelectedPackage(pkg);
@@ -469,7 +486,9 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       setSelectedContract(contract === "ADA" || contract === "TANPA" ? contract : "SEMUA");
       setSelectedSort(urut === "pagu-asc" || urut === "nama" ? urut : "pagu-desc");
       setSelectedVillages(desa.length ? desa : null);
-      setMapView(view === "budget" || view === "work" ? view : "packages");
+      // `tampilan=work` dari tautan lama diperlakukan sebagai tema jumlah paket:
+      // penanda jenis sekarang selalu tampil di semua tema.
+      setMapView(view === "budget" ? "budget" : "packages");
       setSearchQuery(params.get("q") ?? "");
       setSelectedDistrict(district ?? "SEMUA");
       setSelectedRegion(selection.districtSlug || selection.villageSlug || selection.rwSlug ? {
@@ -555,8 +574,8 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </Select>
             </div>
           )}
-          <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2fr)_minmax(250px,1fr)] sm:items-center sm:px-3 sm:py-2">
-            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[100px_175px_165px_150px_150px_150px] xl:gap-2`}>
+          <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2.5fr)_minmax(220px,1fr)] sm:items-center sm:px-3 sm:py-2">
+            <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.05fr)_minmax(0,0.95fr)] xl:gap-2`}>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
                 <Select value={selectedYear} onValueChange={(val) => { setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026"); setBudgetDecile(undefined); }}>
@@ -726,10 +745,19 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
           </div>
 
           {activeFilterLabels.length > 0 && (
-            <p className="border-b border-border bg-white px-3 py-1.5 font-sans text-[11px] leading-snug text-muted-foreground">
-              <span className="mr-1 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-foreground/70">Filter aktif</span>
-              {activeFilterLabels.join(" · ")}
-            </p>
+            <div className="flex items-start justify-between gap-3 border-b border-border bg-white px-3 py-1.5">
+              <p className="min-w-0 font-sans text-[11px] leading-snug text-muted-foreground">
+                <span className="mr-1 font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-foreground/70">Filter aktif</span>
+                {activeFilterLabels.join(" · ")}
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="shrink-0 font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                Hapus filter
+              </button>
+            </div>
           )}
 
           <div className="grid grid-cols-2 border-b border-border lg:hidden" role="group" aria-label="Tampilan peta atau daftar">

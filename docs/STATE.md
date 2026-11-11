@@ -127,13 +127,13 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   memuat jumlah paket, pagu, pagu rata-rata, cakupan rekam penyedia, penyedia unik, komposisi jenis,
   serta tabel per kecamatan yang bisa dibuka. Tema peta tidak lagi dipilih dari baris filter.
 - `src/features/map/map-canvas.tsx` — koroplet tiga tingkat dengan segmented control
-  **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom) dan segmented tema **Jumlah / Pagu / Jenis**
-  di kanvas; legenda mengikuti tingkat dan menyebut jumlah wilayah per kelas. Agregasi kecamatan
-  memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map` yang dibatasi
-  `bbox` viewport untuk `rw`/`kel` (kecamatan selalu penuh untuk tabel), bukan seluruh baris paket;
-  klik wilayah memuat detail paket contoh lewat `GET /api/packages/[rup]`. Tema jenis pekerjaan
-  memakai koroplet jumlah yang sama dengan ikon jenis per wilayah (kotak, bukan pin) pada semua
-  tingkat zoom; jenis diambil dari paket terbanyak, sedangkan "campuran" hanya dipakai di tabel.
+  **Kecamatan / Kelurahan / RW** (bukan berdasarkan zoom) dan segmented tema **Jumlah / Pagu** di
+  kanvas; legenda mengikuti tingkat dan menyebut jumlah wilayah per kelas. Penanda jenis pekerjaan
+  (semua jenis + jumlah paket) selalu tampil di semua tema dan tingkat zoom; tidak ada angka paket
+  yang digambar di dalam poligon. Agregasi kecamatan memakai kelas kuantil. Peta menerima agregat
+  ringkas dari `GET /api/packages/map` yang dibatasi `bbox` viewport untuk `rw`/`kel` (kecamatan
+  selalu penuh untuk tabel), bukan seluruh baris paket; klik wilayah memuat detail paket contoh
+  lewat `GET /api/packages/[rup]`.
 - `src/features/map/map-summary.tsx` — angka kohort dan tabel per kecamatan; `src/features/map/work-encoding.ts`
   — warna dan aturan "jenis dominan" yang dipakai peta, tabel, dan tooltip.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE

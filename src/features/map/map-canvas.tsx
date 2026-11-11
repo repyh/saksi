@@ -15,7 +15,7 @@ import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from
 import { addressSlug, districtSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahCompact, formatRupiahFull } from "./road-types";
 import { BASEMAP_URL, attributionBasemap } from "./basemap";
-import { WORK_COLORS, dominantWork, topWork, type WorkCounts } from "./work-encoding";
+import type { WorkCounts } from "./work-encoding";
 import {
   bringRoadHighlightToFront,
   clearRoadHighlight,
@@ -45,9 +45,9 @@ interface MapCanvasProps {
   onSelectRegion: (region: ClickedRegion | null) => void;
   /** Kirim batas viewport agar agregat peta bisa dibatasi. */
   onViewportChange?: (bbox: [number, number, number, number]) => void;
-  viewMode: "packages" | "budget" | "work";
+  viewMode: "packages" | "budget";
   /** Pilihan tema dipindah ke atas peta; papan ketik dan pembaca layar memakai tombol yang sama. */
-  onViewModeChange: (view: "packages" | "budget" | "work") => void;
+  onViewModeChange: (view: "packages" | "budget") => void;
   /** Jumlah paket pada filter aktif; dipakai untuk keadaan kosong di peta. */
   packageCount?: number;
   mapHeightClassName?: string;
@@ -80,7 +80,6 @@ const BUDGET_COLORS = ["#DCE9F6", "#B4D0EA", "#7FAEDC", "#3D7FBF", "#0058A3"] as
 const THEMES = [
   { value: "packages", label: "Jumlah paket", short: "Jumlah" },
   { value: "budget", label: "Nilai anggaran", short: "Pagu" },
-  { value: "work", label: "Jenis pekerjaan", short: "Jenis" },
 ] as const;
 
 const WORK_ICONS: Record<SpecificRoadWorkCategory, IconType> = {
@@ -207,31 +206,20 @@ function budgetClassFor(budget: number, bands: ReturnType<typeof budgetBands>) {
 }
 
 /**
- * Ikon jenis per wilayah: kotak kecil berlatar putih, bukan pin, supaya tidak
- * terbaca sebagai titik lokasi pekerjaan (aturan 5).
+ * Penanda jenis per wilayah: semua jenis yang ada, masing-masing dengan jumlah paketnya.
+ * Kotak kecil berlatar putih, bukan pin, agar tidak terbaca sebagai titik lokasi pekerjaan.
  */
-function workIconMarkup(category: SpecificRoadWorkCategory) {
-  const Icon = WORK_ICONS[category];
-  return renderToStaticMarkup(
-    <span
-      title={ROAD_WORK_LABELS[category]}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "20px",
-        height: "20px",
-        border: "1px solid rgba(10,25,47,.28)",
-        borderRadius: "3px",
-        background: "rgba(255,255,255,.94)",
-        boxShadow: "0 1px 2px rgba(10,25,47,.18)",
-        pointerEvents: "none",
-        color: "#0058A3",
-      }}
-    >
-      <Icon size={11} aria-hidden="true" />
-    </span>,
-  );
+function workBadgeMarkup(counts: WorkCounts) {
+  const items = ROAD_WORK_TYPES.filter((category) => counts[category] > 0).map((category) => {
+    const Icon = WORK_ICONS[category];
+    const icon = renderToStaticMarkup(<Icon size={9} aria-hidden="true" />);
+    return `<span style="display:inline-flex;align-items:center;gap:2px;color:#0058A3">${icon}<span style="font-family:'Open Sans',sans-serif;font-size:8px;font-weight:700;line-height:9px;color:#0A192F">${counts[category]}</span></span>`;
+  });
+  if (!items.length) return "";
+  const judul = ROAD_WORK_TYPES.filter((category) => counts[category] > 0)
+    .map((category) => `${ROAD_WORK_LABELS[category]}: ${counts[category]}`)
+    .join(" · ");
+  return `<span title="${escapeHtml(judul)}" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:1px 3px;border:1px solid rgba(10,25,47,.24);border-radius:2px;background:rgba(255,255,255,.95);box-shadow:0 1px 2px rgba(10,25,47,.18);pointer-events:none">${items.join("")}</span>`;
 }
 
 function areaKeyFromProperties(
@@ -349,7 +337,6 @@ function styledCollection(
           _lineOpacity: style.opacity,
           _fillOpacity: style.fillOpacity,
           _highlight: highlight,
-          _count: style.count,
         },
       };
     }),
@@ -466,13 +453,20 @@ function tooltipHtml(
       ? `Kec. ${escapeHtml(properti(properties, fields.kecamatan))}`
       : escapeHtml(properti(properties, fields.kelurahan));
   const district = escapeHtml(properti(properties, fields.kecamatan));
-  const detail = aggregate && view === "budget"
-    ? `<strong>${formatRupiahFull(aggregate.budget)}</strong><br>${aggregate.count.toLocaleString("id-ID")} paket`
-    : aggregate && view === "work"
-      ? `${ROAD_WORK_TYPES.filter((category) => aggregate.workCounts[category] > 0).map((category) => `${ROAD_WORK_LABELS[category]}: ${aggregate.workCounts[category]}`).join("<br>")}<br><strong>${aggregate.count.toLocaleString("id-ID")} paket · ${formatRupiahFull(aggregate.budget)}</strong>`
-      : aggregate
-        ? `${aggregate.count.toLocaleString("id-ID")} paket · ${formatRupiahFull(aggregate.budget)}`
-        : "Tidak ada paket terhubung";
+  // Komposisi jenis selalu ikut di tooltip karena penanda di peta hanya memuat angka.
+  const komposisi = aggregate
+    ? ROAD_WORK_TYPES.filter((category) => aggregate.workCounts[category] > 0)
+      .map((category) => `${ROAD_WORK_LABELS[category]}: ${aggregate.workCounts[category]}`)
+      .join("<br>")
+    : "";
+  const detail = !aggregate
+    ? "Tidak ada paket terhubung"
+    : [
+      view === "budget"
+        ? `<strong>${formatRupiahFull(aggregate.budget)}</strong><br>${aggregate.count.toLocaleString("id-ID")} paket`
+        : `${aggregate.count.toLocaleString("id-ID")} paket · ${formatRupiahFull(aggregate.budget)}`,
+      komposisi ? `<span style="opacity:.85">${komposisi}</span>` : null,
+    ].filter(Boolean).join("<br>");
   const barisKecamatan = precision === "Kecamatan" ? "" : `<span>Kec. ${district}</span><br>`;
   return `<div style="line-height:1.45"><strong>${title}</strong><br>${barisKecamatan}${detail}<br><span style="opacity:.7">Batas wilayah, bukan titik pekerjaan</span></div>`;
 }
@@ -697,26 +691,6 @@ export default function MapCanvas(props: MapCanvasProps) {
         } as unknown as maplibregl.AddLayerObject);
       }
 
-      // Angka paket per wilayah hanya pada zoom dekat agar peta kota tidak penuh label.
-      if (!map.getLayer(`${id}-label`)) {
-        map.addLayer({
-          id: `${id}-label`,
-          type: "symbol",
-          source: id,
-          minzoom: 12.5,
-          filter: [">", ["get", "_count"], 0],
-          layout: {
-            visibility: level === state.precision ? "visible" : "none",
-            "text-field": ["to-string", ["get", "_count"]],
-            "text-font": ["Noto Sans Regular"],
-            "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 15, 13],
-            "text-padding": 2,
-            "text-allow-overlap": false,
-          },
-          paint: { "text-color": "#0A192F", "text-halo-color": "#FFFFFF", "text-halo-width": 1.2 },
-        } as unknown as maplibregl.AddLayerObject);
-      }
-
       const hover = (event: maplibregl.MapLayerMouseEvent) => {
         const feature = event.features?.[0];
         if (!feature) return;
@@ -790,7 +764,7 @@ export default function MapCanvas(props: MapCanvasProps) {
       if (mapRef.current !== map) return;
       for (const level of precisions) {
         const id = sourceId(level);
-        for (const suffix of ["fill", "line", "exact", "scope", "label"]) {
+        for (const suffix of ["fill", "line", "exact", "scope"]) {
           if (map.getLayer(`${id}-${suffix}`)) map.removeLayer(`${id}-${suffix}`);
         }
         if (map.getSource(id)) map.removeSource(id);
@@ -905,7 +879,7 @@ export default function MapCanvas(props: MapCanvasProps) {
           ));
         }
       }
-      for (const suffix of ["fill", "line", "exact", "scope", "label"]) {
+      for (const suffix of ["fill", "line", "exact", "scope"]) {
         if (map.getLayer(`${id}-${suffix}`)) {
           map.setLayoutProperty(`${id}-${suffix}`, "visibility", visible ? "visible" : "none");
         }
@@ -913,14 +887,13 @@ export default function MapCanvas(props: MapCanvasProps) {
     }
   }, [areaStats, bands, boundaries, classes, fields, mapLoaded, precision, precisions, props.region.environmentLabel, props.selectedPackage, props.selectedRegion, view]);
 
-  // Ikon jenis selalu tampil pada tema Jenis pekerjaan, pada semua tingkat zoom.
-  // Hanya wilayah di dalam viewport yang dirender agar peta tetap ringan.
+  // Penanda jenis selalu tampil di semua tema dan semua tingkat zoom; hanya wilayah
+  // di dalam viewport yang dirender agar peta tetap ringan.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !boundaries) return;
     for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
-    if (view !== "work") return;
 
     const data = precision === "RW" ? boundaries.rw : precision === "Kelurahan" ? boundaries.kel : boundaries.kec;
     const aggregates = areaStats[PRECISION_STATS_KEY[precision]];
@@ -947,15 +920,15 @@ export default function MapCanvas(props: MapCanvasProps) {
       const viewport = map.getBounds();
       for (const [key, feature] of perArea) {
         const aggregate = aggregates.get(key);
-        if (!aggregate) continue;
-        const jenis = topWork(aggregate.workCounts, aggregate.count);
-        if (!jenis) continue;
+        if (!aggregate || aggregate.count === 0) continue;
         const center = centerOfFeature(feature);
         if (!center || !viewport.contains(center)) continue;
+        const markup = workBadgeMarkup(aggregate.workCounts);
+        if (!markup) continue;
         const element = document.createElement("div");
         element.className = "saksi-work-type-icon";
         element.style.pointerEvents = "none";
-        element.innerHTML = workIconMarkup(jenis);
+        element.innerHTML = markup;
         const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(center).addTo(map);
         markersRef.current.push(marker);
       }
@@ -1030,20 +1003,10 @@ export default function MapCanvas(props: MapCanvasProps) {
   const wilayahLabel = precision === "RW" ? props.region.environmentLabel : precision === "Kelurahan" ? "kelurahan" : "kecamatan";
   const legendTitle = props.viewMode === "budget"
     ? `Nilai anggaran per ${wilayahLabel}`
-    : props.viewMode === "work"
-      ? "Jenis pekerjaan"
-      : `Paket per ${wilayahLabel}`;
-  const legendItems: Array<{ fill: string; label: string; icon?: IconType; jumlah?: number; satuan?: string }> = props.viewMode === "work"
-    ? ROAD_WORK_TYPES.map((category) => ({
-      fill: WORK_COLORS[category],
-      label: ROAD_WORK_LABELS[category],
-      icon: WORK_ICONS[category],
-      jumlah: props.areaStats.totals.workCounts[category],
-      satuan: "paket",
-    }))
-    : props.viewMode === "budget"
-      ? [{ fill: "#F1F5F9", label: "Tanpa paket" }, ...activeBands.map(({ fill, label }) => ({ fill, label }))]
-      : activeClasses.map(({ fill, label }) => ({ fill, label }));
+    : `Paket per ${wilayahLabel}`;
+  const legendItems: Array<{ fill: string; label: string }> = props.viewMode === "budget"
+    ? [{ fill: "#F1F5F9", label: "Tanpa paket" }, ...activeBands.map(({ fill, label }) => ({ fill, label }))]
+    : activeClasses.map(({ fill, label }) => ({ fill, label }));
 
   // Jumlah wilayah per kelas: legenda tidak hanya menjelaskan warna, tetapi juga
   // memperlihatkan apakah kelasnya benar-benar membedakan wilayah.
@@ -1051,17 +1014,10 @@ export default function MapCanvas(props: MapCanvasProps) {
     const stats = areaStats[PRECISION_STATS_KEY[precision]];
     const bandList = precision === "RW" ? bands.rw : precision === "Kelurahan" ? bands.kel : bands.kec;
     const classList = precision === "RW" ? classes.rw : precision === "Kelurahan" ? classes.kel : classes.kec;
-    const size = props.viewMode === "work"
-      ? ROAD_WORK_TYPES.length + 1
-      : props.viewMode === "budget"
-        ? bandList.length + 1
-        : classList.length;
+    const size = props.viewMode === "budget" ? bandList.length + 1 : classList.length;
     const counts = new Array<number>(size).fill(0);
     for (const area of stats.values()) {
-      if (props.viewMode === "work") {
-        const dominant = dominantWork(area.workCounts, area.count);
-        counts[dominant ? ROAD_WORK_TYPES.indexOf(dominant) : ROAD_WORK_TYPES.length] += 1;
-      } else if (props.viewMode === "budget") {
+      if (props.viewMode === "budget") {
         const found = bandList.findIndex((band) => area.budget <= band.max);
         counts[1 + (found < 0 ? bandList.length - 1 : found)] += 1;
       } else {
@@ -1198,45 +1154,40 @@ export default function MapCanvas(props: MapCanvasProps) {
         </button>
         {legendOpen ? (
           <div className="border-t border-border px-3 py-2 text-xs">
-            <ul className={props.viewMode === "work" ? "grid gap-y-1.5" : "grid grid-cols-2 gap-x-3 gap-y-1.5"}>
-              {legendItems.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.label} className="flex items-center gap-2">
-                    {Icon ? (
-                      <span className="flex size-4 shrink-0 items-center justify-center border border-foreground/25 bg-white text-[#0058A3]" aria-hidden="true">
-                        <Icon className="size-2.5" />
-                      </span>
-                    ) : (
-                      <span className="size-3.5 shrink-0 border border-foreground/20" style={{ backgroundColor: item.fill }} aria-hidden="true" />
-                    )}
-                    <span className="leading-4">
-                      {item.label}
-                      {item.jumlah !== undefined ? (
-                        <span className="ml-1 tabular-nums text-muted-foreground">{item.jumlah.toLocaleString("id-ID")} {item.satuan}</span>
-                      ) : legendCounts[index] ? (
-                        <span className="ml-1 tabular-nums text-muted-foreground">({legendCounts[index]})</span>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              {legendItems.map((item, index) => (
+                <li key={item.label} className="flex items-center gap-1.5">
+                  <span className="size-3.5 shrink-0 border border-foreground/20" style={{ backgroundColor: item.fill }} aria-hidden="true" />
+                  <span className="leading-4">
+                    {item.label}
+                    {legendCounts[index] ? (
+                      <span className="ml-1 tabular-nums text-muted-foreground">({legendCounts[index]})</span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
             </ul>
-            {props.viewMode === "work" ? (
-              <p className="mt-1.5 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
-                Ikon = jenis dengan paket terbanyak di wilayah itu; warna wilayah = jumlah paket.
-                {legendCounts[ROAD_WORK_TYPES.length] ? ` ${legendCounts[ROAD_WORK_TYPES.length].toLocaleString("id-ID")} ${wilayahLabel} campuran (tidak ada jenis yang melewati separuh paket).` : ""}
-              </p>
-            ) : props.viewMode === "budget" ? (
+            {props.viewMode === "budget" ? (
               <p className="mt-1.5 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
                 Skala nilai pagu, bukan status atau peringatan.
               </p>
             ) : null}
-            {props.viewMode !== "work" ? (
-              <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
-                Angka dalam kurung = jumlah {wilayahLabel} di kelas itu; {wilayahBerpaket} {wilayahLabel} berpaket pada tampilan ini.
-              </p>
-            ) : null}
+            <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
+              Angka dalam kurung = jumlah {wilayahLabel} di kelas itu; {wilayahBerpaket} {wilayahLabel} berpaket pada tampilan ini.
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-border pt-1.5 text-[10px] leading-4 text-muted-foreground">
+              <span>Penanda wilayah:</span>
+              {ROAD_WORK_TYPES.map((category) => {
+                const Icon = WORK_ICONS[category];
+                return (
+                  <span key={category} className="inline-flex items-center gap-1">
+                    <Icon className="size-2.5 text-[#0058A3]" aria-hidden="true" />
+                    {ROAD_WORK_LABELS[category].split(" & ")[0]}
+                  </span>
+                );
+              })}
+              <span className="basis-full">Angka di penanda = jumlah paket jenis itu di wilayah tersebut; penanda agregat, bukan lokasi pekerjaan.</span>
+            </div>
             {hasSpecificRegion ? (
               <p className="mt-1.5 flex items-center gap-1.5 border-t border-border pt-1.5 text-[11px]">
                 <span className="size-3 shrink-0 border-[3px] border-[#0A192F] bg-transparent" aria-hidden="true" />
@@ -1263,10 +1214,12 @@ export default function MapCanvas(props: MapCanvasProps) {
                 <p>
                   {props.viewMode === "budget"
                     ? "Warna menunjukkan total pagu paket per wilayah; skala ini bukan status atau peringatan."
-                    : props.viewMode === "work"
-                      ? "Ikon menandai jenis dengan paket terbanyak di tiap wilayah; warna wilayah tetap menunjukkan jumlah paket. Ikon hanya penanda agregat, bukan lokasi pekerjaan."
-                      : "Warna menunjukkan jumlah paket pada tiap wilayah."}
+                    : "Warna menunjukkan jumlah paket pada tiap wilayah."}
                   {" "}Arahkan kursor ke wilayah untuk angkanya.
+                </p>
+                <p>
+                  Penanda kecil di tiap wilayah menyebut jumlah paket per jenis pekerjaan (permukaan, drainase, jembatan).
+                  Penanda itu agregat wilayah, bukan lokasi pekerjaan.
                 </p>
                 <p>Paket tidak punya titik koordinat; peta memakai batas wilayah. Lokasi pekerjaan di dalam batas tidak diketahui.</p>
                 <p>Pindah ke tingkat {props.region.environmentLabel} memperbesar tampilan; paket yang hanya diketahui hingga kelurahan tidak dibagi ke {props.region.environmentLabel}.</p>

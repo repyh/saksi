@@ -6,12 +6,14 @@ perbaikannya. Angka dataset tidak ditulis di sini; pakai `data/regions/<id>/mani
 
 ## Batas yang tidak dilanggar
 
-- Peta tetap **koroplet batas wilayah**. Tidak ada pin, titik, atau marker per paket.
+- Peta tetap **koroplet batas wilayah**. Penanda jenis adalah agregat wilayah (ikon + jumlah paket
+  per jenis), bukan pin lokasi pekerjaan; tidak ada marker per paket.
 - Lokasi paket diturunkan ke RW atau kelurahan; paket tanpa anchor hanya tampil di register dengan
   label `Kota Tangerang (umum)`.
 - Penyedia disebut dengan penyebutnya; tidak ada skor gabungan.
-- **Tidak ada tombol reset filter** (`docs/HANDOFF.md`). Filter dikembalikan lewat pilihannya
-  sendiri; pencarian dihapus dari input.
+- **Satu tombol "Hapus filter"** di ujung baris *Filter aktif* (keputusan 11 November 2026,
+  menggantikan aturan lama "tanpa tombol reset"). Tombol mengembalikan filter ke keadaan awal dan
+  tidak mengubah urutan register maupun tema peta.
 - Bahasa indikator tetap "Diduga Tidak Sesuai", bukan tuduhan.
 
 ## Yang sudah kuat
@@ -126,12 +128,18 @@ perbaikannya. Angka dataset tidak ditulis di sini; pakai `data/regions/<id>/mani
 - [x] **Legenda menyatakan sebaran**, bukan hanya warna: jumlah wilayah per kelas di tiap baris,
       label pagu ringkas (`Rp2–3,2 Miliar`), dan ramp lima kelas dengan ujung terang yang lebih
       gelap agar terbaca di atas Positron.
-- [x] **Ringkasan satu baris**: empat angka (paket, pagu, rata-rata, rekam penyedia), komposisi
-      jenis, dan pintasan **Tabel per kecamatan** di ujung kanan. Tabel membuka ke bawah; di layar
-      sempit komposisi dan pintasan berbagi satu baris.
-- [x] **Tema jenis pekerjaan memakai ikon lagi**: ikon kotak (bukan pin) per wilayah menandai jenis
-      dengan paket terbanyak dan tampil pada semua tingkat zoom, sementara isi poligon tetap jumlah
-      paket. Legenda menyebut jumlah paket per jenis.
+- [x] **Ringkasan satu baris**: empat angka (paket, pagu, rata-rata, rekam penyedia) dengan lebar
+      mengikuti isinya, bar komposisi jenis yang lebar dengan label di bawahnya, dan pintasan
+      **Tabel per kecamatan** di ujung kanan. Tabel membuka ke bawah.
+- [x] **Penanda jenis selalu tampil**: setiap wilayah menampilkan ikon semua jenis yang ada beserta
+      jumlah paketnya (kotak putih bertumpuk vertikal, bukan pin). Legenda menjelaskan penandanya.
+      Tema peta tinggal **Jumlah paket** dan **Nilai anggaran**; tautan lama `tampilan=work`
+      diperlakukan sebagai jumlah paket.
+- [x] **Angka di dalam poligon dihapus**: jumlah paket per wilayah sudah terbaca dari penanda jenis,
+      sehingga label angka tidak lagi digambar di atas koroplet.
+- [x] **Tombol "Hapus filter"** di baris Filter aktif.
+- [x] **Tema jenis pekerjaan memakai ikon**: ikon kotak per wilayah pada semua tingkat zoom.
+      Legenda menyebut jumlah paket per jenis.
 - [x] **Tabel per kecamatan** (buka-tutup di ringkasan): paket, pagu, cakupan rekam, jenis dominan.
       Klik nama kecamatan menyaring register; agregat kecamatan sengaja tidak dibatasi viewport agar
       tabel tidak kehilangan baris.

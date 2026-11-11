@@ -25,7 +25,7 @@ function persen(bagian: number, total: number) {
 
 function Ringkasan({ label, nilai, catatan, judul, catatanKelas }: { label: string; nilai: string; catatan?: string; judul?: string; catatanKelas?: string }) {
   return (
-    <div className="min-w-0 basis-1/2 border-l border-border px-3 py-1.5 first:border-l-0 sm:basis-1/4 lg:basis-0 lg:flex-1" title={judul}>
+    <div className="min-w-0 basis-1/2 border-l border-border px-3 py-1.5 first:border-l-0 sm:basis-1/4 lg:basis-auto lg:flex-none" title={judul}>
       <p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       <p className="mt-0.5 flex items-baseline gap-1.5">
         <span className="font-heading text-base font-extrabold tabular-nums leading-tight tracking-tight text-foreground">{nilai}</span>
@@ -84,25 +84,24 @@ export function MapSummary({ totals, totalCount, loading, kecamatan, onSelectDis
           judul="Paket yang punya rekam LPSE atau Data INAPROC, beserta jumlah penyedia unik. Bukan penilaian kinerja."
         />
 
-        <div className="min-w-0 flex-1 basis-[10rem] border-l border-border px-3 py-1.5 sm:basis-[14rem] lg:flex-[1.6]">
+        <div className="min-w-0 flex-1 basis-[10rem] border-l border-border px-3 py-1.5 sm:basis-[14rem] lg:flex-[2]">
           <p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Jenis pekerjaan</p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <div className="flex h-1.5 w-10 shrink-0 overflow-hidden bg-muted" aria-hidden="true">
-              {komposisi.map((category) => (
-                <span
-                  key={category}
-                  style={{ width: `${(workCounts[category] / Math.max(1, totals.count)) * 100}%`, backgroundColor: WORK_COLORS[category] }}
-                />
-              ))}
-            </div>
-            <ul className="flex min-w-0 flex-wrap items-baseline gap-x-2 font-sans text-[10px] leading-3 text-muted-foreground">
-              {komposisi.map((category) => (
-                <li key={category} className="whitespace-nowrap">
-                  {labelRingkas(category)} <span className="tabular-nums text-foreground/80">{workCounts[category].toLocaleString("id-ID")}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-1 flex h-2 w-full overflow-hidden bg-muted" aria-hidden="true">
+            {komposisi.map((category) => (
+              <span
+                key={category}
+                style={{ width: `${(workCounts[category] / Math.max(1, totals.count)) * 100}%`, backgroundColor: WORK_COLORS[category] }}
+              />
+            ))}
           </div>
+          <ul className="mt-1 flex flex-wrap items-baseline gap-x-2.5 font-sans text-[10px] leading-3 text-muted-foreground">
+            {komposisi.map((category) => (
+              <li key={category} className="flex items-center gap-1 whitespace-nowrap">
+                <span className="size-2 shrink-0" style={{ backgroundColor: WORK_COLORS[category] }} aria-hidden="true" />
+                {labelRingkas(category)} <span className="tabular-nums text-foreground/80">{workCounts[category].toLocaleString("id-ID")}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-border px-3 py-1.5">

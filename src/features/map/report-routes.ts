@@ -1,6 +1,7 @@
 import type { RoadContractFilter, RoadPackageItem, RoadPackageSort, RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 
-export type ReportViewMode = "packages" | "budget" | "work";
+/** Tema koroplet. Ikon jenis pekerjaan selalu tampil, jadi tidak ada tema khusus untuk jenis. */
+export type ReportViewMode = "packages" | "budget";
 
 /** Slug region dipakai di segmen pertama URL; sama dengan `region.json` milik region aktif. */
 export const DEFAULT_REGION_SLUG = "kota-tangerang";

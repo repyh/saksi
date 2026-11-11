@@ -144,7 +144,7 @@ Perbaikan UI/UX peta dari review 11 November 2026. Rencana lengkap ada di `docs/
 | Filter wilayah | Memilih kecamatan/kelurahan menggerakkan peta (`fitBounds`); zoom kelurahan dinaikkan dari 11,5 ke 14 | Tangkapan rute kecamatan dan kelurahan |
 | URL filter | `kontrak` dan `desa` ditulis dan dibaca kembali; slug region tidak lagi ditanam | Muat `?desa=…&kontrak=TANPA`: filter aktif dan jumlah tetap setelah reload |
 | Badge lokasi | Badge **RW nn / Kelurahan / Kecamatan** di baris register dan panel paket | Tangkapan register |
-| Jumlah paket | “N dari M paket” dan baris **Filter aktif** (tanpa tombol reset, sesuai keputusan) | Tangkapan filter bar |
+| Jumlah paket | “N dari M paket” dan baris **Filter aktif** dengan tombol **Hapus filter** di ujung kanan | Tangkapan filter bar; klik Hapus filter mengembalikan seluruh filter |
 | Aksesibilitas | `focus-visible` pada kontrol peta, kanvas fokusabel, `prefers-reduced-motion` mematikan animasi kamera | Pemeriksaan kode dan `npm run lint` |
 | Klik poligon | Klik poligon kelurahan berpaket | Register difilter ke kecamatan + kelurahan, peta memperbesar, tanpa panel paket acak |
 | Register | Klik baris paket | Seluruh baris membuka panel; baris terpilih tersorot |
