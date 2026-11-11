@@ -10,7 +10,8 @@
  *
  * Pakai:
  *   node scripts/lpse.mjs list [--region <id>]    # daftar paket tender + non-tender
- *   node scripts/lpse.mjs detail [--region <id>]  # detail + pemenang untuk kandidat yang cocok RUP
+ *   node scripts/lpse.mjs detail [--region <id>] [--metode <nama>] [--limit N] [--paralel N] [--kandidat]
+ *                                                 # detail + pemenang; bawaan semua paket
  *   node scripts/lpse.mjs match [--region <id>]   # cocokkan ke snapshot region
  *
  * Host, direktori kerja, dan berkas keluaran diambil dari blok "lpse" di region.json.
@@ -162,7 +163,7 @@ async function daftar(jenis, tahun) {
   }));
 }
 
-async function detailTender(item) {
+async function detailTender(item, jeda = JEDA_MS) {
   const akar = item.jenis === "lelang" ? "/lelang" : "/nontender";
   const hal = item.jenis === "lelang" ? "pengumumanlelang" : "pengumumanpl";
   const evalPath = item.jenis === "lelang" ? "/evaluasi" : "/evaluasinontender";
@@ -171,7 +172,7 @@ async function detailTender(item) {
   const tabel = bacaTabel(pengumuman);
   const kodeRup = /Kode RUP<\/th>[\s\S]{0,400}?<td[^>]*>\s*(\d{6,14})\s*<\/td>/i.exec(pengumuman)?.[1] ?? null;
 
-  await tidur(JEDA_MS);
+  await tidur(jeda);
   const kontrak = await minta(`${BASE}${evalPath}/${item.id}/pemenangberkontrak`);
   const tKontrak = bacaTabel(kontrak);
 
@@ -229,11 +230,26 @@ async function cmdList() {
 
 async function cmdDetail() {
   const rows = JSON.parse(readFileSync(join(DIR, "rows.json"), "utf8"));
-  const paket = muatSnapshot();
-  const namaRup = new Map(paket.map((p) => [norm(p.nama), p]));
+  const metodeFilter = arg("metode", "");
+  const hanyaKandidat = argv.includes("--kandidat");
+  const batas = Number(arg("limit", "0")) || 0;
+  const paralel = Math.max(1, Number(arg("paralel", "1")) || 1);
+  const jeda = Math.max(0, Number(arg("jeda", String(JEDA_MS))) || JEDA_MS);
 
-  const kandidat = rows.filter((r) => namaRup.has(norm(r.nama)));
-  console.log(`kandidat nama cocok RUP: ${kandidat.length} dari ${rows.length}`);
+  // Halaman detail memuat Kode RUP, jadi semua paket perlu diambil — bukan hanya yang
+  // namanya persis sama dengan RUP. Pencocokan nama tidak bisa diandalkan: nama SPSE
+  // sering berbeda kapitalisasi/imbuhan dari RUP.
+  let kandidat = rows;
+  if (metodeFilter) kandidat = kandidat.filter((r) => r.metode === metodeFilter);
+  if (hanyaKandidat) {
+    const namaRup = new Map(muatSnapshot().map((p) => [norm(p.nama), p]));
+    kandidat = kandidat.filter((r) => namaRup.has(norm(r.nama)));
+  }
+  console.log(
+    `kandidat detail: ${kandidat.length} dari ${rows.length}` +
+      `${metodeFilter ? ` · metode ${metodeFilter}` : ""}` +
+      `${hanyaKandidat ? " · hanya nama cocok RUP" : " · semua paket"}`,
+  );
 
   const jalur = join(DIR, "details.jsonl");
   const sudah = new Set();
@@ -248,22 +264,29 @@ async function cmdDetail() {
       }
     }
   }
-  const sisa = kandidat.filter((r) => !sudah.has(`${r.jenis}:${r.id}`));
+  const sisa = kandidat.filter((r) => !sudah.has(`${r.jenis}:${r.id}`)).slice(0, batas > 0 ? batas : undefined);
   console.log(`sudah diambil ${sudah.size}, sisa ${sisa.length}`);
 
+  const antre = [...sisa];
   let n = 0;
-  for (const item of sisa) {
-    try {
-      const d = await detailTender(item);
-      appendFileSync(jalur, `${JSON.stringify(d)}\n`);
-      n += 1;
-      if (n % 50 === 0) console.log(`  ${n}/${sisa.length} …`);
-    } catch (err) {
-      console.warn(`  gagal ${item.jenis}:${item.id} — ${err.message}`);
+  let gagal = 0;
+  async function pekerja() {
+    while (antre.length) {
+      const item = antre.shift();
+      try {
+        const d = await detailTender(item, jeda);
+        appendFileSync(jalur, `${JSON.stringify(d)}\n`);
+        n += 1;
+        if (n % 50 === 0) console.log(`  ${n}/${sisa.length} …`);
+      } catch (err) {
+        gagal += 1;
+        console.warn(`  gagal ${item.jenis}:${item.id} — ${err.message}`);
+      }
+      await tidur(jeda);
     }
-    await tidur(JEDA_MS);
   }
-  console.log(`selesai, ${n} detail baru`);
+  await Promise.all(Array.from({ length: paralel }, () => pekerja()));
+  console.log(`selesai, ${n} detail baru${gagal ? ` · ${gagal} gagal` : ""}`);
 }
 
 function cmdMatch() {
@@ -369,7 +392,7 @@ function cmdMatch() {
     KELUARAN,
     JSON.stringify(
       {
-        snapshot: "2 Nov 2026",
+        snapshot: new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(new Date()),
         sumber: `${BASE} (SPSE 4.5)`,
         paket_rup: paket.length,
         paket_tercocok: tercocok.size,
