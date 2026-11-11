@@ -513,9 +513,8 @@ interface IndeksTersimpan {
 const cache = new Map<string, IndeksTersimpan>();
 
 /**
- * Indeks kontrak per region. Map disimpan per proses untuk kerja CPU, tetapi
- * kedaluwarsa mengikuti `revalidate` Data Cache katalog (5 menit) supaya proses
- * panjang tidak menyajikan kontrak basi selamanya.
+ * Indeks kontrak per region. Map disimpan per proses untuk kerja CPU dan
+ * kedaluwarsa mengikuti siklus revalidasi katalog harian.
  */
 export function getIndeksKontrak(regionId: string = DEFAULT_REGION_ID): Promise<IndeksKontrak> {
   const sekarang = Date.now();

@@ -1,6 +1,6 @@
 # STATE — Kondisi Terkini Proyek SAKSI
 
-**Tanggal Pembaruan:** 10 November 2026
+**Tanggal Pembaruan:** 11 November 2026
 **Target Terdekat:** Penyisihan **11 November 2026** (proposal ≤30 halaman, surat orisinalitas, video ≤5 menit)
 **Final:** onsite **28 November 2026**
 **Kompetisi:** Web In Action (WIA) — MIA 2026 (KSM Multimedia UPN Veteran Jakarta)
@@ -241,8 +241,9 @@ Model cache sekarang memakai **Data Cache bawaan Next**, bukan `Map` selama pros
 
 - `src/server/packages/catalog-cache.ts` membungkus baris paket (`catalog-road-package-bases`),
   peta kontrak khusus RUP jalan (`catalog-contracts-per-rup`), register penyedia
-  (`catalog-vendors`), dan metadata snapshot dengan `unstable_cache` + `revalidate: 300` + tag
-  `catalog`. Baris paket dan kontrak dipisah menjadi dua entri karena Next menolak satu entri
+  (`catalog-vendors`), dan metadata snapshot dengan `unstable_cache` + revalidasi harian + tag
+  `catalog`. Katalog bersumber dari ingestion harian; TTL lima menit memaksa pengunjung menunggu
+  pembangunan ulang indeks kontrak jarak jauh berkali-kali sehari. Baris paket dan kontrak dipisah menjadi dua entri karena Next menolak satu entri
   Data Cache di atas 2 MB; keduanya digabung per request.
 - `cache()` React mendeduplikasi loader dalam satu request: `generateMetadata` + page pada
   `/paket/[rup]` dan `/penyedia/[slug]`, pasangan `searchRoadPackages` + `aggregateRoadPackages`
@@ -254,12 +255,21 @@ Model cache sekarang memakai **Data Cache bawaan Next**, bukan `Map` selama pros
   merender rute secara dinamis. Cache lintas request yang bekerja adalah Data Cache di atas,
   bukan shell halaman ISR. ISR tingkat rute akan menuntut filter query dipindahkan ke klien
   (mengubah perilaku), jadi tidak dipakai.
-- `/paket/[rup]` dan `/laporan/publik` **tidak** memakai revalidate rute dan **tidak** membungkus
-  `listPublishedReports()` dengan cache katalog. Laporan warga tetap dibaca langsung dari database
-  setiap request; laporan yang baru terbit terlihat pada request berikutnya.
+- `/paket/[rup]` dan `/laporan/publik` **tidak** memakai revalidate rute. Proyeksi laporan publik
+  memakai cache bertag 60 detik; perubahan status mematikan cache tersebut agar keputusan moderasi
+  terlihat pada request berikutnya.
 - `getIndeksKontrak()` masih menyimpan Map per proses untuk kerja CPU, tetapi lapisan lintas
   request yang menentukan adalah Data Cache di atas. Instance baru membangun ulang Map dari entri
   cache atau satu pembacaan database; kebenaran data tidak bergantung pada umur proses.
+
+Audit produksi 11 November 2026 menemukan lonjakan berkala setelah cache katalog kedaluwarsa:
+`npm run profile -- --samples 3 --warmup 1 --parallel 1 --cold` mengukur `/paket` pertama 23,3 dtk;
+`/penyedia` 8,6 dtk; `/laporan/publik` 11,7 dtk. Request berulang setelah cache hangat 68–80 ms
+untuk direktori dan peta. Indeks kontrak selesai diproses dalam 48 ms; PostgreSQL menjalankan query
+utamanya dalam 22–40 ms, sedangkan pembacaan Prisma penuh memakan 9,6 dtk (sekali uji lain 18,5 dtk).
+TTL katalog dinaikkan ke 24 jam sesuai jadwal ingestion harian; daftar/detail laporan publik kini
+di-cache 60 detik dan invalidasi saat status berubah. HTML home mentah sekitar 979 KB (102 KB dengan
+gzip), sedangkan HTML peta 288 KB (28 KB gzip), sehingga ukuran HTML bukan penyebab jeda belasan detik.
 
 Angka `next build` + `next start`, `DATABASE_URL` aktif, 3 warm-up + 7 sampel, p50 (mesin ini):
 
