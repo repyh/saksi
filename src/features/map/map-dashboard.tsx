@@ -42,6 +42,7 @@ import type {
   RoadPackageMapData,
   RoadPackageSearchData,
   RoadPackageSearchFilters,
+  RoadPackageSort,
   RoadWorkCategory,
 } from "@/contracts/packages/road-package.contract";
 import type { RegionOption } from "@/contracts/regions/region.contract";
