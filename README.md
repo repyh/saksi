@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/repyh/saksi/docs/readme-diagrams/docs/assets/brand/saksi-logo-horizontal.svg" alt="Logo SAKSI" width="280">
+<img src="https://raw.githubusercontent.com/repyh/saksi/dc29118/docs/assets/brand/saksi-logo-horizontal.svg" alt="Logo SAKSI" width="280">
 
 # SAKSI
 
