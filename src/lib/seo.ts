@@ -60,12 +60,7 @@ export function createPageMetadata({
 }: PageMetadataOptions): Metadata {
   const canonicalUrl = canonicalPath;
   const shareTitle = `${title} | ${SITE_NAME}`;
-  const image = {
-    url: "/opengraph-image",
-    width: 1200,
-    height: 630,
-    alt: "SAKSI — peta dan audit anggaran jalan Kota Tangerang",
-  };
+  // OG image config, retained for later: { url: "/opengraph-image", width: 1200, height: 630 }.
 
   return {
     title,
@@ -79,13 +74,13 @@ export function createPageMetadata({
       title: shareTitle,
       description,
       url: canonicalUrl,
-      images: [image],
+      // images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: shareTitle,
       description,
-      images: [image],
+      // images: [image],
     },
   };
 }

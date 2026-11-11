@@ -1,3 +1,5 @@
+// Temporarily unused: keep this generator outside src/app so Next does not
+// register it as the automatic Open Graph image metadata route.
 import { ImageResponse } from "next/og";
 
 export const alt = "SAKSI — peta dan audit anggaran jalan Kota Tangerang";
