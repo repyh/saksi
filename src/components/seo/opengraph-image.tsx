@@ -2,10 +2,10 @@
 // register it as the automatic Open Graph image metadata route.
 //
 // The visible identity (emblem + wordmark) is drawn from the brand paths, so the
-// card matches the app exactly. Supporting copy still uses a system sans because
-// ImageResponse cannot read next/font assets without shipping a font file; the
-// active route in src/app/api/og/peta-pekerjaan follows the same rule.
+// card matches the app exactly. Supporting copy uses the same subset
+// Raleway/Open Sans that the app uses (see og-fonts.ts), passed to ImageResponse.
 import { ImageResponse } from "next/og";
+import { loadBrandFonts } from "./og-fonts";
 import {
   BRAND_FULL_NAME,
   EMBLEM_ASPECT,
@@ -50,7 +50,7 @@ export default function OpenGraphImage() {
           padding: 54,
           backgroundColor: CARD.canvas,
           color: CARD.ink,
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "Open Sans, sans-serif",
         }}
       >
         <div
@@ -85,7 +85,7 @@ export default function OpenGraphImage() {
                   display: "flex",
                   marginBottom: 20,
                   fontSize: 19,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: 3,
                   color: CARD.primary,
                   textTransform: "uppercase",
@@ -93,7 +93,9 @@ export default function OpenGraphImage() {
               >
                 Data publik · wilayah · kontrak
               </div>
-              <div style={{ display: "flex", fontSize: 54, fontWeight: 800, lineHeight: 1.1 }}>
+              <div
+                style={{ display: "flex", fontSize: 54, fontWeight: 800, lineHeight: 1.1, fontFamily: "Raleway, sans-serif" }}
+              >
                 Peta dan audit anggaran jalan
               </div>
               <div style={{ display: "flex", marginTop: 18, fontSize: 27, color: CARD.muted }}>
@@ -127,6 +129,6 @@ export default function OpenGraphImage() {
         </div>
       </div>
     ),
-    size,
+    { ...size, fonts: loadBrandFonts() },
   );
 }

@@ -4,6 +4,14 @@ import { ImageResponse } from "next/og";
 import { addressSlug, districtSlug, parseReportSegments } from "@/features/map/report-routes";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
 import { getSiteOrigin } from "@/lib/seo";
+import { loadBrandFonts } from "@/components/seo/og-fonts";
+import {
+  EMBLEM_FRAME_PATH,
+  EMBLEM_SOLID_PATH,
+  EMBLEM_VIEWBOX,
+  WORDMARK_PATH,
+  WORDMARK_VIEWBOX,
+} from "@/components/brand/mark-geometry";
 
 export const runtime = "nodejs";
 
@@ -174,17 +182,22 @@ export async function GET(request: Request) {
   const focusLabel = areaLabel ? "Area pilihan" : "Cakupan peta";
   const response = new ImageResponse(
     (
-      <div style={{ display: "flex", width: "100%", height: "100%", padding: 32, backgroundColor: "#f7f9fc", color: COLORS.ink, fontFamily: "Arial, sans-serif" }}>
+      <div style={{ display: "flex", width: "100%", height: "100%", padding: 32, backgroundColor: "#f7f9fc", color: COLORS.ink, fontFamily: "Open Sans, sans-serif" }}>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%", padding: "34px 42px", border: `1px solid ${COLORS.border}`, borderTop: `10px solid ${COLORS.blue}`, backgroundColor: "#ffffff" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ display: "flex", width: 9, height: 38, backgroundColor: COLORS.yellow }} />
-            <div style={{ display: "flex", fontSize: 30, fontWeight: 800, letterSpacing: 7 }}>SAKSI</div>
+            <svg width={32} height={38} viewBox={EMBLEM_VIEWBOX} fill="none">
+              <path d={EMBLEM_FRAME_PATH} fill={COLORS.yellow} fillRule="evenodd" />
+              <path d={EMBLEM_SOLID_PATH} fill={COLORS.blue} fillRule="evenodd" />
+            </svg>
+            <svg width={89} height={22} viewBox={WORDMARK_VIEWBOX} fill="none">
+              <path d={WORDMARK_PATH} fill={COLORS.blue} />
+            </svg>
             <div style={{ display: "flex", marginLeft: 4, fontSize: 16, color: COLORS.muted }}>Sistem Akuntabilitas &amp; Komparasi Spasial Infrastruktur</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 28 }}>
             <div style={{ display: "flex", flexDirection: "column", width: 610 }}>
-              <div style={{ display: "flex", marginBottom: 16, fontSize: 17, fontWeight: 700, letterSpacing: 2.5, color: COLORS.blue, textTransform: "uppercase" }}>{focusLabel}</div>
-              <div style={{ display: "flex", fontSize: areaLabel ? 42 : 48, fontWeight: 800, lineHeight: 1.12 }}>{heading}</div>
+              <div style={{ display: "flex", marginBottom: 16, fontSize: 17, fontWeight: 600, letterSpacing: 2.5, color: COLORS.blue, textTransform: "uppercase" }}>{focusLabel}</div>
+              <div style={{ display: "flex", fontFamily: "Raleway, sans-serif", fontSize: areaLabel ? 42 : 48, fontWeight: 800, lineHeight: 1.12 }}>{heading}</div>
               <div style={{ display: "flex", marginTop: 14, fontSize: 23, color: COLORS.muted }}>Peta pekerjaan jalan · {regionLabel}</div>
               {labels.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24 }}>{labels.map((label) => <div key={label} style={{ display: "flex", padding: "8px 12px", border: `1px solid ${COLORS.border}`, backgroundColor: "#f7f9fc", color: COLORS.muted, fontSize: 16 }}>{label}</div>)}</div>}
             </div>
@@ -196,12 +209,12 @@ export async function GET(request: Request) {
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 14, borderTop: `1px solid ${COLORS.border}`, color: COLORS.muted, fontSize: 15 }}>
             <div style={{ display: "flex" }}>Data publik · wilayah · kontrak</div>
-            <div style={{ display: "flex", fontWeight: 700, color: COLORS.blue }}>{siteHost}</div>
+            <div style={{ display: "flex", fontWeight: 600, color: COLORS.blue }}>{siteHost}</div>
           </div>
         </div>
       </div>
     ),
-    SIZE,
+    { ...SIZE, fonts: loadBrandFonts() },
   );
 
   const headers = new Headers(response.headers);
