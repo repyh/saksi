@@ -1,18 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { listVendors, searchRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Penyedia & Kontrak Jalan — SAKSI",
-  description:
-    "Rekam jejak penyedia paket jalan dari LPSE/SPSE dan Data INAPROC, disandingkan dengan paket RUP.",
-};
+export const metadata = createPageMetadata({
+  title: "Penyedia dan kontrak jalan",
+  description: "Telusuri penyedia paket jalan dari catatan LPSE/SPSE dan Data INAPROC, disandingkan dengan paket RUP.",
+  path: "/penyedia",
+});
 
 const KATEGORI_LABEL: Record<string, string> = {
   PERMUKAAN: "Permukaan",

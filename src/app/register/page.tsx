@@ -1,10 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { RegisterForm } from "@/features/auth/components/register-form";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Buat akun — SAKSI",
-  description: "Buat akun SAKSI menggunakan undangan personal.",
+export const metadata = {
+  ...createPageMetadata({
+    title: "Buat akun",
+    description: "Buat akun SAKSI menggunakan undangan personal.",
+    path: "/register",
+    index: false,
+  }),
   referrer: "no-referrer",
 };
 

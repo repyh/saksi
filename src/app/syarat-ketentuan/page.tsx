@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
 import { getLegalDoc } from "@/lib/legal-content";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Syarat & Ketentuan | SAKSI",
-  description: "Ketentuan penggunaan SAKSI untuk menelusuri paket jalan dan membuat laporan kerusakan.",
-};
+export const metadata = createPageMetadata({
+  title: "Syarat & Ketentuan",
+  description: "Ketentuan penggunaan SAKSI untuk menelusuri paket jalan dan mengirim laporan kerusakan.",
+  path: "/syarat-ketentuan",
+});
 
 export default async function TermsPage() {
   const content = await getLegalDoc("terms");

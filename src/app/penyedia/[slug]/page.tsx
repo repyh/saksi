@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft, FiArrowRight, FiExternalLink } from "react-icons/fi";
+import { JsonLd } from "@/components/seo/json-ld";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { getVendor } from "@/server/packages/service";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
+import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -48,16 +49,24 @@ function providerDirectoryHref(returnTo: string | undefined, regionId: string) {
   return `/penyedia?${params.toString()}`;
 }
 
-export async function generateMetadata({ params, searchParams }: PenyediaDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PenyediaDetailPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const regionId = resolveRegionId(query.region);
   const data = await getVendor(slug, regionId);
-  if (!data) return { title: "Penyedia tidak ditemukan — SAKSI" };
+  if (!data) {
+    return createPageMetadata({
+      title: "Penyedia tidak ditemukan",
+      description: "Rekam penyedia ini tidak ditemukan di katalog SAKSI.",
+      path: `/penyedia/${encodeURIComponent(slug)}`,
+      index: false,
+    });
+  }
 
-  return {
-    title: `${data.summary.nama} — Penyedia SAKSI`,
-    description: `Rekam kontrak ${data.summary.nama} pada paket jalan ${getRegion(regionId).label} dari LPSE dan Data INAPROC.`,
-  };
+  return createPageMetadata({
+    title: `Rekam kontrak ${data.summary.nama}`,
+    description: `Paket jalan dan rekam kontrak ${data.summary.nama} di ${getRegion(regionId).label}, berdasarkan catatan LPSE/SPSE dan Data INAPROC.`,
+    path: `/penyedia/${encodeURIComponent(slug)}`,
+  });
 }
 
 export default async function PenyediaDetailPage({ params, searchParams }: PenyediaDetailPageProps) {
@@ -69,8 +78,20 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
   if (!data) notFound();
 
   const { summary, items, totalNilai } = data;
+  const canonicalPath = `/penyedia/${encodeURIComponent(slug)}`;
 
   return (
+    <>
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Penyedia", item: absoluteSiteUrl("/penyedia") },
+          { "@type": "ListItem", position: 2, name: summary.nama, item: absoluteSiteUrl(canonicalPath) },
+        ],
+      }}
+    />
     <CatalogPageShell variant="detail" header={
       <>
           <Link href={directoryHref} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
@@ -171,5 +192,6 @@ export default async function PenyediaDetailPage({ params, searchParams }: Penye
           </p>
         </div>
     </CatalogPageShell>
+    </>
   );
 }

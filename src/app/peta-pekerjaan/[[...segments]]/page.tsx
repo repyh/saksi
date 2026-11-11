@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import MapDashboard from "@/features/map/map-dashboard";
@@ -6,13 +5,15 @@ import { addressForPackage, districtSlug, parseReportSegments, type ReportViewMo
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
 import { searchRoadPackages, aggregateRoadPackages } from "@/server/packages/service";
 import { listRegions, resolveRegionId } from "@/server/regions/region-registry";
+import { createPageMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Peta Pekerjaan — SAKSI",
-  description: "Peta paket pekerjaan jalan per kabupaten/kota.",
-};
+export const metadata = createPageMetadata({
+  title: "Peta pekerjaan jalan Kota Tangerang",
+  description: "Jelajahi sebaran paket jalan berdasarkan kecamatan, kelurahan, RW, tahun, dan jenis pekerjaan.",
+  path: "/peta-pekerjaan",
+});
 
 interface LaporanPageProps {
   params: Promise<{ segments?: string[] }>;

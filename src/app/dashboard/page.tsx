@@ -1,15 +1,17 @@
-import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createPageMetadata } from "@/lib/seo";
 import { auth } from "@/lib/auth";
 import { accountApi } from "@/server/api/account/account.api";
 import { DashboardTabs } from "@/features/dashboard/components/dashboard-tabs";
 import { getRegion, regionSummary } from "@/server/regions/region-registry";
 
-export const metadata: Metadata = {
-  title: "Dashboard — SAKSI",
-  description: "Dashboard akun dan akses cepat ke fitur SAKSI.",
-};
+export const metadata = createPageMetadata({
+  title: "Dashboard akun",
+  description: "Kelola akun dan laporan Anda di SAKSI.",
+  path: "/dashboard",
+  index: false,
+});
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });

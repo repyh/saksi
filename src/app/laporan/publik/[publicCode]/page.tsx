@@ -1,15 +1,23 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedReportDetail } from "@/server/reports/public-report.repository";
 import { getRegion, regionSummary, DEFAULT_REGION_ID } from "@/server/regions/region-registry";
 import ReportLocationMap from "@/features/reports/components/report-location-map";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Detail Laporan Publik — SAKSI",
-  description: "Detail laporan kerusakan jalan warga yang sudah disetujui.",
-  robots: { index: false, follow: false },
-};
+interface PublicReportDetailPageProps {
+  params: Promise<{ publicCode: string }>;
+}
+
+export async function generateMetadata({ params }: PublicReportDetailPageProps) {
+  const { publicCode } = await params;
+  return createPageMetadata({
+    title: "Detail laporan publik",
+    description: "Informasi laporan kerusakan jalan yang telah disetujui untuk ditampilkan.",
+    path: `/laporan/publik/${encodeURIComponent(publicCode)}`,
+    index: false,
+  });
+}
 
 const DAMAGE_LABELS: Record<string, string> = {
   POTHOLE: "Lubang",
@@ -91,7 +99,7 @@ export default async function PublicReportDetailPage({ params }: PublicReportDet
                 <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Paket rujukan</dt>
                 <dd className="mt-1 text-sm text-foreground">
                   {report.package ? (
-                    <Link href={`/paket/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(region.id)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+                    <Link href={`/project/${encodeURIComponent(report.package.rup)}?region=${encodeURIComponent(region.id)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
                       RUP {report.package.rup}
                     </Link>
                   ) : "Tidak ditautkan"}

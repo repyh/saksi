@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { FiMap, FiSearch } from "react-icons/fi";
 import type { RoadWorkCategory } from "@/contracts/packages/road-package.contract";
@@ -7,11 +6,13 @@ import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
 import { listRoadPackages } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Proyek Jalan — SAKSI",
-  description: "Direktori proyek jalan dengan rincian RUP, lokasi, pagu, dan rekam kontrak.",
-};
+export const metadata = createPageMetadata({
+  title: "Proyek jalan Kota Tangerang",
+  description: "Telusuri rincian proyek jalan, RUP, wilayah, pagu, dan rekam kontrak yang tersedia.",
+  path: "/project",
+});
 
 const PAGE_SIZE = 50;
 const WORK_OPTIONS: Array<{ value: RoadWorkCategory; label: string }> = [

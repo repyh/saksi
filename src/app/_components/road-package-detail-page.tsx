@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { Badge } from "@/components/ui/badge";
+import { JsonLd } from "@/components/seo/json-ld";
 import { classifyRoadWork, ROAD_WORK_LABELS } from "@/contracts/packages/road-work";
 import { PackageContractSection } from "@/features/packages/components/package-contract-section";
 import { PackageLocationSection } from "@/features/packages/components/package-location-section";
@@ -14,6 +15,7 @@ import { formatRupiahFull } from "@/features/map/road-types";
 import { getRoadPackageDetail } from "@/server/packages/service";
 import { getRegion, resolveRegionId } from "@/server/regions/region-registry";
 import { listPublishedReports } from "@/server/reports/public-report.repository";
+import { absoluteSiteUrl, createPageMetadata } from "@/lib/seo";
 
 export interface RoadPackageDetailPageProps {
   params: Promise<{ rup: string }>;
@@ -73,16 +75,32 @@ export async function generateRoadPackageDetailMetadata({
   directoryPath,
 }: RoadPackageDetailPageProps): Promise<Metadata> {
   const [{ rup }, query] = await Promise.all([params, searchParams]);
-  const typeLabel = directoryPath === "/project" ? "Proyek" : "Paket";
-  if (!/^\d{1,16}$/.test(rup)) return { title: `${typeLabel} tidak ditemukan — SAKSI` };
+  if (!/^\d{1,16}$/.test(rup)) {
+    return createPageMetadata({
+      title: "Proyek jalan tidak ditemukan",
+      description: "Rincian proyek jalan ini tidak tersedia di katalog SAKSI.",
+      path: `${directoryPath}/${encodeURIComponent(rup)}`,
+      index: false,
+    });
+  }
   const regionId = resolveRegionId(query.region);
   const detail = await getRoadPackageDetail(rup, regionId);
-  if (!detail) return { title: `${typeLabel} tidak ditemukan — SAKSI` };
+  if (!detail) {
+    return createPageMetadata({
+      title: "Proyek jalan tidak ditemukan",
+      description: "Rincian proyek jalan ini tidak tersedia di katalog SAKSI.",
+      path: `${directoryPath}/${encodeURIComponent(rup)}`,
+      index: false,
+    });
+  }
 
-  return {
-    title: `${detail.item.nama} — ${typeLabel} RUP ${detail.item.kode_rup} — SAKSI`,
-    description: `Rencana, lokasi, realisasi kontrak, dan laporan warga untuk RUP ${detail.item.kode_rup} di ${detail.region.label}.`,
-  };
+  const canonicalPath = `/project/${encodeURIComponent(detail.item.kode_rup)}`;
+  return createPageMetadata({
+    title: `${detail.item.nama} — Proyek RUP ${detail.item.kode_rup}`,
+    description: `Rencana pengadaan, wilayah, pagu, dan rekam kontrak yang tersedia untuk proyek RUP ${detail.item.kode_rup} di ${detail.region.label}.`,
+    path: canonicalPath,
+    canonicalPath,
+  });
 }
 
 export async function RoadPackageDetailPage({
@@ -107,9 +125,30 @@ export async function RoadPackageDetailPage({
   const regionLabel = getRegion(regionId).label;
   const typeLabel = directoryPath === "/project" ? "Proyek" : "Paket";
   const returnLabel = directoryPath === "/project" ? "Semua proyek jalan" : "Semua paket jalan";
+  const detailPath = `/project/${encodeURIComponent(item.kode_rup)}`;
 
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-white text-foreground">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Proyek jalan",
+              item: absoluteSiteUrl("/project"),
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: item.nama,
+              item: absoluteSiteUrl(detailPath),
+            },
+          ],
+        }}
+      />
       <section className="border-b border-border bg-muted/20">
         <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <Link href={returnHref} className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-primary underline-offset-2 hover:underline">
