@@ -214,7 +214,7 @@ export function DashboardTabs({ account, region }: { account: DashboardAccount; 
     if (activeTab === "workspace") nextParams.delete("tab");
     else nextParams.set("tab", activeTab);
     const query = nextParams.toString();
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    window.history.replaceState(null, "", `${pathname}${query ? `?${query}` : ""}`);
   }, [activeTab, pathname, requestedTab, router, searchParams]);
 
   function selectTab(value: string | null) {
@@ -225,7 +225,7 @@ export function DashboardTabs({ account, region }: { account: DashboardAccount; 
     if (nextTab === "workspace") nextParams.delete("tab");
     else nextParams.set("tab", nextTab);
     const query = nextParams.toString();
-    router.push(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    window.history.pushState(null, "", `${pathname}${query ? `?${query}` : ""}`);
   }
 
   function resetProfile() {
