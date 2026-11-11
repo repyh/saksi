@@ -6,7 +6,7 @@
     2025,
     2026
   ],
-  "dibuat": "2026-11-11T09:12:05.281Z",
+  "dibuat": "2026-11-11T09:56:43.209Z",
   "sumber": {
     "rup": "data/rup_kota_tangerang_2025_2026.json",
     "detail": "data/rup_detail_kota_tangerang.json",
@@ -27,6 +27,16 @@
       "berkas": "data/regions/kota-tangerang/aliases.json",
       "byte": 912,
       "sha256": "7fd80c8d290d239599615d289956f68ac02d24452b54334ca930d4799974dcda"
+    },
+    "data/rup_kota_tangerang_2025_2026.json": {
+      "berkas": "data/rup_kota_tangerang_2025_2026.json",
+      "byte": 9817074,
+      "sha256": "72a6ae616d4196a2b178d7184d58d0be86a7a8c33d9c16167a6ecd2ca34b0c5c"
+    },
+    "data/rup_detail_kota_tangerang.json": {
+      "berkas": "data/rup_detail_kota_tangerang.json",
+      "byte": 1302247,
+      "sha256": "67f9a54a6dba8092286cbc3ddaa325346ed4970d14aa214ae2bf73b647fcb6a4"
     },
     "data/realisasi_kota_tangerang.json": {
       "berkas": "data/realisasi_kota_tangerang.json",
@@ -112,8 +122,8 @@
       "unik": 558
     },
     "sumber": {
-      "rup": null,
-      "detail": null,
+      "rup": 29288,
+      "detail": 2552,
       "realisasi": 51153,
       "lpse": 1736,
       "batas_kecamatan": 13,
