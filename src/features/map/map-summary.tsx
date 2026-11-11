@@ -23,14 +23,21 @@ function persen(bagian: number, total: number) {
   return `${((bagian / total) * 100).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%`;
 }
 
-function Ringkasan({ label, nilai, catatan, judul }: { label: string; nilai: string; catatan?: string; judul?: string }) {
+function Ringkasan({ label, nilai, catatan, judul, catatanKelas }: { label: string; nilai: string; catatan?: string; judul?: string; catatanKelas?: string }) {
   return (
-    <div className="min-w-0 px-3 py-2" title={judul}>
+    <div className="min-w-0 basis-1/2 border-l border-border px-3 py-1.5 first:border-l-0 sm:basis-1/4 lg:basis-0 lg:flex-1" title={judul}>
       <p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
-      <p className="mt-0.5 truncate font-heading text-lg font-extrabold tabular-nums leading-tight tracking-tight text-foreground">{nilai}</p>
-      {catatan ? <p className="mt-0.5 truncate font-sans text-[10px] text-muted-foreground">{catatan}</p> : null}
+      <p className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="font-heading text-base font-extrabold tabular-nums leading-tight tracking-tight text-foreground">{nilai}</span>
+        {catatan ? <span className={`truncate font-sans text-[10px] text-muted-foreground ${catatanKelas ?? ""}`}>{catatan}</span> : null}
+      </p>
     </div>
   );
+}
+
+/** Label jenis versi pendek untuk baris ringkas: "Permukaan", "Drainase", "Jembatan". */
+function labelRingkas(category: keyof typeof WORK_COLORS) {
+  return ROAD_WORK_LABELS[category].split(" & ")[0];
 }
 
 /**
@@ -52,11 +59,12 @@ export function MapSummary({ totals, totalCount, loading, kecamatan, onSelectDis
 
   return (
     <section aria-label="Ringkasan paket pada filter aktif" aria-busy={loading} className="border-b border-border bg-white">
-      <div className={`grid grid-cols-2 gap-y-1 divide-border sm:grid-cols-3 sm:divide-x lg:grid-cols-4 ${loading ? "opacity-60" : ""}`}>
+      {/* Satu baris: empat angka, komposisi jenis, dan pintasan tabel di ujung kanan. */}
+      <div className="flex flex-wrap items-stretch">
         <Ringkasan
           label="Paket"
           nilai={totals.count.toLocaleString("id-ID")}
-          catatan={`dari ${totalCount.toLocaleString("id-ID")} paket`}
+          catatan={`dari ${totalCount.toLocaleString("id-ID")}`}
         />
         <Ringkasan
           label="Pagu"
@@ -72,39 +80,40 @@ export function MapSummary({ totals, totalCount, loading, kecamatan, onSelectDis
           label="Rekam penyedia"
           nilai={`${totals.withContract.toLocaleString("id-ID")} · ${persen(totals.withContract, totals.count)}`}
           catatan={totals.vendors ? `${totals.vendors.toLocaleString("id-ID")} penyedia unik` : "belum ada rekam"}
-          judul="Paket yang punya rekam LPSE atau Data INAPROC. Bukan penilaian kinerja."
+          catatanKelas="hidden xl:inline"
+          judul="Paket yang punya rekam LPSE atau Data INAPROC, beserta jumlah penyedia unik. Bukan penilaian kinerja."
         />
-      </div>
 
-      <div className="flex flex-col gap-2 border-t border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex h-2 w-full max-w-sm overflow-hidden bg-muted" aria-hidden="true">
-            {komposisi.map((category) => (
-              <span
-                key={category}
-                style={{ width: `${(workCounts[category] / Math.max(1, totals.count)) * 100}%`, backgroundColor: WORK_COLORS[category] }}
-              />
-            ))}
+        <div className="min-w-0 flex-1 basis-[10rem] border-l border-border px-3 py-1.5 sm:basis-[14rem] lg:flex-[1.6]">
+          <p className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Jenis pekerjaan</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="flex h-1.5 w-10 shrink-0 overflow-hidden bg-muted" aria-hidden="true">
+              {komposisi.map((category) => (
+                <span
+                  key={category}
+                  style={{ width: `${(workCounts[category] / Math.max(1, totals.count)) * 100}%`, backgroundColor: WORK_COLORS[category] }}
+                />
+              ))}
+            </div>
+            <ul className="flex min-w-0 flex-wrap items-baseline gap-x-2 font-sans text-[10px] leading-3 text-muted-foreground">
+              {komposisi.map((category) => (
+                <li key={category} className="whitespace-nowrap">
+                  {labelRingkas(category)} <span className="tabular-nums text-foreground/80">{workCounts[category].toLocaleString("id-ID")}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 font-sans text-[10px] text-muted-foreground">
-            {komposisi.map((category) => (
-              <li key={category} className="flex items-center gap-1">
-                <span className="size-2 shrink-0" style={{ backgroundColor: WORK_COLORS[category] }} aria-hidden="true" />
-                {ROAD_WORK_LABELS[category]} {workCounts[category].toLocaleString("id-ID")}
-                <span className="tabular-nums">({persen(workCounts[category], totals.count)})</span>
-              </li>
-            ))}
-          </ul>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 font-sans text-[10px] text-muted-foreground">
+
+        <div className="ml-auto flex shrink-0 items-center gap-3 border-l border-border px-3 py-1.5">
           {presisiKota > 0 ? (
-            <span>{presisiKota.toLocaleString("id-ID")} paket hanya presisi kota, tidak masuk koroplet.</span>
+            <span className="font-sans text-[10px] text-muted-foreground">{presisiKota.toLocaleString("id-ID")} paket presisi kota</span>
           ) : null}
           <button
             type="button"
             onClick={() => setTableOpen((open) => !open)}
             aria-expanded={tableOpen}
-            className="flex min-h-7 items-center gap-1 font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="flex min-h-7 items-center gap-1 whitespace-nowrap font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Tabel per kecamatan
             {tableOpen ? <FiChevronUp className="size-3" aria-hidden="true" /> : <FiChevronDown className="size-3" aria-hidden="true" />}

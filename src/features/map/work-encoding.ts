@@ -16,20 +16,24 @@ export const WORK_COLORS: Record<SpecificRoadWorkCategory, string> = {
 export const WORK_MIXED_COLOR = "#94A3B8";
 
 /**
- * Jenis dominan hanya disebut bila lebih dari separuh paket di wilayah itu.
- * Di bawah itu, wilayah diberi warna campuran agar tidak mengarang pemenang.
+ * Jenis dengan paket terbanyak, dipakai untuk ikon wilayah. Selalu ada selama
+ * wilayah punya paket; wilayah campuran tetap diberi ikon jenis teratasnya.
  */
-export function dominantWork(counts: WorkCounts, total: number): SpecificRoadWorkCategory | null {
+export function topWork(counts: WorkCounts, total: number): SpecificRoadWorkCategory | null {
   if (total <= 0) return null;
   let best: SpecificRoadWorkCategory | null = null;
   for (const category of ROAD_WORK_TYPES) {
     if (!best || counts[category] > counts[best]) best = category;
   }
-  if (!best || counts[best] * 2 <= total) return null;
   return best;
 }
 
-export function workFill(counts: WorkCounts, total: number): string {
-  const dominant = dominantWork(counts, total);
-  return dominant ? WORK_COLORS[dominant] : WORK_MIXED_COLOR;
+/**
+ * Jenis dominan hanya disebut bila lebih dari separuh paket di wilayah itu.
+ * Di bawah itu, wilayah disebut campuran agar tidak mengarang pemenang.
+ */
+export function dominantWork(counts: WorkCounts, total: number): SpecificRoadWorkCategory | null {
+  const best = topWork(counts, total);
+  if (!best || counts[best] * 2 <= total) return null;
+  return best;
 }

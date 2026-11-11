@@ -126,9 +126,12 @@ perbaikannya. Angka dataset tidak ditulis di sini; pakai `data/regions/<id>/mani
 - [x] **Legenda menyatakan sebaran**, bukan hanya warna: jumlah wilayah per kelas di tiap baris,
       label pagu ringkas (`Rp2–3,2 Miliar`), dan ramp lima kelas dengan ujung terang yang lebih
       gelap agar terbaca di atas Positron.
-- [x] **Tema jenis pekerjaan tanpa ikon**: isi poligon = jenis yang mencakup lebih dari separuh
-      paket; wilayah tanpa jenis dominan diberi abu-abu "campuran". Marker bulat dihapus (aturan 5
-      dan performa); komposisi lengkap tetap di tooltip.
+- [x] **Ringkasan satu baris**: empat angka (paket, pagu, rata-rata, rekam penyedia), komposisi
+      jenis, dan pintasan **Tabel per kecamatan** di ujung kanan. Tabel membuka ke bawah; di layar
+      sempit komposisi dan pintasan berbagi satu baris.
+- [x] **Tema jenis pekerjaan memakai ikon lagi**: ikon kotak (bukan pin) per wilayah menandai jenis
+      dengan paket terbanyak dan tampil pada semua tingkat zoom, sementara isi poligon tetap jumlah
+      paket. Legenda menyebut jumlah paket per jenis.
 - [x] **Tabel per kecamatan** (buka-tutup di ringkasan): paket, pagu, cakupan rekam, jenis dominan.
       Klik nama kecamatan menyaring register; agregat kecamatan sengaja tidak dibatasi viewport agar
       tabel tidak kehilangan baris.

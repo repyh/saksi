@@ -132,7 +132,8 @@ ArcGIS Kota Tangerang. Pipeline pembangun ada di repo kerja `~/dev/saksi` (`tool
   memakai kelas kuantil. Peta menerima agregat ringkas dari `GET /api/packages/map` yang dibatasi
   `bbox` viewport untuk `rw`/`kel` (kecamatan selalu penuh untuk tabel), bukan seluruh baris paket;
   klik wilayah memuat detail paket contoh lewat `GET /api/packages/[rup]`. Tema jenis pekerjaan
-  mewarnai poligon menurut jenis dominan (>50% paket) tanpa ikon atau marker.
+  memakai koroplet jumlah yang sama dengan ikon jenis per wilayah (kotak, bukan pin) pada semua
+  tingkat zoom; jenis diambil dari paket terbanyak, sedangkan "campuran" hanya dipakai di tabel.
 - `src/features/map/map-summary.tsx` — angka kohort dan tabel per kecamatan; `src/features/map/work-encoding.ts`
   — warna dan aturan "jenis dominan" yang dipakai peta, tabel, dan tooltip.
 - Tautan bukti penyedia: paket dengan rekam LPSE membuka halaman SPSE aslinya; paket tanpa rekam LPSE
