@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/repyh/saksi/docs/readme-diagrams/docs/assets/brand/saksi-logo-horizontal.svg" alt="Logo SAKSI" width="280">
+
 # SAKSI
 
 **Sistem Akuntabilitas & Komparasi Spasial Infrastruktur**
