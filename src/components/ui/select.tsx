@@ -16,14 +16,14 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-8 min-w-[175px] items-center justify-between gap-2 rounded-xs border border-border bg-white px-3 py-1 font-sans text-xs font-semibold text-foreground transition-colors outline-none select-none hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[popup-open]:border-primary",
+        "group flex h-8 min-w-[175px] cursor-pointer items-center justify-between gap-2 rounded-xs border border-border bg-white px-3 py-1 font-sans text-xs font-semibold text-foreground outline-none select-none hover:border-primary/60 hover:bg-primary/10 hover:text-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[popup-open]:border-primary data-[popup-open]:bg-primary/10 data-[popup-open]:text-primary",
         className
       )}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon className="flex items-center text-muted-foreground">
-        <FiChevronDown className="size-3.5" aria-hidden="true" />
+      <SelectPrimitive.Icon className="flex items-center text-muted-foreground group-hover:text-primary group-data-[popup-open]:text-primary">
+        <FiChevronDown className="size-3.5 transition-transform duration-150 group-data-[popup-open]:rotate-180" aria-hidden="true" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
