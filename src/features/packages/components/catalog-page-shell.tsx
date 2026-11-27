@@ -27,3 +27,29 @@ export function CatalogPageShell({ variant, header, children }: CatalogPageShell
     </main>
   );
 }
+
+export function CatalogDirectoryLoading({ label, searchMaxWidth = "max-w-4xl" }: { label: string; searchMaxWidth?: string }) {
+  return (
+    <CatalogPageShell
+      variant="directory"
+      header={
+        <div aria-busy="true" aria-label={label}>
+          <div className="h-9 w-72 animate-pulse bg-muted" />
+          <div className="mt-3 h-5 max-w-2xl animate-pulse bg-muted/80" />
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-14 animate-pulse bg-muted/60" />
+            ))}
+          </div>
+          <div className={`mt-6 h-10 ${searchMaxWidth} animate-pulse bg-muted/70`} />
+        </div>
+      }
+    >
+      <div className="space-y-2 border border-border p-3">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="h-11 animate-pulse bg-muted/30" />
+        ))}
+      </div>
+    </CatalogPageShell>
+  );
+}
