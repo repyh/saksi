@@ -87,7 +87,10 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
     sort,
     villages: selectedDistrict && villages.length ? villages : undefined,
   } as const;
-  const [initialData, initialAggregate] = await Promise.all([searchRoadPackages(filters), aggregateRoadPackages(filters)]);
+  const [initialData, initialAggregate] = await Promise.all([
+    searchRoadPackages(filters),
+    aggregateRoadPackages({ ...filters, district: undefined, villages: undefined }),
+  ]);
   const selectedPackage = selection.rupCode
     ? initialData.items.find((item) => item.kode_rup === selection.rupCode) ??
       (await searchRoadPackages({ region: regionId, query: selection.rupCode })).items.find(
