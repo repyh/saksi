@@ -1,10 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FiArrowLeft, FiArrowRight, FiLink, FiMap } from "react-icons/fi";
 import { BudgetConcentrationChart } from "./budget-concentration-chart";
 import type { BudgetExplorerNode } from "@/contracts/audit/budget-explorer.contract";
+import { ROAD_WORK_TYPES } from "@/contracts/packages/road-work";
+import { fetchRoadPackages } from "@/features/map/package-api";
+import { routeForPackage } from "@/features/map/report-routes";
+
+type LeafRecord = NonNullable<BudgetExplorerNode["records"]>[number];
 
 const number = new Intl.NumberFormat("id-ID");
 const money = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
@@ -14,6 +19,7 @@ export function BudgetExplorer({ data, snapshot, source, region }: { data: Budge
   const [path, setPath] = useState<number[]>([]);
   const [metric, setMetric] = useState<"budget" | "count">("budget");
   const [visible, setVisible] = useState(10);
+  const [loadedLeaf, setLoadedLeaf] = useState<{ key: string; records: LeafRecord[]; error?: string } | null>(null);
   let nodes = data;
   const ancestors: BudgetExplorerNode[] = [];
   for (const index of path) {
@@ -22,7 +28,66 @@ export function BudgetExplorer({ data, snapshot, source, region }: { data: Budge
     nodes = node.children ?? [];
   }
   const current = ancestors.at(-1);
-  const records = current?.records;
+  const isLeaf = Boolean(current?.records) || (path.length === 4 && Boolean(current));
+  const yearLabel = ancestors[0]?.label;
+  const workType = path.length === 4 ? ROAD_WORK_TYPES[path[2]] : undefined;
+  const leafKey = isLeaf && !current?.records && current
+    ? `${region}:${yearLabel}:${path[1] + 1}:${workType ?? ""}:${current.label}:${visible}`
+    : null;
+  const currentMapHref = current?.mapHref;
+  const currentLabel = current?.label;
+  const decileNumber = path.length === 4 ? path[1] + 1 : undefined;
+
+  useEffect(() => {
+    if (!leafKey || !currentLabel || decileNumber === undefined || !workType) return;
+    if (yearLabel !== "2025" && yearLabel !== "2026") return;
+
+    const controller = new AbortController();
+    const isGeneral = currentLabel === "Lokasi umum / belum terpetakan";
+    fetchRoadPackages(
+      {
+        region,
+        year: yearLabel,
+        budgetDecile: decileNumber,
+        work: workType,
+        district: isGeneral ? undefined : currentLabel,
+        generalOnly: isGeneral,
+        sort: "pagu-desc",
+        page: 1,
+        limit: Math.min(visible, 300),
+      },
+      controller.signal,
+    )
+      .then((result) => {
+        const search = currentMapHref
+          ? new URL(currentMapHref, "https://saksi.invalid").searchParams.toString()
+          : "";
+        const mapped: LeafRecord[] = result.items.map((row) => ({
+          rup: row.kode_rup,
+          name: row.nama,
+          budget: row.pagu,
+          precision: row.presisi_peta === "Kabupaten" ? "Lokasi umum" : row.presisi_peta,
+          href: search ? `${routeForPackage(row, region)}?${search}` : routeForPackage(row, region),
+        }));
+        setLoadedLeaf({ key: leafKey, records: mapped });
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setLoadedLeaf({
+            key: leafKey,
+            records: [],
+            error: error instanceof Error ? error.message : "Daftar paket belum dapat dimuat.",
+          });
+        }
+      });
+
+    return () => controller.abort();
+  }, [currentLabel, currentMapHref, decileNumber, leafKey, region, visible, workType, yearLabel]);
+
+  const records = current?.records ?? (leafKey && loadedLeaf?.key === leafKey ? loadedLeaf.records : undefined);
+  const recordsLoading = Boolean(leafKey && loadedLeaf?.key !== leafKey);
+  const recordsError = leafKey && loadedLeaf?.key === leafKey ? loadedLeaf.error : undefined;
+  const recordsTotal = current?.records ? current.records.length : (current?.count ?? 0);
   const total = nodes.reduce((sum, node) => sum + node[metric], 0);
   const maximum = Math.max(1, ...nodes.map((node) => node[metric]));
   const format = (value: number) => metric === "budget" ? money.format(value) : `${number.format(value)} paket`;
@@ -61,14 +126,16 @@ export function BudgetExplorer({ data, snapshot, source, region }: { data: Budge
           {path.length > 0 && <div className="flex flex-wrap items-center gap-4"><Link href={mapHref} className="inline-flex min-h-12 items-center justify-center gap-2 bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><FiMap aria-hidden="true" />Lihat pilihan ini di Peta Pekerjaan<FiArrowRight aria-hidden="true" /></Link><button type="button" onClick={() => navigate(path.slice(0, -1))} className="flex min-h-11 shrink-0 items-center gap-2 text-sm font-bold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"><FiArrowLeft aria-hidden="true" />Kembali</button></div>}
         </div>
 
-        {!records && path.length > 0 && <div className="mt-6 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{number.format(current?.count ?? 0)} paket dalam pilihan ini. Pilihan diteruskan ke peta. {current?.mapHref?.includes("umum=1") ? "Paket lokasi umum tersedia di daftar." : `Peta dimulai dengan ${number.format(current?.locatedCount ?? 0)} paket berlokasi; paket lokasi umum tersedia lewat filter.`}</p><div role="group" aria-label="Ukuran grafik" className="flex border border-border">
+        {!isLeaf && path.length > 0 && <div className="mt-6 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{number.format(current?.count ?? 0)} paket dalam pilihan ini. Pilihan diteruskan ke peta. {current?.mapHref?.includes("umum=1") ? "Paket lokasi umum tersedia di daftar." : `Peta dimulai dengan ${number.format(current?.locatedCount ?? 0)} paket berlokasi; paket lokasi umum tersedia lewat filter.`}</p><div role="group" aria-label="Ukuran grafik" className="flex border border-border">
             {(["budget", "count"] as const).map((value) => <button key={value} type="button" aria-pressed={metric === value} onClick={() => setMetric(value)} className={`min-h-11 px-4 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${metric === value ? "bg-primary text-white" : "hover:bg-muted"}`}>{value === "budget" ? "Pagu" : "Jumlah paket"}</button>)}
           </div></div>}
 
-        {path.length === 0 ? <BudgetConcentrationChart data={data} onSelect={navigate} /> : records ? <div className="mt-6">
-          <p className="mb-3 text-sm text-muted-foreground">{number.format(records.length)} paket · diurutkan menurut pagu terbesar</p>
-          <ul className="divide-y divide-border">{records.slice(0, visible).map((record) => <li key={record.rup}><Link href={record.href} aria-label={`Buka ${record.name} di Peta Pekerjaan`} title="Buka di Peta Pekerjaan" className="group flex flex-col items-start justify-between gap-3 py-5 transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-2 focus-visible:outline-primary sm:flex-row sm:items-center sm:gap-5"><div className="min-w-0"><p className="inline-flex items-center gap-2 text-sm font-bold leading-6 group-hover:text-primary"><span>{record.name}</span><FiLink aria-hidden="true" className="size-4 shrink-0 text-primary" /></p><p className="mt-1 text-xs text-muted-foreground">RUP {record.rup} · {record.precision}</p></div><span className="shrink-0 text-sm font-bold tabular-nums">{money.format(record.budget)}</span></Link></li>)}</ul>
-          {visible < records.length && <button type="button" onClick={() => setVisible(visible + 10)} className="mt-5 min-h-11 border border-primary px-5 text-sm font-bold text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary">Tampilkan 10 paket berikutnya</button>}
+        {path.length === 0 ? <BudgetConcentrationChart data={data} onSelect={navigate} /> : isLeaf ? <div className="mt-6">
+          <p className="mb-3 text-sm text-muted-foreground">{number.format(recordsTotal)} paket · diurutkan menurut pagu terbesar</p>
+          {recordsLoading && !records && <p role="status" className="py-6 text-sm text-muted-foreground">Memuat daftar paket…</p>}
+          {recordsError && <p role="alert" className="py-6 text-sm text-destructive">{recordsError}</p>}
+          {records && <ul className="divide-y divide-border">{records.slice(0, visible).map((record) => <li key={record.rup}><Link href={record.href} aria-label={`Buka ${record.name} di Peta Pekerjaan`} title="Buka di Peta Pekerjaan" className="group flex flex-col items-start justify-between gap-3 py-5 transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-2 focus-visible:outline-primary sm:flex-row sm:items-center sm:gap-5"><div className="min-w-0"><p className="inline-flex items-center gap-2 text-sm font-bold leading-6 group-hover:text-primary"><span>{record.name}</span><FiLink aria-hidden="true" className="size-4 shrink-0 text-primary" /></p><p className="mt-1 text-xs text-muted-foreground">RUP {record.rup} · {record.precision}</p></div><span className="shrink-0 text-sm font-bold tabular-nums">{money.format(record.budget)}</span></Link></li>)}</ul>}
+          {visible < recordsTotal && <button type="button" onClick={() => setVisible(visible + 10)} className="mt-5 min-h-11 border border-primary px-5 text-sm font-bold text-primary hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary">Tampilkan 10 paket berikutnya</button>}
         </div> : <div className="mt-7 space-y-2">
           <p className="mb-4 text-xs text-muted-foreground">Panjang batang dibandingkan nilai terbesar dalam pilihan ini. Persentase memakai total pilihan sebagai penyebut.</p>
           {nodes.map((node, index) => <button key={node.label} type="button" disabled={!node.count} aria-label={`${node.label}. ${nextAction}.`} onClick={() => navigate([...path, index])} className="group grid min-h-16 w-full gap-2 rounded-sm px-3 py-3 text-left transition-colors hover:bg-primary/5 focus-visible:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default disabled:opacity-50 sm:grid-cols-[14rem_1fr] sm:gap-6">
@@ -78,7 +145,7 @@ export function BudgetExplorer({ data, snapshot, source, region }: { data: Budge
           {nodes.length === 0 && <p className="py-8 text-sm text-muted-foreground">Tidak ada paket pada pilihan ini.</p>}
         </div>}
 
-        {!records && <details className="mt-8 text-sm"><summary className="cursor-pointer font-semibold text-primary">Lihat angka dalam tabel</summary><div className="mt-3 overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Angka grafik {current?.label ?? "per tahun"}</caption><thead><tr className="border-b border-border"><th scope="col" className="py-3">Pilihan</th><th scope="col" className="py-3 text-right">Paket</th><th scope="col" className="py-3 text-right">Pagu</th></tr></thead><tbody>{(path.length ? nodes : data.flatMap((year) => (year.children ?? []).map((work) => ({ ...work, label: `${year.label} · ${work.label}` })))).map((node, index) => <tr key={node.label} className="even:bg-muted/40"><th scope="row" className="pr-4 font-normal"><button type="button" disabled={!node.count} onClick={() => navigate(path.length ? [...path, index] : [Math.floor(index / (data[0]?.children?.length || 1)), index % (data[0]?.children?.length || 1)])} className="min-h-11 py-3 text-left text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary disabled:text-muted-foreground">{node.label}</button></th><td className="text-right tabular-nums">{number.format(node.count)}</td><td className="text-right tabular-nums">{money.format(node.budget)}</td></tr>)}</tbody></table></div></details>}
+        {!isLeaf && <details className="mt-8 text-sm"><summary className="cursor-pointer font-semibold text-primary">Lihat angka dalam tabel</summary><div className="mt-3 overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Angka grafik {current?.label ?? "per tahun"}</caption><thead><tr className="border-b border-border"><th scope="col" className="py-3">Pilihan</th><th scope="col" className="py-3 text-right">Paket</th><th scope="col" className="py-3 text-right">Pagu</th></tr></thead><tbody>{(path.length ? nodes : data.flatMap((year) => (year.children ?? []).map((work) => ({ ...work, label: `${year.label} · ${work.label}` })))).map((node, index) => <tr key={node.label} className="even:bg-muted/40"><th scope="row" className="pr-4 font-normal"><button type="button" disabled={!node.count} onClick={() => navigate(path.length ? [...path, index] : [Math.floor(index / (data[0]?.children?.length || 1)), index % (data[0]?.children?.length || 1)])} className="min-h-11 py-3 text-left text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary disabled:text-muted-foreground">{node.label}</button></th><td className="text-right tabular-nums">{number.format(node.count)}</td><td className="text-right tabular-nums">{money.format(node.budget)}</td></tr>)}</tbody></table></div></details>}
         <div className="mt-10 space-y-2 text-xs leading-5 text-muted-foreground">
           <p className="font-bold text-primary">DATA RESMI (SIRUP / BINA MARGA)</p><p>Snapshot {snapshot} · {source} · Pagu merupakan rencana anggaran, bukan nilai pekerjaan selesai.</p>
           <p>Desil dihitung ulang per tahun dengan jumlah paket hampir sama; D1 berpagu terkecil, D10 terbesar. Pagu yang sama diurutkan menurut kode RUP sehingga dapat melintasi batas kelompok. Konsentrasi menunjukkan struktur portofolio, bukan ukuran pemerataan, kebutuhan, atau kinerja.</p><p>Jenis pekerjaan dikelompokkan dari nama paket; kategori permukaan jalan juga mencakup paket jalan yang tidak menyebut drainase, penahan, atau jembatan. Sebaran wilayah belum dibandingkan dengan panjang, kondisi jalan, atau jumlah penduduk.</p>

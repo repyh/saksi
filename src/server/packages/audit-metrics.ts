@@ -15,7 +15,7 @@ import {
   regionSummary,
   type RegionConfig,
 } from "@/server/regions/region-registry";
-import { listRoadPackagesCached, snapshotMetaCached } from "./catalog-cache";
+import { listRoadPackageBasesCached, snapshotMetaCached } from "./catalog-cache";
 import {
   CATALOG_CACHE_TAGS,
   CATALOG_REVALIDATE_SECONDS,
@@ -152,7 +152,7 @@ export async function susunAuditSummaryMetrics(
       ? Promise.resolve(packageRows)
       : paketRepository
         ? paketRepository.listRoadPackages()
-        : listRoadPackagesCached(regionId),
+        : listRoadPackageBasesCached(regionId),
     Promise.resolve(readBoundaries(region)),
     snapshotMetaCached(regionId),
   ]);
@@ -203,7 +203,7 @@ export async function susunAuditSummaryMetrics(
 
 const loadAuditSummaryMetrics = unstable_cache(
   async (regionId: string) => susunAuditSummaryMetrics(regionId),
-  ["catalog-audit-metrics", CATALOG_SOURCE],
+  ["catalog-audit-metrics-v2", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 

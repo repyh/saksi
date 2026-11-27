@@ -5,7 +5,6 @@ import { buildAuditSummaryMetrics } from "@/server/packages/audit-metrics";
 import { resolveRegionId } from "@/server/regions/region-registry";
 import { buildBudgetExplorer } from "@/server/packages/budget-explorer";
 import { BudgetExplorer } from "@/features/audit/components/budget-explorer";
-import { listRoadPackageBasesCached } from "@/server/packages/catalog-cache";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getSiteOrigin, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
@@ -18,10 +17,9 @@ interface HomeProps {
 export default async function Home({ searchParams }: HomeProps) {
   const query = await searchParams;
   const regionId = resolveRegionId(query.region);
-  const packages = await listRoadPackageBasesCached(regionId);
   const [metrics, explorer] = await Promise.all([
-    buildAuditSummaryMetrics(regionId, undefined, packages),
-    buildBudgetExplorer(regionId, packages),
+    buildAuditSummaryMetrics(regionId),
+    buildBudgetExplorer(regionId),
   ]);
   const siteUrl = getSiteOrigin().toString();
 
