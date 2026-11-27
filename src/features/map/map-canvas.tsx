@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as maplibregl from "maplibre-gl";
-import { FaRoad, FaWater } from "react-icons/fa6";
-import { FiChevronDown, FiChevronUp, FiMaximize } from "react-icons/fi";
+import { FaRoad, FaRupiahSign, FaWater } from "react-icons/fa6";
+import { FiChevronDown, FiChevronUp, FiMaximize, FiPackage } from "react-icons/fi";
 import { GiBridge } from "react-icons/gi";
 import type { IconType } from "react-icons";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -12,10 +12,12 @@ import type { RoadPackageItem, RoadPackageMapData } from "@/contracts/packages/r
 import type { RegionSummary } from "@/contracts/regions/region.contract";
 import { normalizeAreaKey } from "@/contracts/packages/area-key";
 import { ROAD_WORK_LABELS, ROAD_WORK_TYPES, type SpecificRoadWorkCategory } from "@/contracts/packages/road-work";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { addressSlug, districtSlug, type ReportAddress } from "./report-routes";
 import { formatRupiahCompact, formatRupiahFull } from "./road-types";
 import { BASEMAP_URL, attributionBasemap } from "./basemap";
 import type { WorkCounts } from "./work-encoding";
+import { CLUSTER_RADIUS_PX, clusterWorkBadges, type WorkBadgePoint } from "./work-clustering";
 import {
   bringRoadHighlightToFront,
   clearRoadHighlight,
@@ -77,15 +79,21 @@ type StyledCollection = FeatureCollection<Geometry, StyledProperties>;
 /** Ramp biru lima kelas; ujung terang dibuat lebih gelap agar terbaca di atas Positron. */
 const BUDGET_COLORS = ["#DCE9F6", "#B4D0EA", "#7FAEDC", "#3D7FBF", "#0058A3"] as const;
 
-const THEMES = [
-  { value: "packages", label: "Jumlah paket", short: "Jumlah" },
-  { value: "budget", label: "Nilai anggaran", short: "Pagu" },
-] as const;
+const THEMES: ReadonlyArray<{ value: AreaView; label: string; icon: IconType }> = [
+  { value: "packages", label: "Jumlah paket", icon: FiPackage },
+  { value: "budget", label: "Nilai anggaran", icon: FaRupiahSign },
+];
 
 const WORK_ICONS: Record<SpecificRoadWorkCategory, IconType> = {
   PERMUKAAN: FaRoad,
   DRAINASE: FaWater,
   JEMBATAN: GiBridge,
+};
+
+const WORK_ICON_MARKUP: Record<SpecificRoadWorkCategory, string> = {
+  PERMUKAAN: renderToStaticMarkup(<FaRoad size={9} aria-hidden="true" />),
+  DRAINASE: renderToStaticMarkup(<FaWater size={9} aria-hidden="true" />),
+  JEMBATAN: renderToStaticMarkup(<GiBridge size={9} aria-hidden="true" />),
 };
 
 const KEC_ZOOM = 11;
@@ -208,18 +216,23 @@ function budgetClassFor(budget: number, bands: ReturnType<typeof budgetBands>) {
 /**
  * Penanda jenis per wilayah: semua jenis yang ada, masing-masing dengan jumlah paketnya.
  * Kotak kecil berlatar putih, bukan pin, agar tidak terbaca sebagai titik lokasi pekerjaan.
+ * Saat beberapa wilayah berdekatan di layar, penanda digabung menjadi kartu grup klikable.
  */
-function workBadgeMarkup(counts: WorkCounts) {
-  const items = ROAD_WORK_TYPES.filter((category) => counts[category] > 0).map((category) => {
-    const Icon = WORK_ICONS[category];
-    const icon = renderToStaticMarkup(<Icon size={9} aria-hidden="true" />);
-    return `<span style="display:inline-flex;align-items:center;gap:2px;color:#0058A3">${icon}<span style="font-family:'Open Sans',sans-serif;font-size:8px;font-weight:700;line-height:9px;color:#0A192F">${counts[category]}</span></span>`;
-  });
-  if (!items.length) return "";
-  const judul = ROAD_WORK_TYPES.filter((category) => counts[category] > 0)
+function workBadgeMarkup(counts: WorkCounts, areaCount = 1, areaUnit = "") {
+  const categories = ROAD_WORK_TYPES.filter((category) => counts[category] > 0);
+  if (!categories.length) return "";
+  const items = categories.map(
+    (category) =>
+      `<span style="display:inline-flex;align-items:center;gap:2px;color:#0058A3">${WORK_ICON_MARKUP[category]}<span style="font-family:'Open Sans',sans-serif;font-size:8px;font-weight:700;line-height:9px;color:#0A192F">${counts[category]}</span></span>`,
+  );
+  const summary = categories
     .map((category) => `${ROAD_WORK_LABELS[category]}: ${counts[category]}`)
     .join(" · ");
-  return `<span title="${escapeHtml(judul)}" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:1px 3px;border:1px solid rgba(10,25,47,.24);border-radius:2px;background:rgba(255,255,255,.95);box-shadow:0 1px 2px rgba(10,25,47,.18);pointer-events:none">${items.join("")}</span>`;
+  if (areaCount > 1) {
+    const label = `Gabungan ${areaCount} ${areaUnit} · ${summary} · klik untuk memperbesar`;
+    return `<button type="button" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" style="display:inline-flex;flex-direction:column;align-items:stretch;overflow:hidden;padding:0;border:1px solid #0058A3;border-radius:2px;background:rgba(255,255,255,.97);box-shadow:2px 2px 0 rgba(0,88,163,.2);cursor:pointer"><span style="display:block;padding:1px 4px;background:#0058A3;font-family:'Open Sans',sans-serif;font-size:7.5px;font-weight:700;line-height:10px;letter-spacing:.03em;color:#fff;white-space:nowrap;text-align:center">${areaCount} ${escapeHtml(areaUnit)}</span><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:2px 3px">${items.join("")}</span></button>`;
+  }
+  return `<span title="${escapeHtml(summary)}" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:1px 3px;border:1px solid rgba(10,25,47,.24);border-radius:2px;background:rgba(255,255,255,.95);box-shadow:0 1px 2px rgba(10,25,47,.18);pointer-events:none">${items.join("")}</span>`;
 }
 
 function areaKeyFromProperties(
@@ -400,13 +413,6 @@ function boundsOfCollection(collection: BoundaryCollection): Bounds | null {
   return [[west, south], [east, north]];
 }
 
-/** Titik tengah kotak batas; cukup untuk menaruh ikon jenis di dalam wilayah. */
-function centerOfFeature(feature: BoundaryFeature): [number, number] | null {
-  const bounds = boundsOfFeature(feature);
-  if (!bounds) return null;
-  return [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
-}
-
 /** Pengguna yang meminta gerak minimal tidak diberi animasi terbang peta. */
 function reducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -493,6 +499,77 @@ const levelLabels = (environmentLabel: string): Record<BoundaryPrecision, string
   RW: environmentLabel,
 });
 
+const boundaryCache = new Map<string, Promise<BoundaryCollection>>();
+
+function loadBoundary(url: string, errorMessage: string): Promise<BoundaryCollection> {
+  const cached = boundaryCache.get(url);
+  if (cached) return cached;
+  const request = fetch(url)
+    .then((response) => {
+      if (!response.ok) throw new Error(errorMessage);
+      return response.json() as Promise<BoundaryCollection>;
+    })
+    .catch((error) => {
+      boundaryCache.delete(url);
+      throw error;
+    });
+  boundaryCache.set(url, request);
+  return request;
+}
+
+type AreaGeometryEntry = {
+  key: string;
+  feature: BoundaryFeature;
+  bounds: Bounds;
+  center: [number, number];
+};
+
+const areaGeometryCache = new WeakMap<
+  BoundaryCollection,
+  Partial<Record<BoundaryPrecision, AreaGeometryEntry[]>>
+>();
+
+function getAreaGeometries(
+  collection: BoundaryCollection,
+  precision: BoundaryPrecision,
+  fields: BoundaryFields,
+): AreaGeometryEntry[] {
+  let byPrecision = areaGeometryCache.get(collection);
+  if (!byPrecision) {
+    byPrecision = {};
+    areaGeometryCache.set(collection, byPrecision);
+  }
+  const cached = byPrecision[precision];
+  if (cached) return cached;
+
+  // Satu wilayah bisa terpecah menjadi beberapa fitur; pakai poligon terbesar agar
+  // ikon tidak muncul dua kali di wilayah yang sama.
+  const perArea = new Map<string, { feature: BoundaryFeature; bounds: Bounds; area: number }>();
+  for (const feature of collection.features) {
+    const key = areaKey(feature, precision, fields);
+    if (!key) continue;
+    const bounds = boundsOfFeature(feature);
+    if (!bounds) continue;
+    const area = (bounds[1][0] - bounds[0][0]) * (bounds[1][1] - bounds[0][1]);
+    const previous = perArea.get(key);
+    if (!previous || area > previous.area) {
+      perArea.set(key, { feature, bounds, area });
+    }
+  }
+
+  const entries: AreaGeometryEntry[] = [];
+  for (const [key, item] of perArea) {
+    entries.push({
+      key,
+      feature: item.feature,
+      bounds: item.bounds,
+      center: [(item.bounds[0][0] + item.bounds[1][0]) / 2, (item.bounds[0][1] + item.bounds[1][1]) / 2],
+    });
+  }
+  byPrecision[precision] = entries;
+  return entries;
+}
+
 export default function MapCanvas(props: MapCanvasProps) {
   const fields = props.region.boundaryFields;
   const labels = levelLabels(props.region.environmentLabel);
@@ -506,10 +583,10 @@ export default function MapCanvas(props: MapCanvasProps) {
     [urls.lingkungan, urls.kecamatan],
   );
   const [precision, setPrecision] = useState<BoundaryPrecision>("Kelurahan");
-  const [boundaries, setBoundaries] = useState<{ rw: BoundaryCollection; kel: BoundaryCollection; kec: BoundaryCollection } | null>(null);
+  const [boundaries, setBoundaries] = useState<Partial<Record<"rw" | "kel" | "kec", BoundaryCollection>>>({});
   const [loadError, setLoadError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [loadedMap, setLoadedMap] = useState<maplibregl.Map | null>(null);
   const [roadEnabled, setRoadEnabled] = useState(false);
   const [roadError, setRoadError] = useState(false);
   const [legendOpen, setLegendOpen] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 1024px)").matches);
@@ -519,6 +596,22 @@ export default function MapCanvas(props: MapCanvasProps) {
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // Tooltip yang sedang tampil; ruas jalan menang atas tooltip wilayah.
   const hoverOwnerRef = useRef<"region" | "road" | null>(null);
+  const hoveredFeatureRef = useRef<{ source: string; id: string | number } | null>(null);
+  const hoveredTooltipKeyRef = useRef<string | null>(null);
+  const appliedInputsRef = useRef<
+    Partial<
+      Record<
+        BoundaryPrecision,
+        {
+          collection: BoundaryCollection;
+          areaStats: RoadPackageMapData;
+          view: AreaView;
+          selectedPackage: RoadPackageItem | null;
+          selectedRegion: ReportAddress | null;
+        }
+      >
+    >
+  >({});
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const initialFitRef = useRef(false);
   const view: AreaView = props.viewMode;
@@ -539,35 +632,85 @@ export default function MapCanvas(props: MapCanvasProps) {
   );
 
   // Handler dan efek MapLibre mendaftar sekali; nilai terbaru dibaca lewat ref ini.
-  const latestRef = useRef({ areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion, roadLayer });
+  const latestRef = useRef({
+    areaStats,
+    bands,
+    classes,
+    selectedPackage: props.selectedPackage,
+    selectedRegion: props.selectedRegion,
+    view,
+    precision,
+    onSelectRegion: props.onSelectRegion,
+    roadLayer,
+    fields,
+    environmentLabel: props.region.environmentLabel,
+  });
 
   useEffect(() => {
-    latestRef.current = { areaStats, bands, classes, selectedPackage: props.selectedPackage, selectedRegion: props.selectedRegion, view, precision, onSelectRegion: props.onSelectRegion, roadLayer };
-  }, [areaStats, bands, classes, props.onSelectRegion, props.selectedPackage, props.selectedRegion, precision, roadLayer, view]);
+    latestRef.current = {
+      areaStats,
+      bands,
+      classes,
+      selectedPackage: props.selectedPackage,
+      selectedRegion: props.selectedRegion,
+      view,
+      precision,
+      onSelectRegion: props.onSelectRegion,
+      roadLayer,
+      fields,
+      environmentLabel: props.region.environmentLabel,
+    };
+  }, [areaStats, bands, classes, fields, props.onSelectRegion, props.region.environmentLabel, props.selectedPackage, props.selectedRegion, precision, roadLayer, view]);
+
+  const needKel = true;
+  const needRw = Boolean(
+    urls.lingkungan &&
+      (precision === "RW" || props.selectedRegion?.rwSlug || props.selectedPackage?.presisi_peta === "RW"),
+  );
+  const needKec = Boolean(
+    urls.kecamatan &&
+      (precision === "Kecamatan" ||
+        props.selectedRegion?.districtSlug ||
+        props.selectedPackage?.presisi_peta === "Kecamatan"),
+  );
 
   useEffect(() => {
-    const controller = new AbortController();
-    const ambil = (url: string, pesan: string) =>
-      fetch(url, { signal: controller.signal }).then((response) => {
-        if (!response.ok) throw new Error(pesan);
-        return response.json() as Promise<BoundaryCollection>;
+    let cancelled = false;
+    const tasks: Array<{ level: "rw" | "kel" | "kec"; url: string; message: string }> = [];
+    if (needKel) {
+      tasks.push({ level: "kel", url: urls.kelurahan, message: "Batas kelurahan tidak tersedia." });
+    }
+    if (needRw && urls.lingkungan) {
+      tasks.push({
+        level: "rw",
+        url: urls.lingkungan,
+        message: `Batas ${props.region.environmentLabel} tidak tersedia.`,
       });
-    const kosong: BoundaryCollection = { type: "FeatureCollection", features: [] };
-    Promise.all([
-      urls.lingkungan
-        ? ambil(urls.lingkungan, `Batas ${props.region.environmentLabel} tidak tersedia.`)
-        : Promise.resolve(kosong),
-      ambil(urls.kelurahan, "Batas kelurahan tidak tersedia."),
-      urls.kecamatan
-        ? ambil(urls.kecamatan, "Batas kecamatan tidak tersedia.")
-        : Promise.resolve(kosong),
-    ])
-      .then(([rw, kel, kec]) => setBoundaries({ rw, kel, kec }))
-      .catch(() => {
-        if (!controller.signal.aborted) setLoadError(true);
-      });
-    return () => controller.abort();
-  }, [props.region, urls.kecamatan, urls.kelurahan, urls.lingkungan, reloadToken]);
+    }
+    if (needKec && urls.kecamatan) {
+      tasks.push({ level: "kec", url: urls.kecamatan, message: "Batas kecamatan tidak tersedia." });
+    }
+    if (reloadToken > 0) {
+      for (const task of tasks) boundaryCache.delete(task.url);
+    }
+
+    for (const task of tasks) {
+      loadBoundary(task.url, task.message)
+        .then((collection) => {
+          if (cancelled) return;
+          setLoadError(false);
+          setBoundaries((previous) =>
+            previous[task.level] === collection ? previous : { ...previous, [task.level]: collection },
+          );
+        })
+        .catch(() => {
+          if (!cancelled) setLoadError(true);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [needKec, needKel, needRw, props.region.environmentLabel, reloadToken, urls.kecamatan, urls.kelurahan, urls.lingkungan]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -594,195 +737,151 @@ export default function MapCanvas(props: MapCanvasProps) {
     // wadah fleksibel kadang belum punya tinggi final saat peta dibuat.
     const handleLoad = () => {
       map.resize();
-      setMapLoaded(true);
+      setLoadedMap(map);
     };
     map.on("load", handleLoad);
-    const resizeObserver = new ResizeObserver(() => map.resize());
+    let resizeFrame = 0;
+    const resizeObserver = new ResizeObserver(() => {
+      if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0;
+        map.resize();
+      });
+    });
     resizeObserver.observe(container);
     const frame = window.requestAnimationFrame(() => map.resize());
 
     return () => {
       window.cancelAnimationFrame(frame);
+      if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
       resizeObserver.disconnect();
       map.off("load", handleLoad);
       popup.remove();
       popupRef.current = null;
+      hoveredFeatureRef.current = null;
+      hoveredTooltipKeyRef.current = null;
+      appliedInputsRef.current = {};
       mapRef.current = null;
       initialFitRef.current = false;
-      setMapLoaded(false);
+      setLoadedMap(null);
       map.remove();
     };
   }, [props.region.center, props.region.zoom]);
 
   useEffect(() => {
     const map = mapRef.current;
-    // `mapLoaded` bisa tertinggal dari instance peta baru setelah remount; menambah
-    // source sebelum gaya siap melempar galat dan mematikan seluruh peta.
-    if (!map || !mapLoaded || !boundaries || !map.isStyleLoaded()) return;
+    if (!map || loadedMap !== map || !map.getStyle()) return;
 
-    const state = latestRef.current;
-    const handlers: Array<() => void> = [];
-
-    for (const level of precisions) {
-      const id = sourceId(level);
-      if (!map.getSource(id)) {
-        map.addSource(id, {
-          type: "geojson",
-          data: styledCollection(
-            boundaries[PRECISION_STATS_KEY[level]],
-            level,
-            fields,
-            state.areaStats[PRECISION_STATS_KEY[level]],
-            state.selectedPackage,
-            state.selectedRegion,
-            state.view,
-            state.bands[PRECISION_STATS_KEY[level]],
-            state.classes[PRECISION_STATS_KEY[level]],
-          ),
-        });
+    const clearPolygonHover = () => {
+      const hovered = hoveredFeatureRef.current;
+      if (hovered && map.getSource(hovered.source)) {
+        map.setFeatureState({ source: hovered.source, id: hovered.id }, { hover: false });
       }
-
-      if (!map.getLayer(`${id}-fill`)) {
-        map.addLayer({
-          id: `${id}-fill`,
-          type: "fill",
-          source: id,
-          layout: { visibility: level === state.precision ? "visible" : "none" },
-          paint: {
-            "fill-color": ["coalesce", ["get", "_fill"], "#F1F5F9"],
-            "fill-opacity": ["coalesce", ["get", "_fillOpacity"], 0.18],
-          },
-        } as unknown as maplibregl.AddLayerObject);
-      }
-
-      if (!map.getLayer(`${id}-line`)) {
-        map.addLayer({
-          id: `${id}-line`,
-          type: "line",
-          source: id,
-          layout: { visibility: level === state.precision ? "visible" : "none", "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": ["coalesce", ["get", "_stroke"], "#94A3B8"],
-            "line-width": ["coalesce", ["get", "_weight"], 0.5],
-            "line-opacity": ["coalesce", ["get", "_lineOpacity"], 0.8],
-          },
-        } as unknown as maplibregl.AddLayerObject);
-      }
-
-      if (!map.getLayer(`${id}-exact`)) {
-        map.addLayer({
-          id: `${id}-exact`,
-          type: "line",
-          source: id,
-          filter: ["==", ["get", "_highlight"], "exact"],
-          layout: { visibility: level === state.precision ? "visible" : "none", "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#0A192F", "line-width": 4, "line-opacity": 1 },
-        } as unknown as maplibregl.AddLayerObject);
-      }
-
-      if (!map.getLayer(`${id}-scope`)) {
-        map.addLayer({
-          id: `${id}-scope`,
-          type: "line",
-          source: id,
-          filter: ["==", ["get", "_highlight"], "scope"],
-          layout: { visibility: level === state.precision ? "visible" : "none", "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#0058A3", "line-width": 2.5, "line-opacity": 1, "line-dasharray": [5, 3] },
-        } as unknown as maplibregl.AddLayerObject);
-      }
-
-      const hover = (event: maplibregl.MapLayerMouseEvent) => {
-        const feature = event.features?.[0];
-        if (!feature) return;
-        // Tooltip ruas menang saat kursor di atas jalan; jangan ditimpa tooltip wilayah.
-        if (hoverOwnerRef.current === "road") return;
-        hoverOwnerRef.current = "region";
-        const current = latestRef.current;
-        const properties = (feature.properties ?? {}) as BoundaryProperties;
-        const aggregate = current.areaStats[PRECISION_STATS_KEY[level]].get(areaKeyFromProperties(properties, level, fields));
-        map.getCanvas().style.cursor = "pointer";
-        popupRef.current
-          ?.setLngLat(event.lngLat)
-          .setHTML(tooltipHtml(properties, level, fields, props.region.environmentLabel, aggregate, current.view))
-          .addTo(map);
-      };
-      const leave = () => {
-        if (hoverOwnerRef.current !== "region") return;
+      hoveredFeatureRef.current = null;
+      hoveredTooltipKeyRef.current = null;
+      if (hoverOwnerRef.current === "region") {
         hoverOwnerRef.current = null;
         map.getCanvas().style.cursor = "";
         popupRef.current?.remove();
-      };
-      const select = (event: maplibregl.MapLayerMouseEvent) => {
-        const feature = event.features?.[0];
-        if (!feature) return;
-        event.preventDefault();
-        const current = latestRef.current;
-        const properties = (feature.properties ?? {}) as BoundaryProperties;
-        current.onSelectRegion(clickedRegion(properties, level, fields));
-      };
-      const layerId = `${id}-fill`;
-      map.on("mousemove", layerId, hover);
-      map.on("mouseleave", layerId, leave);
-      map.on("click", layerId, select);
-      handlers.push(() => {
-        map.off("mousemove", layerId, hover);
-        map.off("mouseleave", layerId, leave);
-        map.off("click", layerId, select);
-      });
-    }
+      }
+    };
+
+    const handleMouseMove = (event: maplibregl.MapMouseEvent) => {
+      if (hoverOwnerRef.current === "road") {
+        clearPolygonHover();
+        return;
+      }
+      const current = latestRef.current;
+      const active = current.precision;
+      const layerId = fillLayerId(active);
+      if (!map.getLayer(layerId)) {
+        clearPolygonHover();
+        return;
+      }
+      const feature = map.queryRenderedFeatures(event.point, { layers: [layerId] })[0];
+      if (!feature) {
+        clearPolygonHover();
+        return;
+      }
+      const source = sourceId(active);
+      const prev = hoveredFeatureRef.current;
+      if (feature.id !== undefined && (prev?.source !== source || prev?.id !== feature.id)) {
+        if (prev && map.getSource(prev.source)) {
+          map.setFeatureState({ source: prev.source, id: prev.id }, { hover: false });
+        }
+        map.setFeatureState({ source, id: feature.id }, { hover: true });
+        hoveredFeatureRef.current = { source, id: feature.id };
+      } else if (feature.id === undefined && prev) {
+        if (map.getSource(prev.source)) {
+          map.setFeatureState({ source: prev.source, id: prev.id }, { hover: false });
+        }
+        hoveredFeatureRef.current = null;
+      }
+
+      hoverOwnerRef.current = "region";
+      map.getCanvas().style.cursor = "pointer";
+      const properties = (feature.properties ?? {}) as BoundaryProperties;
+      const key = areaKeyFromProperties(properties, active, current.fields);
+      const aggregate = current.areaStats[PRECISION_STATS_KEY[active]].get(key);
+      const tooltipKey = `${active}:${key}:${current.view}:${aggregate?.count ?? 0}:${aggregate?.budget ?? 0}:${current.environmentLabel}`;
+      const popup = popupRef.current;
+      if (popup) {
+        if (hoveredTooltipKeyRef.current !== tooltipKey) {
+          hoveredTooltipKeyRef.current = tooltipKey;
+          popup.setHTML(tooltipHtml(properties, active, current.fields, current.environmentLabel, aggregate, current.view));
+        }
+        popup.setLngLat(event.lngLat);
+        if (!popup.isOpen()) popup.addTo(map);
+      }
+    };
 
     const handleMapClick = (event: maplibregl.MapMouseEvent) => {
       if (event.defaultPrevented) return;
-      const active = latestRef.current.precision;
-      const hits = map.queryRenderedFeatures([event.point.x, event.point.y], { layers: [fillLayerId(active)] });
-      if (hits.length) return;
-      latestRef.current.onSelectRegion(null);
+      const current = latestRef.current;
+      const active = current.precision;
+      const layerId = fillLayerId(active);
+      if (!map.getLayer(layerId)) return;
+      const feature = map.queryRenderedFeatures(event.point, { layers: [layerId] })[0];
+      if (feature) {
+        current.onSelectRegion(clickedRegion((feature.properties ?? {}) as BoundaryProperties, active, current.fields));
+      } else {
+        current.onSelectRegion(null);
+      }
     };
-    map.on("click", handleMapClick);
 
     const emitViewport = () => {
+      if (!onViewportChange) return;
       const bounds = map.getBounds();
-      onViewportChange?.([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
+      onViewportChange([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
     };
-    map.on("moveend", emitViewport);
 
-    if (!initialFitRef.current) {
-      const bounds = boundsOfCollection(boundaries.kel);
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 18, animate: false });
-        initialFitRef.current = true;
-      }
-    }
-
-    // Sorot ruas harus tetap di atas poligon wilayah meski layer batas dibuat ulang.
-    bringRoadHighlightToFront(map);
+    const canvas = map.getCanvas();
+    map.on("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", clearPolygonHover);
+    map.on("click", handleMapClick);
+    if (onViewportChange) map.on("moveend", emitViewport);
 
     return () => {
+      map.off("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", clearPolygonHover);
       map.off("click", handleMapClick);
-      map.off("moveend", emitViewport);
-      for (const remove of handlers) remove();
-      if (mapRef.current !== map) return;
-      for (const level of precisions) {
-        const id = sourceId(level);
-        for (const suffix of ["fill", "line", "exact", "scope"]) {
-          if (map.getLayer(`${id}-${suffix}`)) map.removeLayer(`${id}-${suffix}`);
-        }
-        if (map.getSource(id)) map.removeSource(id);
-      }
+      if (onViewportChange) map.off("moveend", emitViewport);
     };
-  }, [boundaries, fields, mapLoaded, onViewportChange, precisions, props.region.environmentLabel]);
+  }, [loadedMap, onViewportChange]);
 
   // Jaringan jalan digambar oleh peta dasar; layer Overture di sini tak terlihat dan hanya dipakai
   // untuk hit-test tooltip. Sorot memakai geometri ruas itu sendiri, jadi tidak ada garis ganda.
   useEffect(() => {
     const map = mapRef.current;
     const layer = latestRef.current.roadLayer;
-    if (!map || !mapLoaded || !layer || !map.isStyleLoaded()) return;
+    if (!map || loadedMap !== map || !layer || !map.getStyle()) return;
 
     const lineId = `${ROAD_SOURCE_ID}-line`;
     let hoverKey: string | null = null;
+    let tooltipKey: string | null = null;
     const clearHover = () => {
       hoverKey = null;
+      tooltipKey = null;
       clearRoadHighlight(map);
     };
     const removeLayers = () => {
@@ -827,11 +926,16 @@ export default function MapCanvas(props: MapCanvasProps) {
       if (!feature) return;
       hoverOwnerRef.current = "road";
       map.getCanvas().style.cursor = "pointer";
-      popupRef.current
-        ?.setLngLat(event.lngLat)
-        .setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties))
-        .addTo(map);
       const key = roadHighlightKey(feature, layer.fields.nama);
+      const popup = popupRef.current;
+      if (popup) {
+        if (tooltipKey !== key) {
+          tooltipKey = key;
+          popup.setHTML(roadTooltipHtml(layer, (feature.properties ?? {}) as BoundaryProperties));
+        }
+        popup.setLngLat(event.lngLat);
+        if (!popup.isOpen()) popup.addTo(map);
+      }
       if (key === hoverKey) return;
       hoverKey = key;
       setRoadHighlight(map, collectRoadHighlight(map, lineId, feature, layer.fields.nama));
@@ -853,86 +957,255 @@ export default function MapCanvas(props: MapCanvasProps) {
       map.off("click", lineId, hover);
       if (mapRef.current === map) removeLayers();
     };
-  }, [mapLoaded, roadEnabled, roadLayer?.tiles]);
+  }, [loadedMap, roadEnabled, roadLayer?.tiles]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded || !boundaries) return;
-    const state = latestRef.current;
+    if (!map || loadedMap !== map || !map.getStyle()) return;
+
+    if (!initialFitRef.current && boundaries.kel) {
+      const bounds = boundsOfCollection(boundaries.kel);
+      if (bounds) {
+        map.fitBounds(bounds, { padding: 18, animate: false });
+        initialFitRef.current = true;
+      }
+    }
+
+    const activeCollection = boundaries[PRECISION_STATS_KEY[precision]];
+    const hovered = hoveredFeatureRef.current;
+    if (hovered && hovered.source !== sourceId(precision)) {
+      if (map.getSource(hovered.source)) {
+        map.setFeatureState({ source: hovered.source, id: hovered.id }, { hover: false });
+      }
+      hoveredFeatureRef.current = null;
+      hoveredTooltipKeyRef.current = null;
+      if (hoverOwnerRef.current === "region") {
+        hoverOwnerRef.current = null;
+        map.getCanvas().style.cursor = "";
+        popupRef.current?.remove();
+      }
+    }
+
+    let addedLayers = false;
     for (const level of precisions) {
       const id = sourceId(level);
       const visible = level === precision;
-      // Hanya tingkat yang tampil dibangun ulang; tingkat tersembunyi dibangun saat dipilih.
-      if (visible) {
-        const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
-        if (source) {
-          source.setData(styledCollection(
-            level === "RW" ? boundaries.rw : level === "Kelurahan" ? boundaries.kel : boundaries.kec,
-            level,
-            fields,
-            state.areaStats[PRECISION_STATS_KEY[level]],
-            state.selectedPackage,
-            state.selectedRegion,
-            state.view,
-            state.bands[PRECISION_STATS_KEY[level]],
-            state.classes[PRECISION_STATS_KEY[level]],
-          ));
+      if (visible && activeCollection) {
+        const statsKey = PRECISION_STATS_KEY[level];
+        const nextInputs = {
+          collection: activeCollection,
+          areaStats: props.areaStats,
+          view,
+          selectedPackage: props.selectedPackage,
+          selectedRegion: props.selectedRegion,
+        };
+        const prevInputs = appliedInputsRef.current[level];
+        const needsData =
+          !prevInputs ||
+          prevInputs.collection !== nextInputs.collection ||
+          prevInputs.areaStats !== nextInputs.areaStats ||
+          prevInputs.view !== nextInputs.view ||
+          prevInputs.selectedPackage !== nextInputs.selectedPackage ||
+          prevInputs.selectedRegion !== nextInputs.selectedRegion;
+
+        if (!map.getSource(id)) {
+          map.addSource(id, {
+            type: "geojson",
+            generateId: true,
+            data: styledCollection(
+              activeCollection,
+              level,
+              fields,
+              areaStats[statsKey],
+              props.selectedPackage,
+              props.selectedRegion,
+              view,
+              bands[statsKey],
+              classes[statsKey],
+            ),
+          });
+          appliedInputsRef.current[level] = nextInputs;
+        } else if (needsData) {
+          const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
+          if (source) {
+            source.setData(styledCollection(
+              activeCollection,
+              level,
+              fields,
+              areaStats[statsKey],
+              props.selectedPackage,
+              props.selectedRegion,
+              view,
+              bands[statsKey],
+              classes[statsKey],
+            ));
+            appliedInputsRef.current[level] = nextInputs;
+            hoveredFeatureRef.current = null;
+            hoveredTooltipKeyRef.current = null;
+          }
+        }
+
+        if (!map.getLayer(`${id}-fill`)) {
+          addedLayers = true;
+          map.addLayer({
+            id: `${id}-fill`,
+            type: "fill",
+            source: id,
+            layout: { visibility: "visible" },
+            paint: {
+              "fill-color": ["coalesce", ["get", "_fill"], "#F1F5F9"],
+              "fill-opacity": ["coalesce", ["get", "_fillOpacity"], 0.18],
+            },
+          } as unknown as maplibregl.AddLayerObject);
+        }
+        if (!map.getLayer(`${id}-line`)) {
+          addedLayers = true;
+          map.addLayer({
+            id: `${id}-line`,
+            type: "line",
+            source: id,
+            layout: { visibility: "visible", "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": ["coalesce", ["get", "_stroke"], "#94A3B8"],
+              "line-width": ["coalesce", ["get", "_weight"], 0.5],
+              "line-opacity": ["coalesce", ["get", "_lineOpacity"], 0.8],
+            },
+          } as unknown as maplibregl.AddLayerObject);
+        }
+        if (!map.getLayer(`${id}-hover`)) {
+          addedLayers = true;
+          map.addLayer({
+            id: `${id}-hover`,
+            type: "line",
+            source: id,
+            layout: { visibility: "visible", "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#0A192F",
+              "line-width": 2,
+              "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.85, 0],
+            },
+          } as unknown as maplibregl.AddLayerObject);
+        }
+        if (!map.getLayer(`${id}-exact`)) {
+          addedLayers = true;
+          map.addLayer({
+            id: `${id}-exact`,
+            type: "line",
+            source: id,
+            filter: ["==", ["get", "_highlight"], "exact"],
+            layout: { visibility: "visible", "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": "#0A192F", "line-width": 4, "line-opacity": 1 },
+          } as unknown as maplibregl.AddLayerObject);
+        }
+        if (!map.getLayer(`${id}-scope`)) {
+          addedLayers = true;
+          map.addLayer({
+            id: `${id}-scope`,
+            type: "line",
+            source: id,
+            filter: ["==", ["get", "_highlight"], "scope"],
+            layout: { visibility: "visible", "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": "#0058A3", "line-width": 2.5, "line-opacity": 1, "line-dasharray": [5, 3] },
+          } as unknown as maplibregl.AddLayerObject);
         }
       }
-      for (const suffix of ["fill", "line", "exact", "scope"]) {
+
+      for (const suffix of ["fill", "line", "hover", "exact", "scope"]) {
         if (map.getLayer(`${id}-${suffix}`)) {
           map.setLayoutProperty(`${id}-${suffix}`, "visibility", visible ? "visible" : "none");
         }
       }
     }
-  }, [areaStats, bands, boundaries, classes, fields, mapLoaded, precision, precisions, props.region.environmentLabel, props.selectedPackage, props.selectedRegion, view]);
 
-  // Penanda jenis selalu tampil di semua tema dan semua tingkat zoom; hanya wilayah
-  // di dalam viewport yang dirender agar peta tetap ringan.
+    if (addedLayers) bringRoadHighlightToFront(map);
+  }, [areaStats, bands, boundaries, classes, fields, loadedMap, precision, precisions, props.areaStats, props.selectedPackage, props.selectedRegion, view]);
+
+  // Penanda jenis selalu tampil di semua tema dan semua tingkat zoom; penanda yang
+  // berdekatan di layar digabung menjadi klaster agar tetap terbaca saat diperkecil.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapLoaded || !boundaries) return;
+    const data = boundaries[PRECISION_STATS_KEY[precision]];
+    if (!map || loadedMap !== map || !data) return;
     for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
 
-    const data = precision === "RW" ? boundaries.rw : precision === "Kelurahan" ? boundaries.kel : boundaries.kec;
     const aggregates = areaStats[PRECISION_STATS_KEY[precision]];
-    // Satu wilayah bisa terpecah menjadi beberapa fitur; pakai poligon terbesar agar
-    // ikon tidak muncul dua kali di wilayah yang sama.
-    const perArea = new Map<string, BoundaryFeature>();
-    for (const feature of data.features) {
-      const key = areaKey(feature, precision, fields);
-      const previous = perArea.get(key);
-      if (!previous) {
-        perArea.set(key, feature);
-        continue;
-      }
-      const bounds = boundsOfFeature(feature);
-      const previousBounds = boundsOfFeature(previous);
-      if (!bounds || !previousBounds) continue;
-      const area = (bounds[1][0] - bounds[0][0]) * (bounds[1][1] - bounds[0][1]);
-      const previousArea = (previousBounds[1][0] - previousBounds[0][0]) * (previousBounds[1][1] - previousBounds[0][1]);
-      if (area > previousArea) perArea.set(key, feature);
+    const geometries = getAreaGeometries(data, precision, fields);
+    const areas: Array<Omit<WorkBadgePoint, "x" | "y">> = [];
+    for (const entry of geometries) {
+      const aggregate = aggregates.get(entry.key);
+      if (!aggregate || aggregate.count === 0) continue;
+      areas.push({
+        key: entry.key,
+        center: entry.center,
+        bounds: entry.bounds,
+        workCounts: aggregate.workCounts,
+        total: aggregate.count,
+      });
     }
-    const render = () => {
+
+    const areaUnit = precision === "Kecamatan" ? "kec" : precision === "Kelurahan" ? "kel" : props.region.environmentLabel;
+    let lastZoomBucket = -1;
+    let cachedClusters: ReturnType<typeof clusterWorkBadges> = [];
+    let mountedAll = false;
+
+    const mountClusters = (clusters: ReturnType<typeof clusterWorkBadges>, viewportOnly: boolean) => {
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
-      const viewport = map.getBounds();
-      for (const [key, feature] of perArea) {
-        const aggregate = aggregates.get(key);
-        if (!aggregate || aggregate.count === 0) continue;
-        const center = centerOfFeature(feature);
-        if (!center || !viewport.contains(center)) continue;
-        const markup = workBadgeMarkup(aggregate.workCounts);
+      const viewport = viewportOnly ? map.getBounds() : null;
+      for (const cluster of clusters) {
+        if (viewport && !viewport.contains(cluster.center)) continue;
+        const markup = workBadgeMarkup(cluster.workCounts, cluster.areaCount, areaUnit);
         if (!markup) continue;
         const element = document.createElement("div");
         element.className = "saksi-work-type-icon";
-        element.style.pointerEvents = "none";
         element.innerHTML = markup;
-        const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(center).addTo(map);
+        if (cluster.areaCount > 1) {
+          element.style.pointerEvents = "auto";
+          element.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const duration = reducedMotion() ? 0 : 300;
+            const dx = Math.abs(cluster.bounds[1][0] - cluster.bounds[0][0]);
+            const dy = Math.abs(cluster.bounds[1][1] - cluster.bounds[0][1]);
+            if (dx < 1e-5 && dy < 1e-5) {
+              map.easeTo({ center: cluster.center, zoom: map.getZoom() + 2, duration });
+              return;
+            }
+            const maxZoom = Math.max(
+              map.getZoom() + 2,
+              precision === "RW" ? 16.5 : precision === "Kelurahan" ? 14.5 : 13,
+            );
+            map.fitBounds(cluster.bounds, { padding: 56, maxZoom, duration });
+          });
+        } else {
+          element.style.pointerEvents = "none";
+        }
+        const marker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat(cluster.center).addTo(map);
         markersRef.current.push(marker);
       }
     };
+
+    const render = () => {
+      const zoomBucket = Math.round(map.getZoom() * 4);
+      if (zoomBucket !== lastZoomBucket) {
+        lastZoomBucket = zoomBucket;
+        const projected: WorkBadgePoint[] = areas.map((area) => {
+          const pixel = map.project(area.center);
+          return { ...area, x: pixel.x, y: pixel.y };
+        });
+        cachedClusters = clusterWorkBadges(projected, CLUSTER_RADIUS_PX);
+        if (cachedClusters.length <= 120) {
+          mountedAll = true;
+          mountClusters(cachedClusters, false);
+          return;
+        }
+        mountedAll = false;
+      } else if (mountedAll) {
+        return;
+      }
+      mountClusters(cachedClusters, true);
+    };
+
     render();
     map.on("moveend", render);
 
@@ -941,18 +1214,19 @@ export default function MapCanvas(props: MapCanvasProps) {
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
     };
-  }, [areaStats, boundaries, fields, mapLoaded, precision, precisions, view]);
+  }, [areaStats, boundaries, fields, loadedMap, precision, props.region.environmentLabel]);
 
   useEffect(() => {
     const map = mapRef.current;
     const pkg = props.selectedPackage;
-    if (!map || !mapLoaded || !boundaries || !pkg || props.selectedRegion?.villageSlug) return;
+    if (!map || loadedMap !== map || !pkg || props.selectedRegion?.villageSlug) return;
     if (pkg.presisi_peta !== "RW" && pkg.presisi_peta !== "Kelurahan" && pkg.presisi_peta !== "Kecamatan") return;
     if (pkg.presisi_peta === "RW" && !pkg.unit_id) return;
     if (pkg.presisi_peta === "Kelurahan" && !pkg.desa_resmi) return;
     if (pkg.presisi_peta === "Kecamatan" && !pkg.kecamatan_resmi) return;
     const target: BoundaryPrecision = pkg.presisi_peta === "RW" ? "RW" : pkg.presisi_peta === "Kelurahan" ? "Kelurahan" : "Kecamatan";
-    const data = target === "RW" ? boundaries.rw : target === "Kelurahan" ? boundaries.kel : boundaries.kec;
+    const data = boundaries[PRECISION_STATS_KEY[target]];
+    if (!data) return;
     const key = target === "RW"
       ? normalize(pkg.unit_id ?? "")
       : target === "Kelurahan"
@@ -963,17 +1237,18 @@ export default function MapCanvas(props: MapCanvasProps) {
     if (!feature) return;
     const bounds = boundsOfFeature(feature);
     const maxZoom = target === "RW" ? 15 : target === "Kelurahan" ? KEL_ZOOM : KEC_ZOOM;
-    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom, duration: reducedMotion() ? 0 : 700 });
-  }, [boundaries, fields, mapLoaded, props.selectedPackage, props.selectedRegion]);
+    if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom, duration: reducedMotion() ? 0 : 300 });
+  }, [boundaries, fields, loadedMap, props.selectedPackage, props.selectedRegion]);
 
   useEffect(() => {
     const map = mapRef.current;
     const region = props.selectedRegion;
-    if (!map || !mapLoaded || !boundaries || !region) return;
-    const duration = reducedMotion() ? 0 : 700;
+    if (!map || loadedMap !== map || !region) return;
+    const duration = reducedMotion() ? 0 : 300;
     if (region.villageSlug) {
       const target: BoundaryPrecision = region.rwSlug ? "RW" : "Kelurahan";
-      const data = target === "RW" ? boundaries.rw : boundaries.kel;
+      const data = boundaries[PRECISION_STATS_KEY[target]];
+      if (!data) return;
       const feature = data.features.find((candidate) => {
         const properties = candidate.properties ?? {};
         if (addressSlug(String(properti(properties, fields.kelurahan) ?? "")) !== region.villageSlug) return false;
@@ -989,14 +1264,14 @@ export default function MapCanvas(props: MapCanvasProps) {
     }
     // Kecamatan tanpa kelurahan terpilih tetap harus menggerakkan peta; sebelumnya peta diam
     // dan filter wilayah tampak tidak berpengaruh.
-    if (!region.districtSlug) return;
+    if (!region.districtSlug || !boundaries.kec) return;
     const feature = boundaries.kec.features.find(
       (candidate) => districtSlug(String(properti(candidate.properties ?? {}, fields.kecamatan) ?? "")) === region.districtSlug,
     );
     if (!feature) return;
     const bounds = boundsOfFeature(feature);
     if (bounds) map.fitBounds(bounds, { padding: 28, maxZoom: KEC_ZOOM + 2, duration });
-  }, [boundaries, fields, mapLoaded, props.region.environmentLabel, props.selectedRegion]);
+  }, [boundaries, fields, loadedMap, props.region.environmentLabel, props.selectedRegion]);
 
   const activeBands = precision === "RW" ? bands.rw : precision === "Kelurahan" ? bands.kel : bands.kec;
   const activeClasses = precision === "RW" ? classes.rw : precision === "Kelurahan" ? classes.kel : classes.kec;
@@ -1038,9 +1313,9 @@ export default function MapCanvas(props: MapCanvasProps) {
 
   const fitCity = () => {
     const map = mapRef.current;
-    if (!map || !boundaries) return;
+    if (!map || !boundaries.kel) return;
     const bounds = boundsOfCollection(boundaries.kel);
-    if (bounds) map.fitBounds(bounds, { padding: 18, duration: reducedMotion() ? 0 : 600 });
+    if (bounds) map.fitBounds(bounds, { padding: 18, duration: reducedMotion() ? 0 : 300 });
   };
 
   // Pindah ke tingkat RW pada zoom kota membuat poligon selebar jalan. Bawa pengguna ke
@@ -1049,8 +1324,8 @@ export default function MapCanvas(props: MapCanvasProps) {
     setPrecision(level);
     if (level !== "RW") return;
     const map = mapRef.current;
-    if (!map || !boundaries) return;
-    const duration = reducedMotion() ? 0 : 600;
+    if (!map || !boundaries.kel) return;
+    const duration = reducedMotion() ? 0 : 300;
     const village = props.selectedRegion?.villageSlug;
     if (village) {
       const feature = boundaries.kel.features.find(
@@ -1109,40 +1384,56 @@ export default function MapCanvas(props: MapCanvasProps) {
             </button>
           ) : null}
         </div>
-        {/* Tema pindah ke peta: sebelumnya tersembunyi di deretan filter. */}
-        <div role="group" aria-label="Tema peta" className="flex flex-wrap overflow-hidden border border-border bg-white/95 shadow-sm">
-          {THEMES.map((tema) => (
-            <button
-              key={tema.value}
-              type="button"
-              onClick={() => props.onViewModeChange(tema.value)}
-              aria-pressed={props.viewMode === tema.value}
-              aria-label={tema.label}
-              className={`whitespace-nowrap border-r border-border px-2.5 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] transition-colors last:border-r-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${
-                props.viewMode === tema.value ? "bg-foreground text-white" : "text-foreground/70 hover:bg-muted"
-              }`}
-            >
-              <span aria-hidden="true" className="sm:hidden">{tema.short}</span>
-              <span aria-hidden="true" className="max-sm:hidden">{tema.label}</span>
-            </button>
-          ))}
-        </div>
       </div>
-      <button
-        type="button"
-        onClick={fitCity}
-        aria-label="Lihat seluruh kota"
-        title="Lihat seluruh kota"
-        className="saksi-map-overlay absolute top-[88px] left-3 z-10 flex size-8 items-center justify-center border border-border bg-white/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        <FiMaximize className="size-4" aria-hidden="true" />
-      </button>
+      <Tooltip>
+        <TooltipTrigger
+          type="button"
+          onClick={fitCity}
+          aria-label="Lihat seluruh kota"
+          className="saksi-map-overlay absolute top-[88px] left-3 z-10 flex size-8 items-center justify-center border border-border bg-white/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <FiMaximize className="size-4" aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={10}>
+          Lihat seluruh kota
+        </TooltipContent>
+      </Tooltip>
       {props.selectedPackage && !hasSpecificRegion ? (
         <div className="saksi-map-overlay absolute top-[128px] left-3 z-10 max-w-[min(18rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
           RUP {props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah kecamatan/kelurahan/{props.region.environmentLabel}; peta tidak menandai area tertentu.
         </div>
       ) : null}
-      <div className="saksi-map-overlay absolute right-3 bottom-3 z-10 w-[min(20rem,calc(100%-1.5rem))] border border-border bg-white/95 text-foreground shadow-sm">
+      <div className="saksi-map-overlay pointer-events-none absolute right-3 bottom-3 z-10 flex max-w-[calc(100%-1.5rem)] items-end gap-2">
+        <div
+          role="group"
+          aria-label="Tema peta"
+          className="pointer-events-auto flex shrink-0 border border-border bg-white/95 shadow-sm"
+        >
+          {THEMES.map((tema) => {
+            const Icon = tema.icon;
+            const active = props.viewMode === tema.value;
+            return (
+              <Tooltip key={tema.value}>
+                <TooltipTrigger
+                  type="button"
+                  closeOnClick={false}
+                  onClick={() => props.onViewModeChange(tema.value)}
+                  aria-pressed={active}
+                  aria-label={tema.label}
+                  className={`flex size-8 items-center justify-center border-r border-border transition-colors last:border-r-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${
+                    active ? "bg-foreground text-white" : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="size-4" aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  {tema.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+        <div className="pointer-events-auto w-[min(20rem,calc(100vw-6.5rem))] border border-border bg-white/95 text-foreground shadow-sm">
         <button
           type="button"
           onClick={() => setLegendOpen((open) => !open)}
@@ -1235,13 +1526,14 @@ export default function MapCanvas(props: MapCanvasProps) {
             ) : null}
           </div>
         ) : null}
+        </div>
       </div>
       {roadError ? (
         <div role="status" className="saksi-map-overlay absolute top-[128px] left-14 z-10 border border-border bg-white/95 px-3 py-2 text-xs text-muted-foreground">
           Layer jaringan jalan tidak dapat dimuat.
         </div>
       ) : null}
-      {props.packageCount === 0 && !loadError && mapLoaded ? (
+      {props.packageCount === 0 && !loadError && loadedMap ? (
         <div role="status" className="saksi-map-overlay absolute bottom-20 left-3 z-10 max-w-[min(20rem,calc(100%-1.5rem))] border border-border bg-white/95 px-3 py-2 text-xs leading-5 text-foreground shadow-sm">
           Tidak ada paket yang cocok dengan filter ini. Longgarkan filter atau hapus pencarian.
         </div>

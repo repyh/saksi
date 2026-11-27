@@ -358,6 +358,22 @@ export async function listVendors(
     : vendors;
 }
 
+/** Ringkasan penyedia beserta hitungan cakupan kontrak region tanpa memindai ulang konteks peta. */
+export async function getVendorDirectoryData(
+  query?: string,
+  regionId: string = DEFAULT_REGION_ID,
+): Promise<{ vendors: VendorSummary[]; totalCount: number; withContractCount: number }> {
+  const cari = query?.trim().toLocaleLowerCase("id-ID");
+  const { vendors, totalPackages, withContractCount } = await getVendorCatalogCached(regionId);
+  return {
+    vendors: cari
+      ? vendors.filter((vendor) => vendor.nama.toLocaleLowerCase("id-ID").includes(cari))
+      : vendors,
+    totalCount: totalPackages,
+    withContractCount,
+  };
+}
+
 /**
  * Detail penyedia; ringkasan, peta RUP, dan daftar paket berasal dari cache katalog
  * yang sama. Dibungkus `cache()` untuk deduplikasi metadata + page per request.

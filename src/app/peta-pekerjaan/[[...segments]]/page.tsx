@@ -75,11 +75,12 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
   const rawVillages = query.desa;
   const villages = (Array.isArray(rawVillages) ? rawVillages : rawVillages ? [rawVillages] : []).filter(Boolean);
   const selection = parseReportSegments(segments, regionId);
-  const catalog = await searchRoadPackages({ region: regionId, limit: 1 });
-  const selectedDistrict = selection.districtSlug
-    ? catalog.districts.find((district) => districtSlug(district) === selection.districtSlug)
-    : undefined;
-  if (selection.districtSlug && !selectedDistrict) notFound();
+  let selectedDistrict: string | undefined;
+  if (selection.districtSlug) {
+    const catalog = await searchRoadPackages({ region: regionId, limit: 1 });
+    selectedDistrict = catalog.districts.find((district) => districtSlug(district) === selection.districtSlug);
+    if (!selectedDistrict) notFound();
+  }
   const filters = {
     region: regionId, locatedOnly, generalOnly, budgetDecile: decile,
     year: rawYear === "2025" || rawYear === "2026" ? rawYear : undefined,
@@ -87,7 +88,10 @@ async function LaporanContent({ params, searchParams }: LaporanPageProps) {
     sort,
     villages: selectedDistrict && villages.length ? villages : undefined,
   } as const;
-  const [initialData, initialAggregate] = await Promise.all([searchRoadPackages(filters), aggregateRoadPackages(filters)]);
+  const [initialData, initialAggregate] = await Promise.all([
+    searchRoadPackages(filters),
+    aggregateRoadPackages({ ...filters, district: undefined, villages: undefined }),
+  ]);
   const selectedPackage = selection.rupCode
     ? initialData.items.find((item) => item.kode_rup === selection.rupCode) ??
       (await searchRoadPackages({ region: regionId, query: selection.rupCode })).items.find(

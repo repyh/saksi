@@ -4,8 +4,8 @@ import { cache } from "react";
 import type { BudgetExplorerNode } from "@/contracts/audit/budget-explorer.contract";
 import type { RoadPackageItem } from "@/contracts/packages/road-package.contract";
 import { classifyRoadWork, ROAD_WORK_LABELS, ROAD_WORK_TYPES } from "@/contracts/packages/road-work";
-import { districtSlug, routeForAddress, routeForPackage } from "@/features/map/report-routes";
-import { listRoadPackagesCached } from "./catalog-cache";
+import { districtSlug, routeForAddress } from "@/features/map/report-routes";
+import { listRoadPackageBasesCached } from "./catalog-cache";
 import {
   CATALOG_CACHE_TAGS,
   CATALOG_REVALIDATE_SECONDS,
@@ -20,7 +20,7 @@ export async function susunBudgetExplorer(
   region: string,
   packages?: RoadPackageItem[],
 ): Promise<BudgetExplorerNode[]> {
-  const rows = packages ?? await listRoadPackagesCached(region);
+  const rows = packages ?? await listRoadPackageBasesCached(region);
   function mapLink(year: number, decile?: number, work?: string, district?: string) {
     const params = new URLSearchParams({ region, tahun: String(year) });
     if (decile) params.set("kelompok", String(decile));
@@ -57,11 +57,6 @@ export async function susunBudgetExplorer(
                 return {
                   ...summarize(district, local),
                   mapHref: mapLink(year, decile + 1, work, district),
-                  records: local.sort((a, b) => b.pagu - a.pagu).map((row) => ({
-                    rup: row.kode_rup, name: row.nama, budget: row.pagu,
-                    precision: row.presisi_peta === "Kabupaten" ? "Lokasi umum" : row.presisi_peta,
-                    href: `${routeForPackage(row)}?${new URL(mapLink(year, decile + 1, work, district), "https://saksi.invalid").searchParams}`,
-                  })),
                 };
               }),
             };
@@ -74,7 +69,7 @@ export async function susunBudgetExplorer(
 
 const loadBudgetExplorer = unstable_cache(
   async (region: string) => susunBudgetExplorer(region),
-  ["catalog-budget-explorer", CATALOG_SOURCE],
+  ["catalog-budget-explorer-v2", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 
