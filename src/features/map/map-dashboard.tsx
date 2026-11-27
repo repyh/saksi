@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiArrowLeft, FiArrowRight, FiChevronDown, FiChevronLeft, FiChevronRight, FiExternalLink, FiFilter, FiSearch } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiCheck, FiChevronDown, FiChevronLeft, FiChevronRight, FiCopy, FiExternalLink, FiFilter, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -167,11 +167,19 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const [mobilePane, setMobilePane] = useState<"map" | "list">("map");
   const [listOpen, setListOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [copiedRup, setCopiedRup] = useState(false);
 
   const updateSelectedPackage = (pkg: RoadPackageItem | null) => {
     selectedPackageRef.current = pkg;
     setSelectedPackage(pkg);
+    setCopiedRup(false);
   };
+
+  useEffect(() => {
+    if (!copiedRup) return;
+    const timer = window.setTimeout(() => setCopiedRup(false), 1500);
+    return () => window.clearTimeout(timer);
+  }, [copiedRup]);
 
   useEffect(() => {
     function handleMapSearch(event: Event) {
@@ -816,7 +824,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               aria-label="Daftar paket jalan"
               className={`order-1 flex h-[580px] min-w-0 flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""} ${listOpen ? "" : "lg:hidden"} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}
             >
-              <ScrollArea className="flex-1">
+              <ScrollArea className="min-h-0 flex-1">
                 <div className="divide-y divide-border">
                   {filteredPackages.map((pkg) => (
                     <article key={pkg.kode_rup} className={`transition-colors hover:bg-muted/30 ${selectedPackage?.kode_rup === pkg.kode_rup ? "bg-primary/5" : ""}`}>
@@ -935,26 +943,34 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
             {selectedPackage && <aside className={`order-3 flex h-[580px] min-w-0 flex-col border-l border-border bg-white lg:col-span-3 lg:col-start-10 lg:order-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""}`}>
               {selectedPackage ? (
-                <div className="flex h-full flex-col">
-                  <div className="flex items-center justify-between border-b border-border bg-muted/20 px-5 py-3">
+                <div className="flex h-full min-h-0 flex-col">
+                  <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/20 px-4 py-2.5">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => { setListOpen(true); closeSelectedPackage(); }}
-                      className="-ml-2 h-7 gap-1.5 px-2 font-sans text-xs font-bold text-primary hover:bg-primary/10 hover:text-primary active:translate-y-0"
+                      className="-ml-2 h-7 gap-1.5 px-2 font-sans text-xs font-semibold text-primary hover:bg-primary/10 hover:text-primary active:translate-y-0"
                     >
                       <FiArrowLeft className="size-3.5" aria-hidden="true" />
                       <span>Kembali ke daftar</span>
                     </Button>
 
-                    <span className="font-mono text-[11px] font-bold tracking-wider text-muted-foreground">
-                      RUP {selectedPackage.kode_rup}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(selectedPackage.kode_rup).then(() => setCopiedRup(true)).catch(() => undefined);
+                      }}
+                      title="Salin kode RUP"
+                      className="inline-flex items-center gap-1 rounded-xs px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <span>{copiedRup ? "Tersalin" : `RUP ${selectedPackage.kode_rup}`}</span>
+                      {copiedRup ? <FiCheck className="size-3 text-primary" aria-hidden="true" /> : <FiCopy className="size-3 opacity-70" aria-hidden="true" />}
+                    </button>
                   </div>
 
-                  <ScrollArea className="flex-1">
-                    <div className="p-5">
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="p-4">
                       <nav aria-label="Lokasi paket" className="min-w-0">
                         <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-sans text-xs">
                           <li>
@@ -999,41 +1015,43 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                           {!selectedPackage.kecamatan_resmi && !selectedPackage.desa_resmi && <li aria-current="location" className="font-semibold text-foreground">Lokasi umum</li>}
                           {labelPresisi(selectedPackage) ? (
                             <li className="ml-auto">
-                              <Badge variant="outline" className="px-1 py-0 text-[9px] tracking-[0.08em]">{labelPresisi(selectedPackage)}</Badge>
+                              <Badge variant="outline" className="px-1.5 py-0 text-[9px] tracking-[0.08em]">{labelPresisi(selectedPackage)}</Badge>
                             </li>
                           ) : null}
                         </ol>
                       </nav>
-                      <h2 className="mt-2 font-heading text-xl font-bold leading-snug tracking-tight text-foreground">
+                      <h2 className="mt-2 font-heading text-[17px] font-bold leading-snug tracking-tight text-foreground">
                         {selectedPackage.nama}
                       </h2>
 
-                      <div className="mt-4 border-b border-border py-3">
-                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Pagu paket</p>
-                        <p className="mt-1 font-heading text-2xl font-extrabold tabular-nums tracking-tight text-primary">{formatRupiahFull(selectedPackage.pagu)}</p>
+                      <div className="mt-3">
+                        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          Pagu paket · TA {selectedPackage.tahun}
+                        </p>
+                        <p className="mt-0.5 font-heading text-[22px] font-extrabold tabular-nums leading-tight tracking-tight text-primary">
+                          {formatRupiahFull(selectedPackage.pagu)}
+                        </p>
                       </div>
 
-                      <table className="mt-3 w-full border-collapse font-sans text-sm">
-                        <tbody>
-                          <tr>
-                            <th scope="row" className="w-28 py-2 pr-3 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Satker</th>
-                            <td className="py-2 font-medium leading-snug text-foreground">{selectedPackage.satker}</td>
-                          </tr>
-                          <tr>
-                            <th scope="row" className="w-28 py-2 pr-3 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Jadwal</th>
-                            <td className="py-2 font-medium text-foreground">{selectedPackage.bulan ?? "Belum tersedia"}</td>
-                          </tr>
-                          <tr>
-                            <th scope="row" className="w-28 py-2 pr-3 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Metode & dana</th>
-                            <td className="py-2 font-medium leading-snug text-foreground">{selectedPackage.metode ?? "Tidak dicantumkan"}{selectedPackage.sumber ? ` (${selectedPackage.sumber.replace(/,+$/, "")})` : ""}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <dl className="mt-4 space-y-1.5 font-sans text-[13px]">
+                        <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-x-3 py-0.5">
+                          <dt className="pt-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">Satker</dt>
+                          <dd className="font-medium leading-snug text-foreground">{selectedPackage.satker}</dd>
+                        </div>
+                        <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-x-3 py-0.5">
+                          <dt className="pt-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">Jadwal</dt>
+                          <dd className="font-medium text-foreground">{selectedPackage.bulan ?? "Belum tersedia"}</dd>
+                        </div>
+                        <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-x-3 py-0.5">
+                          <dt className="pt-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">Metode & dana</dt>
+                          <dd className="font-medium leading-snug text-foreground">{selectedPackage.metode ?? "Tidak dicantumkan"}{selectedPackage.sumber ? ` (${selectedPackage.sumber.replace(/,+$/, "")})` : ""}</dd>
+                        </div>
+                      </dl>
 
                       {selectedPackage.kontrak && !selectedPackage.kontrak.paketRealisasi?.length ? (
-                        <div className="mt-4 border border-dashed border-border bg-muted/10 p-3">
+                        <div className="mt-4 border border-dashed border-border/80 bg-muted/10 p-3">
                           <p className="font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Rincian realisasi belum tersedia</p>
-                          <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/80">
+                          <p className="mt-1 font-sans text-xs leading-relaxed text-foreground/80">
                             {selectedPackage.kontrak.sumber === "LPSE"
                               ? "Pengumuman SPSE paket ini sudah tercatat (penyedia, nilai kontrak, dan HPS di bawah). Data INAPROC belum memuat transaksi realisasinya, jadi kode paket realisasi belum bisa ditampilkan."
                               : "Rincian kode paket dan nilai transaksi realisasi untuk paket ini belum tersedia."}
@@ -1042,81 +1060,89 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       ) : null}
 
                       {selectedPackage.kontrak ? (
-                        <div className="mt-4 border border-border">
-                          <div className="flex items-center justify-between gap-2 bg-muted/20 px-3 py-2">
-                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{selectedPackage.kontrak.jenis === "tender" ? "Pemenang tender" : "Penyedia"}</p>
+                        <div className="mt-4 overflow-hidden rounded-xs border border-border">
+                          <div className="flex items-center justify-between gap-2 bg-muted/30 px-3.5 py-2">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Sumber</p>
                             <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-primary">Data resmi ({selectedPackage.kontrak.sumber === "LPSE" ? "LPSE" : "INAPROC"})</span>
                           </div>
-                          <table className="w-full border-collapse font-sans text-sm">
-                            <tbody>
-                              <tr className="border-b border-border/60">
-                                <th scope="row" className="w-24 py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Penyedia</th>
-                                <td className="py-2 pr-3 leading-snug text-foreground">
-                                  <ul className="space-y-1">
-                                    {penyediaPanel.slice(0, 2).map((baris) => (
-                                      <li key={baris.nama} className="flex items-baseline justify-between gap-2">
-                                        <Link href={`/penyedia/${slugPenyedia(baris.nama)}?region=${encodeURIComponent(regionId)}`} className="font-semibold text-primary underline-offset-2 hover:underline">
-                                          {baris.nama}
-                                        </Link>
-                                        {baris.nilai ? (
+                          <div className="space-y-2 px-3.5 py-3 text-[13px] leading-snug text-foreground">
+                            <div>
+                              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                                {selectedPackage.kontrak.jenis === "tender" ? "Pemenang" : "Penyedia"}
+                              </p>
+                              <ul className="mt-1 space-y-1">
+                                {penyediaPanel.slice(0, 2).map((baris) => {
+                                  const tampilkanNilaiBaris =
+                                    penyediaPanel.length > 1 ||
+                                    baris.nilaiBersama ||
+                                    (baris.nilai > 0 && baris.nilai !== nilaiKontrak);
+                                  return (
+                                    <li key={baris.nama} className="flex items-baseline justify-between gap-2">
+                                      <Link href={`/penyedia/${slugPenyedia(baris.nama)}?region=${encodeURIComponent(regionId)}`} className="font-semibold text-primary underline-offset-2 hover:underline">
+                                        {baris.nama}
+                                      </Link>
+                                      {tampilkanNilaiBaris ? (
+                                        baris.nilai ? (
                                           <span className="shrink-0 font-sans text-[11px] tabular-nums text-muted-foreground">{formatRupiahFull(baris.nilai)}</span>
                                         ) : baris.nilaiBersama ? (
                                           <span className="shrink-0 font-sans text-[10px] italic text-muted-foreground" title="Nilai transaksi dicatat bersama untuk beberapa penyedia dan tidak dibagi.">nilai bersama</span>
-                                        ) : null}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                  {labelPenyediaTersembunyi ? (
-                                    <Link
-                                      href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
-                                      className="mt-1 inline-block font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
-                                    >
-                                      {labelPenyediaTersembunyi}
-                                    </Link>
-                                  ) : null}
-                                  {panelPenyedia.adaPenyediaBersama ? (
-                                    <p className="mt-1 font-sans text-[10px] leading-snug text-muted-foreground">
-                                      Nilai transaksi dicatat bersama untuk penyedia dalam satu paket dan tidak dibagi.
-                                    </p>
-                                  ) : null}
-                                </td>
-                              </tr>
-                              <tr className="border-b border-border/60">
-                                <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Nilai kontrak</th>
-                                <td className="py-2 pr-3 font-semibold tabular-nums text-foreground">
+                                        ) : null
+                                      ) : null}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                              {labelPenyediaTersembunyi ? (
+                                <Link
+                                  href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`}
+                                  className="mt-1 inline-block font-sans text-[11px] font-bold text-primary underline-offset-2 hover:underline"
+                                >
+                                  {labelPenyediaTersembunyi}
+                                </Link>
+                              ) : null}
+                              {panelPenyedia.adaPenyediaBersama ? (
+                                <p className="mt-1 font-sans text-[10px] leading-snug text-muted-foreground">
+                                  Nilai transaksi dicatat bersama untuk penyedia dalam satu paket dan tidak dibagi.
+                                </p>
+                              ) : null}
+                            </div>
+                            <dl className="space-y-1.5 font-sans text-[13px]">
+                              <div className="flex items-baseline justify-between gap-3">
+                                <dt className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">Nilai kontrak</dt>
+                                <dd className="text-right font-semibold tabular-nums text-foreground">
                                   {selectedPackage.kontrak.nilai_kontrak ? formatRupiahFull(selectedPackage.kontrak.nilai_kontrak) : "Tidak tercatat"}
-                                </td>
-                              </tr>
+                                </dd>
+                              </div>
                               {selisihPagu !== null ? (
-                                <tr>
-                                  <th scope="row" className="py-2 pl-3 pr-2 text-left align-top font-semibold text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Selisih pagu</th>
-                                  <td className="py-2 pr-3 tabular-nums text-foreground">
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <dt className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">Selisih pagu</dt>
+                                  <dd className="text-right tabular-nums text-foreground">
                                     {formatRupiahFull(selisihPagu)}
                                     {selisihPersen !== null ? (
                                       <span className="ml-1 font-sans text-[11px] text-muted-foreground">
-                                        ({selisihPersen.toLocaleString("id-ID", { maximumFractionDigits: 1 })}% dari pagu)
+                                        ({selisihPersen.toLocaleString("id-ID", { maximumFractionDigits: 1 })}%)
                                       </span>
                                     ) : null}
-                                  </td>
-                                </tr>
+                                  </dd>
+                                </div>
                               ) : null}
-                            </tbody>
-                          </table>
-                          {selectedPackage.kontrak.paketRealisasi?.length ? (
-                            <p className="border-t border-border px-3 py-2 font-sans text-[10px] leading-snug text-muted-foreground">
-                              Nilai realisasi per paket tercatat di Data INAPROC
-                              {selectedPackage.kontrak.transaksi && selectedPackage.kontrak.transaksi > 1
-                                ? ` · ${selectedPackage.kontrak.transaksi} transaksi`
-                                : ""}
-                              . Rincian kode paket ada di halaman detail paket.
-                            </p>
-                          ) : null}
+                            </dl>
+                            {selectedPackage.kontrak.paketRealisasi?.length ? (
+                              <p className="font-sans text-[10px] leading-snug text-muted-foreground">
+                                Tercatat di Data INAPROC
+                                {selectedPackage.kontrak.transaksi && selectedPackage.kontrak.transaksi > 1
+                                  ? ` · ${selectedPackage.kontrak.transaksi} transaksi`
+                                  : ""}
+                                . Rincian kode paket ada di halaman detail.
+                              </p>
+                            ) : null}
+                          </div>
                           {selectedPackage.kontrak.url ? (
                             <a
                               href={selectedPackage.kontrak.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 font-sans text-[11px] font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                              className="flex items-center justify-between gap-2 border-t border-border/50 px-3.5 py-2 font-sans text-[11px] font-semibold text-primary transition-colors hover:bg-primary/5 hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
                             >
                               {selectedPackage.kontrak.sumber === "LPSE" ? "Bukti halaman LPSE" : "Bukti paket di Data INAPROC"}
                               <FiExternalLink className="size-3 shrink-0" aria-hidden="true" />
@@ -1124,31 +1150,31 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                           ) : null}
                         </div>
                       ) : (
-                        <p className="mt-4 border border-dashed border-border bg-muted/10 p-3 font-sans text-[11px] leading-relaxed text-muted-foreground">
+                        <p className="mt-3.5 border border-dashed border-border/80 bg-muted/10 p-3 font-sans text-xs leading-relaxed text-muted-foreground">
                           Belum ditemukan rekam kontrak yang cocok pada LPSE/SPSE atau Data INAPROC.
                         </p>
                       )}
                     </div>
                   </ScrollArea>
 
-                  <div className="grid grid-cols-2 gap-2 border-t border-border bg-white p-4">
+                  <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-white px-4 py-3">
                     <Button
                       render={<Link href={`/laporan/paket/${selectedPackage.kode_rup}?region=${encodeURIComponent(regionId)}`} />}
                       nativeButton={false}
                       variant="default"
-                      className="h-10 w-full rounded-xs bg-primary font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-white hover:bg-[#004682]"
+                      className="h-9 w-full gap-1.5 rounded-xs bg-primary px-3 font-sans text-xs font-semibold text-white hover:bg-[#004682]"
                     >
-                      <span>Laporkan kerusakan</span>
-                      <FiArrowRight className="size-4 text-secondary" aria-hidden="true" />
+                      <span className="truncate">Laporkan kerusakan</span>
+                      <FiArrowRight className="size-3.5 shrink-0 text-secondary" aria-hidden="true" />
                     </Button>
                     <Button
                       render={<Link href={`/paket/${encodeURIComponent(selectedPackage.kode_rup)}?region=${encodeURIComponent(regionId)}`} />}
                       nativeButton={false}
                       variant="outline"
-                      className="h-10 w-full rounded-xs border-border font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-primary hover:bg-primary/5"
+                      className="h-9 w-full gap-1.5 rounded-xs border-border px-3 font-sans text-xs font-semibold text-primary hover:bg-primary/5"
                     >
-                      <span>Buka detail</span>
-                      <FiArrowRight className="size-3.5" aria-hidden="true" />
+                      <span className="truncate">Buka detail</span>
+                      <FiArrowRight className="size-3.5 shrink-0" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>
