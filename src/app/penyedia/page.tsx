@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { formatRupiahFull } from "@/features/map/road-types";
 import { CatalogPageShell } from "@/features/packages/components/catalog-page-shell";
-import { listVendors, searchRoadPackages } from "@/server/packages/service";
+import { getVendorDirectoryData } from "@/server/packages/service";
 import { resolveRegionId } from "@/server/regions/region-registry";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -40,7 +40,8 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
   const { q, urut, arah, region } = await searchParams;
   const regionId = resolveRegionId(region);
   const query = (q ?? "").trim();
-  const vendor = await listVendors(query || undefined, regionId);
+  const directory = await getVendorDirectoryData(query || undefined, regionId);
+  const vendor = [...directory.vendors];
   const sortBy = urut === "paket" || urut === "nama" || urut === "tahun" ? urut : "nilai";
   const direction = arah === "asc" ? "asc" : "desc";
   vendor.sort((a, b) => {
@@ -54,7 +55,7 @@ export default async function PenyediaPage({ searchParams }: PenyediaPageProps) 
     if (compared !== 0) return direction === "asc" ? compared : -compared;
     return a.nama.localeCompare(b.nama, "id");
   });
-  const ringkas = await searchRoadPackages({ region: regionId });
+  const ringkas = { totalCount: directory.totalCount, withContractCount: directory.withContractCount };
   const totalPaket = vendor.reduce((n, item) => n + item.paket, 0);
   const totalNilai = vendor.reduce((n, item) => n + item.nilai, 0);
   const tampil = vendor.slice(0, 60);

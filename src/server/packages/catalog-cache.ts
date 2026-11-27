@@ -100,6 +100,8 @@ export interface VendorCatalog {
   vendors: VendorSummary[];
   /** Slug penyedia → kode RUP yang dikontrakkan; dibangun dari indeks kontrak yang sama. */
   rupBySlug: Record<string, string[]>;
+  totalPackages: number;
+  withContractCount: number;
 }
 
 async function buildVendorCatalog(regionId: string): Promise<VendorCatalog> {
@@ -135,12 +137,14 @@ async function buildVendorCatalog(regionId: string): Promise<VendorCatalog> {
       kategori: [...(kategori.get(vendor.slug) ?? [])] as VendorSummary["kategori"],
     })),
     rupBySlug,
+    totalPackages: semuaPaket.length,
+    withContractCount: semuaPaket.filter((item) => item.kontrak).length,
   };
 }
 
 const loadVendorCatalog = unstable_cache(
   buildVendorCatalog,
-  ["catalog-vendors-v2", CATALOG_SOURCE],
+  ["catalog-vendors-v3", CATALOG_SOURCE],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: CATALOG_CACHE_TAGS },
 );
 
