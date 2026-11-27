@@ -4,6 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  createMultiParser,
+  createParser,
+  debounce,
+  parseAsNumberLiteral,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiChevronDown, FiChevronLeft, FiChevronRight, FiCopy, FiExternalLink, FiFilter, FiSearch } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +85,38 @@ const SORT_LABELS: Record<RoadPackageSort, string> = {
 const FILTER_TRIGGER_CLASS =
   "h-7 w-full min-w-0 border-0 bg-transparent px-1.5 text-xs font-semibold shadow-none hover:bg-primary/10 hover:text-primary data-[popup-open]:bg-primary/10 data-[popup-open]:text-primary";
 
+const parseAsWorkCategory = createParser<RoadWorkCategory>({
+  parse: (value) => {
+    const upper = value.toLocaleUpperCase("id-ID");
+    return upper === "PERMUKAAN" || upper === "DRAINASE" || upper === "JEMBATAN"
+      ? upper
+      : null;
+  },
+  serialize: (value) => value.toLocaleLowerCase("id-ID"),
+});
+
+const parseAsVillages = createMultiParser<string[]>({
+  parse: (values) => {
+    const clean = values.filter(Boolean);
+    return clean.length > 0 ? clean : null;
+  },
+  serialize: (values) => values,
+  eq: (a, b) => a.length === b.length && a.every((item, index) => item === b[index]),
+});
+
+const MAP_FILTER_PARSERS = {
+  tahun: parseAsStringLiteral(["2025", "2026"] as const),
+  kelompok: parseAsNumberLiteral([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const),
+  umum: parseAsStringLiteral(["1"] as const),
+  lokasi: parseAsStringLiteral(["0"] as const),
+  jenis: parseAsWorkCategory,
+  kontrak: parseAsStringLiteral(["ADA", "TANPA"] as const),
+  desa: parseAsVillages,
+  urut: parseAsStringLiteral(["pagu-asc", "nama"] as const),
+  tampilan: parseAsStringLiteral(["budget"] as const),
+  q: parseAsString.withDefault("").withOptions({ limitUrlUpdates: debounce(180) }),
+};
+
 function normalizeDistrictName(value: string) {
   return value
     .toLocaleLowerCase("id-ID")
@@ -130,14 +171,22 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<"SEMUA" | "2025" | "2026">(initialRouteState?.selectedYear ?? "SEMUA");
+  const [filters, setFilters] = useQueryStates(MAP_FILTER_PARSERS, {
+    history: "replace",
+    shallow: true,
+  });
+  const selectedYear: "SEMUA" | "2025" | "2026" = filters.tahun ?? "SEMUA";
   const [selectedDistrict, setSelectedDistrict] = useState<string>(initialRouteState?.selectedDistrict ?? "SEMUA");
-  const [selectedVillages, setSelectedVillages] = useState<string[] | null>(initialRouteState?.selectedVillages ?? null);
+  const [allVillagesUnchecked, setAllVillagesUnchecked] = useState(false);
+  const selectedVillages = useMemo(
+    () => (allVillagesUnchecked ? [] : filters.desa),
+    [allVillagesUnchecked, filters.desa],
+  );
   const [openVillages, setOpenVillages] = useState(false);
   const villagesRef = useRef<HTMLDivElement | null>(null);
-  const [locatedOnly, setLocatedOnly] = useState(initialRouteState?.locatedOnly ?? true);
-  const [budgetDecile, setBudgetDecile] = useState<number | undefined>(initialRouteState?.budgetDecile);
-  const [generalOnly, setGeneralOnly] = useState(initialRouteState?.generalOnly ?? false);
+  const locatedOnly = filters.lokasi !== "0";
+  const budgetDecile = filters.kelompok ?? undefined;
+  const generalOnly = filters.umum === "1";
   const activeDecile = selectedYear !== "SEMUA" ? budgetDecile : undefined;
 
   useEffect(() => {
@@ -155,14 +204,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [openVillages]);
-  const [selectedWork, setSelectedWork] = useState<RoadWorkCategory>(initialRouteState?.selectedWork ?? "SEMUA");
-  const [selectedContract, setSelectedContract] = useState<RoadContractFilter>(initialRouteState?.selectedContract ?? "SEMUA");
-  const [selectedSort, setSelectedSort] = useState<RoadPackageSort>(initialRouteState?.selectedSort ?? "pagu-desc");
-  const [searchQuery, setSearchQuery] = useState<string>(initialRouteState?.searchQuery ?? "");
+  const selectedWork: RoadWorkCategory = filters.jenis ?? "SEMUA";
+  const selectedContract: RoadContractFilter = filters.kontrak ?? "SEMUA";
+  const selectedSort: RoadPackageSort = filters.urut ?? "pagu-desc";
+  const searchQuery = filters.q;
   const [selectedPackage, setSelectedPackage] = useState<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
   const selectedPackageRef = useRef<RoadPackageItem | null>(initialRouteState?.selectedPackage ?? null);
   const [selectedRegion, setSelectedRegion] = useState<ReportAddress | null>(initialRouteState?.selectedRegion ?? null);
-  const [mapView, setMapView] = useState<ReportViewMode>(initialRouteState?.mapView ?? "packages");
+  const mapView: ReportViewMode = filters.tampilan ?? "packages";
   // Di layar kecil peta tampil lebih dulu; daftar dan panel dibuka lewat segmented control.
   const [mobilePane, setMobilePane] = useState<"map" | "list">("map");
   const [listOpen, setListOpen] = useState(true);
@@ -184,14 +233,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   useEffect(() => {
     function handleMapSearch(event: Event) {
       const query = (event as CustomEvent<string>).detail;
-      setSearchQuery(query);
+      void setFilters({ q: query || null });
       document.getElementById("jelajahi")?.scrollIntoView({ behavior: "smooth", block: "start" });
       window.setTimeout(() => document.getElementById("map-package-search")?.focus({ preventScroll: true }), 350);
     }
 
     window.addEventListener(MAP_SEARCH_EVENT, handleMapSearch);
     return () => window.removeEventListener(MAP_SEARCH_EVENT, handleMapSearch);
-  }, []);
+  }, [setFilters]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -315,7 +364,13 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     if (aktif.has(desa)) aktif.delete(desa);
     else aktif.add(desa);
     const berikut = villageOptions.filter((opsi) => aktif.has(opsi));
-    setSelectedVillages(berikut.length === villageOptions.length ? null : berikut);
+    if (berikut.length === 0) {
+      setAllVillagesUnchecked(true);
+      void setFilters({ desa: null });
+      return;
+    }
+    setAllVillagesUnchecked(false);
+    void setFilters({ desa: berikut.length === villageOptions.length ? null : berikut });
   };
   const filteredPackages = kelurahanKosong ? [] : packageData?.items ?? [];
   const totalCount = packageData?.totalCount ?? 0;
@@ -364,7 +419,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
     }
   };
 
-  const writeReportPath = (path: string) => {
+  const writeReportPath = (
+    path: string,
+    overrides?: Partial<Parameters<typeof routeForFilters>[1]>,
+  ) => {
     if (!addressRouting) return;
     const nextUrl = routeForFilters(path, {
       region: regionId,
@@ -378,6 +436,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       sort: selectedSort,
       view: mapView,
       query: searchQuery,
+      ...overrides,
     });
     window.history.pushState(null, "", nextUrl);
   };
@@ -388,29 +447,44 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const pilihKecamatan = (district: string) => {
     const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) };
     setSelectedDistrict(district);
-    setGeneralOnly(false);
-    setSelectedVillages(null);
+    setAllVillagesUnchecked(false);
     setOpenVillages(false);
     setSelectedRegion(address);
     updateSelectedPackage(null);
-    writeReportPath(address ? addressPath(address) : "/peta-pekerjaan");
+    writeReportPath(address ? addressPath(address) : "/peta-pekerjaan", {
+      generalOnly: false,
+      villages: undefined,
+    });
+    void setFilters({ umum: null, desa: null });
   };
 
   /** Kembalikan seluruh filter ke keadaan awal; urutan register dan tema peta tidak diubah. */
   const clearFilters = () => {
-    setSelectedYear("SEMUA");
-    setBudgetDecile(undefined);
-    setGeneralOnly(false);
-    setSelectedDistrict("SEMUA");
-    setSelectedVillages(null);
+    setAllVillagesUnchecked(false);
     setOpenVillages(false);
-    setSelectedWork("SEMUA");
-    setSelectedContract("SEMUA");
-    setLocatedOnly(true);
-    setSearchQuery("");
+    setSelectedDistrict("SEMUA");
     setSelectedRegion(null);
     updateSelectedPackage(null);
-    writeReportPath("/peta-pekerjaan");
+    writeReportPath("/peta-pekerjaan", {
+      year: "SEMUA",
+      budgetDecile: undefined,
+      generalOnly: false,
+      villages: undefined,
+      work: "SEMUA",
+      contract: "SEMUA",
+      locatedOnly: true,
+      query: "",
+    });
+    void setFilters({
+      tahun: null,
+      kelompok: null,
+      umum: null,
+      desa: null,
+      lokasi: null,
+      jenis: null,
+      kontrak: null,
+      q: null,
+    });
   };
 
   const selectPackage = (pkg: RoadPackageItem) => {
@@ -437,10 +511,11 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   const selectRegion = (region: { district: string | null; village: string | null; rw: string | null; precision: "RW" | "Kelurahan" | "Kecamatan" } | null) => {
     if (!region) {
       setSelectedDistrict("SEMUA");
-      setSelectedVillages(null);
+      setAllVillagesUnchecked(false);
       setSelectedRegion(null);
       updateSelectedPackage(null);
-      writeReportPath("/peta-pekerjaan");
+      writeReportPath("/peta-pekerjaan", { villages: undefined });
+      void setFilters({ desa: null });
       return;
     }
     const requestedDistrict = region.district ?? "";
@@ -454,12 +529,16 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
       villageSlug: region.village ? addressSlug(region.village) : undefined,
       rwSlug: region.precision === "RW" && region.rw ? `rw-${addressSlug(region.rw.replace(/^rw-?/i, ""))}` : undefined,
     };
-    setGeneralOnly(false);
+    const nextVillages = region.precision === "Kecamatan" || !namaKelurahan ? null : [namaKelurahan];
+    setAllVillagesUnchecked(false);
     setSelectedDistrict(matchedDistrict ?? "SEMUA");
-    setSelectedVillages(region.precision === "Kecamatan" || !namaKelurahan ? null : [namaKelurahan]);
     setSelectedRegion(address);
     updateSelectedPackage(null);
-    writeReportPath(addressPath(address));
+    writeReportPath(addressPath(address), {
+      generalOnly: false,
+      villages: nextVillages ?? undefined,
+    });
+    void setFilters({ umum: null, desa: nextVillages });
   };
 
   const closeSelectedPackage = () => {
@@ -470,53 +549,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
   useEffect(() => {
     if (!addressRouting) return;
-    const url = routeForFilters(window.location.pathname, {
-      region: regionId,
-      generalOnly,
-      budgetDecile: activeDecile,
-      locatedOnly,
-      year: selectedYear,
-      work: selectedWork,
-      contract: selectedContract,
-      villages: selectedVillages ?? undefined,
-      sort: selectedSort,
-      view: mapView,
-      query: searchQuery,
-    });
-    if (`${window.location.pathname}${window.location.search}` !== url) {
-      window.history.replaceState(null, "", url);
-    }
-  }, [generalOnly, activeDecile, addressRouting, locatedOnly, mapView, regionId, searchQuery, selectedContract, selectedSort, selectedVillages, selectedWork, selectedYear]);
-
-  useEffect(() => {
-    if (!addressRouting) return;
     const restoreFromLocation = () => {
       const segments = window.location.pathname.split("/").filter(Boolean).slice(1);
       const selection = parseReportSegments(segments, regionId);
-      const params = new URLSearchParams(window.location.search);
       const district = districts.find((name) => districtSlug(name) === selection.districtSlug);
       const rupPackage = selection.rupCode
         ? initialData.items.find((item) => item.kode_rup === selection.rupCode)
         : null;
-      const year = params.get("tahun");
-      const work = params.get("jenis")?.toLocaleUpperCase("id-ID");
-      const view = params.get("tampilan");
-      const group = Number(params.get("kelompok"));
-      const contract = params.get("kontrak");
-      const desa = params.getAll("desa");
-      const urut = params.get("urut");
-      setBudgetDecile(Number.isInteger(group) && group >= 1 && group <= 10 && (year === "2025" || year === "2026") ? group : undefined);
-      setLocatedOnly(params.get("lokasi") !== "0");
-      setGeneralOnly(params.get("umum") === "1");
-      setSelectedYear(year === "2025" || year === "2026" ? year : "SEMUA");
-      setSelectedWork(WORK_OPTIONS.includes(work as RoadWorkCategory) ? work as RoadWorkCategory : "SEMUA");
-      setSelectedContract(contract === "ADA" || contract === "TANPA" ? contract : "SEMUA");
-      setSelectedSort(urut === "pagu-asc" || urut === "nama" ? urut : "pagu-desc");
-      setSelectedVillages(desa.length ? desa : null);
-      // `tampilan=work` dari tautan lama diperlakukan sebagai tema jumlah paket:
-      // penanda jenis sekarang selalu tampil di semua tema.
-      setMapView(view === "budget" ? "budget" : "packages");
-      setSearchQuery(params.get("q") ?? "");
+      setAllVillagesUnchecked(false);
       setSelectedDistrict(district ?? "SEMUA");
       setSelectedRegion(selection.districtSlug || selection.villageSlug || selection.rwSlug ? {
         districtSlug: selection.districtSlug,
@@ -581,12 +621,12 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
 
   return (
     <>
-      {showIntro && <MapIntroSection searchQuery={searchQuery} onSearchChange={setSearchQuery} />}
+      {showIntro && <MapIntroSection searchQuery={searchQuery} onSearchChange={(query) => void setFilters({ q: query })} />}
       <section aria-label="Jelajahi paket jalan" className={fillViewport ? "min-h-[calc(100dvh-4rem)] bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
       <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <TooltipProvider>
         <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
-          {(activeDecile || generalOnly) && <div role="status" className="flex flex-wrap items-center justify-between gap-2 bg-secondary/20 px-4 py-1.5 text-sm"><p><strong>{activeDecile ? `Kelompok D${activeDecile} · ${selectedYear}` : "Pilihan dari analisis"}{generalOnly ? " · Lokasi umum" : ""}</strong> · dari analisis konsentrasi pagu. {locatedOnly ? "Menampilkan paket berlokasi; paket lokasi umum tersedia lewat filter lokasi." : "Termasuk paket lokasi umum di daftar."}</p><button type="button" onClick={() => { setBudgetDecile(undefined); setGeneralOnly(false); }} className="min-h-9 font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">Lepas kelompok</button></div>}
+          {(activeDecile || generalOnly) && <div role="status" className="flex flex-wrap items-center justify-between gap-2 bg-secondary/20 px-4 py-1.5 text-sm"><p><strong>{activeDecile ? `Kelompok D${activeDecile} · ${selectedYear}` : "Pilihan dari analisis"}{generalOnly ? " · Lokasi umum" : ""}</strong> · dari analisis konsentrasi pagu. {locatedOnly ? "Menampilkan paket berlokasi; paket lokasi umum tersedia lewat filter lokasi." : "Termasuk paket lokasi umum di daftar."}</p><button type="button" onClick={() => void setFilters({ kelompok: null, umum: null })} className="min-h-9 font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">Lepas kelompok</button></div>}
           {availableRegions.length > 1 && (
             <div className="flex items-center gap-3 border-b border-border bg-muted/20 px-3 py-2">
               <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Wilayah kerja</span>
@@ -602,11 +642,11 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </Select>
             </div>
           )}
-          <div className="grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2.5fr)_minmax(220px,1fr)] sm:items-center sm:px-3 sm:py-2">
+          <div className="relative grid gap-2 border-b border-border bg-muted/20 p-2.5 sm:grid-cols-[minmax(0,2.5fr)_minmax(220px,1fr)] lg:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-3 sm:py-2">
             <div className={`${filtersOpen ? "grid" : "hidden lg:grid"} grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.05fr)_minmax(0,0.95fr)] xl:gap-2`}>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">TA</span>
-                <Select value={selectedYear} onValueChange={(val) => { setSelectedYear((val ?? "SEMUA") as "SEMUA" | "2025" | "2026"); setBudgetDecile(undefined); }}>
+                <Select value={selectedYear} onValueChange={(val) => void setFilters({ tahun: val === "2025" || val === "2026" ? val : null, kelompok: null })}>
                   <SelectTrigger aria-label="Tahun anggaran" className={FILTER_TRIGGER_CLASS}>
                     <SelectValue>{selectedYear === "SEMUA" ? "Semua tahun" : selectedYear}</SelectValue>
                   </SelectTrigger>
@@ -675,7 +715,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       </span>
                       <button
                         type="button"
-                        onClick={() => setSelectedVillages(null)}
+                        onClick={() => {
+                          setAllVillagesUnchecked(false);
+                          void setFilters({ desa: null });
+                        }}
                         className="font-sans text-[11px] font-bold text-primary hover:underline"
                       >
                         Pilih semua
@@ -712,7 +755,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Jenis</span>
-                <Select value={selectedWork} onValueChange={(val) => setSelectedWork((val ?? "SEMUA") as RoadWorkCategory)}>
+                <Select value={selectedWork} onValueChange={(val) => void setFilters({ jenis: val && val !== "SEMUA" ? (val as RoadWorkCategory) : null })}>
                   <SelectTrigger aria-label="Jenis pekerjaan" className={FILTER_TRIGGER_CLASS}>
                     <SelectValue>{WORK_LABELS[selectedWork]}</SelectValue>
                   </SelectTrigger>
@@ -723,7 +766,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Kontrak</span>
-                <Select value={selectedContract} onValueChange={(val) => setSelectedContract((val ?? "SEMUA") as RoadContractFilter)}>
+                <Select value={selectedContract} onValueChange={(val) => void setFilters({ kontrak: val === "ADA" || val === "TANPA" ? val : null })}>
                   <SelectTrigger aria-label="Status rekam kontrak LPSE" className={FILTER_TRIGGER_CLASS}>
                     <SelectValue>{CONTRACT_LABELS[selectedContract]}</SelectValue>
                   </SelectTrigger>
@@ -734,7 +777,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 px-1 py-0.5">
                 <span className="font-sans text-[9px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Urutkan</span>
-                <Select value={selectedSort} onValueChange={(value) => setSelectedSort((value ?? "pagu-desc") as RoadPackageSort)}>
+                <Select value={selectedSort} onValueChange={(value) => void setFilters({ urut: value === "pagu-asc" || value === "nama" ? value : null })}>
                   <SelectTrigger aria-label="Urutan register paket" className={FILTER_TRIGGER_CLASS}>
                     <SelectValue>{SORT_LABELS[selectedSort]}</SelectValue>
                   </SelectTrigger>
@@ -759,7 +802,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 <input
                   type="checkbox"
                   checked={locatedOnly}
-                  onChange={(event) => { setLocatedOnly(event.target.checked); if (event.target.checked) setGeneralOnly(false); }}
+                  onChange={(event) => void setFilters({
+                    lokasi: event.target.checked ? null : "0",
+                    ...(event.target.checked ? { umum: null } : {}),
+                  })}
                   className="size-3.5 accent-primary"
                 />
                 <span className="font-sans text-[11px]">Hanya paket berlokasi</span>
@@ -772,15 +818,23 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                   aria-label="Cari paket berdasarkan kelurahan, jalan, kecamatan, atau nomor RUP"
                   type="search"
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onChange={(event) => void setFilters({ q: event.target.value })}
                   placeholder="Cari kelurahan, jalan, atau RUP"
                   className="h-8 pl-8 pr-2 text-[11px]"
                 />
               </label>}
-              <span aria-live="polite" className="whitespace-nowrap">
-                {isLoading ? "Memuat paket…" : null}
+              <span role="status" aria-live="polite" className="sr-only">
+                {isLoading ? "Memuat paket…" : ""}
               </span>
             </div>
+            {isLoading && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-primary/20"
+              >
+                <div className="h-full w-full animate-pulse bg-primary" />
+              </div>
+            )}
           </div>
 
           {activeFilterLabels.length > 0 && (
@@ -825,7 +879,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               className={`order-1 flex h-[580px] min-w-0 flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""} ${listOpen ? "" : "lg:hidden"} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}
             >
               <ScrollArea className="min-h-0 flex-1">
-                <div className="divide-y divide-border">
+                <div className={`divide-y divide-border transition-opacity duration-150 ${isLoading && packageData ? "opacity-60" : ""}`}>
                   {filteredPackages.map((pkg) => (
                     <article key={pkg.kode_rup} className={`transition-colors hover:bg-muted/30 ${selectedPackage?.kode_rup === pkg.kode_rup ? "bg-primary/5" : ""}`}>
                       <button
@@ -894,7 +948,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                                 type="button"
                                 variant="ghost"
                                 size="xs"
-                                onClick={() => setLocatedOnly(false)}
+                                onClick={() => void setFilters({ lokasi: "0" })}
                                 className="mt-2 block h-7 px-2 text-[11px] font-bold text-primary hover:bg-primary/10 hover:text-primary"
                               >
                                 Tampilkan paket berlokasi umum
@@ -916,7 +970,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                 selectedRegion={selectedRegion}
                 onSelectRegion={selectRegion}
                 viewMode={mapView}
-                onViewModeChange={setMapView}
+                onViewModeChange={(mode) => void setFilters({ tampilan: mode === "budget" ? "budget" : null })}
                 packageCount={isLoading || kelurahanKosong ? undefined : filteredCount}
                 mapHeightClassName={fillViewport ? "h-full min-h-0" : undefined}
               />
@@ -974,14 +1028,14 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                       <nav aria-label="Lokasi paket" className="min-w-0">
                         <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-sans text-xs">
                           <li>
-                            <button type="button" onClick={() => { setSelectedDistrict("SEMUA"); setSelectedVillages(null); setSelectedRegion(null); setSearchQuery(""); updateSelectedPackage(null); writeReportPath("/peta-pekerjaan"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            <button type="button" onClick={() => { setSelectedDistrict("SEMUA"); setAllVillagesUnchecked(false); setSelectedRegion(null); updateSelectedPackage(null); writeReportPath("/peta-pekerjaan", { villages: undefined, query: "" }); void setFilters({ desa: null, q: null }); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                               {regionLabel}
                             </button>
                           </li>
                           {selectedPackage.kecamatan_resmi && <>
                             <li aria-hidden="true" className="text-muted-foreground">/</li>
                             <li>
-                              <button type="button" onClick={() => { const district = selectedPackage.kecamatan_resmi ?? "SEMUA"; const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) }; setSelectedDistrict(district); setSelectedVillages(null); setSelectedRegion(address); setSearchQuery(""); updateSelectedPackage(null); writeReportPath(address ? addressPath(address) : "/peta-pekerjaan"); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <button type="button" onClick={() => { const district = selectedPackage.kecamatan_resmi ?? "SEMUA"; const address = district === "SEMUA" ? null : { districtSlug: districtSlug(district) }; setSelectedDistrict(district); setAllVillagesUnchecked(false); setSelectedRegion(address); updateSelectedPackage(null); writeReportPath(address ? addressPath(address) : "/peta-pekerjaan", { villages: undefined, query: "" }); void setFilters({ desa: null, q: null }); }} className="font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                 Kec. {selectedPackage.kecamatan_resmi}
                               </button>
                             </li>
@@ -1013,11 +1067,6 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
                             </>}
                           </>}
                           {!selectedPackage.kecamatan_resmi && !selectedPackage.desa_resmi && <li aria-current="location" className="font-semibold text-foreground">Lokasi umum</li>}
-                          {labelPresisi(selectedPackage) ? (
-                            <li className="ml-auto">
-                              <Badge variant="outline" className="px-1.5 py-0 text-[9px] tracking-[0.08em]">{labelPresisi(selectedPackage)}</Badge>
-                            </li>
-                          ) : null}
                         </ol>
                       </nav>
                       <h2 className="mt-2 font-heading text-[17px] font-bold leading-snug tracking-tight text-foreground">

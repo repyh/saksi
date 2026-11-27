@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Raleway, Open_Sans } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import PwaRuntime from "@/features/pwa/components/pwa-runtime";
@@ -69,7 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Navbar />
         </Suspense>
         <div id="main-content" tabIndex={-1} className="flex-1 scroll-mt-16 focus:outline-none">
-          {children}
+          <NuqsAdapter>{children}</NuqsAdapter>
         </div>
         <Suspense fallback={null}>
           <SiteFooter />
