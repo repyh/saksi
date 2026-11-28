@@ -622,10 +622,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   return (
     <>
       {showIntro && <MapIntroSection searchQuery={searchQuery} onSearchChange={(query) => void setFilters({ q: query })} />}
-      <section aria-label="Jelajahi paket jalan" className={fillViewport ? "flex min-h-[calc(100dvh-4rem)] flex-col bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
-      <div className={fillViewport ? "flex w-full flex-1 flex-col px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
+      <section aria-label="Jelajahi paket jalan" className={fillViewport ? "min-h-[calc(100dvh-4rem)] bg-white max-lg:flex max-lg:flex-col lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
+      <div className={fillViewport ? "h-full w-full px-0 max-lg:flex max-lg:flex-1 max-lg:flex-col" : "w-full px-4 sm:px-6 lg:px-8"}>
         <TooltipProvider>
-        <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "flex min-h-0 flex-1 flex-col lg:h-full" : ""}`}>
+        <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
           {(activeDecile || generalOnly) && <div role="status" className="flex flex-wrap items-center justify-between gap-2 bg-secondary/20 px-4 py-1.5 text-sm"><p><strong>{activeDecile ? `Kelompok D${activeDecile} · ${selectedYear}` : "Pilihan dari analisis"}{generalOnly ? " · Lokasi umum" : ""}</strong> · dari analisis konsentrasi pagu. {locatedOnly ? "Menampilkan paket berlokasi; paket lokasi umum tersedia lewat filter lokasi." : "Termasuk paket lokasi umum di daftar."}</p><button type="button" onClick={() => void setFilters({ kelompok: null, umum: null })} className="min-h-9 font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">Lepas kelompok</button></div>}
           {availableRegions.length > 1 && (
             <div className="flex items-center gap-3 border-b border-border bg-muted/20 px-3 py-2">
@@ -872,7 +872,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             ))}
           </div>
 
-          <div className={`grid grid-cols-1 lg:grid-cols-12 ${fillViewport ? "min-h-0 flex-1 grid-rows-[minmax(0,1fr)]" : ""}`}>
+          <div className={`grid grid-cols-1 lg:grid-cols-12 ${fillViewport ? "max-lg:min-h-0 max-lg:flex-1 max-lg:grid-rows-[minmax(0,1fr)] lg:min-h-0 lg:flex-1" : ""}`}>
             <aside
               id="saksi-package-list"
               aria-label="Daftar paket jalan"

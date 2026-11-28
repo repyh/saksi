@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as maplibregl from "maplibre-gl";
 import { FaRoad, FaRupiahSign, FaWater } from "react-icons/fa6";
-import { FiChevronDown, FiChevronUp, FiMaximize, FiPackage } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiLayers, FiMaximize, FiPackage } from "react-icons/fi";
 import { GiBridge } from "react-icons/gi";
 import type { IconType } from "react-icons";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -418,6 +418,19 @@ function reducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** Layar besar membuka legenda otomatis; ponsel membiarkannya tertutup agar peta dan atribusi tetap terlihat. */
+function useLayarBesar() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const media = window.matchMedia("(min-width: 1024px)");
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => false,
+  );
+}
+
 function sourceId(precision: BoundaryPrecision) {
   return `saksi-${precision.toLocaleLowerCase("id-ID")}`;
 }
@@ -589,7 +602,10 @@ export default function MapCanvas(props: MapCanvasProps) {
   const [loadedMap, setLoadedMap] = useState<maplibregl.Map | null>(null);
   const [roadEnabled, setRoadEnabled] = useState(false);
   const [roadError, setRoadError] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 1024px)").matches);
+  // Di mobile legenda tertutup; hanya layar besar yang membukanya otomatis.
+  const layarBesar = useLayarBesar();
+  const [legendPreference, setLegendPreference] = useState<boolean | null>(null);
+  const legendOpen = legendPreference ?? layarBesar;
   const [aboutOpen, setAboutOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -1403,7 +1419,7 @@ export default function MapCanvas(props: MapCanvasProps) {
           RUP {props.selectedPackage.kode_rup} tidak memiliki kecocokan wilayah kecamatan/kelurahan/{props.region.environmentLabel}; peta tidak menandai area tertentu.
         </div>
       ) : null}
-      <div className="saksi-map-overlay pointer-events-none absolute right-3 bottom-3 z-10 flex max-w-[calc(100%-1.5rem)] items-end gap-2">
+      <div className="saksi-map-overlay pointer-events-none absolute right-3 bottom-14 z-10 flex max-w-[calc(100%-1.5rem)] items-end gap-2">
         <div
           role="group"
           aria-label="Tema peta"
@@ -1433,10 +1449,22 @@ export default function MapCanvas(props: MapCanvasProps) {
             );
           })}
         </div>
-        <div className="pointer-events-auto w-[min(20rem,calc(100vw-6.5rem))] border border-border bg-white/95 text-foreground shadow-sm">
+        {!legendOpen ? (
+          <button
+            type="button"
+            onClick={() => setLegendPreference(true)}
+            aria-expanded={legendOpen}
+            aria-label="Buka legenda peta"
+            title="Legenda peta"
+            className="pointer-events-auto flex size-8 shrink-0 items-center justify-center border border-border bg-white/95 text-foreground/70 shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary lg:hidden"
+          >
+            <FiLayers className="size-4" aria-hidden="true" />
+          </button>
+        ) : null}
+        <div className={`pointer-events-auto w-[min(20rem,calc(100vw-6.5rem))] border border-border bg-white/95 text-foreground shadow-sm ${legendOpen ? "" : "max-lg:hidden"}`}>
         <button
           type="button"
-          onClick={() => setLegendOpen((open) => !open)}
+          onClick={() => setLegendPreference((open) => !(open ?? layarBesar))}
           aria-expanded={legendOpen}
           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-sans text-[11px] font-bold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
         >
