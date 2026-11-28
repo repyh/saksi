@@ -46,6 +46,12 @@ const DEFAULT_ACTIONS: NavActionItem[] = [
     variant: "ghost",
   },
   {
+    id: "laporan-publik",
+    label: "Laporan Publik",
+    href: "/laporan/publik",
+    variant: "ghost",
+  },
+  {
     id: "laporkan-jalan",
     label: "Laporkan Jalan",
     href: "/laporan/",
@@ -58,6 +64,12 @@ const REPORT_ACTION = DEFAULT_ACTIONS.find((item) => item.id === "laporkan-jalan
 function isActivePath(pathname: string, href: string) {
   const normalizedHref = href.replace(/\/+$/, "") || "/";
   return pathname === normalizedHref || (normalizedHref !== "/" && pathname.startsWith(`${normalizedHref}/`));
+}
+
+function resolveActiveId(pathname: string, items: NavActionItem[]) {
+  return items
+    .filter((item) => isActivePath(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.id;
 }
 
 export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavActionsProps) {
@@ -74,6 +86,9 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
     label: session ? "Dashboard" : "Masuk",
     href: session ? "/dashboard" : "/login?returnTo=%2Fdashboard",
   };
+  const desktopItems = [...actions, account];
+  const desktopActiveId = resolveActiveId(pathname, desktopItems);
+  const mobileActiveId = resolveActiveId(pathname, secondaryActions);
 
   useEffect(() => {
     navRef.current?.setAttribute("data-nav-ready", "true");
@@ -95,14 +110,14 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
       <nav
         ref={navRef}
         aria-label="Navigasi Utama"
-        className={cn("hidden h-full items-stretch gap-7 md:flex", className)}
+        className={cn("hidden h-full items-stretch gap-7 xl:flex", className)}
       >
-        {[...actions, account].map((item) => {
+        {desktopItems.map((item) => {
           if (item.id === "account-action" && isPending) {
             return <span key={item.id} aria-hidden="true" className="my-3 w-20 animate-pulse bg-white/15" />;
           }
 
-          const isActive = isActivePath(pathname, item.href);
+          const isActive = item.id === desktopActiveId;
 
           if (item.id === "account-action") {
             return (
@@ -162,10 +177,10 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
         })}
       </nav>
 
-      <div className="flex items-center gap-1.5 md:hidden">
+      <div className="flex items-center gap-1.5 xl:hidden">
         <Link
           href={reportAction.href}
-          aria-current={isActivePath(pathname, reportAction.href) ? "page" : undefined}
+          aria-current={reportAction.id === mobileActiveId ? "page" : undefined}
           className="inline-flex min-h-10 items-center border border-secondary bg-secondary px-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.08em] text-secondary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           {reportAction.label.replace(" Jalan", "")}
@@ -197,12 +212,12 @@ export function NavActions({ actions = DEFAULT_ACTIONS, className = "" }: NavAct
       {menuOpen ? (
         <div
           id="mobile-navigation-panel"
-          className="absolute inset-x-0 top-full z-50 border-b border-white/20 bg-primary shadow-lg md:hidden"
+          className="absolute inset-x-0 top-full z-50 border-b border-white/20 bg-primary shadow-lg xl:hidden"
         >
           <nav aria-label="Navigasi utama ponsel" className="mx-auto w-full max-w-7xl px-4 py-2">
             <ul>
               {secondaryActions.map((item) => {
-                const active = isActivePath(pathname, item.href);
+                const active = item.id === mobileActiveId;
                 return (
                   <li key={item.id} className="border-b border-white/15 last:border-b-0">
                     <Link

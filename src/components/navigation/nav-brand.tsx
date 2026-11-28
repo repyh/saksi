@@ -26,7 +26,8 @@ export function NavBrand({ config = DEFAULT_BRAND, className = "" }: NavBrandPro
       )}
       aria-label={`${shortName} — ${fullName}`}
     >
-      <SaksiLogo variant="horizontal-full" tone="onDark" size={30} />
+      <SaksiLogo variant="horizontal" tone="onDark" size={30} className="min-[1600px]:hidden" />
+      <SaksiLogo variant="horizontal-full" tone="onDark" size={30} className="hidden min-[1600px]:inline-flex" />
     </Link>
   );
 }
