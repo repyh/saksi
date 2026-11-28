@@ -622,10 +622,10 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
   return (
     <>
       {showIntro && <MapIntroSection searchQuery={searchQuery} onSearchChange={(query) => void setFilters({ q: query })} />}
-      <section aria-label="Jelajahi paket jalan" className={fillViewport ? "min-h-[calc(100dvh-4rem)] bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
-      <div className={fillViewport ? "h-full w-full px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
+      <section aria-label="Jelajahi paket jalan" className={fillViewport ? "flex min-h-[calc(100dvh-4rem)] flex-col bg-white lg:h-full" : "bg-white pt-8 pb-12 sm:pt-10"}>
+      <div className={fillViewport ? "flex w-full flex-1 flex-col px-0" : "w-full px-4 sm:px-6 lg:px-8"}>
         <TooltipProvider>
-        <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "lg:flex lg:h-full lg:min-h-0 lg:flex-col" : ""}`}>
+        <Card className={`overflow-hidden rounded-xs border-border bg-white shadow-none ${fillViewport ? "flex min-h-0 flex-1 flex-col lg:h-full" : ""}`}>
           {(activeDecile || generalOnly) && <div role="status" className="flex flex-wrap items-center justify-between gap-2 bg-secondary/20 px-4 py-1.5 text-sm"><p><strong>{activeDecile ? `Kelompok D${activeDecile} · ${selectedYear}` : "Pilihan dari analisis"}{generalOnly ? " · Lokasi umum" : ""}</strong> · dari analisis konsentrasi pagu. {locatedOnly ? "Menampilkan paket berlokasi; paket lokasi umum tersedia lewat filter lokasi." : "Termasuk paket lokasi umum di daftar."}</p><button type="button" onClick={() => void setFilters({ kelompok: null, umum: null })} className="min-h-9 font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary">Lepas kelompok</button></div>}
           {availableRegions.length > 1 && (
             <div className="flex items-center gap-3 border-b border-border bg-muted/20 px-3 py-2">
@@ -872,11 +872,11 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
             ))}
           </div>
 
-          <div className={`grid grid-cols-1 lg:grid-cols-12 ${fillViewport ? "lg:min-h-0 lg:flex-1" : ""}`}>
+          <div className={`grid grid-cols-1 lg:grid-cols-12 ${fillViewport ? "min-h-0 flex-1 grid-rows-[minmax(0,1fr)]" : ""}`}>
             <aside
               id="saksi-package-list"
               aria-label="Daftar paket jalan"
-              className={`order-1 flex h-[580px] min-w-0 flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""} ${listOpen ? "" : "lg:hidden"} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}
+              className={`order-1 flex min-w-0 flex-col border-r border-border bg-white lg:col-span-3 ${fillViewport ? "h-full max-lg:min-h-[360px] lg:min-h-0" : "h-[580px]"} ${listOpen ? "" : "lg:hidden"} ${mobilePane === "list" && !selectedPackage ? "" : "max-lg:hidden"}`}
             >
               <ScrollArea className="min-h-0 flex-1">
                 <div className={`divide-y divide-border transition-opacity duration-150 ${isLoading && packageData ? "opacity-60" : ""}`}>
@@ -962,7 +962,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </ScrollArea>
             </aside>
 
-            <div className={`relative order-2 min-w-0 border-b border-border lg:order-2 lg:border-b-0 ${listOpen ? (selectedPackage ? "lg:col-span-6" : "lg:col-span-9") : (selectedPackage ? "lg:col-span-9" : "lg:col-span-12")} ${fillViewport ? "h-[580px] lg:h-full lg:min-h-0" : ""} ${mobilePane === "map" && !selectedPackage ? "" : "max-lg:hidden"}`}>
+            <div className={`relative order-2 min-w-0 border-b border-border lg:order-2 lg:border-b-0 ${listOpen ? (selectedPackage ? "lg:col-span-6" : "lg:col-span-9") : (selectedPackage ? "lg:col-span-9" : "lg:col-span-12")} ${fillViewport ? "h-full max-lg:min-h-[360px] lg:min-h-0" : ""} ${mobilePane === "map" && !selectedPackage ? "" : "max-lg:hidden"}`}>
               <MapCanvas
                 areaStats={mapAggregate}
                 region={activeRegion}
@@ -995,7 +995,7 @@ export default function MapDashboard({ initialData, initialAggregate, regionId, 
               </Tooltip>
             </div>
 
-            {selectedPackage && <aside className={`order-3 flex h-[580px] min-w-0 flex-col border-l border-border bg-white lg:col-span-3 lg:col-start-10 lg:order-3 ${fillViewport ? "lg:h-full lg:min-h-0" : ""}`}>
+            {selectedPackage && <aside className={`order-3 flex min-w-0 flex-col border-l border-border bg-white lg:col-span-3 lg:col-start-10 lg:order-3 ${fillViewport ? "h-full max-lg:min-h-[360px] lg:min-h-0" : "h-[580px]"}`}>
               {selectedPackage ? (
                 <div className="flex h-full min-h-0 flex-col">
                   <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-muted/20 px-4 py-2.5">
